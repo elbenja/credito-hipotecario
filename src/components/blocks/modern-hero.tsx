@@ -1,4 +1,4 @@
-import { Star } from "lucide-react"
+import { ArrowRight, Star } from "lucide-react"
 import { Avatar, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -28,21 +28,27 @@ export function Hero({
 }: HeroProps) {
   return (
     <section
-      className={cn("flex items-center justify-center w-full py-32", className)}
+      className={cn("flex items-center justify-center w-full py-32 bg-slate-50", className)}
       {...props}
     >
       <div className="container flex flex-col items-center justify-center">
         <div className="mx-auto flex max-w-screen-lg flex-col items-center gap-6">
-          <h1 className="text-center text-3xl font-extrabold lg:text-6xl">
+          <h1 className="text-center text-3xl font-extrabold text-slate-900 lg:text-6xl">
             {title}
           </h1>
-          <p className="text-balance text-center text-muted-foreground lg:text-lg">
+          <p className="text-balance text-center text-slate-600 lg:text-lg">
             {description}
           </p>
         </div>
-        <Button size="lg" className="mt-10">
-          {buttonText}
-        </Button>
+        <div className="flex gap-4 mt-10">
+          <Button size="lg">
+            {buttonText}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="lg">
+            Watch Demo
+          </Button>
+        </div>
         <div className="mt-10 flex w-full max-w-fit flex-col items-center justify-center gap-4 sm:flex-row">
           <span className="inline-flex items-center -space-x-4">
             {avatars.map((avatar, index) => (
@@ -59,9 +65,9 @@ export function Hero({
                   className="h-5 w-5 fill-yellow-400 text-yellow-400"
                 />
               ))}
-              <span className="font-semibold">{rating.value.toFixed(1)}</span>
+              <span className="font-semibold text-slate-900">{rating.value.toFixed(1)}</span>
             </div>
-            <p className="font-medium text-muted-foreground">
+            <p className="font-medium text-slate-600">
               from {rating.count}+ reviews
             </p>
           </div>
