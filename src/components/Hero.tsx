@@ -1,28 +1,33 @@
-import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { Hero as ModernHero } from "@/components/blocks/modern-hero"
 
 export const Hero = () => {
-  return (
-    <div className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-blue-50 to-white">
-      <div className="absolute inset-0 w-full h-full bg-grid-pattern opacity-[0.02]" />
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="text-center max-w-4xl mx-auto animate-fade-up">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Make Smarter Real Estate Decisions
-          </h1>
-          <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            AI-powered insights to help you navigate the real estate market with confidence
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Button size="lg" className="bg-primary hover:bg-primary/90">
-              Get Started <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-            <Button size="lg" variant="outline">
-              Watch Demo
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  const heroData = {
+    title: "Make Smarter Real Estate Decisions",
+    description: "AI-powered insights to help you navigate the real estate market with confidence",
+    buttonText: "Get Started",
+    avatars: [
+      {
+        src: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7",
+        alt: "User 1"
+      },
+      {
+        src: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d",
+        alt: "User 2"
+      },
+      {
+        src: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158",
+        alt: "User 3"
+      },
+      {
+        src: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e",
+        alt: "User 4"
+      }
+    ],
+    rating: {
+      value: 5.0,
+      count: 200
+    }
+  };
+
+  return <ModernHero {...heroData} />;
 };
