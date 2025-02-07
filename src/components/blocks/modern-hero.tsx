@@ -1,3 +1,4 @@
+
 import { ArrowRight, Star } from "lucide-react"
 import { Avatar, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -7,6 +8,7 @@ interface HeroProps extends React.HTMLAttributes<HTMLElement> {
   title: string
   description: string
   buttonText: string
+  onGetStarted: () => void
   avatars: Array<{
     src: string
     alt: string
@@ -21,6 +23,7 @@ export function Hero({
   title,
   description,
   buttonText,
+  onGetStarted,
   avatars,
   rating,
   className,
@@ -41,7 +44,11 @@ export function Hero({
           </p>
         </div>
         <div className="flex gap-4 mt-10">
-          <Button size="lg">
+          <Button 
+            size="lg" 
+            className="bg-slate-950 hover:bg-slate-900"
+            onClick={onGetStarted}
+          >
             {buttonText}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>

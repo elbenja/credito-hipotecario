@@ -1,10 +1,34 @@
-import { Hero as ModernHero } from "@/components/blocks/modern-hero"
+
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Hero as ModernHero } from "@/components/blocks/modern-hero";
 
 export const Hero = () => {
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    checkAuth();
+  }, []);
+
+  const handleGetStarted = () => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    } else {
+      navigate("/auth");
+    }
+  };
+
   const heroData = {
     title: "Make Smarter Real Estate Decisions",
     description: "AI-powered insights to help you navigate the real estate market with confidence",
-    buttonText: "Get Started",
+    buttonText: isAuthenticated ? "Go to App" : "Get Started",
+    onGetStarted: handleGetStarted,
     avatars: [
       {
         src: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7",
