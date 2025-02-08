@@ -1,5 +1,5 @@
 
-import { Building, Calculator, LayoutDashboard, MessageSquare, User } from "lucide-react"
+import { Building, Calculator, LayoutDashboard, MessageSquare, User, Home } from "lucide-react"
 import { Link } from "react-router-dom"
 import {
   Sidebar,
@@ -31,7 +31,8 @@ export function DashboardSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b">
         <Link to="/dashboard" className="flex items-center gap-2 px-4 py-4">
-          <span className="font-bold text-xl">HomeSavvy</span>
+          <Home className="h-6 w-6" />
+          <span className="font-bold text-xl">CreditoHipotecar.io</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>

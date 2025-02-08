@@ -1,4 +1,5 @@
-import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
+
+import { Facebook, Instagram, Linkedin, Twitter, Home } from "lucide-react";
 
 export const Footer = () => {
   return (
@@ -6,7 +7,10 @@ export const Footer = () => {
       <div className="container py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-white font-bold text-xl mb-4">HomeSavvy</h3>
+            <h3 className="text-white font-bold text-xl mb-4 flex items-center gap-2">
+              <Home className="h-6 w-6" />
+              CreditoHipotecar.io
+            </h3>
             <p className="text-sm">Making real estate decisions smarter and easier.</p>
           </div>
           <div>
@@ -68,7 +72,7 @@ export const Footer = () => {
           </div>
         </div>
         <div className="border-t border-gray-800 mt-12 pt-8 text-sm text-center">
-          <p>&copy; 2024 HomeSavvy. All rights reserved.</p>
+          <p>&copy; 2024 CreditoHipotecar.io. All rights reserved.</p>
         </div>
       </div>
     </footer>

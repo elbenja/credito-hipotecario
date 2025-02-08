@@ -1,7 +1,8 @@
+
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "@/components/ui/navigation-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Menu, X } from "lucide-react"
+import { Menu, X, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react"
@@ -58,9 +59,10 @@ export function Navigation() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-8">
-          <Link to="/" className="font-bold text-xl text-slate-900">
-            HomeSavvy
+        <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 font-bold text-xl text-slate-900">
+            <Home className="h-6 w-6" />
+            CreditoHipotecar.io
           </Link>
           
           {/* Desktop Navigation */}
@@ -141,7 +143,10 @@ export function Navigation() {
             <SheetContent side="right" className="w-full sm:w-[300px]">
               <div className="flex flex-col space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-xl text-slate-900">HomeSavvy</span>
+                  <span className="flex items-center gap-2 font-bold text-xl text-slate-900">
+                    <Home className="h-6 w-6" />
+                    CreditoHipotecar.io
+                  </span>
                   <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
                     <X className="h-5 w-5" />
                   </Button>
