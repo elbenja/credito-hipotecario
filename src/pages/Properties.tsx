@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { CurrencyInput } from "@/components/ui/currency-input"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
@@ -143,6 +144,8 @@ export default function Properties() {
     },
   })
 
+  const selectedCurrency = form.watch("currency")
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       if (!user) throw new Error("No user found")
@@ -233,10 +236,9 @@ export default function Properties() {
                           <FormItem>
                             <FormLabel>Price</FormLabel>
                             <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
+                              <CurrencyInput
                                 placeholder="Enter price"
+                                currency={selectedCurrency}
                                 {...field}
                               />
                             </FormControl>
@@ -280,10 +282,9 @@ export default function Properties() {
                             <FormItem>
                               <FormLabel>Property Insurance</FormLabel>
                               <FormControl>
-                                <Input
-                                  type="number"
-                                  step="0.01"
+                                <CurrencyInput
                                   placeholder="Monthly insurance"
+                                  currency={selectedCurrency}
                                   {...field}
                                 />
                               </FormControl>
@@ -298,10 +299,9 @@ export default function Properties() {
                             <FormItem>
                               <FormLabel>Other Monthly Expenses</FormLabel>
                               <FormControl>
-                                <Input
-                                  type="number"
-                                  step="0.01"
+                                <CurrencyInput
                                   placeholder="Other expenses"
+                                  currency={selectedCurrency}
                                   {...field}
                                 />
                               </FormControl>
