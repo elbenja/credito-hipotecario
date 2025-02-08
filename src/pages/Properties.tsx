@@ -1,3 +1,4 @@
+
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
@@ -60,6 +61,7 @@ type Property = {
   property_insurance: number | null
   other_expenses: number | null
   is_first_home: boolean
+  description?: string | null
 }
 
 const formatCurrency = (amount: number, currency: string) => {
@@ -82,6 +84,7 @@ export default function Properties() {
     key: keyof Property;
     direction: 'asc' | 'desc';
   } | null>(null)
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
 
   const loadProperties = async () => {
     try {
@@ -146,11 +149,40 @@ export default function Properties() {
 
   const selectedCurrency = form.watch("currency")
 
+  // Reset form when opening sheet in create mode
+  const handleAddNewClick = () => {
+    setSelectedProperty(null)
+    form.reset({
+      name: "",
+      description: "",
+      price_cost: "",
+      currency: "PEN",
+      property_insurance: "",
+      other_expenses: "",
+    })
+    setOpen(true)
+  }
+
+  // Initialize form with property data when editing
+  useEffect(() => {
+    if (selectedProperty) {
+      form.reset({
+        name: selectedProperty.name,
+        description: selectedProperty.description || "",
+        price_cost: selectedProperty.price_cost.toString(),
+        currency: selectedProperty.currency,
+        property_insurance: selectedProperty.property_insurance?.toString() || "",
+        other_expenses: selectedProperty.other_expenses?.toString() || "",
+      })
+      setOpen(true)
+    }
+  }, [selectedProperty, form])
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       if (!user) throw new Error("No user found")
 
-      const { error } = await supabase.from("properties").insert({
+      const propertyData = {
         name: values.name,
         description: values.description,
         price_cost: parseFloat(values.price_cost),
@@ -158,23 +190,57 @@ export default function Properties() {
         property_insurance: values.property_insurance ? parseFloat(values.property_insurance) : null,
         other_expenses: values.other_expenses ? parseFloat(values.other_expenses) : 0,
         user_id: user.id,
-      })
+      }
 
-      if (error) throw error
+      if (selectedProperty) {
+        // Update existing property
+        const { error } = await supabase
+          .from("properties")
+          .update(propertyData)
+          .eq('id', selectedProperty.id)
 
-      toast({
-        title: "Success",
-        description: "Property added successfully",
-      })
+        if (error) throw error
+
+        // Update local state
+        setProperties(properties.map(p => 
+          p.id === selectedProperty.id 
+            ? { ...p, ...propertyData } 
+            : p
+        ))
+
+        toast({
+          title: "Success",
+          description: "Property updated successfully",
+        })
+      } else {
+        // Create new property
+        const { data, error } = await supabase
+          .from("properties")
+          .insert(propertyData)
+          .select()
+
+        if (error) throw error
+
+        // Update local state with the new property
+        if (data) {
+          setProperties([...properties, data[0]])
+        }
+
+        toast({
+          title: "Success",
+          description: "Property added successfully",
+        })
+      }
       
       setOpen(false)
+      setSelectedProperty(null)
       form.reset()
     } catch (error) {
-      console.error("Error adding property:", error)
+      console.error("Error saving property:", error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "There was an error adding the property",
+        description: "There was an error saving the property",
       })
     }
   }
@@ -186,14 +252,16 @@ export default function Properties() {
           <h1 className="text-3xl font-bold">Properties</h1>
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button>
+              <Button onClick={handleAddNewClick}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Property
               </Button>
             </SheetTrigger>
             <SheetContent className="w-full sm:max-w-xl">
               <SheetHeader>
-                <SheetTitle>Add New Property</SheetTitle>
+                <SheetTitle>
+                  {selectedProperty ? 'Edit Property' : 'Add New Property'}
+                </SheetTitle>
               </SheetHeader>
               <div className="mt-8">
                 <Form {...form}>
@@ -313,7 +381,7 @@ export default function Properties() {
                     </div>
 
                     <Button type="submit" className="w-full">
-                      Add Property
+                      {selectedProperty ? 'Update Property' : 'Add Property'}
                     </Button>
                   </form>
                 </Form>
@@ -344,7 +412,11 @@ export default function Properties() {
             </TableHeader>
             <TableBody>
               {properties.map((property) => (
-                <TableRow key={property.id}>
+                <TableRow 
+                  key={property.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => setSelectedProperty(property)}
+                >
                   <TableCell>{property.name}</TableCell>
                   <TableCell>
                     {formatCurrency(property.price_cost, property.currency)}
@@ -352,7 +424,7 @@ export default function Properties() {
                   <TableCell>
                     {formatCurrency(getMonthlyExpenses(property), property.currency)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <Switch
                       checked={property.is_first_home}
                       onCheckedChange={async (checked) => {
@@ -364,7 +436,12 @@ export default function Properties() {
 
                           if (error) throw error
                           
-                          await loadProperties()
+                          // Update local state
+                          setProperties(properties.map(p => 
+                            p.id === property.id 
+                              ? { ...p, is_first_home: checked }
+                              : p
+                          ))
                           
                           toast({
                             title: "Success",
