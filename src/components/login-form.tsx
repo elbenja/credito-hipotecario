@@ -8,16 +8,24 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { useAuth } from "@/context/auth-context"
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { user } = useAuth()
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsLoading(true)
+
+    // If user is already logged in, redirect to dashboard
+    if (user) {
+      navigate("/dashboard")
+      return
+    }
 
     const formData = new FormData(event.currentTarget)
     const email = formData.get("email") as string
@@ -64,7 +72,7 @@ export function LoginForm() {
           console.error("Login error:", error)
           throw error
         }
-        navigate("/")
+        navigate("/dashboard")
       }
     } catch (error: any) {
       toast({
