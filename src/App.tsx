@@ -10,6 +10,7 @@ import Index from "./pages/Index"
 import Auth from "./pages/Auth"
 import NotFound from "./pages/NotFound"
 import Dashboard from "./pages/Dashboard"
+import Properties from "./pages/Properties"
 
 const queryClient = new QueryClient()
 
@@ -28,6 +29,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/properties"
+              element={
+                <ProtectedRoute>
+                  <Properties />
                 </ProtectedRoute>
               }
             />
