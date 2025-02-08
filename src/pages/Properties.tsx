@@ -24,6 +24,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { supabase } from "@/integrations/supabase/client"
+import { useAuth } from "@/context/auth-context"
 
 const formSchema = z.object({
   name: z.string().min(1, "Property name is required"),
@@ -35,6 +36,7 @@ const formSchema = z.object({
 export default function Properties() {
   const [open, setOpen] = useState(false)
   const { toast } = useToast()
+  const { user } = useAuth()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,11 +50,14 @@ export default function Properties() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
+      if (!user) throw new Error("No user found")
+
       const { error } = await supabase.from("properties").insert({
         name: values.name,
         description: values.description,
         price_cost: parseFloat(values.price_cost),
         currency: values.currency,
+        user_id: user.id
       })
 
       if (error) throw error
