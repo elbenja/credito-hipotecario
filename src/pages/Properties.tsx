@@ -156,7 +156,7 @@ export default function Properties() {
       name: "",
       description: "",
       price_cost: "",
-      currency: "PEN",
+      currency: "PEN" as "PEN" | "USD", // Fix the type here
       property_insurance: "",
       other_expenses: "",
     })
@@ -170,7 +170,7 @@ export default function Properties() {
         name: selectedProperty.name,
         description: selectedProperty.description || "",
         price_cost: selectedProperty.price_cost.toString(),
-        currency: selectedProperty.currency,
+        currency: selectedProperty.currency as "PEN" | "USD", // Fix the type here
         property_insurance: selectedProperty.property_insurance?.toString() || "",
         other_expenses: selectedProperty.other_expenses?.toString() || "",
       })
