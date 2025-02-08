@@ -1,4 +1,3 @@
-
 import { ArrowRight, Star } from "lucide-react"
 import { Avatar, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -57,9 +56,6 @@ export function Hero({
         <div className="flex gap-4 mt-10">
           <Button 
             size="lg"
-            className={cn(
-              user && "bg-[#ea384c] hover:bg-[#ea384c]/90 rounded-full"
-            )}
             onClick={handleAction}
           >
             {user ? "Go to App" : buttonText}

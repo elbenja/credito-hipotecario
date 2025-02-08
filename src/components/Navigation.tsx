@@ -1,4 +1,3 @@
-
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "@/components/ui/navigation-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -123,10 +122,7 @@ export function Navigation() {
         <div className="hidden md:block">
           <Button 
             size="sm" 
-            className={cn(
-              "text-sm font-medium",
-              user && "bg-[#ea384c] hover:bg-[#ea384c]/90 rounded-full"
-            )}
+            className="text-sm font-medium"
             onClick={handleAction}
           >
             {user ? "Go to App" : "Get Started"}
@@ -171,10 +167,7 @@ export function Navigation() {
                 </div>
                 <div className="pt-4">
                   <Button 
-                    className={cn(
-                      "w-full",
-                      user && "bg-[#ea384c] hover:bg-[#ea384c]/90 rounded-full"
-                    )} 
+                    className="w-full" 
                     size="sm"
                     onClick={handleAction}
                   >
