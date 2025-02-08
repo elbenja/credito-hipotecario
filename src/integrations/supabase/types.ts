@@ -36,6 +36,51 @@ export type Database = {
         }
         Relationships: []
       }
+      properties: {
+        Row: {
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          is_first_home: boolean | null
+          loan_protection_insurance: number | null
+          name: string
+          other_expenses: number | null
+          price_cost: number
+          property_insurance: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency: string
+          description?: string | null
+          id?: string
+          is_first_home?: boolean | null
+          loan_protection_insurance?: number | null
+          name: string
+          other_expenses?: number | null
+          price_cost: number
+          property_insurance?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          is_first_home?: boolean | null
+          loan_protection_insurance?: number | null
+          name?: string
+          other_expenses?: number | null
+          price_cost?: number
+          property_insurance?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
