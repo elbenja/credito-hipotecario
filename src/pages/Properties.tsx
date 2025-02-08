@@ -1,4 +1,3 @@
-
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
@@ -52,6 +51,7 @@ const formSchema = z.object({
   property_insurance: z.string().optional(),
   other_expenses: z.string().optional(),
   is_sustainable: z.boolean().default(false),
+  is_first_home: z.boolean().default(false),
 })
 
 type Property = {
@@ -191,10 +191,28 @@ export default function Properties() {
       property_insurance: "",
       other_expenses: "",
       is_sustainable: false,
+      is_first_home: false,
     },
   })
 
   const selectedCurrency = form.watch("currency")
+  const price = form.watch("price_cost")
+  const isFirstHome = form.watch("is_first_home")
+  const isSustainable = form.watch("is_sustainable")
+
+  // Function to check if price is within bonus range
+  const isPriceInBonusRange = (priceInPEN: number) => {
+    return bonusRules.some(rule => 
+      priceInPEN >= rule.min_value && priceInPEN <= rule.max_value
+    )
+  }
+
+  // Function to get applicable bonus rule
+  const getApplicableRule = (priceInPEN: number) => {
+    return bonusRules.find(rule => 
+      priceInPEN >= rule.min_value && priceInPEN <= rule.max_value
+    )
+  }
 
   // Reset form when opening sheet in create mode
   const handleAddNewClick = () => {
@@ -207,6 +225,7 @@ export default function Properties() {
       property_insurance: "",
       other_expenses: "",
       is_sustainable: false,
+      is_first_home: false,
     })
     setOpen(true)
   }
@@ -222,6 +241,7 @@ export default function Properties() {
         property_insurance: selectedProperty.property_insurance?.toString() || "",
         other_expenses: selectedProperty.other_expenses?.toString() || "",
         is_sustainable: selectedProperty.is_sustainable,
+        is_first_home: selectedProperty.is_first_home,
       })
       setOpen(true)
     }
@@ -239,6 +259,7 @@ export default function Properties() {
         property_insurance: values.property_insurance ? parseFloat(values.property_insurance) : null,
         other_expenses: values.other_expenses ? parseFloat(values.other_expenses) : 0,
         is_sustainable: values.is_sustainable,
+        is_first_home: values.is_first_home,
         user_id: user.id,
       }
 
@@ -430,28 +451,92 @@ export default function Properties() {
                       </div>
                     </div>
 
-                    <FormField
-                      control={form.control}
-                      name="is_sustainable"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              Sustainable Property
-                            </FormLabel>
-                            <div className="text-sm text-muted-foreground">
-                              Mark if this property meets sustainable building criteria
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">First Home Buyer Bonus</h3>
+                      
+                      <FormField
+                        control={form.control}
+                        name="is_first_home"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">
+                                First Home Buyer
+                              </FormLabel>
+                              <div className="text-sm text-muted-foreground">
+                                Enable if this is your first property purchase
+                              </div>
                             </div>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      {isFirstHome && price && (
+                        <div className="space-y-4 rounded-lg border p-4">
+                          {isPriceInBonusRange(parseFloat(price)) ? (
+                            <>
+                              <div className="space-y-2">
+                                <p className="text-sm text-muted-foreground">
+                                  Property value is within bonus range (S/67,400 - S/355,100)
+                                </p>
+                                {getApplicableRule(parseFloat(price)) && (
+                                  <p className="text-sm font-medium">
+                                    Applicable range: S/{getApplicableRule(parseFloat(price))?.min_value.toLocaleString()} - S/{getApplicableRule(parseFloat(price))?.max_value.toLocaleString()}
+                                  </p>
+                                )}
+                              </div>
+
+                              <FormField
+                                control={form.control}
+                                name="is_sustainable"
+                                render={({ field }) => (
+                                  <FormItem className="flex flex-row items-center justify-between">
+                                    <div className="space-y-0.5">
+                                      <FormLabel className="text-base">
+                                        Sustainable Property
+                                      </FormLabel>
+                                      <div className="text-sm text-muted-foreground">
+                                        Qualifies for higher bonus amount
+                                      </div>
+                                    </div>
+                                    <FormControl>
+                                      <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+
+                              {getApplicableRule(parseFloat(price)) && (
+                                <div className="mt-2 rounded-md bg-secondary p-4">
+                                  <p className="font-medium">Bonus Amount:</p>
+                                  <p className="text-2xl font-bold">
+                                    {formatCurrency(
+                                      isSustainable
+                                        ? getApplicableRule(parseFloat(price))!.sustainable_bonus
+                                        : getApplicableRule(parseFloat(price))!.traditional_bonus,
+                                      'PEN'
+                                    )}
+                                  </p>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">
+                              Property value must be between S/67,400 and S/355,100 to qualify for the bonus
+                            </div>
+                          )}
+                        </div>
                       )}
-                    />
+                    </div>
 
                     <Button type="submit" className="w-full">
                       {selectedProperty ? 'Update Property' : 'Add Property'}
