@@ -1,5 +1,5 @@
 
-import { Building, Calculator, LayoutDashboard, MessageSquare, User, Home, CreditCard, Bell, Settings, LogOut, ChevronsUpDown } from "lucide-react"
+import { Building, Calculator, LayoutDashboard, MessageSquare, User, CreditCard, Bell, Settings, LogOut, ChevronsUpDown } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import {
   Sidebar,
@@ -47,7 +47,7 @@ export function DashboardSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b">
         <Link to="/dashboard" className="flex items-center gap-2 px-4 py-4">
-          <Home className="h-6 w-6" />
+          <img src="/lovable-uploads/41f7154c-117b-44d3-8e9a-93df702ec7d9.png" alt="Logo" className="h-6 w-6" />
           <span className="font-bold text-xl">CreditoHipotecar.io</span>
         </Link>
       </SidebarHeader>

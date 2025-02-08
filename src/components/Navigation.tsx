@@ -1,4 +1,3 @@
-
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "@/components/ui/navigation-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -61,7 +60,7 @@ export function Navigation() {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2 font-bold text-xl text-slate-900">
-            <Home className="h-6 w-6" />
+            <img src="/lovable-uploads/41f7154c-117b-44d3-8e9a-93df702ec7d9.png" alt="Logo" className="h-6 w-6" />
             CreditoHipotecar.io
           </Link>
           

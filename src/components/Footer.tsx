@@ -1,5 +1,5 @@
 
-import { Facebook, Instagram, Linkedin, Twitter, Home } from "lucide-react";
+import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 
 export const Footer = () => {
   return (
@@ -8,7 +8,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <h3 className="text-white font-bold text-xl mb-4 flex items-center gap-2">
-              <Home className="h-6 w-6" />
+              <img src="/lovable-uploads/41f7154c-117b-44d3-8e9a-93df702ec7d9.png" alt="Logo" className="h-6 w-6" />
               CreditoHipotecar.io
             </h3>
             <p className="text-sm">Making real estate decisions smarter and easier.</p>
