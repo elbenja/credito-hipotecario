@@ -41,14 +41,15 @@ export const CurrencyInput = ({
   ...props
 }: CurrencyInputProps) => {
   const [displayValue, setDisplayValue] = useState('')
+  const [isFocused, setIsFocused] = useState(false)
   
   useEffect(() => {
     if (value) {
-      setDisplayValue(formatValue(value, currency))
+      setDisplayValue(isFocused ? unformatValue(value) : formatValue(value, currency))
     } else {
       setDisplayValue('')
     }
-  }, [value, currency])
+  }, [value, currency, isFocused])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const unformatted = unformatValue(e.target.value)
@@ -56,7 +57,12 @@ export const CurrencyInput = ({
   }
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setIsFocused(true)
     e.target.select()
+  }
+
+  const handleBlur = () => {
+    setIsFocused(false)
   }
 
   return (
@@ -65,6 +71,7 @@ export const CurrencyInput = ({
       value={displayValue}
       onChange={handleChange}
       onFocus={handleFocus}
+      onBlur={handleBlur}
     />
   )
 }
