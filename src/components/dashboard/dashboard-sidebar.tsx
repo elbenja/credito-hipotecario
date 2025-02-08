@@ -1,5 +1,5 @@
 
-import { Building, Calculator, LayoutDashboard, MessageSquare, User, Home, CreditCard, Bell, Settings, LogOut } from "lucide-react"
+import { Building, Calculator, LayoutDashboard, MessageSquare, User, Home, CreditCard, Bell, Settings, LogOut, ChevronsUpDown } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import {
   Sidebar,
@@ -87,9 +87,12 @@ export function DashboardSidebar() {
               <SidebarMenuItem>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <SidebarMenuButton className="w-full justify-start">
-                      <User className="h-4 w-4" />
-                      <span className="truncate">{user?.email}</span>
+                    <SidebarMenuButton className="w-full justify-between">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        <span className="truncate">{user?.email}</span>
+                      </div>
+                      <ChevronsUpDown className="h-4 w-4" />
                     </SidebarMenuButton>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="start" side="right">
