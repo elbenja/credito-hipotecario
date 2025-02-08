@@ -1,4 +1,3 @@
-
 import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 
 export const Footer = () => {
@@ -8,7 +7,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <h3 className="text-white font-bold text-xl mb-4 flex items-center gap-2">
-              <img src="/lovable-uploads/41f7154c-117b-44d3-8e9a-93df702ec7d9.png" alt="Logo" className="h-6 w-6" />
+              <img src="/lovable-uploads/17eb0714-2b3e-4b08-a1d6-a92337781e6d.png" alt="Logo" className="h-6 w-6" />
               CreditoHipotecar.io
             </h3>
             <p className="text-sm">Making real estate decisions smarter and easier.</p>

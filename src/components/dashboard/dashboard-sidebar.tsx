@@ -47,7 +47,7 @@ export function DashboardSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b">
         <Link to="/dashboard" className="flex items-center gap-2 px-4 py-4">
-          <img src="/lovable-uploads/41f7154c-117b-44d3-8e9a-93df702ec7d9.png" alt="Logo" className="h-6 w-6" />
+          <img src="/lovable-uploads/17eb0714-2b3e-4b08-a1d6-a92337781e6d.png" alt="Logo" className="h-6 w-6" />
           <span className="font-bold text-xl">CreditoHipotecar.io</span>
         </Link>
       </SidebarHeader>
