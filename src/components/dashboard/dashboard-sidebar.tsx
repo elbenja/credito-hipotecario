@@ -32,7 +32,6 @@ const mainNavItems = [
 
 const footerNavItems = [
   { title: "AI Chat", icon: MessageSquare, href: "/chat" },
-  { title: "Profile", icon: User, href: "/profile" },
 ]
 
 export function DashboardSidebar() {
