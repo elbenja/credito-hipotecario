@@ -60,7 +60,12 @@ export default function Properties() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       const { error } = await supabase.from("properties").insert({
-        ...values,
+        name: values.name,
+        description: values.description,
+        price_cost: values.price_cost,
+        property_insurance: values.property_insurance,
+        other_expenses: values.other_expenses,
+        currency: values.currency,
         user_id: user?.id,
       })
 
