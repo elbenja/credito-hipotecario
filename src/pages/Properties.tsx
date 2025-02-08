@@ -51,6 +51,7 @@ const formSchema = z.object({
   currency: z.enum(["PEN", "USD"]).default("PEN"),
   property_insurance: z.string().optional(),
   other_expenses: z.string().optional(),
+  is_sustainable: z.boolean().default(false),
 })
 
 type Property = {
@@ -61,7 +62,15 @@ type Property = {
   property_insurance: number | null
   other_expenses: number | null
   is_first_home: boolean
+  is_sustainable: boolean
   description?: string | null
+}
+
+type BonusRule = {
+  min_value: number
+  max_value: number
+  traditional_bonus: number
+  sustainable_bonus: number
 }
 
 const formatCurrency = (amount: number, currency: string) => {
@@ -80,11 +89,47 @@ export default function Properties() {
   const { toast } = useToast()
   const { user } = useAuth()
   const [properties, setProperties] = useState<Property[]>([])
+  const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Property;
     direction: 'asc' | 'desc';
   } | null>(null)
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+
+  const loadBonusRules = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bonus_rules')
+        .select('*')
+        .eq('is_active', true)
+        .order('min_value', { ascending: true })
+
+      if (error) throw error
+      setBonusRules(data || [])
+    } catch (error) {
+      console.error('Error loading bonus rules:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not load bonus rules",
+      })
+    }
+  }
+
+  const calculateBonus = (property: Property): number | null => {
+    if (!property.is_first_home || property.currency !== 'PEN') return null
+
+    const propertyValue = property.price_cost
+    const applicableRule = bonusRules.find(
+      rule => propertyValue >= rule.min_value && propertyValue <= rule.max_value
+    )
+
+    if (!applicableRule) return null
+
+    return property.is_sustainable 
+      ? applicableRule.sustainable_bonus 
+      : applicableRule.traditional_bonus
+  }
 
   const loadProperties = async () => {
     try {
@@ -109,6 +154,7 @@ export default function Properties() {
 
   useEffect(() => {
     loadProperties()
+    loadBonusRules()
   }, [user])
 
   const handleSort = (key: keyof Property) => {
@@ -144,6 +190,7 @@ export default function Properties() {
       currency: "PEN",
       property_insurance: "",
       other_expenses: "",
+      is_sustainable: false,
     },
   })
 
@@ -156,9 +203,10 @@ export default function Properties() {
       name: "",
       description: "",
       price_cost: "",
-      currency: "PEN" as "PEN" | "USD", // Fix the type here
+      currency: "PEN",
       property_insurance: "",
       other_expenses: "",
+      is_sustainable: false,
     })
     setOpen(true)
   }
@@ -170,9 +218,10 @@ export default function Properties() {
         name: selectedProperty.name,
         description: selectedProperty.description || "",
         price_cost: selectedProperty.price_cost.toString(),
-        currency: selectedProperty.currency as "PEN" | "USD", // Fix the type here
+        currency: selectedProperty.currency as "PEN" | "USD",
         property_insurance: selectedProperty.property_insurance?.toString() || "",
         other_expenses: selectedProperty.other_expenses?.toString() || "",
+        is_sustainable: selectedProperty.is_sustainable,
       })
       setOpen(true)
     }
@@ -189,6 +238,7 @@ export default function Properties() {
         currency: values.currency,
         property_insurance: values.property_insurance ? parseFloat(values.property_insurance) : null,
         other_expenses: values.other_expenses ? parseFloat(values.other_expenses) : 0,
+        is_sustainable: values.is_sustainable,
         user_id: user.id,
       }
 
@@ -380,6 +430,29 @@ export default function Properties() {
                       </div>
                     </div>
 
+                    <FormField
+                      control={form.control}
+                      name="is_sustainable"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">
+                              Sustainable Property
+                            </FormLabel>
+                            <div className="text-sm text-muted-foreground">
+                              Mark if this property meets sustainable building criteria
+                            </div>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
                     <Button type="submit" className="w-full">
                       {selectedProperty ? 'Update Property' : 'Add Property'}
                     </Button>
@@ -407,59 +480,101 @@ export default function Properties() {
                   Cost {sortConfig?.key === 'price_cost' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                 </TableHead>
                 <TableHead>Monthly Expenses</TableHead>
-                <TableHead>First Home Bonus</TableHead>
+                <TableHead>First Home</TableHead>
+                <TableHead>Sustainable</TableHead>
+                <TableHead>Bonus Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {properties.map((property) => (
-                <TableRow 
-                  key={property.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => setSelectedProperty(property)}
-                >
-                  <TableCell>{property.name}</TableCell>
-                  <TableCell>
-                    {formatCurrency(property.price_cost, property.currency)}
-                  </TableCell>
-                  <TableCell>
-                    {formatCurrency(getMonthlyExpenses(property), property.currency)}
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Switch
-                      checked={property.is_first_home}
-                      onCheckedChange={async (checked) => {
-                        try {
-                          const { error } = await supabase
-                            .from('properties')
-                            .update({ is_first_home: checked })
-                            .eq('id', property.id)
+              {properties.map((property) => {
+                const bonusAmount = calculateBonus(property)
+                return (
+                  <TableRow 
+                    key={property.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => setSelectedProperty(property)}
+                  >
+                    <TableCell>{property.name}</TableCell>
+                    <TableCell>
+                      {formatCurrency(property.price_cost, property.currency)}
+                    </TableCell>
+                    <TableCell>
+                      {formatCurrency(getMonthlyExpenses(property), property.currency)}
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Switch
+                        checked={property.is_first_home}
+                        onCheckedChange={async (checked) => {
+                          try {
+                            const { error } = await supabase
+                              .from('properties')
+                              .update({ is_first_home: checked })
+                              .eq('id', property.id)
 
-                          if (error) throw error
-                          
-                          // Update local state
-                          setProperties(properties.map(p => 
-                            p.id === property.id 
-                              ? { ...p, is_first_home: checked }
-                              : p
-                          ))
-                          
-                          toast({
-                            title: "Success",
-                            description: `First home bonus ${checked ? 'enabled' : 'disabled'}`,
-                          })
-                        } catch (error) {
-                          console.error('Error updating property:', error)
-                          toast({
-                            variant: "destructive",
-                            title: "Error",
-                            description: "Could not update property",
-                          })
-                        }
-                      }}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
+                            if (error) throw error
+                            
+                            // Update local state
+                            setProperties(properties.map(p => 
+                              p.id === property.id 
+                                ? { ...p, is_first_home: checked }
+                                : p
+                            ))
+                            
+                            toast({
+                              title: "Success",
+                              description: `First home bonus ${checked ? 'enabled' : 'disabled'}`,
+                            })
+                          } catch (error) {
+                            console.error('Error updating property:', error)
+                            toast({
+                              variant: "destructive",
+                              title: "Error",
+                              description: "Could not update property",
+                            })
+                          }
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Switch
+                        checked={property.is_sustainable}
+                        onCheckedChange={async (checked) => {
+                          try {
+                            const { error } = await supabase
+                              .from('properties')
+                              .update({ is_sustainable: checked })
+                              .eq('id', property.id)
+
+                            if (error) throw error
+                            
+                            // Update local state
+                            setProperties(properties.map(p => 
+                              p.id === property.id 
+                                ? { ...p, is_sustainable: checked }
+                                : p
+                            ))
+                            
+                            toast({
+                              title: "Success",
+                              description: `Sustainable property ${checked ? 'enabled' : 'disabled'}`,
+                            })
+                          } catch (error) {
+                            console.error('Error updating property:', error)
+                            toast({
+                              variant: "destructive",
+                              title: "Error",
+                              description: "Could not update property",
+                            })
+                          }
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {bonusAmount ? formatCurrency(bonusAmount, 'PEN') : '-'}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </div>

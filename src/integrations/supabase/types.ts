@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bonus_rules: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          max_value: number
+          min_value: number
+          sustainable_bonus: number
+          traditional_bonus: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_value: number
+          min_value: number
+          sustainable_bonus: number
+          traditional_bonus: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_value?: number
+          min_value?: number
+          sustainable_bonus?: number
+          traditional_bonus?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       exchange_rates: {
         Row: {
           from_currency: string
@@ -67,6 +100,7 @@ export type Database = {
           description: string | null
           id: string
           is_first_home: boolean | null
+          is_sustainable: boolean | null
           loan_protection_insurance: number | null
           name: string
           other_expenses: number | null
@@ -81,6 +115,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_first_home?: boolean | null
+          is_sustainable?: boolean | null
           loan_protection_insurance?: number | null
           name: string
           other_expenses?: number | null
@@ -95,6 +130,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_first_home?: boolean | null
+          is_sustainable?: boolean | null
           loan_protection_insurance?: number | null
           name?: string
           other_expenses?: number | null
