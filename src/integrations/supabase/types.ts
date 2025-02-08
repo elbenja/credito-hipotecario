@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      exchange_rates: {
+        Row: {
+          from_currency: string
+          id: string
+          last_updated: string | null
+          rate: number
+          to_currency: string
+        }
+        Insert: {
+          from_currency: string
+          id?: string
+          last_updated?: string | null
+          rate: number
+          to_currency: string
+        }
+        Update: {
+          from_currency?: string
+          id?: string
+          last_updated?: string | null
+          rate?: number
+          to_currency?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
