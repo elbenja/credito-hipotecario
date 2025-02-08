@@ -4,14 +4,22 @@ import { useNavigate } from "react-router-dom"
 import { GalleryVerticalEnd } from "lucide-react"
 import { LoginForm } from "@/components/login-form"
 import { supabase } from "@/integrations/supabase/client"
+import { useAuth } from "@/context/auth-context"
 
 export default function Auth() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard")
+    }
+  }, [user, navigate])
 
   useEffect(() => {
     supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        navigate("/")
+        navigate("/dashboard")
       }
     })
   }, [navigate])

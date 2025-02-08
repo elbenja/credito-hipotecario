@@ -1,10 +1,12 @@
+
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "@/components/ui/navigation-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react"
+import { useAuth } from "@/context/auth-context"
 
 const features = [
   {
@@ -33,6 +35,16 @@ const resources = [
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
+  const { user } = useAuth()
+  const navigate = useNavigate()
+
+  const handleAction = () => {
+    if (user) {
+      navigate('/dashboard')
+    } else {
+      navigate('/auth')
+    }
+  }
 
   const MobileNavItem = ({ href, children }: { href: string; children: React.ReactNode }) => (
     <a
@@ -109,8 +121,15 @@ export function Navigation() {
 
         {/* Desktop CTA */}
         <div className="hidden md:block">
-          <Button size="sm" className="text-sm font-medium">
-            Get Started
+          <Button 
+            size="sm" 
+            className={cn(
+              "text-sm font-medium",
+              user && "bg-[#ea384c] hover:bg-[#ea384c]/90 rounded-full"
+            )}
+            onClick={handleAction}
+          >
+            {user ? "Go to App" : "Get Started"}
           </Button>
         </div>
 
@@ -151,8 +170,15 @@ export function Navigation() {
                   <MobileNavItem href="#pricing">Pricing</MobileNavItem>
                 </div>
                 <div className="pt-4">
-                  <Button className="w-full" size="sm">
-                    Get Started
+                  <Button 
+                    className={cn(
+                      "w-full",
+                      user && "bg-[#ea384c] hover:bg-[#ea384c]/90 rounded-full"
+                    )} 
+                    size="sm"
+                    onClick={handleAction}
+                  >
+                    {user ? "Go to App" : "Get Started"}
                   </Button>
                 </div>
               </div>

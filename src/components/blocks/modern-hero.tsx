@@ -1,7 +1,10 @@
+
 import { ArrowRight, Star } from "lucide-react"
 import { Avatar, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useNavigate } from "react-router-dom"
+import { useAuth } from "@/context/auth-context"
 
 interface HeroProps extends React.HTMLAttributes<HTMLElement> {
   title: string
@@ -26,6 +29,17 @@ export function Hero({
   className,
   ...props
 }: HeroProps) {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+
+  const handleAction = () => {
+    if (user) {
+      navigate('/dashboard')
+    } else {
+      navigate('/auth')
+    }
+  }
+
   return (
     <section
       className={cn("flex items-center justify-center w-full py-32 bg-slate-50", className)}
@@ -41,8 +55,14 @@ export function Hero({
           </p>
         </div>
         <div className="flex gap-4 mt-10">
-          <Button size="lg">
-            {buttonText}
+          <Button 
+            size="lg"
+            className={cn(
+              user && "bg-[#ea384c] hover:bg-[#ea384c]/90 rounded-full"
+            )}
+            onClick={handleAction}
+          >
+            {user ? "Go to App" : buttonText}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
           <Button variant="outline" size="lg">
