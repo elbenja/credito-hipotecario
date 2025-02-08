@@ -25,29 +25,54 @@ export function LoginForm() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              email: email,
+            }
+          }
         })
-        if (error) throw error
-        toast({
-          title: "Account created!",
-          description: "Please check your email to verify your account.",
-        })
+
+        if (error) {
+          console.error("Signup error:", error)
+          throw error
+        }
+
+        if (data.user) {
+          toast({
+            title: "Account created!",
+            description: "Please check your email to verify your account.",
+          })
+          // Optionally update profiles table
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ email: email })
+            .eq('id', data.user.id)
+
+          if (profileError) {
+            console.error("Profile update error:", profileError)
+          }
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         })
-        if (error) throw error
+        if (error) {
+          console.error("Login error:", error)
+          throw error
+        }
         navigate("/")
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: error.message || "An error occurred during authentication",
       })
+      console.error("Auth error:", error)
     } finally {
       setIsLoading(false)
     }
