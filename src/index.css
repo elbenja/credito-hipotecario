@@ -60,15 +60,21 @@
 }
 
 /* Custom input focus styles */
+.input,
+.select,
+.textarea {
+  @apply transition-all duration-200;
+}
+
 .input:focus-visible,
 .select:focus-visible,
 .textarea:focus-visible {
-  outline: none;
-  box-shadow: none;
-  border-color: hsl(var(--brand));
-  border-width: 3px;
-  border-style: solid;
-  ring-offset-width: 0;
+  outline: none !important;
+  border-color: hsl(var(--brand)) !important;
+  border-width: 3px !important;
+  box-shadow: none !important;
+  ring-width: 0 !important;
+  ring-offset-width: 0 !important;
 }
 
 .bg-grid-pattern {
