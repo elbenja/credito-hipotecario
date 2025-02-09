@@ -107,7 +107,7 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
                         </p>
                         <div className="space-y-2">
                           {getApplicableRule(parseFloat(price)) && (
-                            <p className="text-base font-medium">
+                            <p className="text-sm text-muted-foreground">
                               Applicable range: S/{getApplicableRule(parseFloat(price))?.min_value.toLocaleString()} - S/{getApplicableRule(parseFloat(price))?.max_value.toLocaleString()}
                             </p>
                           )}
