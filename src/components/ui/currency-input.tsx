@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { Input } from "./input"
 
 interface CurrencyInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
@@ -42,17 +41,28 @@ export const CurrencyInput = ({
 }: CurrencyInputProps) => {
   const [displayValue, setDisplayValue] = useState('')
   const [isFocused, setIsFocused] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const cursorPositionRef = useRef<number | null>(null)
   
   useEffect(() => {
     if (value) {
-      setDisplayValue(isFocused ? unformatValue(value) : formatValue(value, currency))
+      const newDisplayValue = isFocused ? unformatValue(value) : formatValue(value, currency)
+      setDisplayValue(newDisplayValue)
+      
+      // Restore cursor position after value update if input is focused
+      if (isFocused && inputRef.current && cursorPositionRef.current !== null) {
+        const newCursorPosition = Math.min(cursorPositionRef.current, newDisplayValue.length)
+        inputRef.current.setSelectionRange(newCursorPosition, newCursorPosition)
+      }
     } else {
       setDisplayValue('')
     }
   }, [value, currency, isFocused])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const unformatted = unformatValue(e.target.value)
+    const input = e.target
+    cursorPositionRef.current = input.selectionStart
+    const unformatted = unformatValue(input.value)
     onChange(unformatted)
   }
 
@@ -63,11 +73,13 @@ export const CurrencyInput = ({
 
   const handleBlur = () => {
     setIsFocused(false)
+    cursorPositionRef.current = null
   }
 
   return (
     <Input
       {...props}
+      ref={inputRef}
       value={displayValue}
       onChange={handleChange}
       onFocus={handleFocus}
