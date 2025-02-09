@@ -5,6 +5,8 @@ import { UseFormReturn } from "react-hook-form"
 import * as z from "zod"
 import { BonusRule } from "./types"
 import { formatCurrency } from "./types"
+import { useQuery } from "@tanstack/react-query"
+import { supabase } from "@/integrations/supabase/client"
 
 const formSchema = z.object({
   name: z.string().min(1, "Property name is required"),
@@ -24,16 +26,41 @@ type BonusSectionProps = {
 
 export function BonusSection({ form, bonusRules }: BonusSectionProps) {
   const price = form.watch("price_cost")
+  const currency = form.watch("currency")
   const isFirstHome = form.watch("is_first_home")
   const isSustainable = form.watch("is_sustainable")
 
-  const isPriceInBonusRange = (priceInPEN: number) => {
+  // Fetch exchange rate
+  const { data: exchangeRate } = useQuery({
+    queryKey: ['exchangeRate', currency, 'PEN'],
+    queryFn: async () => {
+      if (currency === 'PEN') return 1
+
+      const { data, error } = await supabase
+        .from('exchange_rates')
+        .select('rate')
+        .eq('from_currency', currency)
+        .eq('to_currency', 'PEN')
+        .single()
+
+      if (error) throw error
+      return data?.rate || 3.70 // Fallback rate
+    }
+  })
+
+  const convertToPEN = (amount: number): number => {
+    return amount * (exchangeRate || 3.70)
+  }
+
+  const isPriceInBonusRange = (price: number): boolean => {
+    const priceInPEN = convertToPEN(price)
     return bonusRules.some(rule => 
       priceInPEN >= rule.min_value && priceInPEN <= rule.max_value
     )
   }
 
-  const getApplicableRule = (priceInPEN: number) => {
+  const getApplicableRule = (price: number) => {
+    const priceInPEN = convertToPEN(price)
     return bonusRules.find(rule => 
       priceInPEN >= rule.min_value && priceInPEN <= rule.max_value
     )
@@ -41,8 +68,6 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
 
   return (
     <div className="space-y-4">
-      
-      
       <FormField
         control={form.control}
         name="is_first_home"
@@ -69,8 +94,6 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
               <div className="mt-4 space-y-4">
                 {isPriceInBonusRange(parseFloat(price)) ? (
                   <>
-                 
-
                     <FormField
                       control={form.control}
                       name="is_sustainable"
@@ -117,7 +140,10 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
                   </>
                 ) : (
                   <div className="mt-2 text-sm text-muted-foreground">
-                   Price outside the range.
+                    {currency === 'USD' ? 
+                      `Price (S/${convertToPEN(parseFloat(price)).toLocaleString()}) outside the range.` :
+                      'Price outside the range.'
+                    }
                   </div>
                 )}
               </div>
