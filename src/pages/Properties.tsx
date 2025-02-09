@@ -1,3 +1,4 @@
+
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
@@ -9,50 +10,11 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { useState, useEffect } from "react"
-import { useToast } from "@/components/ui/use-toast"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { CurrencyInput } from "@/components/ui/currency-input"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
+import { PropertyForm } from "@/components/properties/property-form"
+import { PropertyList } from "@/components/properties/property-list"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
-
-const formSchema = z.object({
-  name: z.string().min(1, "Property name is required"),
-  description: z.string().optional(),
-  price_cost: z.string().min(1, "Price is required"),
-  currency: z.enum(["PEN", "USD"]).default("PEN"),
-  property_insurance: z.string().optional(),
-  other_expenses: z.string().optional(),
-  is_sustainable: z.boolean().default(false),
-  is_first_home: z.boolean().default(false),
-})
+import { useToast } from "@/components/ui/use-toast"
 
 type Property = {
   id: string
@@ -73,21 +35,10 @@ type BonusRule = {
   sustainable_bonus: number
 }
 
-const formatCurrency = (amount: number, currency: string) => {
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency === 'PEN' ? 'PEN' : 'USD',
-    currencyDisplay: 'symbol',
-  })
-  
-  const formatted = formatter.format(amount)
-  return currency === 'PEN' ? formatted.replace('PEN', 'S/') : formatted
-}
-
 export default function Properties() {
   const [open, setOpen] = useState(false)
-  const { toast } = useToast()
   const { user } = useAuth()
+  const { toast } = useToast()
   const [properties, setProperties] = useState<Property[]>([])
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
   const [sortConfig, setSortConfig] = useState<{
@@ -114,21 +65,6 @@ export default function Properties() {
         description: "Could not load bonus rules",
       })
     }
-  }
-
-  const calculateBonus = (property: Property): number | null => {
-    if (!property.is_first_home || property.currency !== 'PEN') return null
-
-    const propertyValue = property.price_cost
-    const applicableRule = bonusRules.find(
-      rule => propertyValue >= rule.min_value && propertyValue <= rule.max_value
-    )
-
-    if (!applicableRule) return null
-
-    return property.is_sustainable 
-      ? applicableRule.sustainable_bonus 
-      : applicableRule.traditional_bonus
   }
 
   const loadProperties = async () => {
@@ -175,145 +111,20 @@ export default function Properties() {
     setProperties(sortedProperties)
   }
 
-  const getMonthlyExpenses = (property: Property) => {
-    const insurance = property.property_insurance || 0
-    const other = property.other_expenses || 0
-    return insurance + other
-  }
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      price_cost: "",
-      currency: "PEN",
-      property_insurance: "",
-      other_expenses: "",
-      is_sustainable: false,
-      is_first_home: false,
-    },
-  })
-
-  const selectedCurrency = form.watch("currency")
-  const price = form.watch("price_cost")
-  const isFirstHome = form.watch("is_first_home")
-  const isSustainable = form.watch("is_sustainable")
-
-  // Function to check if price is within bonus range
-  const isPriceInBonusRange = (priceInPEN: number) => {
-    return bonusRules.some(rule => 
-      priceInPEN >= rule.min_value && priceInPEN <= rule.max_value
-    )
-  }
-
-  // Function to get applicable bonus rule
-  const getApplicableRule = (priceInPEN: number) => {
-    return bonusRules.find(rule => 
-      priceInPEN >= rule.min_value && priceInPEN <= rule.max_value
-    )
-  }
-
-  // Reset form when opening sheet in create mode
-  const handleAddNewClick = () => {
-    setSelectedProperty(null)
-    form.reset({
-      name: "",
-      description: "",
-      price_cost: "",
-      currency: "PEN",
-      property_insurance: "",
-      other_expenses: "",
-      is_sustainable: false,
-      is_first_home: false,
-    })
+  const handlePropertySelect = (property: Property) => {
+    setSelectedProperty(property)
     setOpen(true)
   }
 
-  // Initialize form with property data when editing
-  useEffect(() => {
-    if (selectedProperty) {
-      form.reset({
-        name: selectedProperty.name,
-        description: selectedProperty.description || "",
-        price_cost: selectedProperty.price_cost.toString(),
-        currency: selectedProperty.currency as "PEN" | "USD",
-        property_insurance: selectedProperty.property_insurance?.toString() || "",
-        other_expenses: selectedProperty.other_expenses?.toString() || "",
-        is_sustainable: selectedProperty.is_sustainable,
-        is_first_home: selectedProperty.is_first_home,
-      })
-      setOpen(true)
-    }
-  }, [selectedProperty, form])
+  const handlePropertyUpdate = (updatedProperty: Property) => {
+    setProperties(properties.map(p => 
+      p.id === updatedProperty.id ? updatedProperty : p
+    ))
+  }
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      if (!user) throw new Error("No user found")
-
-      const propertyData = {
-        name: values.name,
-        description: values.description,
-        price_cost: parseFloat(values.price_cost),
-        currency: values.currency,
-        property_insurance: values.property_insurance ? parseFloat(values.property_insurance) : null,
-        other_expenses: values.other_expenses ? parseFloat(values.other_expenses) : 0,
-        is_sustainable: values.is_sustainable,
-        is_first_home: values.is_first_home,
-        user_id: user.id,
-      }
-
-      if (selectedProperty) {
-        // Update existing property
-        const { error } = await supabase
-          .from("properties")
-          .update(propertyData)
-          .eq('id', selectedProperty.id)
-
-        if (error) throw error
-
-        // Update local state
-        setProperties(properties.map(p => 
-          p.id === selectedProperty.id 
-            ? { ...p, ...propertyData } 
-            : p
-        ))
-
-        toast({
-          title: "Success",
-          description: "Property updated successfully",
-        })
-      } else {
-        // Create new property
-        const { data, error } = await supabase
-          .from("properties")
-          .insert(propertyData)
-          .select()
-
-        if (error) throw error
-
-        // Update local state with the new property
-        if (data) {
-          setProperties([...properties, data[0]])
-        }
-
-        toast({
-          title: "Success",
-          description: "Property added successfully",
-        })
-      }
-      
-      setOpen(false)
-      setSelectedProperty(null)
-      form.reset()
-    } catch (error) {
-      console.error("Error saving property:", error)
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "There was an error saving the property",
-      })
-    }
+  const handleAddNewClick = () => {
+    setSelectedProperty(null)
+    setOpen(true)
   }
 
   return (
@@ -335,333 +146,26 @@ export default function Properties() {
                 </SheetTitle>
               </SheetHeader>
               <div className="mt-8">
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Property Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter property name" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Description</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Enter property details (address, notes, etc.)" 
-                              className="min-h-[100px]"
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="price_cost"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Price</FormLabel>
-                            <FormControl>
-                              <CurrencyInput
-                                placeholder="Enter price"
-                                currency={selectedCurrency}
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="currency"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Currency</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select currency" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="PEN">PEN (S/)</SelectItem>
-                                <SelectItem value="USD">USD ($)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-medium text-muted-foreground">Monthly Cost Breakdown</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="property_insurance"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Property Insurance</FormLabel>
-                              <FormControl>
-                                <CurrencyInput
-                                  placeholder="Monthly insurance"
-                                  currency={selectedCurrency}
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="other_expenses"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Other Monthly Expenses</FormLabel>
-                              <FormControl>
-                                <CurrencyInput
-                                  placeholder="Other expenses"
-                                  currency={selectedCurrency}
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">First Home Buyer Bonus</h3>
-                      
-                      <FormField
-                        control={form.control}
-                        name="is_first_home"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">
-                                First Home Buyer
-                              </FormLabel>
-                              <div className="text-sm text-muted-foreground">
-                                Enable if this is your first property purchase
-                              </div>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      {isFirstHome && price && (
-                        <div className="space-y-4 rounded-lg border p-4">
-                          {isPriceInBonusRange(parseFloat(price)) ? (
-                            <>
-                              <div className="space-y-2">
-                                <p className="text-sm text-muted-foreground">
-                                  Property value is within bonus range (S/67,400 - S/355,100)
-                                </p>
-                                {getApplicableRule(parseFloat(price)) && (
-                                  <p className="text-sm font-medium">
-                                    Applicable range: S/{getApplicableRule(parseFloat(price))?.min_value.toLocaleString()} - S/{getApplicableRule(parseFloat(price))?.max_value.toLocaleString()}
-                                  </p>
-                                )}
-                              </div>
-
-                              <FormField
-                                control={form.control}
-                                name="is_sustainable"
-                                render={({ field }) => (
-                                  <FormItem className="flex flex-row items-center justify-between">
-                                    <div className="space-y-0.5">
-                                      <FormLabel className="text-base">
-                                        Sustainable Property
-                                      </FormLabel>
-                                      <div className="text-sm text-muted-foreground">
-                                        Qualifies for higher bonus amount
-                                      </div>
-                                    </div>
-                                    <FormControl>
-                                      <Switch
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                      />
-                                    </FormControl>
-                                  </FormItem>
-                                )}
-                              />
-
-                              {getApplicableRule(parseFloat(price)) && (
-                                <div className="mt-2 rounded-md bg-secondary p-4">
-                                  <p className="font-medium">Bonus Amount:</p>
-                                  <p className="text-2xl font-bold">
-                                    {formatCurrency(
-                                      isSustainable
-                                        ? getApplicableRule(parseFloat(price))!.sustainable_bonus
-                                        : getApplicableRule(parseFloat(price))!.traditional_bonus,
-                                      'PEN'
-                                    )}
-                                  </p>
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <div className="text-sm text-muted-foreground">
-                              Property value must be between S/67,400 and S/355,100 to qualify for the bonus
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    <Button type="submit" className="w-full">
-                      {selectedProperty ? 'Update Property' : 'Add Property'}
-                    </Button>
-                  </form>
-                </Form>
+                <PropertyForm
+                  onSuccess={loadProperties}
+                  onClose={() => setOpen(false)}
+                  selectedProperty={selectedProperty}
+                  bonusRules={bonusRules}
+                />
               </div>
             </SheetContent>
           </Sheet>
         </div>
 
         <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort('name')}
-                >
-                  Name {sortConfig?.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort('price_cost')}
-                >
-                  Cost {sortConfig?.key === 'price_cost' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                </TableHead>
-                <TableHead>Monthly Expenses</TableHead>
-                <TableHead>First Home</TableHead>
-                <TableHead>Sustainable</TableHead>
-                <TableHead>Bonus Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {properties.map((property) => {
-                const bonusAmount = calculateBonus(property)
-                return (
-                  <TableRow 
-                    key={property.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => setSelectedProperty(property)}
-                  >
-                    <TableCell>{property.name}</TableCell>
-                    <TableCell>
-                      {formatCurrency(property.price_cost, property.currency)}
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(getMonthlyExpenses(property), property.currency)}
-                    </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Switch
-                        checked={property.is_first_home}
-                        onCheckedChange={async (checked) => {
-                          try {
-                            const { error } = await supabase
-                              .from('properties')
-                              .update({ is_first_home: checked })
-                              .eq('id', property.id)
-
-                            if (error) throw error
-                            
-                            // Update local state
-                            setProperties(properties.map(p => 
-                              p.id === property.id 
-                                ? { ...p, is_first_home: checked }
-                                : p
-                            ))
-                            
-                            toast({
-                              title: "Success",
-                              description: `First home bonus ${checked ? 'enabled' : 'disabled'}`,
-                            })
-                          } catch (error) {
-                            console.error('Error updating property:', error)
-                            toast({
-                              variant: "destructive",
-                              title: "Error",
-                              description: "Could not update property",
-                            })
-                          }
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Switch
-                        checked={property.is_sustainable}
-                        onCheckedChange={async (checked) => {
-                          try {
-                            const { error } = await supabase
-                              .from('properties')
-                              .update({ is_sustainable: checked })
-                              .eq('id', property.id)
-
-                            if (error) throw error
-                            
-                            // Update local state
-                            setProperties(properties.map(p => 
-                              p.id === property.id 
-                                ? { ...p, is_sustainable: checked }
-                                : p
-                            ))
-                            
-                            toast({
-                              title: "Success",
-                              description: `Sustainable property ${checked ? 'enabled' : 'disabled'}`,
-                            })
-                          } catch (error) {
-                            console.error('Error updating property:', error)
-                            toast({
-                              variant: "destructive",
-                              title: "Error",
-                              description: "Could not update property",
-                            })
-                          }
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {bonusAmount ? formatCurrency(bonusAmount, 'PEN') : '-'}
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
+          <PropertyList
+            properties={properties}
+            bonusRules={bonusRules}
+            onPropertySelect={handlePropertySelect}
+            onPropertyUpdate={handlePropertyUpdate}
+            sortConfig={sortConfig}
+            onSort={handleSort}
+          />
         </div>
       </div>
     </DashboardLayout>
