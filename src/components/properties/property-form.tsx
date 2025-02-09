@@ -293,7 +293,8 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty, bonusRules 
                     First Home Buyer
                   </FormLabel>
                   <div className="text-sm text-muted-foreground">
-                    Enable if this is your first property purchase
+                    Enable if this is your first property purchase. Property value within bonus range (S/67,400 - S/355,100) qualifies.
+
                   </div>
                 </div>
                 <FormControl>
