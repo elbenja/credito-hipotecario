@@ -139,7 +139,7 @@ export default function Properties() {
                 Add Property
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-full sm:max-w-xl">
+            <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
               <SheetHeader>
                 <SheetTitle>
                   {selectedProperty ? 'Edit Property' : 'Add New Property'}
