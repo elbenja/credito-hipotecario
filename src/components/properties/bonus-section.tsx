@@ -41,7 +41,7 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">First Home Buyer Bonus</h3>
+      
       
       <FormField
         control={form.control}
@@ -51,7 +51,7 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <FormLabel className="text-xl font-semibold">
-                This is your first property purchase
+                First Home Buyer Bonus
                 </FormLabel>
                 <div className="text-sm text-muted-foreground">
                  Bonus for prices between S/67,400 - S/355,100.
