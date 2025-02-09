@@ -63,15 +63,15 @@
 .input,
 .select,
 .textarea {
-  @apply transition-all duration-200;
+  @apply transition-all duration-200 border-[1px] border-input;
 }
 
 .input:focus-visible,
 .select:focus-visible,
 .textarea:focus-visible {
   outline: none !important;
-  border-color: hsl(var(--brand)) !important;
-  border-width: 3px !important;
+  border: 3px solid hsl(var(--brand)) !important;
+  background-clip: padding-box !important;
   box-shadow: none !important;
   ring-width: 0 !important;
   ring-offset-width: 0 !important;
