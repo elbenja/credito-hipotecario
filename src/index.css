@@ -22,7 +22,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 164 100% 66%;
+    --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
     --brand: 164 100% 66%;
   }
@@ -46,7 +46,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 164 100% 66%;
+    --ring: 212.7 26.8% 83.9%;
     --brand: 164 100% 66%;
   }
 
@@ -59,22 +59,12 @@
   }
 }
 
-/* Custom input focus styles */
+/* Remove ring offset from form fields */
 .input,
 .select,
-.textarea {
-  @apply transition-all duration-200 border-[1px] border-input;
-}
-
-.input:focus-visible,
-.select:focus-visible,
-.textarea:focus-visible {
-  outline: none !important;
-  border: 3px solid hsl(var(--brand)) !important;
-  background-clip: padding-box !important;
-  box-shadow: none !important;
-  ring-width: 0 !important;
-  ring-offset-width: 0 !important;
+.textarea,
+.button {
+  @apply focus-visible:ring-offset-0;
 }
 
 .bg-grid-pattern {
