@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect } from "react"
 import { Input } from "./input"
 
 interface CurrencyInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
@@ -41,45 +41,44 @@ export const CurrencyInput = ({
 }: CurrencyInputProps) => {
   const [displayValue, setDisplayValue] = useState('')
   const [isFocused, setIsFocused] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const cursorPositionRef = useRef<number | null>(null)
   
+  // Update display value when the external value changes
   useEffect(() => {
-    if (value) {
-      const newDisplayValue = isFocused ? unformatValue(value) : formatValue(value, currency)
-      setDisplayValue(newDisplayValue)
-      
-      // Restore cursor position after value update if input is focused
-      if (isFocused && inputRef.current && cursorPositionRef.current !== null) {
-        const newCursorPosition = Math.min(cursorPositionRef.current, newDisplayValue.length)
-        inputRef.current.setSelectionRange(newCursorPosition, newCursorPosition)
-      }
-    } else {
-      setDisplayValue('')
+    if (!isFocused) {
+      setDisplayValue(value ? formatValue(value, currency) : '')
     }
   }, [value, currency, isFocused])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target
-    cursorPositionRef.current = input.selectionStart
-    const unformatted = unformatValue(input.value)
-    onChange(unformatted)
+    const rawValue = e.target.value
+    const numericValue = rawValue.replace(/[^\d.]/g, '')
+    
+    // Allow only one decimal point
+    if ((numericValue.match(/\./g) || []).length > 1) return
+    
+    // Allow only two decimal places
+    const parts = numericValue.split('.')
+    if (parts[1] && parts[1].length > 2) return
+
+    setDisplayValue(rawValue)
+    onChange(numericValue)
   }
 
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleFocus = () => {
     setIsFocused(true)
-    e.target.select()
+    // Show unformatted value when focused
+    setDisplayValue(unformatValue(value))
   }
 
   const handleBlur = () => {
     setIsFocused(false)
-    cursorPositionRef.current = null
+    // Show formatted value when blurred
+    setDisplayValue(value ? formatValue(value, currency) : '')
   }
 
   return (
     <Input
       {...props}
-      ref={inputRef}
       value={displayValue}
       onChange={handleChange}
       onFocus={handleFocus}
