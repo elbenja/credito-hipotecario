@@ -22,8 +22,9 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 164 100% 66%;
     --radius: 0.5rem;
+    --brand: 164 100% 66%;
   }
 
   .dark {
@@ -45,7 +46,8 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 164 100% 66%;
+    --brand: 164 100% 66%;
   }
 
   * {
@@ -54,6 +56,14 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+  }
+
+  /* Custom input focus styles */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    @apply outline-none border-brand ring-0;
+    border-width: 3px;
   }
 }
 
