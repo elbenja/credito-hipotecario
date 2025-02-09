@@ -117,7 +117,7 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
                   </>
                 ) : (
                   <div className="mt-2 text-sm text-muted-foreground">
-                    Property value must be between S/67,400 and S/355,100 to qualify for the bonus
+                   Price outside the range.
                   </div>
                 )}
               </div>
