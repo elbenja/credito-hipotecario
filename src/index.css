@@ -57,14 +57,18 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
+}
 
-  /* Custom input focus styles */
-  input:focus,
-  textarea:focus,
-  select:focus {
-    @apply outline-none border-brand ring-0;
-    border-width: 3px;
-  }
+/* Custom input focus styles */
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-color: hsl(var(--brand));
+  border-width: 3px;
+  border-style: solid;
+  ring-offset-width: 0;
 }
 
 .bg-grid-pattern {
