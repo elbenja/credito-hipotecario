@@ -54,7 +54,7 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
                   First Home Buyer
                 </FormLabel>
                 <div className="text-sm text-muted-foreground">
-                  Enable if this is your first property purchase. Property value within bonus range (S/67,400 - S/355,100) qualifies.
+                  Enable if this is your first property purchase. For prices between S/67,400 - S/355,100.
                 </div>
               </div>
               <FormControl>
@@ -70,9 +70,7 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
                 {isPriceInBonusRange(parseFloat(price)) ? (
                   <>
                     <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">
-                        Property value is within bonus range (S/67,400 - S/355,100)
-                      </p>
+                    
                       {getApplicableRule(parseFloat(price)) && (
                         <p className="text-base font-medium">
                           Applicable range: S/{getApplicableRule(parseFloat(price))?.min_value.toLocaleString()} - S/{getApplicableRule(parseFloat(price))?.max_value.toLocaleString()}
