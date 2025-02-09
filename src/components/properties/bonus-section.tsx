@@ -51,10 +51,10 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <FormLabel className="text-xl font-semibold">
-                  First Home Buyer
+                This is your first property purchase
                 </FormLabel>
                 <div className="text-sm text-muted-foreground">
-                  Enable if this is your first property purchase. For prices between S/67,400 - S/355,100.
+                 Bonus for prices between S/67,400 - S/355,100.
                 </div>
               </div>
               <FormControl>
