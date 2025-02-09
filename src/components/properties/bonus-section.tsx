@@ -69,14 +69,7 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
               <div className="mt-4 space-y-4">
                 {isPriceInBonusRange(parseFloat(price)) ? (
                   <>
-                    <div className="space-y-2">
-                    
-                      {getApplicableRule(parseFloat(price)) && (
-                        <p className="text-base font-medium">
-                          Applicable range: S/{getApplicableRule(parseFloat(price))?.min_value.toLocaleString()} - S/{getApplicableRule(parseFloat(price))?.max_value.toLocaleString()}
-                        </p>
-                      )}
-                    </div>
+                 
 
                     <FormField
                       control={form.control}
@@ -112,6 +105,13 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
                             'PEN'
                           )}
                         </p>
+                        <div className="space-y-2">
+                          {getApplicableRule(parseFloat(price)) && (
+                            <p className="text-base font-medium">
+                              Applicable range: S/{getApplicableRule(parseFloat(price))?.min_value.toLocaleString()} - S/{getApplicableRule(parseFloat(price))?.max_value.toLocaleString()}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     )}
                   </>
