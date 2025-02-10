@@ -1,16 +1,25 @@
 # CreditoHipotecar.io - Project Knowledge Doc
 
 ## Project Overview
-CreditoHipotecar.io is a web application designed to help users manage mortgage credits, property listings, and rental properties. The application provides tools for property management, amortization calculations, and rental tracking.
+CreditoHipotecar.io is a modern, clean, and responsive web application designed to help users manage mortgage credits, property listings, and rental properties. Inspired by the design aesthetics of Cal.com and Notion.so, the application provides comprehensive tools for property management, amortization calculations, and rental tracking, featuring smooth micro-interactions and animations to enhance user experience.
+
+## Design Philosophy
+- Modern and clean interface inspired by Cal.com and Notion.so
+- Smooth micro-interactions and animations
+- Responsive design optimized for all devices
+- Dark mode support
+- Consistent and accessible user interface
 
 ## Tech Stack
 - **Frontend Framework**: React with TypeScript
+- **UI Components**: ShadCN UI (based on Radix UI)
 - **Styling**: Tailwind CSS with custom UI components
 - **Backend**: Supabase
 - **Build Tool**: Vite
 - **Package Manager**: npm/bun
 - **State Management**: React Context
 - **Authentication**: Supabase Auth
+- **Database**: Supabase PostgreSQL
 
 ## Project Structure
 ```
@@ -27,40 +36,101 @@ src/
 ```
 
 ## Key Features
-1. **Property Management**
-   - Property listing and details
-   - Cost tracking
-   - Monthly expenses calculation
-   - Bonus amount calculations
 
-2. **Amortization Tools**
-   - Mortgage calculations
-   - Payment schedules
-   - Financial analysis
+### 1. Property Management
+- **Property Details**
+  - Name and description (address, notes)
+  - Price cost with currency selection (PEN/USD)
+  - Dynamic currency conversion
+  
+- **Monthly Cost Breakdown**
+  - Loan Protection Insurance (4 options)
+  - Property Insurance
+  - Other Monthly Expenses
+  
+- **First-Home Bonus System**
+  - Automatic bonus calculation based on property value
+  - Different brackets for traditional and sustainable properties
+  - Admin-configurable bonus amounts
 
-3. **Rental Management** (Coming Soon)
-   - Rental property tracking
-   - Tenant management
-   - Rental income monitoring
+#### Bonus Brackets
+##### Traditional Properties:
+- Range 67,400-96,200: S/26,900
+- Range 96,200-144,000: S/22,400
+- Range 144,000-239,800: S/20,500
+- Range 239,800-355,100: S/7,600
 
-4. **Dashboard**
-   - Overview of properties
-   - Financial summaries
-   - Quick access to key features
+##### Sustainable Properties:
+- Range 67,400-96,200: S/32,900
+- Range 96,200-144,000: S/28,400
+- Range 144,000-239,800: S/26,500
+- Range 239,800-355,100: S/13,600
+
+### 2. Amortization Tools
+- **Input Parameters**
+  - Down payment amount and percentage
+  - Interest rate configuration
+  - Flexible term selection (10-30 years)
+  - Multiple instalment frequency options
+  - Customizable first instalment date
+
+- **Calculation Outputs**
+  - Loan amount details
+  - Down payment percentage
+  - Total interest and insurance costs
+  - Complete payment summary
+  - Monthly instalment breakdown
+
+### 3. Rental Management (Coming Soon)
+- **Income Tracking**
+  - Market rent price monitoring
+  - Occupancy rate tracking
+  - Annual rent increase calculations
+
+- **Expense Management**
+  - Maintenance and repairs
+  - Property taxes
+  - Insurance costs
+  - Condo fees
+  - Utility tracking
+
+### 4. Dashboard
+- Property portfolio overview
+- Financial summaries
+- Quick access to key features
+- Performance metrics
 
 ## UI Components
-The application uses a custom UI component library built on top of Radix UI and styled with Tailwind CSS. Key components include:
+The application uses ShadCN UI components, built on top of Radix UI and styled with Tailwind CSS:
 
-- **Sidebar**: Main navigation component with collapsible sections
-- **Tables**: Data display with sorting capabilities
-- **Forms**: Input components with validation
-- **Badges**: Status indicators and labels
+### Core Components
+- **Navigation Sidebar**
+  - Persistent on desktop
+  - Collapsible on mobile
+  - Sections:
+    - Header with logo
+    - Main navigation
+    - Footer with AI Chat and profile
+    
+- **Tables**: Advanced data display with sorting
+- **Forms**: Validated input components
+- **Badges**: Status indicators
 - **Dropdowns**: Menu and selection components
+- **Modals**: Interactive dialogs
+- **Cards**: Information display
+- **Charts**: Data visualization
 
 ## Authentication & Authorization
-- User authentication is handled through Supabase
-- Protected routes require authentication
-- User profile management with email-based authentication
+- User authentication via Supabase
+- Protected routes and resources
+- Role-based access control
+- Admin privileges for bonus management
+
+## Admin Features
+- Bonus bracket configuration
+- Translation management
+- UI label customization
+- System configuration
 
 ## State Management
 - React Context is used for global state management
