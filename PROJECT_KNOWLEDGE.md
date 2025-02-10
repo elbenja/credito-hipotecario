@@ -105,8 +105,7 @@ The application uses ShadCN UI components, built on top of Radix UI and styled w
 
 ### Core Components
 - **Navigation Sidebar**
-  - Persistent on desktop
-  - Collapsible on mobile
+  - Collapsible on desktop and mobile
   - Sections:
     - Header with logo
     - Main navigation
