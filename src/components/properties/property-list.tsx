@@ -1,4 +1,3 @@
-
 import { Switch } from "@/components/ui/switch"
 import {
   Table,
@@ -101,8 +100,6 @@ export function PropertyList({
             Cost {sortConfig?.key === 'price_cost' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
           </TableHead>
           <TableHead>Monthly Expenses</TableHead>
-          <TableHead>First Home</TableHead>
-          <TableHead>Sustainable</TableHead>
           <TableHead>Bonus Amount</TableHead>
         </TableRow>
       </TableHeader>
@@ -121,64 +118,6 @@ export function PropertyList({
               </TableCell>
               <TableCell>
                 {formatCurrency(getMonthlyExpenses(property), property.currency)}
-              </TableCell>
-              <TableCell onClick={(e) => e.stopPropagation()}>
-                <Switch
-                  checked={property.is_first_home}
-                  onCheckedChange={async (checked) => {
-                    try {
-                      const { error } = await supabase
-                        .from('properties')
-                        .update({ is_first_home: checked })
-                        .eq('id', property.id)
-
-                      if (error) throw error
-                      
-                      onPropertyUpdate({ ...property, is_first_home: checked })
-                      
-                      toast({
-                        title: "Success",
-                        description: `First home bonus ${checked ? 'enabled' : 'disabled'}`,
-                      })
-                    } catch (error) {
-                      console.error('Error updating property:', error)
-                      toast({
-                        variant: "destructive",
-                        title: "Error",
-                        description: "Could not update property",
-                      })
-                    }
-                  }}
-                />
-              </TableCell>
-              <TableCell onClick={(e) => e.stopPropagation()}>
-                <Switch
-                  checked={property.is_sustainable}
-                  onCheckedChange={async (checked) => {
-                    try {
-                      const { error } = await supabase
-                        .from('properties')
-                        .update({ is_sustainable: checked })
-                        .eq('id', property.id)
-
-                      if (error) throw error
-                      
-                      onPropertyUpdate({ ...property, is_sustainable: checked })
-                      
-                      toast({
-                        title: "Success",
-                        description: `Sustainable property ${checked ? 'enabled' : 'disabled'}`,
-                      })
-                    } catch (error) {
-                      console.error('Error updating property:', error)
-                      toast({
-                        variant: "destructive",
-                        title: "Error",
-                        description: "Could not update property",
-                      })
-                    }
-                  }}
-                />
               </TableCell>
               <TableCell>
                 {bonusAmount ? formatCurrency(bonusAmount, 'PEN') : '-'}
