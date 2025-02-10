@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
+import { LucideIcon } from "lucide-react"
 
 const CostsIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4">
@@ -30,14 +31,20 @@ const CostsIcon = () => (
   </svg>
 )
 
-const mainNavItems = [
+type NavItem = {
+  title: string;
+  icon: LucideIcon | (() => JSX.Element);
+  href: string;
+}
+
+const mainNavItems: NavItem[] = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   { title: "Properties", icon: Building, href: "/properties" },
   { title: "Amortizations", icon: CostsIcon, href: "/amortizations" },
   { title: "Rentals", icon: Building, href: "/rentals" },
 ]
 
-const footerNavItems = [
+const footerNavItems: NavItem[] = [
   { title: "AI Chat", icon: MessageSquare, href: "/chat" },
 ]
 
