@@ -1,3 +1,4 @@
+
 import { Switch } from "@/components/ui/switch"
 import {
   Table,
@@ -9,6 +10,7 @@ import {
 } from "@/components/ui/table"
 import { useToast } from "@/components/ui/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { useExchangeRate } from "@/hooks/use-exchange-rate"
 
 type Property = {
   id: string
@@ -61,6 +63,7 @@ export function PropertyList({
   onSort
 }: PropertyListProps) {
   const { toast } = useToast()
+  const { data: exchangeRate } = useExchangeRate()
 
   const getMonthlyExpenses = (property: Property) => {
     const insurance = property.property_insurance || 0
@@ -68,12 +71,19 @@ export function PropertyList({
     return insurance + other
   }
 
-  const calculateBonus = (property: Property): number | null => {
-    if (!property.is_first_home || property.currency !== 'PEN') return null
+  const convertToPEN = (amount: number, currency: string): number => {
+    if (currency === 'PEN') return amount
+    return amount * (exchangeRate || 3.7167)
+  }
 
-    const propertyValue = property.price_cost
+  const calculateBonus = (property: Property): number | null => {
+    if (!property.is_first_home) return null
+
+    // Convert property value to PEN for bonus calculation
+    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency)
+    
     const applicableRule = bonusRules.find(
-      rule => propertyValue >= rule.min_value && propertyValue <= rule.max_value
+      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
     )
 
     if (!applicableRule) return null
@@ -100,7 +110,7 @@ export function PropertyList({
             Cost {sortConfig?.key === 'price_cost' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
           </TableHead>
           <TableHead>Monthly Expenses</TableHead>
-          <TableHead>Bonus Amount</TableHead>
+          <TableHead>Bonus Amount (S/)</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
