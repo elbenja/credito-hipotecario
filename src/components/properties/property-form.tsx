@@ -105,7 +105,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty, bonusRules 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <PropertyDetails form={form} />
+        <PropertyDetails form={form} isNewProperty={!selectedProperty} />
         <MonthlyCosts form={form} />
         <BonusSection form={form} bonusRules={bonusRules} />
         

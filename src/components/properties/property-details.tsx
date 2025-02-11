@@ -1,11 +1,13 @@
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CurrencyInput } from "@/components/ui/currency-input"
 import { UseFormReturn } from "react-hook-form"
 import { EditableHeading } from "@/components/ui/editable-heading"
+import { useEffect } from "react"
+import { supabase } from "@/integrations/supabase/client"
+import { useAuth } from "@/context/auth-context"
 import * as z from "zod"
 
 const formSchema = z.object({
@@ -21,11 +23,43 @@ const formSchema = z.object({
 
 type PropertyDetailsProps = {
   form: UseFormReturn<z.infer<typeof formSchema>>
+  isNewProperty?: boolean
 }
 
-export function PropertyDetails({ form }: PropertyDetailsProps) {
+export function PropertyDetails({ form, isNewProperty = false }: PropertyDetailsProps) {
   const selectedCurrency = form.watch("currency")
   const currentName = form.watch("name")
+  const { user } = useAuth()
+
+  useEffect(() => {
+    const setupDefaultName = async () => {
+      if (!isNewProperty || !user || currentName) return
+
+      try {
+        // Get the user's current counter
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('last_property_number')
+          .eq('id', user.id)
+          .single()
+
+        const nextNumber = (profile?.last_property_number || 0) + 1
+
+        // Update the counter in the database
+        await supabase
+          .from('profiles')
+          .update({ last_property_number: nextNumber })
+          .eq('id', user.id)
+
+        // Set the default name
+        form.setValue("name", `New Property #${nextNumber}`, { shouldValidate: true })
+      } catch (error) {
+        console.error('Error setting up default property name:', error)
+      }
+    }
+
+    setupDefaultName()
+  }, [isNewProperty, user, form])
 
   const handleNameChange = (newName: string) => {
     form.setValue("name", newName, { shouldValidate: true })
