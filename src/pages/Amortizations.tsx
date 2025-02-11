@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
 import {
   Table,
   TableBody,
@@ -88,12 +89,15 @@ export default function Amortizations() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Amortizations</h1>
-          <Button onClick={() => navigate("/amortizations/new")}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Amortization
-          </Button>
+        <div>
+          <div className="flex items-center justify-between pb-4">
+            <h1 className="text-3xl font-bold">Amortizations</h1>
+            <Button onClick={() => navigate("/amortizations/new")}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Amortization
+            </Button>
+          </div>
+          <Separator className="w-[calc(100%+4rem)] -ml-8" />
         </div>
 
         <div className="space-y-8">
