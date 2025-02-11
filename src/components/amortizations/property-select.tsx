@@ -29,12 +29,14 @@ export type Property = {
 type PropertySelectProps = {
   form: UseFormReturn<AmortizationFormValues>
   onPropertyChange: (property: Property | null) => void
-  disabled?: boolean // Added disabled prop as optional
+  disabled?: boolean
 }
 
 export function PropertySelect({ form, onPropertyChange, disabled = false }: PropertySelectProps) {
   const { user } = useAuth()
   const [properties, setProperties] = useState<Property[]>([])
+  const [selectedPropertyName, setSelectedPropertyName] = useState<string>("")
+  const propertyId = form.watch("property_id")
 
   useEffect(() => {
     const loadProperties = async () => {
@@ -54,14 +56,29 @@ export function PropertySelect({ form, onPropertyChange, disabled = false }: Pro
       )
       
       setProperties(validProperties)
+
+      // If we have a propertyId, find and set its name
+      if (propertyId) {
+        const selectedProperty = validProperties.find(p => p.id === propertyId)
+        if (selectedProperty) {
+          setSelectedPropertyName(selectedProperty.name)
+          onPropertyChange(selectedProperty)
+        }
+      }
     }
 
     loadProperties()
-  }, [user])
+  }, [user, propertyId])
 
   const handlePropertyChange = (propertyId: string) => {
     const property = properties.find((p) => p.id === propertyId)
-    onPropertyChange(property || null)
+    if (property) {
+      setSelectedPropertyName(property.name)
+      onPropertyChange(property)
+    } else {
+      setSelectedPropertyName("")
+      onPropertyChange(null)
+    }
     form.setValue("property_id", propertyId)
   }
 
@@ -74,12 +91,14 @@ export function PropertySelect({ form, onPropertyChange, disabled = false }: Pro
           <FormLabel>Property</FormLabel>
           <Select
             onValueChange={handlePropertyChange}
-            defaultValue={field.value}
+            value={field.value}
             disabled={disabled}
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder="Select a property" />
+                <SelectValue placeholder="Select a property">
+                  {selectedPropertyName || "Select a property"}
+                </SelectValue>
               </SelectTrigger>
             </FormControl>
             <SelectContent>
