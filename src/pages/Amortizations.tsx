@@ -21,6 +21,7 @@ type Property = {
   id: string
   name: string
   currency: string
+  price_cost: number
   amortizations: Amortization[]
 }
 
@@ -53,6 +54,7 @@ export default function Amortizations() {
           id,
           name,
           currency,
+          price_cost,
           amortizations (
             id,
             name,
@@ -104,7 +106,12 @@ export default function Amortizations() {
           {propertiesWithAmortizations?.map((property) => (
             property.amortizations.length > 0 && (
               <div key={property.id} className="space-y-4">
-                <h2 className="text-xl font-semibold">{property.name}</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">{property.name}</h2>
+                  <span className="text-xl font-semibold">
+                    {formatCurrency(property.price_cost, property.currency)}
+                  </span>
+                </div>
                 <Table>
                   <TableHeader>
                     <TableRow>
