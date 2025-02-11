@@ -75,6 +75,9 @@ export default function Amortizations() {
         return []
       }
 
+      // Add logging to debug the data
+      console.log("Properties data:", properties)
+
       return (properties || []) as Property[]
     },
     enabled: !!user,
@@ -109,7 +112,9 @@ export default function Amortizations() {
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold">{property.name}</h2>
                   <span className="text-xl font-semibold">
-                    {formatCurrency(property.price_cost, property.currency)}
+                    {property.price_cost !== undefined && property.price_cost !== null 
+                      ? formatCurrency(property.price_cost, property.currency)
+                      : '-'}
                   </span>
                 </div>
                 <Table>
