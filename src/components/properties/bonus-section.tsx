@@ -4,7 +4,7 @@ import { Switch } from "@/components/ui/switch"
 import { UseFormReturn } from "react-hook-form"
 import * as z from "zod"
 import { BonusRule } from "./types"
-import { formatCurrency } from "./types"
+import { formatCurrency } from "@/lib/utils"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 
