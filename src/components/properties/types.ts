@@ -17,14 +17,3 @@ export type BonusRule = {
   traditional_bonus: number
   sustainable_bonus: number
 }
-
-export const formatCurrency = (amount: number, currency: string) => {
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency === 'PEN' ? 'PEN' : 'USD',
-    currencyDisplay: 'symbol',
-  })
-  
-  const formatted = formatter.format(amount)
-  return currency === 'PEN' ? formatted.replace('PEN', 'S/') : formatted
-}
