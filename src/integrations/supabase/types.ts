@@ -19,6 +19,7 @@ export type Database = {
           installments_per_year: number
           interest_rate: number
           loan_amount: number
+          name: string
           property_id: string
           term_years: number
           total_interest: number
@@ -35,6 +36,7 @@ export type Database = {
           installments_per_year: number
           interest_rate: number
           loan_amount: number
+          name: string
           property_id: string
           term_years: number
           total_interest: number
@@ -51,6 +53,7 @@ export type Database = {
           installments_per_year?: number
           interest_rate?: number
           loan_amount?: number
+          name?: string
           property_id?: string
           term_years?: number
           total_interest?: number
