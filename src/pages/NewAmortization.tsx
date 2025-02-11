@@ -118,7 +118,6 @@ export default function NewAmortization() {
         return
       }
 
-      // Validate and filter the properties to ensure they match our type
       const validProperties = (data || []).filter(
         (p): p is Property => p.currency === "USD" || p.currency === "PEN"
       )
@@ -141,7 +140,6 @@ export default function NewAmortization() {
       if (data) {
         setInterestRateLimits(data)
       }
-      // If no data is found, we'll use the default values set in useState
     }
 
     loadProperties()
@@ -159,10 +157,9 @@ export default function NewAmortization() {
         interest_rate: parseFloat(values.interest_rate),
         term_years: parseInt(values.term_years),
         installments_per_year: parseInt(values.installments_per_year),
-        first_installment_date: values.first_installment_date,
+        first_installment_date: values.first_installment_date.toISOString(),
         loan_amount: loanAmount,
         user_id: user.id,
-        // We'll calculate these values later when implementing the calculator
         total_payment: 0,
         total_interest: 0,
         installment_amount: 0,
@@ -174,7 +171,6 @@ export default function NewAmortization() {
 
       if (error) throw error
 
-      // Navigate to the amortizations list after successful save
       window.location.href = "/amortizations"
     } catch (error) {
       console.error("Error saving amortization:", error)
