@@ -12,6 +12,7 @@ import { UseFormReturn } from "react-hook-form"
 import { AmortizationFormValues } from "./schema"
 import { Property } from "./property-select"
 import { cn } from "@/lib/utils"
+import { Separator } from "@/components/ui/separator"
 
 type LoanDetailsProps = {
   form: UseFormReturn<AmortizationFormValues>
@@ -41,7 +42,17 @@ export function LoanDetails({
     interestRate <= interestRateLimits.max_rate
 
   return (
-    <>
+    <div className="space-y-6">
+      <Separator />
+      <div className="space-y-2">
+        <div className="text-sm font-medium text-muted-foreground">Loan Amount</div>
+        <div className="text-3xl font-bold">
+          {selectedProperty?.currency === "USD" ? "$" : "S/"}{" "}
+          {loanAmount.toLocaleString()}
+        </div>
+      </div>
+      <Separator />
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <FormField
@@ -67,48 +78,40 @@ export function LoanDetails({
           )}
         </div>
 
-        <div className="space-y-2">
-          <div className="font-medium">Loan Amount</div>
-          <div className="text-2xl font-bold">
-            {selectedProperty?.currency === "USD" ? "$" : "S/"}{" "}
-            {loanAmount.toLocaleString()}
-          </div>
-        </div>
-      </div>
-
-      <FormField
-        control={form.control}
-        name="interest_rate"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Interest Rate (%)</FormLabel>
-            <FormControl>
-              <div className="relative">
-                <input
-                  {...field}
-                  type="number"
-                  step="0.1"
-                  min={interestRateLimits.min_rate}
-                  max={interestRateLimits.max_rate}
-                  className={cn(
-                    "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand active:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-                    !isInterestRateValid && field.value && "border-destructive"
-                  )}
-                />
-                <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                  %
+        <FormField
+          control={form.control}
+          name="interest_rate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Interest Rate (%)</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <input
+                    {...field}
+                    type="number"
+                    step="0.1"
+                    min={interestRateLimits.min_rate}
+                    max={interestRateLimits.max_rate}
+                    className={cn(
+                      "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand active:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+                      !isInterestRateValid && field.value && "border-destructive"
+                    )}
+                  />
+                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                    %
+                  </div>
                 </div>
-              </div>
-            </FormControl>
-            {!isInterestRateValid && field.value && (
-              <p className="text-sm text-destructive">
-                Interest rate must be between {interestRateLimits.min_rate}% and {interestRateLimits.max_rate}%
-              </p>
-            )}
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </>
+              </FormControl>
+              {!isInterestRateValid && field.value && (
+                <p className="text-sm text-destructive">
+                  Interest rate must be between {interestRateLimits.min_rate}% and {interestRateLimits.max_rate}%
+                </p>
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+    </div>
   )
 }
