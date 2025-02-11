@@ -90,7 +90,7 @@ export default function NewAmortization() {
       name: "",
       property_id: "",
       down_payment: "",
-      interest_rate: "10",
+      interest_rate: "",
       term_years: "",
       installments_per_year: "",
       first_installment_date: startOfMonth(addMonths(new Date(), 1)),
@@ -104,6 +104,11 @@ export default function NewAmortization() {
   const loanAmount = selectedProperty
     ? selectedProperty.price_cost - downPayment
     : 0
+  
+  const interestRate = parseFloat(form.watch("interest_rate")) || 0
+  const isInterestRateValid = !isNaN(interestRate) && 
+    interestRate >= interestRateLimits.min_rate && 
+    interestRate <= interestRateLimits.max_rate
 
   useEffect(() => {
     const loadProperties = async () => {
@@ -149,6 +154,11 @@ export default function NewAmortization() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       if (!user || !selectedProperty) return
+
+      const interestRate = parseFloat(values.interest_rate)
+      if (interestRate < interestRateLimits.min_rate || interestRate > interestRateLimits.max_rate) {
+        return
+      }
 
       const amortizationData = {
         name: values.name,
@@ -298,14 +308,22 @@ export default function NewAmortization() {
                             {...field}
                             type="number"
                             step="0.1"
-                            min={interestRateLimits?.min_rate}
-                            max={interestRateLimits?.max_rate}
+                            min={interestRateLimits.min_rate}
+                            max={interestRateLimits.max_rate}
+                            className={cn(
+                              !isInterestRateValid && field.value && "border-destructive"
+                            )}
                           />
                           <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                             %
                           </div>
                         </div>
                       </FormControl>
+                      {!isInterestRateValid && field.value && (
+                        <p className="text-sm text-destructive">
+                          Interest rate must be between {interestRateLimits.min_rate}% and {interestRateLimits.max_rate}%
+                        </p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
