@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CurrencyInput } from "@/components/ui/currency-input"
 import { UseFormReturn } from "react-hook-form"
+import { EditableHeading } from "@/components/ui/editable-heading"
 import * as z from "zod"
 
 const formSchema = z.object({
@@ -24,21 +25,18 @@ type PropertyDetailsProps = {
 
 export function PropertyDetails({ form }: PropertyDetailsProps) {
   const selectedCurrency = form.watch("currency")
+  const currentName = form.watch("name")
+
+  const handleNameChange = (newName: string) => {
+    form.setValue("name", newName, { shouldValidate: true })
+  }
 
   return (
     <>
-      <FormField
-        control={form.control}
-        name="name"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Property Name</FormLabel>
-            <FormControl>
-              <Input placeholder="Enter property name" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
+      <EditableHeading 
+        value={currentName}
+        onChange={handleNameChange}
+        className="mb-6"
       />
       <FormField
         control={form.control}
