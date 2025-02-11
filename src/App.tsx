@@ -11,6 +11,7 @@ import Auth from "./pages/Auth"
 import NotFound from "./pages/NotFound"
 import Dashboard from "./pages/Dashboard"
 import Properties from "./pages/Properties"
+import Amortizations from "./pages/Amortizations"
 
 const queryClient = new QueryClient()
 
@@ -37,6 +38,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Properties />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/amortizations"
+              element={
+                <ProtectedRoute>
+                  <Amortizations />
                 </ProtectedRoute>
               }
             />
