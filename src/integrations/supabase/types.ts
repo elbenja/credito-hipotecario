@@ -125,6 +125,33 @@ export type Database = {
         }
         Relationships: []
       }
+      interest_rate_limits: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          max_rate: number
+          min_rate: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          max_rate: number
+          min_rate: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          max_rate?: number
+          min_rate?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
