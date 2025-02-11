@@ -17,9 +17,9 @@ export default function NewAmortization() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink as={Link} to="/amortizations">
+              <Link to="/amortizations" className="transition-colors hover:text-foreground">
                 Amortizations
-              </BreadcrumbLink>
+              </Link>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
