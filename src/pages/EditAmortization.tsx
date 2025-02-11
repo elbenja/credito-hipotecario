@@ -36,9 +36,13 @@ export default function EditAmortization() {
           )
         `)
         .eq("id", id)
-        .single()
+        .maybeSingle()
 
-      if (error) throw error
+      if (error) {
+        console.error("Error fetching amortization:", error)
+        return null
+      }
+
       return data
     },
     enabled: !!user && !!id,
@@ -61,7 +65,31 @@ export default function EditAmortization() {
   if (!amortization) {
     return (
       <DashboardLayout>
-        <div>Amortization not found</div>
+        <div className="space-y-6">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <Link to="/amortizations" className="transition-colors hover:text-foreground">
+                  Amortizations
+                </Link>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Not Found</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+
+          <div className="text-center py-8">
+            <h1 className="text-2xl font-semibold mb-2">Amortization not found</h1>
+            <p className="text-muted-foreground mb-4">
+              The amortization you're looking for doesn't exist or has been deleted.
+            </p>
+            <Button onClick={() => navigate("/amortizations")}>
+              Back to Amortizations
+            </Button>
+          </div>
+        </div>
       </DashboardLayout>
     )
   }
