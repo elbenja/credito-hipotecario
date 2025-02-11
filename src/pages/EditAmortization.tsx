@@ -15,12 +15,19 @@ import {
 } from "@/components/ui/breadcrumb"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { Form } from "@/components/ui/form"
+import { 
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { PropertySelect } from "@/components/amortizations/property-select"
 import { LoanDetails } from "@/components/amortizations/loan-details"
 import { PaymentSchedule } from "@/components/amortizations/payment-schedule"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { 
   amortizationFormSchema, 
   type AmortizationFormValues 
@@ -235,30 +242,32 @@ export default function EditAmortization() {
         <div className="max-w-2xl">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <Form.Field
+              <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <Form.Item>
-                    <Form.Label>Name</Form.Label>
-                    <Form.Control>
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
                       <Input placeholder="Enter amortization name" {...field} />
-                    </Form.Control>
-                    <Form.Message />
-                  </Form.Item>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
               />
 
               <PropertySelect 
                 form={form}
-                onPropertyChange={() => {}} // No need to update property
-                selectedPropertyId={amortization.property_id}
+                onPropertyChange={() => {}}
                 disabled={true}
               />
 
               <LoanDetails 
                 form={form}
-                selectedProperty={amortization.property}
+                selectedProperty={{
+                  ...amortization.property,
+                  currency: amortization.property.currency as "USD" | "PEN"
+                }}
                 interestRateLimits={{
                   min_rate: 1,
                   max_rate: 25
