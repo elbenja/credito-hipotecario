@@ -1,4 +1,3 @@
-
 import { useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
@@ -16,6 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
+import { EditableHeading } from "@/components/ui/editable-heading"
 import { 
   Form,
   FormField,
@@ -41,7 +41,7 @@ export default function EditAmortization() {
   const { user } = useAuth()
   const { toast } = useToast()
 
-  const { data: amortization, isLoading } = useQuery({
+  const { data: amortization, isLoading, refetch } = useQuery({
     queryKey: ["amortization", id],
     queryFn: async () => {
       if (!user || !id) return null
@@ -176,6 +176,33 @@ export default function EditAmortization() {
     }
   }
 
+  const handleNameChange = async (newName: string) => {
+    try {
+      if (!user || !id) return
+
+      const { error } = await supabase
+        .from("amortizations")
+        .update({ name: newName })
+        .eq('id', id)
+
+      if (error) throw error
+
+      toast({
+        title: "Success",
+        description: "Name updated successfully",
+      })
+
+      refetch()
+    } catch (error) {
+      console.error("Error updating name:", error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "There was an error updating the name",
+      })
+    }
+  }
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -238,7 +265,10 @@ export default function EditAmortization() {
         </div>
 
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">{amortization.name}</h1>
+          <EditableHeading 
+            value={amortization.name} 
+            onChange={handleNameChange}
+          />
           <Button variant="destructive" onClick={handleDelete}>
             Delete
           </Button>
@@ -247,20 +277,6 @@ export default function EditAmortization() {
         <div className="max-w-2xl">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter amortization name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <PropertySelect 
                 form={form}
                 onPropertyChange={() => {}}
