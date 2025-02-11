@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { format, startOfMonth, addMonths } from "date-fns"
@@ -150,8 +149,36 @@ export default function NewAmortization() {
   }, [user])
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    console.log(values)
-    // TODO: Implement save functionality
+    try {
+      if (!user || !selectedProperty) return
+
+      const amortizationData = {
+        name: values.name,
+        property_id: values.property_id,
+        down_payment: parseFloat(values.down_payment.replace(/[^0-9.]/g, "")),
+        interest_rate: parseFloat(values.interest_rate),
+        term_years: parseInt(values.term_years),
+        installments_per_year: parseInt(values.installments_per_year),
+        first_installment_date: values.first_installment_date,
+        loan_amount: loanAmount,
+        user_id: user.id,
+        // We'll calculate these values later when implementing the calculator
+        total_payment: 0,
+        total_interest: 0,
+        installment_amount: 0,
+      }
+
+      const { error } = await supabase
+        .from("amortizations")
+        .insert(amortizationData)
+
+      if (error) throw error
+
+      // Navigate to the amortizations list after successful save
+      window.location.href = "/amortizations"
+    } catch (error) {
+      console.error("Error saving amortization:", error)
+    }
   }
 
   const handlePropertyChange = (propertyId: string) => {
