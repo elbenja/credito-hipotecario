@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { format, startOfMonth, addMonths } from "date-fns"
@@ -117,7 +118,13 @@ export default function NewAmortization() {
         console.error("Error loading properties:", error)
         return
       }
-      setProperties(data || [])
+
+      // Validate and filter the properties to ensure they match our type
+      const validProperties = (data || []).filter(
+        (p): p is Property => p.currency === "USD" || p.currency === "PEN"
+      )
+      
+      setProperties(validProperties)
     }
 
     const loadInterestRateLimits = async () => {
@@ -135,6 +142,7 @@ export default function NewAmortization() {
       if (data) {
         setInterestRateLimits(data)
       }
+      // If no data is found, we'll use the default values set in useState
     }
 
     loadProperties()
