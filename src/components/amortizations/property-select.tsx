@@ -18,6 +18,7 @@ import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
 import { UseFormReturn } from "react-hook-form"
 import { AmortizationFormValues } from "./schema"
+import { formatCurrency } from "@/lib/utils"
 
 export type Property = {
   id: string
@@ -82,6 +83,25 @@ export function PropertySelect({ form, onPropertyChange, disabled = false }: Pro
     form.setValue("property_id", propertyId)
   }
 
+  const formatPropertyOption = (property: Property) => {
+    const cost = Math.round(property.price_cost)
+    return (
+      <div className="flex justify-between items-center w-full">
+        <span>{property.name}</span>
+        <span className="text-muted-foreground">
+          {formatCurrency(cost, property.currency)}
+        </span>
+      </div>
+    )
+  }
+
+  const getSelectedPropertyDisplay = () => {
+    if (!propertyId) return "Select a property"
+    const property = properties.find(p => p.id === propertyId)
+    if (!property) return "Select a property"
+    return formatPropertyOption(property)
+  }
+
   return (
     <FormField
       control={form.control}
@@ -97,14 +117,14 @@ export function PropertySelect({ form, onPropertyChange, disabled = false }: Pro
             <FormControl>
               <SelectTrigger>
                 <SelectValue placeholder="Select a property">
-                  {selectedPropertyName || "Select a property"}
+                  {getSelectedPropertyDisplay()}
                 </SelectValue>
               </SelectTrigger>
             </FormControl>
             <SelectContent>
               {properties.map((property) => (
                 <SelectItem key={property.id} value={property.id}>
-                  {property.name}
+                  {formatPropertyOption(property)}
                 </SelectItem>
               ))}
             </SelectContent>
