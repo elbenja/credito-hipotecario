@@ -16,7 +16,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { EditableHeading } from "@/components/ui/editable-heading"
 import { Separator } from "@/components/ui/separator"
 import {
   Breadcrumb,
@@ -47,6 +47,38 @@ export default function NewAmortization() {
     defaultValues,
   })
 
+  const formName = form.watch("name")
+
+  useEffect(() => {
+    const setupDefaultName = async () => {
+      if (!user || formName) return
+
+      try {
+        // Get the user's current counter
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('last_property_number')
+          .eq('id', user.id)
+          .single()
+
+        const nextNumber = (profile?.last_property_number || 0) + 1
+
+        // Update the counter in the database
+        await supabase
+          .from('profiles')
+          .update({ last_property_number: nextNumber })
+          .eq('id', user.id)
+
+        // Set the default name
+        form.setValue("name", `Amortization #${nextNumber}`, { shouldValidate: true })
+      } catch (error) {
+        console.error('Error setting up default amortization name:', error)
+      }
+    }
+
+    setupDefaultName()
+  }, [user, form, formName])
+
   useEffect(() => {
     const loadInterestRateLimits = async () => {
       const { data, error } = await supabase
@@ -67,6 +99,10 @@ export default function NewAmortization() {
 
     loadInterestRateLimits()
   }, [])
+
+  const handleNameChange = (newName: string) => {
+    form.setValue("name", newName, { shouldValidate: true })
+  }
 
   const onSubmit = async (values: AmortizationFormValues) => {
     try {
@@ -125,27 +161,15 @@ export default function NewAmortization() {
         </Breadcrumb>
 
         <div className="space-y-6">
-          <h1 className="text-3xl font-bold">New Amortization</h1>
+          <EditableHeading 
+            value={formName || ""} 
+            onChange={handleNameChange}
+            className="mb-6"
+          />
           
           <div className="max-w-2xl">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter amortization name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Separator />
-
                 <PropertySelect 
                   form={form} 
                   onPropertyChange={setSelectedProperty} 
