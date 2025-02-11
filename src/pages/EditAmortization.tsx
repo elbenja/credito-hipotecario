@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { Button } from "@/components/ui/button"
 import { Link } from "react-router-dom"
 import {
   Breadcrumb,
@@ -14,11 +13,25 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { Form } from "@/components/ui/form"
+import { Button } from "@/components/ui/button"
+import { PropertySelect } from "@/components/amortizations/property-select"
+import { LoanDetails } from "@/components/amortizations/loan-details"
+import { PaymentSchedule } from "@/components/amortizations/payment-schedule"
+import { useToast } from "@/components/ui/use-toast"
+import { 
+  amortizationFormSchema, 
+  type AmortizationFormValues 
+} from "@/components/amortizations/schema"
+import { Input } from "@/components/ui/input"
 
 export default function EditAmortization() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { toast } = useToast()
 
   const { data: amortization, isLoading } = useQuery({
     queryKey: ["amortization", id],
@@ -32,7 +45,8 @@ export default function EditAmortization() {
           property:properties (
             id,
             name,
-            currency
+            currency,
+            price_cost
           )
         `)
         .eq("id", id)
@@ -48,11 +62,111 @@ export default function EditAmortization() {
     enabled: !!user && !!id,
   })
 
+  const form = useForm<AmortizationFormValues>({
+    resolver: zodResolver(amortizationFormSchema),
+    defaultValues: {
+      name: amortization?.name || "",
+      property_id: amortization?.property_id || "",
+      down_payment: amortization?.down_payment?.toString() || "",
+      interest_rate: amortization?.interest_rate?.toString() || "",
+      term_years: amortization?.term_years?.toString() || "",
+      installments_per_year: amortization?.installments_per_year?.toString() || "",
+      first_installment_date: amortization?.first_installment_date 
+        ? new Date(amortization.first_installment_date)
+        : new Date(),
+    },
+  })
+
+  useEffect(() => {
+    if (amortization) {
+      form.reset({
+        name: amortization.name,
+        property_id: amortization.property_id,
+        down_payment: amortization.down_payment.toString(),
+        interest_rate: amortization.interest_rate.toString(),
+        term_years: amortization.term_years.toString(),
+        installments_per_year: amortization.installments_per_year.toString(),
+        first_installment_date: new Date(amortization.first_installment_date),
+      })
+    }
+  }, [amortization, form])
+
   useEffect(() => {
     if (amortization && amortization.user_id !== user?.id) {
       navigate("/amortizations")
     }
   }, [amortization, user, navigate])
+
+  const onSubmit = async (values: AmortizationFormValues) => {
+    try {
+      if (!user || !amortization?.property) return
+
+      const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, ""))
+      const loanAmount = amortization.property.price_cost - downPayment
+
+      const amortizationData = {
+        name: values.name,
+        property_id: values.property_id,
+        down_payment: downPayment,
+        interest_rate: parseFloat(values.interest_rate),
+        term_years: parseInt(values.term_years),
+        installments_per_year: parseInt(values.installments_per_year),
+        first_installment_date: values.first_installment_date.toISOString(),
+        loan_amount: loanAmount,
+        total_payment: 0, // These will be calculated by the database trigger
+        total_interest: 0,
+        installment_amount: 0,
+      }
+
+      const { error } = await supabase
+        .from("amortizations")
+        .update(amortizationData)
+        .eq('id', id)
+
+      if (error) throw error
+
+      toast({
+        title: "Success",
+        description: "Amortization updated successfully",
+      })
+
+      navigate("/amortizations")
+    } catch (error) {
+      console.error("Error updating amortization:", error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "There was an error updating the amortization",
+      })
+    }
+  }
+
+  const handleDelete = async () => {
+    try {
+      if (!user || !id) return
+
+      const { error } = await supabase
+        .from("amortizations")
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      toast({
+        title: "Success",
+        description: "Amortization deleted successfully",
+      })
+
+      navigate("/amortizations")
+    } catch (error) {
+      console.error("Error deleting amortization:", error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "There was an error deleting the amortization",
+      })
+    }
+  }
 
   if (isLoading) {
     return (
@@ -113,16 +227,60 @@ export default function EditAmortization() {
 
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">{amortization.name}</h1>
-          <Button variant="destructive" onClick={() => navigate("/amortizations")}>
+          <Button variant="destructive" onClick={handleDelete}>
             Delete
           </Button>
         </div>
 
-        {/* TODO: Add edit form with the same fields as NewAmortization */}
         <div className="max-w-2xl">
-          <p className="text-muted-foreground">
-            Edit form will be implemented here with the same fields as the New Amortization form.
-          </p>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <Form.Field
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <Form.Item>
+                    <Form.Label>Name</Form.Label>
+                    <Form.Control>
+                      <Input placeholder="Enter amortization name" {...field} />
+                    </Form.Control>
+                    <Form.Message />
+                  </Form.Item>
+                )}
+              />
+
+              <PropertySelect 
+                form={form}
+                onPropertyChange={() => {}} // No need to update property
+                selectedPropertyId={amortization.property_id}
+                disabled={true}
+              />
+
+              <LoanDetails 
+                form={form}
+                selectedProperty={amortization.property}
+                interestRateLimits={{
+                  min_rate: 1,
+                  max_rate: 25
+                }}
+              />
+
+              <PaymentSchedule form={form} />
+
+              <div className="flex space-x-4">
+                <Button type="submit">
+                  Update
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  onClick={() => navigate("/amortizations")}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </Form>
         </div>
       </div>
     </DashboardLayout>
