@@ -29,9 +29,10 @@ export type Property = {
 type PropertySelectProps = {
   form: UseFormReturn<AmortizationFormValues>
   onPropertyChange: (property: Property | null) => void
+  disabled?: boolean // Added disabled prop as optional
 }
 
-export function PropertySelect({ form, onPropertyChange }: PropertySelectProps) {
+export function PropertySelect({ form, onPropertyChange, disabled = false }: PropertySelectProps) {
   const { user } = useAuth()
   const [properties, setProperties] = useState<Property[]>([])
 
@@ -74,6 +75,7 @@ export function PropertySelect({ form, onPropertyChange }: PropertySelectProps) 
           <Select
             onValueChange={handlePropertyChange}
             defaultValue={field.value}
+            disabled={disabled}
           >
             <FormControl>
               <SelectTrigger>
