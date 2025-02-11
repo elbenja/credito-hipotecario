@@ -9,6 +9,65 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      amortizations: {
+        Row: {
+          created_at: string
+          down_payment: number
+          first_installment_date: string
+          id: string
+          installment_amount: number
+          installments_per_year: number
+          interest_rate: number
+          loan_amount: number
+          property_id: string
+          term_years: number
+          total_interest: number
+          total_payment: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          down_payment: number
+          first_installment_date: string
+          id?: string
+          installment_amount: number
+          installments_per_year: number
+          interest_rate: number
+          loan_amount: number
+          property_id: string
+          term_years: number
+          total_interest: number
+          total_payment: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          down_payment?: number
+          first_installment_date?: string
+          id?: string
+          installment_amount?: number
+          installments_per_year?: number
+          interest_rate?: number
+          loan_amount?: number
+          property_id?: string
+          term_years?: number
+          total_interest?: number
+          total_payment?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amortizations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bonus_rules: {
         Row: {
           created_at: string | null
