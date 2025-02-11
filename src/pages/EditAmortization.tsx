@@ -13,6 +13,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { 
@@ -200,6 +201,7 @@ export default function EditAmortization() {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
+          <Separator className="my-4" />
 
           <div className="text-center py-8">
             <h1 className="text-2xl font-semibold mb-2">Amortization not found</h1>
@@ -218,19 +220,22 @@ export default function EditAmortization() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <Link to="/amortizations" className="transition-colors hover:text-foreground">
-                Amortizations
-              </Link>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{amortization.name}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <div>
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <Link to="/amortizations" className="transition-colors hover:text-foreground">
+                  Amortizations
+                </Link>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{amortization.name}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          <Separator className="my-4" />
+        </div>
 
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">{amortization.name}</h1>
