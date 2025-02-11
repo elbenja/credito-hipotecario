@@ -120,15 +120,15 @@ export default function Amortizations() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Loan Amount</TableHead>
-                      <TableHead>Down Payment</TableHead>
-                      <TableHead>Interest Rate</TableHead>
-                      <TableHead>Term</TableHead>
-                      <TableHead>Installments/Year</TableHead>
-                      <TableHead>Monthly Payment</TableHead>
-                      <TableHead>Total Interest</TableHead>
-                      <TableHead>Total Payment</TableHead>
+                      <TableHead className="w-[20%]">Name</TableHead>
+                      <TableHead className="w-[12%]">Loan Amount</TableHead>
+                      <TableHead className="w-[12%]">Down Payment</TableHead>
+                      <TableHead className="w-[8%]">Interest Rate</TableHead>
+                      <TableHead className="w-[8%]">Term</TableHead>
+                      <TableHead className="w-[10%]">Installments/Year</TableHead>
+                      <TableHead className="w-[10%]">Monthly Payment</TableHead>
+                      <TableHead className="w-[10%]">Total Interest</TableHead>
+                      <TableHead className="w-[10%]">Total Payment</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -138,23 +138,23 @@ export default function Amortizations() {
                         className="cursor-pointer hover:bg-muted/50"
                         onClick={() => navigate(`/amortizations/${amortization.id}`)}
                       >
-                        <TableCell>{amortization.name}</TableCell>
-                        <TableCell>
+                        <TableCell className="w-[20%]">{amortization.name}</TableCell>
+                        <TableCell className="w-[12%]">
                           {formatCurrency(amortization.loan_amount, property.currency)}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="w-[12%]">
                           {formatCurrency(amortization.down_payment, property.currency)}
                         </TableCell>
-                        <TableCell>{amortization.interest_rate}%</TableCell>
-                        <TableCell>{amortization.term_years} years</TableCell>
-                        <TableCell>{amortization.installments_per_year}</TableCell>
-                        <TableCell>
+                        <TableCell className="w-[8%]">{amortization.interest_rate}%</TableCell>
+                        <TableCell className="w-[8%]">{amortization.term_years} years</TableCell>
+                        <TableCell className="w-[10%]">{amortization.installments_per_year}</TableCell>
+                        <TableCell className="w-[10%]">
                           {formatCurrency(amortization.installment_amount, property.currency)}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="w-[10%]">
                           {formatCurrency(amortization.total_interest, property.currency)}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="w-[10%]">
                           {formatCurrency(amortization.total_payment, property.currency)}
                         </TableCell>
                       </TableRow>
