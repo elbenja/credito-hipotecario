@@ -87,7 +87,7 @@ export function PropertySelect({ form, onPropertyChange, disabled = false }: Pro
     const cost = Math.round(property.price_cost)
     return (
       <div className="grid grid-cols-[1fr,auto] gap-4 w-full items-center py-1">
-        <span className="truncate">{property.name}</span>
+        <span className="truncate">{property.name} - </span>
         <span>
           {formatCurrency(cost, property.currency)}
         </span>
