@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { format, startOfMonth, addMonths } from "date-fns"
@@ -48,7 +47,7 @@ type Property = {
   id: string
   name: string
   price_cost: number
-  currency: string
+  currency: "USD" | "PEN"
 }
 
 type InterestRateLimit = {
@@ -80,7 +79,10 @@ export default function NewAmortization() {
   const { user } = useAuth()
   const [properties, setProperties] = useState<Property[]>([])
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
-  const [interestRateLimits, setInterestRateLimits] = useState<InterestRateLimit | null>(null)
+  const [interestRateLimits, setInterestRateLimits] = useState<InterestRateLimit>({
+    min_rate: 1,
+    max_rate: 25
+  })
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -123,13 +125,16 @@ export default function NewAmortization() {
         .from("interest_rate_limits")
         .select("min_rate, max_rate")
         .eq("is_active", true)
-        .single()
+        .maybeSingle()
 
       if (error) {
         console.error("Error loading interest rate limits:", error)
         return
       }
-      setInterestRateLimits(data)
+      
+      if (data) {
+        setInterestRateLimits(data)
+      }
     }
 
     loadProperties()
