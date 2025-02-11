@@ -117,7 +117,11 @@ export default function Amortizations() {
                   </TableHeader>
                   <TableBody>
                     {property.amortizations.map((amortization) => (
-                      <TableRow key={amortization.id}>
+                      <TableRow 
+                        key={amortization.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => navigate(`/amortizations/${amortization.id}`)}
+                      >
                         <TableCell>{amortization.name}</TableCell>
                         <TableCell>
                           {formatCurrency(amortization.loan_amount, property.currency)}

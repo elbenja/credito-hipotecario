@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard"
 import Properties from "./pages/Properties"
 import Amortizations from "./pages/Amortizations"
 import NewAmortization from "./pages/NewAmortization"
+import EditAmortization from "./pages/EditAmortization"
 
 const queryClient = new QueryClient()
 
@@ -55,6 +56,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <NewAmortization />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/amortizations/:id"
+              element={
+                <ProtectedRoute>
+                  <EditAmortization />
                 </ProtectedRoute>
               }
             />
