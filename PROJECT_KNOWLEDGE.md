@@ -149,7 +149,18 @@ The application uses ShadCN UI components, built on top of Radix UI and styled w
    - Consistent text sizes using Tailwind classes
    - Responsive text scaling
 
-3. **Components**
+3. **Focus States**
+   - Clean 3px ring in brand color without offset for all focus states
+   - Consistent focus styling across all interactive elements:
+     - Form inputs
+     - Textareas
+     - Select dropdowns
+     - Date pickers
+     - Buttons
+   - No ring offset to maintain a cleaner, more subtle UI
+   - Applied through `.form-control-focus` utility class
+
+4. **Components**
    - Consistent spacing using Tailwind's spacing scale
    - Responsive design patterns
    - Accessible focus states and interactions

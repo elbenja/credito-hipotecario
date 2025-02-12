@@ -66,7 +66,7 @@
   }
 
   .form-control-focus {
-    @apply outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand focus:ring-[3px] focus:ring-brand focus-within:ring-[3px] focus-within:ring-brand active:ring-offset-2;
+    @apply outline-none focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand data-[state=open]:ring-[3px] data-[state=open]:ring-brand;
   }
 
   /* Input styles */
@@ -101,7 +101,7 @@
 
   /* Button focus styles */
   .button {
-    @apply form-control-focus;
+    @apply outline-none focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand data-[state=open]:ring-[3px] data-[state=open]:ring-brand;
   }
 }
 
