@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge"
 import { CurrencyInput } from "@/components/ui/currency-input"
 import {
@@ -8,6 +7,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
 import { UseFormReturn } from "react-hook-form"
 import { AmortizationFormValues } from "./schema"
 import { Property } from "./property-select"
@@ -59,7 +59,6 @@ export function LoanDetails({
 
   return (
     <div className="space-y-6">
-      <Separator />
       <div className="space-y-2">
         <div className="text-sm font-medium text-muted-foreground">Loan Amount</div>
         <div className="text-3xl font-bold">
@@ -70,35 +69,32 @@ export function LoanDetails({
       <Separator />
 
       <div className="space-y-6">
-        <h2 className="text-2xl font-semibold">Basics</h2>
+        <h2 className="text-lg font-semibold">Basics</h2>
         
         {/* Down Payment */}
-        <div className="space-y-2">
-          <FormField
-            control={form.control}
-            name="down_payment"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-base">Down Payment</FormLabel>
-                <div className="flex gap-4 items-center">
-                  <FormControl>
-                    <CurrencyInput
-                      {...field}
-                      currency={selectedProperty?.currency || "PEN"}
-                      className="text-lg"
-                    />
-                  </FormControl>
-                  {selectedProperty && (
-                    <Badge variant="outline" className="text-base py-1.5">
-                      {downPaymentPercentage}%
-                    </Badge>
-                  )}
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="down_payment"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Down Payment</FormLabel>
+              <div className="flex gap-4 items-center">
+                <FormControl>
+                  <CurrencyInput
+                    {...field}
+                    currency={selectedProperty?.currency || "PEN"}
+                  />
+                </FormControl>
+                {selectedProperty && (
+                  <Badge variant="outline">
+                    {downPaymentPercentage}%
+                  </Badge>
+                )}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         {/* Interest Rate and Term */}
         <div className="grid grid-cols-2 gap-4">
@@ -107,21 +103,20 @@ export function LoanDetails({
             name="interest_rate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-base">Interest rate</FormLabel>
+                <FormLabel>Interest rate</FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <input
+                    <Input
                       {...field}
                       type="number"
                       step="0.1"
                       min={interestRateLimits.min_rate}
                       max={interestRateLimits.max_rate}
                       className={cn(
-                        "flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-lg ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
                         !isInterestRateValid && field.value && "border-destructive"
                       )}
                     />
-                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-base">
+                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                       %
                     </div>
                   </div>
@@ -140,10 +135,10 @@ export function LoanDetails({
             name="term_years"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-base">Amortization Term</FormLabel>
+                <FormLabel>Amortization Term</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger className="h-12 text-lg rounded-xl">
+                    <SelectTrigger>
                       <SelectValue placeholder="Select term" />
                     </SelectTrigger>
                   </FormControl>
@@ -168,10 +163,10 @@ export function LoanDetails({
             name="installments_per_year"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-base">Instalments per Year</FormLabel>
+                <FormLabel>Instalments per Year</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger className="h-12 text-lg rounded-xl">
+                    <SelectTrigger>
                       <SelectValue placeholder="Select frequency" />
                     </SelectTrigger>
                   </FormControl>
@@ -198,14 +193,14 @@ export function LoanDetails({
             name="first_installment_date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-base">First Date</FormLabel>
+                <FormLabel>First Date</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
                         variant="outline"
                         className={cn(
-                          "h-12 text-lg w-full rounded-xl font-normal",
+                          "w-full justify-start text-left font-normal focus-visible:ring-[3px] focus-visible:ring-brand active:ring-offset-2",
                           !field.value && "text-muted-foreground"
                         )}
                       >

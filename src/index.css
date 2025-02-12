@@ -59,14 +59,53 @@
   }
 }
 
-/* Remove ring offset from form fields */
-.input,
-.select,
-.textarea,
-.button {
-  @apply focus-visible:ring-offset-0;
+/* Global focus styles for form elements */
+@layer components {
+  .form-control-base {
+    @apply h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .form-control-focus {
+    @apply outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand focus:ring-[3px] focus:ring-brand focus-within:ring-[3px] focus-within:ring-brand active:ring-offset-2;
+  }
+
+  /* Input styles */
+  .input {
+    @apply form-control-base form-control-focus;
+  }
+
+  /* Select trigger styles */
+  .select-trigger {
+    @apply form-control-base form-control-focus flex items-center justify-between [&>span]:line-clamp-1;
+  }
+
+  /* Select item styles */
+  .select-item {
+    @apply relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50;
+  }
+
+  /* Select item hover */
+  .select-item:hover {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  /* Select item selected */
+  .select-item[data-state="checked"] {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  /* Textarea styles */
+  .textarea {
+    @apply form-control-base form-control-focus min-h-[80px];
+  }
+
+  /* Button focus styles */
+  .button {
+    @apply form-control-focus;
+  }
 }
 
+/* Grid pattern background */
 .bg-grid-pattern {
   background-image: linear-gradient(to right, #e5e7eb 1px, transparent 1px),
     linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
