@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import * as React from "react"
 import { Input } from "./input"
 
 interface CurrencyInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
@@ -33,56 +33,58 @@ const unformatValue = (value: string) => {
   return value.replace(/[^\d.]/g, '')
 }
 
-export const CurrencyInput = ({
-  value,
-  onChange,
-  currency,
-  ...props
-}: CurrencyInputProps) => {
-  const [displayValue, setDisplayValue] = useState('')
-  const [isFocused, setIsFocused] = useState(false)
-  
-  // Update display value when the external value changes
-  useEffect(() => {
-    if (!isFocused) {
+const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
+  function CurrencyInput({ value, onChange, currency, ...props }, ref) {
+    const [displayValue, setDisplayValue] = React.useState('')
+    const [isFocused, setIsFocused] = React.useState(false)
+    
+    // Update display value when the external value changes
+    React.useEffect(() => {
+      if (!isFocused) {
+        setDisplayValue(value ? formatValue(value, currency) : '')
+      }
+    }, [value, currency, isFocused])
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const rawValue = e.target.value
+      const numericValue = rawValue.replace(/[^\d.]/g, '')
+      
+      // Allow only one decimal point
+      if ((numericValue.match(/\./g) || []).length > 1) return
+      
+      // Allow only two decimal places
+      const parts = numericValue.split('.')
+      if (parts[1] && parts[1].length > 2) return
+
+      setDisplayValue(rawValue)
+      onChange(numericValue)
+    }
+
+    const handleFocus = () => {
+      setIsFocused(true)
+      // Show unformatted value when focused
+      setDisplayValue(unformatValue(value))
+    }
+
+    const handleBlur = () => {
+      setIsFocused(false)
+      // Show formatted value when blurred
       setDisplayValue(value ? formatValue(value, currency) : '')
     }
-  }, [value, currency, isFocused])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value
-    const numericValue = rawValue.replace(/[^\d.]/g, '')
-    
-    // Allow only one decimal point
-    if ((numericValue.match(/\./g) || []).length > 1) return
-    
-    // Allow only two decimal places
-    const parts = numericValue.split('.')
-    if (parts[1] && parts[1].length > 2) return
-
-    setDisplayValue(rawValue)
-    onChange(numericValue)
+    return (
+      <Input
+        {...props}
+        ref={ref}
+        value={displayValue}
+        onChange={handleChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+      />
+    )
   }
+)
 
-  const handleFocus = () => {
-    setIsFocused(true)
-    // Show unformatted value when focused
-    setDisplayValue(unformatValue(value))
-  }
+CurrencyInput.displayName = "CurrencyInput"
 
-  const handleBlur = () => {
-    setIsFocused(false)
-    // Show formatted value when blurred
-    setDisplayValue(value ? formatValue(value, currency) : '')
-  }
-
-  return (
-    <Input
-      {...props}
-      value={displayValue}
-      onChange={handleChange}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-    />
-  )
-}
+export { CurrencyInput }

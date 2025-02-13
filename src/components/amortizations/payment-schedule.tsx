@@ -1,4 +1,3 @@
-
 import { Calendar as CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -41,7 +40,7 @@ export function PaymentSchedule({ form }: PaymentScheduleProps) {
             <FormLabel>Term (Years)</FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
-                <SelectTrigger>
+                <SelectTrigger className="form-control-focus">
                   <SelectValue placeholder="Select term" />
                 </SelectTrigger>
               </FormControl>
@@ -66,7 +65,7 @@ export function PaymentSchedule({ form }: PaymentScheduleProps) {
             <FormLabel>Installments Per Year</FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
-                <SelectTrigger>
+                <SelectTrigger className="form-control-focus">
                   <SelectValue placeholder="Select frequency" />
                 </SelectTrigger>
               </FormControl>
@@ -94,7 +93,7 @@ export function PaymentSchedule({ form }: PaymentScheduleProps) {
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full pl-3 text-left font-normal",
+                      "w-full pl-3 text-left font-normal form-control-focus",
                       !field.value && "text-muted-foreground"
                     )}
                   >

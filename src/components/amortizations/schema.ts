@@ -1,4 +1,3 @@
-
 import * as z from "zod"
 import { startOfMonth, addMonths } from "date-fns"
 
@@ -14,6 +13,20 @@ export const amortizationFormSchema = z.object({
         return !isNaN(rate)
       },
       "Must be a valid number"
+    )
+    .refine(
+      (value) => {
+        const rate = parseFloat(value)
+        return rate >= 4
+      },
+      "Interest rate must be at least 4%"
+    )
+    .refine(
+      (value) => {
+        const rate = parseFloat(value)
+        return rate <= 18
+      },
+      "Interest rate cannot exceed 18%"
     ),
   term_years: z.string().min(1, "Term is required"),
   installments_per_year: z.string().min(1, "Installments per year is required"),
@@ -22,13 +35,13 @@ export const amortizationFormSchema = z.object({
   }),
 })
 
-export const defaultValues = {
+export const defaultValues: AmortizationFormValues = {
   name: "",
   property_id: "",
-  down_payment: "",
-  interest_rate: "",
-  term_years: "",
-  installments_per_year: "",
+  down_payment: "0",
+  interest_rate: "4",
+  term_years: "20",
+  installments_per_year: "12",
   first_installment_date: startOfMonth(addMonths(new Date(), 1)),
 }
 

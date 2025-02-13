@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { CurrencyInput } from "@/components/ui/currency-input"
 import {
   FormField,
@@ -13,14 +14,13 @@ import { AmortizationFormValues } from "./schema"
 import { Property } from "./property-select"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, PlayCircle } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import {
   Select,
@@ -44,15 +44,25 @@ export function LoanDetails({
   selectedProperty, 
   interestRateLimits 
 }: LoanDetailsProps) {
-  const downPayment = parseFloat(form.watch("down_payment").replace(/[^0-9.]/g, "")) || 0
-  const downPaymentPercentage = selectedProperty
+  // Ensure we have default values and proper type handling
+  const downPaymentValue = form.watch("down_payment") || "0"
+  const downPayment = typeof downPaymentValue === "string" 
+    ? parseFloat(downPaymentValue.replace(/[^0-9.]/g, "") || "0") 
+    : 0
+
+  const downPaymentPercentage = selectedProperty?.price_cost 
     ? ((downPayment / selectedProperty.price_cost) * 100).toFixed(1)
     : "0.0"
-  const loanAmount = selectedProperty
+
+  const loanAmount = selectedProperty?.price_cost 
     ? selectedProperty.price_cost - downPayment
     : 0
 
-  const interestRate = parseFloat(form.watch("interest_rate")) || 0
+  const interestRateValue = form.watch("interest_rate") || "4"
+  const interestRate = typeof interestRateValue === "string"
+    ? parseFloat(interestRateValue || "4")
+    : 4
+
   const isInterestRateValid = !isNaN(interestRate) && 
     interestRate >= interestRateLimits.min_rate && 
     interestRate <= interestRateLimits.max_rate
@@ -63,13 +73,23 @@ export function LoanDetails({
         <div className="text-sm font-medium text-muted-foreground">Loan Amount</div>
         <div className="text-3xl font-bold">
           {selectedProperty?.currency === "USD" ? "$" : "S/"}{" "}
-          {loanAmount.toLocaleString()}
+          {Math.round(loanAmount).toLocaleString()}
         </div>
       </div>
       <Separator />
 
       <div className="space-y-6">
-        <h2 className="text-lg font-semibold">Basics</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Basics</h2>
+          <div className="flex gap-2">
+            <Button variant="secondary" size="sm">
+              Suggest Scenario
+            </Button>
+            <Button variant="secondary" size="sm" className="px-2">
+              <PlayCircle className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
         
         {/* Down Payment */}
         <FormField
@@ -101,31 +121,31 @@ export function LoanDetails({
           <FormField
             control={form.control}
             name="interest_rate"
-            render={({ field }) => (
+            render={({ field, fieldState: { error } }) => (
               <FormItem>
-                <FormLabel>Interest rate</FormLabel>
+                <FormLabel className={cn(error && "text-destructive")}>Interest rate</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input
                       {...field}
                       type="number"
                       step="0.1"
-                      min={interestRateLimits.min_rate}
-                      max={interestRateLimits.max_rate}
+                      inputMode="decimal"
                       className={cn(
-                        !isInterestRateValid && field.value && "border-destructive"
+                        "pr-8",
+                        error && "border-destructive focus-visible:ring-destructive"
                       )}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                        form.trigger("interest_rate");
+                      }}
                     />
-                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted-foreground">
                       %
                     </div>
                   </div>
                 </FormControl>
-                {!isInterestRateValid && field.value && (
-                  <FormMessage>
-                    Interest rate must be between {interestRateLimits.min_rate}% and {interestRateLimits.max_rate}%
-                  </FormMessage>
-                )}
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -138,7 +158,7 @@ export function LoanDetails({
                 <FormLabel>Amortization Term</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="form-control-focus">
                       <SelectValue placeholder="Select term" />
                     </SelectTrigger>
                   </FormControl>
@@ -166,7 +186,7 @@ export function LoanDetails({
                 <FormLabel>Instalments per Year</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="form-control-focus">
                       <SelectValue placeholder="Select frequency" />
                     </SelectTrigger>
                   </FormControl>
@@ -200,7 +220,7 @@ export function LoanDetails({
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal focus-visible:ring-[3px] focus-visible:ring-brand active:ring-offset-2",
+                          "w-full justify-start text-left font-normal form-control-focus",
                           !field.value && "text-muted-foreground"
                         )}
                       >

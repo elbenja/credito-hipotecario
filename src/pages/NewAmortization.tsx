@@ -1,9 +1,8 @@
-
 import { Link } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { Plus } from "lucide-react"
+import { Plus, PlayCircle } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
@@ -27,7 +26,6 @@ import {
 } from "@/components/ui/breadcrumb"
 import { PropertySelect, type Property } from "@/components/amortizations/property-select"
 import { LoanDetails } from "@/components/amortizations/loan-details"
-import { PaymentSchedule } from "@/components/amortizations/payment-schedule"
 import { 
   amortizationFormSchema, 
   defaultValues, 
@@ -38,8 +36,8 @@ export default function NewAmortization() {
   const { user } = useAuth()
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [interestRateLimits, setInterestRateLimits] = useState({
-    min_rate: 1,
-    max_rate: 25
+    min_rate: 4,
+    max_rate: 18
   })
 
   const form = useForm<AmortizationFormValues>({
@@ -160,7 +158,7 @@ export default function NewAmortization() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="space-y-6">
+        <div className="space-y-6 pt-4">
           <EditableHeading 
             value={formName || ""} 
             onChange={handleNameChange}
@@ -181,15 +179,13 @@ export default function NewAmortization() {
                   interestRateLimits={interestRateLimits}
                 />
 
-                <Separator />
+                <Separator className="w-[calc(100%+4rem)] -mx-8" />
 
-                <PaymentSchedule form={form} />
-
-                <div className="flex space-x-4">
-                  <Button type="submit">
+                <div className="flex flex-col gap-2">
+                  <Button type="submit" className="w-full">
                     Save
                   </Button>
-                  <Button type="button" variant="secondary">
+                  <Button type="button" variant="secondary" className="w-full">
                     <Plus className="mr-2 h-4 w-4" />
                     Save & Create Rental Scenario
                   </Button>
