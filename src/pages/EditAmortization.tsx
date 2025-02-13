@@ -25,7 +25,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import { PropertySelect, type Property } from "@/components/amortizations/property-select"
+import { PropertySelect, PropertyDisplay, type Property } from "@/components/amortizations/property-select"
 import { LoanDetails } from "@/components/amortizations/loan-details"
 import { useToast } from "@/hooks/use-toast"
 import { 
@@ -323,12 +323,16 @@ export default function EditAmortization() {
         <div className="max-w-2xl">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <PropertySelect 
-                form={form}
-                onPropertyChange={setSelectedProperty}
-                disabled={true}
-                initialProperty={amortization?.property}
-              />
+              <FormItem>
+                <FormLabel>Property</FormLabel>
+                <PropertyDisplay 
+                  property={{
+                    ...amortization.property,
+                    is_first_home: false,
+                    is_sustainable: false
+                  }}
+                />
+              </FormItem>
 
               <LoanDetails 
                 form={form}

@@ -19,6 +19,7 @@ import { UseFormReturn } from "react-hook-form"
 import { AmortizationFormValues } from "./schema"
 import { formatCurrency } from "@/lib/utils"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
+import { Lock } from "lucide-react"
 
 // Helper function for currency formatting
 const formatAmount = (amount: number, currency: string) => {
@@ -47,6 +48,73 @@ type PropertySelectProps = {
   onPropertyChange: (property: Property | null) => void
   disabled?: boolean
   initialProperty?: Property | null
+}
+
+export function PropertyDisplay({ property }: { property: Property }) {
+  const { data: exchangeRate } = useExchangeRate()
+  const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
+
+  useEffect(() => {
+    const loadBonusRules = async () => {
+      const { data: rulesData } = await supabase
+        .from("bonus_rules")
+        .select("*")
+        .order('min_value', { ascending: true })
+      
+      setBonusRules(rulesData || [])
+    }
+    loadBonusRules()
+  }, [])
+
+  const convertToPEN = (amount: number, currency: string): number => {
+    if (currency === 'PEN') return amount
+    return amount * (exchangeRate || 3.7167)
+  }
+
+  const calculateBonus = (property: Property): number | null => {
+    if (!property.is_first_home) return null
+
+    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency)
+    
+    const applicableRule = bonusRules.find(
+      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
+    )
+
+    if (!applicableRule) return null
+
+    return property.is_sustainable 
+      ? applicableRule.sustainable_bonus 
+      : applicableRule.traditional_bonus
+  }
+
+  const cost = property.price_cost
+  const bonus = calculateBonus(property)
+  const costInPEN = convertToPEN(cost, property.currency)
+
+  return (
+    <div className="relative w-full rounded-md border border-input bg-background px-3 py-2">
+      <div className="flex flex-col items-start">
+        <span className="font-medium">{property.name}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-foreground">
+            Cost: {formatAmount(cost, property.currency)}
+            {property.currency === "USD" && ` (≈ ${formatAmount(costInPEN, "PEN")})`}
+          </span>
+          {bonus && (
+            <>
+              <span className="text-sm text-foreground">|</span>
+              <span className="text-sm text-foreground">
+                First-Home Bonus: {formatAmount(bonus, "PEN")}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+        <Lock className="h-4 w-4 text-muted-foreground" />
+      </div>
+    </div>
+  )
 }
 
 export function PropertySelect({ 
@@ -156,7 +224,7 @@ export function PropertySelect({
     form.setValue("property_id", propertyId)
   }
 
-  const formatPropertyOption = (property: Property) => {
+  const formatPropertyOption = (property: Property, isSelected: boolean = false) => {
     const cost = property.price_cost
     const bonus = calculateBonus(property)
     const costInPEN = convertToPEN(cost, property.currency)
@@ -166,14 +234,17 @@ export function PropertySelect({
         <div className="flex flex-col items-start">
           <span className="font-medium">{property.name}</span>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
+            <span className={`text-sm ${isSelected ? 'text-foreground/90' : 'text-muted-foreground'}`}>
               Cost: {formatAmount(cost, property.currency)}
               {property.currency === "USD" && ` (≈ ${formatAmount(costInPEN, "PEN")})`}
             </span>
             {bonus && (
-              <span className="text-sm text-green-600 dark:text-green-400">
-                First-Home Bonus: {formatAmount(bonus, "PEN")}
-              </span>
+              <>
+                <span className={`text-sm ${isSelected ? 'text-foreground/90' : 'text-muted-foreground'}`}>|</span>
+                <span className={`text-sm ${isSelected ? 'text-foreground/90' : 'text-muted-foreground'}`}>
+                  First-Home Bonus: {formatAmount(bonus, "PEN")}
+                </span>
+              </>
             )}
           </div>
         </div>
@@ -186,7 +257,7 @@ export function PropertySelect({
     if (!propertyId) return "Select a property"
     const property = properties.find(p => p.id === propertyId)
     if (!property) return "Select a property"
-    return formatPropertyOption(property)
+    return formatPropertyOption(property, true)
   }
 
   return (
@@ -202,7 +273,7 @@ export function PropertySelect({
             disabled={disabled || isLoading}
           >
             <FormControl>
-              <SelectTrigger className="form-control-focus h-20 items-start pt-2">
+              <SelectTrigger className="form-control-focus h-16 items-start pt-2">
                 <SelectValue placeholder="Select a property" className="text-left">
                   {getSelectedPropertyDisplay()}
                 </SelectValue>
@@ -210,7 +281,7 @@ export function PropertySelect({
             </FormControl>
             <SelectContent>
               {properties.map((property) => (
-                <SelectItem key={property.id} value={property.id} className="h-20 py-2">
+                <SelectItem key={property.id} value={property.id} className="h-16 py-2">
                   {formatPropertyOption(property)}
                 </SelectItem>
               ))}
