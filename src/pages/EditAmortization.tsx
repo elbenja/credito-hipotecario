@@ -33,7 +33,7 @@ import {
   type AmortizationFormValues 
 } from "@/components/amortizations/schema"
 import { Input } from "@/components/ui/input"
-import { PlayCircle } from "lucide-react"
+import { PlayCircle, ArrowLeft } from "lucide-react"
 
 export default function EditAmortization() {
   const { id } = useParams()
@@ -41,6 +41,7 @@ export default function EditAmortization() {
   const { user } = useAuth()
   const { toast } = useToast()
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+  const [showMobileDetails, setShowMobileDetails] = useState(false)
 
   const form = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
@@ -111,7 +112,11 @@ export default function EditAmortization() {
 
   useEffect(() => {
     if (amortization && amortization.property) {
-      setSelectedProperty(amortization.property)
+      setSelectedProperty({
+        ...amortization.property,
+        is_first_home: false,
+        is_sustainable: false
+      })
       form.reset({
         name: amortization.name,
         property_id: amortization.property_id,
@@ -320,43 +325,83 @@ export default function EditAmortization() {
           </Button>
         </div>
 
-        <div className="max-w-2xl">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormItem>
-                <FormLabel>Property</FormLabel>
-                <PropertyDisplay 
-                  property={{
-                    ...amortization.property,
-                    is_first_home: false,
-                    is_sustainable: false
-                  }}
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Left Container */}
+          <div className="w-full md:w-[40%]">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormItem>
+                  <FormLabel>Property</FormLabel>
+                  <PropertyDisplay 
+                    property={{
+                      ...amortization.property,
+                      is_first_home: false,
+                      is_sustainable: false
+                    }}
+                  />
+                </FormItem>
+
+                <LoanDetails 
+                  form={form}
+                  selectedProperty={selectedProperty}
+                  interestRateLimits={amortization?.interestRateLimits || { min_rate: 4, max_rate: 18 }}
                 />
-              </FormItem>
 
-              <LoanDetails 
-                form={form}
-                selectedProperty={selectedProperty}
-                interestRateLimits={amortization?.interestRateLimits || { min_rate: 4, max_rate: 18 }}
-              />
+                <Separator className="w-full" />
 
-              <Separator className="w-[calc(100%+4rem)] -mx-8" />
+                <div className="flex flex-col gap-2">
+                  <Button type="submit" className="w-full">
+                    Update
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="secondary" 
+                    className="w-full"
+                    onClick={() => navigate("/amortizations")}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </div>
 
-              <div className="flex flex-col gap-2">
-                <Button type="submit" className="w-full">
-                  Update
-                </Button>
+          {/* Right Container (Blue) - Desktop */}
+          <div className="hidden md:block w-[60%] p-6 bg-[#87CEEB]/20 rounded-lg">
+            <h2 className="text-xl font-semibold mb-4">Payment Details</h2>
+            {/* Add your payment details content here */}
+          </div>
+
+          {/* Right Container (Blue) - Mobile */}
+          <div className={`fixed inset-0 bg-background md:hidden transition-transform duration-200 ${showMobileDetails ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className="h-full flex flex-col">
+              <div className="p-4 border-b">
                 <Button 
-                  type="button" 
-                  variant="secondary" 
-                  className="w-full"
-                  onClick={() => navigate("/amortizations")}
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowMobileDetails(false)}
+                  className="gap-2"
                 >
-                  Cancel
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
                 </Button>
               </div>
-            </form>
-          </Form>
+              <div className="flex-1 p-6 bg-[#87CEEB]/20">
+                <h2 className="text-xl font-semibold mb-4">Payment Details</h2>
+                {/* Add your payment details content here */}
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Toggle Button */}
+          <div className="md:hidden">
+            <Button 
+              className="w-full" 
+              onClick={() => setShowMobileDetails(true)}
+            >
+              View Payment Details
+            </Button>
+          </div>
         </div>
       </div>
     </DashboardLayout>

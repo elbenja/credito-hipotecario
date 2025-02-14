@@ -169,8 +169,9 @@ export default function NewAmortization() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <PropertySelect 
-                  form={form} 
-                  onPropertyChange={setSelectedProperty} 
+                  form={form}
+                  onPropertyChange={setSelectedProperty}
+                  disabled={false}
                 />
 
                 <LoanDetails 
