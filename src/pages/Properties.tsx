@@ -1,4 +1,3 @@
-
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
@@ -15,6 +14,7 @@ import { PropertyList } from "@/components/properties/property-list"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
 import { useToast } from "@/components/ui/use-toast"
+import { Separator } from "@/components/ui/separator"
 
 type Property = {
   id: string
@@ -127,36 +127,40 @@ export default function Properties() {
     setOpen(true)
   }
 
-  return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Properties</h1>
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button onClick={handleAddNewClick}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Property
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>
-                  {selectedProperty ? 'Edit Property' : 'Add New Property'}
-                </SheetTitle>
-              </SheetHeader>
-              <div className="mt-8">
-                <PropertyForm
-                  onSuccess={loadProperties}
-                  onClose={() => setOpen(false)}
-                  selectedProperty={selectedProperty}
-                  bonusRules={bonusRules}
-                />
-              </div>
-            </SheetContent>
-          </Sheet>
+  const headerActions = (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button onClick={handleAddNewClick}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Property
+        </Button>
+      </SheetTrigger>
+      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>
+            {selectedProperty ? 'Edit Property' : 'Add New Property'}
+          </SheetTitle>
+        </SheetHeader>
+        <div className="mt-8">
+          <PropertyForm
+            onSuccess={loadProperties}
+            onClose={() => setOpen(false)}
+            selectedProperty={selectedProperty}
+            bonusRules={bonusRules}
+          />
         </div>
+      </SheetContent>
+    </Sheet>
+  )
 
+  return (
+    <DashboardLayout
+      header={{
+        title: <h1 className="text-3xl font-bold">Properties</h1>,
+        actions: headerActions
+      }}
+    >
+      <div className="p-8">
         <div className="rounded-md border">
           <PropertyList
             properties={properties}

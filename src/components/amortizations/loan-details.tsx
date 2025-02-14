@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { UseFormReturn } from "react-hook-form"
 import { AmortizationFormValues } from "./schema"
 import { Property } from "./property-select"
-import { cn } from "@/lib/utils"
+import { cn, formatDate } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { CalendarIcon, PlayCircle } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
@@ -225,7 +225,7 @@ export function LoanDetails({
                         )}
                       >
                         {field.value ? (
-                          format(field.value, "PPP")
+                          formatDate(field.value)
                         ) : (
                           <span>Pick a date</span>
                         )}

@@ -1,5 +1,6 @@
 import * as z from "zod"
 import { startOfMonth, addMonths } from "date-fns"
+import { formatDate } from "@/lib/utils"
 
 export const amortizationFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -32,6 +33,7 @@ export const amortizationFormSchema = z.object({
   installments_per_year: z.string().min(1, "Installments per year is required"),
   first_installment_date: z.date({
     required_error: "First installment date is required",
+    invalid_type_error: "Please enter a valid date in the format 'MMM d, yyyy' (e.g., Feb 28, 2025)",
   }),
 })
 

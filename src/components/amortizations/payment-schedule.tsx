@@ -24,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { UseFormReturn } from "react-hook-form"
 import { AmortizationFormValues } from "./schema"
+import { formatDate } from "@/lib/utils"
 
 type PaymentScheduleProps = {
   form: UseFormReturn<AmortizationFormValues>
@@ -86,7 +87,7 @@ export function PaymentSchedule({ form }: PaymentScheduleProps) {
         name="first_installment_date"
         render={({ field }) => (
           <FormItem className="flex flex-col">
-            <FormLabel>First Installment Date</FormLabel>
+            <FormLabel>First Date</FormLabel>
             <Popover>
               <PopoverTrigger asChild>
                 <FormControl>
@@ -98,7 +99,7 @@ export function PaymentSchedule({ form }: PaymentScheduleProps) {
                     )}
                   >
                     {field.value ? (
-                      format(field.value, "PPP")
+                      formatDate(field.value)
                     ) : (
                       <span>Pick a date</span>
                     )}
@@ -112,6 +113,9 @@ export function PaymentSchedule({ form }: PaymentScheduleProps) {
                   selected={field.value}
                   onSelect={field.onChange}
                   initialFocus
+                  formatters={{
+                    formatDay: (date) => date.getDate().toString(),
+                  }}
                 />
               </PopoverContent>
             </Popover>

@@ -101,7 +101,22 @@ src/
 - Performance metrics
 
 ## UI Components
-The application uses ShadCN UI components, built on top of Radix UI and styled with Tailwind CSS:
+The application uses ShadCN UI components, built on top of Radix UI and styled with Tailwind CSS. Following the [shadcn/ui documentation](https://ui.shadcn.com/docs), we embrace these key principles:
+
+### Component Philosophy
+- **Open Code**: Components are not imported from a package but copied into the project, allowing full customization
+- **Composition**: All components share a common, predictable interface
+- **Beautiful Defaults**: Carefully chosen default styles that work well together
+- **Accessibility**: Built with accessibility in mind using Radix UI primitives
+- **Customization**: Easy to modify using Tailwind CSS and CSS variables
+
+### Documentation Reference
+For component-specific implementation details, refer to:
+- [Components](https://ui.shadcn.com/docs/components) - Official component documentation
+- [Installation](https://ui.shadcn.com/docs/installation) - Setup and configuration
+- [Typography](https://ui.shadcn.com/docs/dark-mode) - Text styling guidelines
+- [Colors](https://ui.shadcn.com/docs/theming) - Color system and theming
+- [CLI](https://ui.shadcn.com/docs/cli) - Component addition and updates
 
 ### Core Components
 - **Navigation Sidebar**
@@ -118,6 +133,38 @@ The application uses ShadCN UI components, built on top of Radix UI and styled w
 - **Modals**: Interactive dialogs
 - **Cards**: Information display
 - **Charts**: Data visualization
+
+### Design Decisions
+1. **Date Formatting**
+   - Standard format across the application: "MMM d, yyyy" (e.g., "Feb 28, 2025")
+   - Implemented through a centralized `formatDate` utility function
+   - Used consistently in:
+     - Form inputs
+     - Calendar displays
+     - Table data
+     - Date pickers
+   - Ensures clear and concise date representation while maintaining consistency
+
+2. **Colors**
+   - Brand color: HSL(41, 89%, 61%)
+   - Accent colors for interactive elements
+   - Consistent use of color variables
+
+3. **Typography**
+   - System font stack
+   - Consistent text sizes using Tailwind classes
+   - Responsive text scaling
+
+4. **Focus States**
+   - Clean 3px ring in brand color without offset for all focus states
+   - Consistent focus styling across all interactive elements:
+     - Form inputs
+     - Textareas
+     - Select dropdowns
+     - Date pickers
+     - Buttons
+   - No ring offset to maintain a cleaner, more subtle UI
+   - Applied through `.form-control-focus` utility class
 
 ## Authentication & Authorization
 - User authentication via Supabase

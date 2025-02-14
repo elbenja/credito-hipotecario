@@ -142,29 +142,36 @@ export default function NewAmortization() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <Link to="/amortizations" className="transition-colors hover:text-foreground">
-                Amortizations
-              </Link>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>New Amortization</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
-        <div className="space-y-6 pt-4">
+    <DashboardLayout
+      header={{
+        title: (
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <Link to="/amortizations" className="transition-colors hover:text-foreground">
+                  Amortizations
+                </Link>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>New Amortization</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        )
+      }}
+    >
+      <div>
+        <div className="px-8 py-4">
           <EditableHeading 
             value={formName || ""} 
             onChange={handleNameChange}
-            className="mb-6"
           />
-          
+        </div>
+
+        <Separator />
+        
+        <div className="space-y-6 px-8 pt-6">
           <div className="max-w-2xl">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

@@ -235,6 +235,22 @@ export default function EditAmortization() {
     }
   }
 
+  const headerContent = (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <Link to="/amortizations" className="transition-colors hover:text-foreground">
+            Amortizations
+          </Link>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbPage>{amortization?.name || 'Not Found'}</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  )
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -250,34 +266,19 @@ export default function EditAmortization() {
 
   if (!amortization) {
     return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <Link to="/amortizations" className="transition-colors hover:text-foreground">
-                  Amortizations
-                </Link>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Not Found</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="pt-4">
-            <Separator className="w-[calc(100%+4rem)] -mx-8" />
-          </div>
-
-          <div className="text-center py-8">
-            <h1 className="text-2xl font-semibold mb-2">Amortization not found</h1>
-            <p className="text-muted-foreground mb-4">
-              The amortization you're looking for doesn't exist or has been deleted.
-            </p>
-            <Button onClick={() => navigate("/amortizations")}>
-              Back to Amortizations
-            </Button>
-          </div>
+      <DashboardLayout
+        header={{
+          title: headerContent
+        }}
+      >
+        <div className="text-center py-8">
+          <h1 className="text-2xl font-semibold mb-2">Amortization not found</h1>
+          <p className="text-muted-foreground mb-4">
+            The amortization you're looking for doesn't exist or has been deleted.
+          </p>
+          <Button onClick={() => navigate("/amortizations")}>
+            Back to Amortizations
+          </Button>
         </div>
       </DashboardLayout>
     )
@@ -294,28 +295,13 @@ export default function EditAmortization() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <Link to="/amortizations" className="transition-colors hover:text-foreground">
-                  Amortizations
-                </Link>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{amortization.name}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="pt-4">
-            <Separator className="w-[calc(100%+4rem)] -mx-8" />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
+    <DashboardLayout
+      header={{
+        title: headerContent
+      }}
+    >
+      <div>
+        <div className="flex items-center justify-between px-8 py-4">
           <EditableHeading 
             value={amortization.name} 
             onChange={handleNameChange}
@@ -325,82 +311,86 @@ export default function EditAmortization() {
           </Button>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Left Container */}
-          <div className="w-full md:w-[40%]">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormItem>
-                  <FormLabel>Property</FormLabel>
-                  <PropertyDisplay 
-                    property={{
-                      ...amortization.property,
-                      is_first_home: false,
-                      is_sustainable: false
-                    }}
+        <Separator />
+
+        <div className="space-y-6 px-8 pt-6">
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Left Container */}
+            <div className="w-full md:w-[40%]">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormItem>
+                    <FormLabel>Property</FormLabel>
+                    <PropertyDisplay 
+                      property={{
+                        ...amortization.property,
+                        is_first_home: false,
+                        is_sustainable: false
+                      }}
+                    />
+                  </FormItem>
+
+                  <LoanDetails 
+                    form={form}
+                    selectedProperty={selectedProperty}
+                    interestRateLimits={amortization?.interestRateLimits || { min_rate: 4, max_rate: 18 }}
                   />
-                </FormItem>
 
-                <LoanDetails 
-                  form={form}
-                  selectedProperty={selectedProperty}
-                  interestRateLimits={amortization?.interestRateLimits || { min_rate: 4, max_rate: 18 }}
-                />
+                  <Separator className="w-full" />
 
-                <Separator className="w-full" />
+                  <div className="flex flex-col gap-2">
+                    <Button type="submit" className="w-full">
+                      Update
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="secondary" 
+                      className="w-full"
+                      onClick={() => navigate("/amortizations")}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </div>
 
-                <div className="flex flex-col gap-2">
-                  <Button type="submit" className="w-full">
-                    Update
-                  </Button>
+            {/* Right Container (Blue) - Desktop */}
+            <div className="hidden md:block w-[60%] p-6 bg-[#87CEEB]/20 rounded-lg">
+              <h2 className="text-xl font-semibold mb-4">Payment Details</h2>
+              {/* Add your payment details content here */}
+            </div>
+
+            {/* Right Container (Blue) - Mobile */}
+            <div className={`fixed inset-0 bg-background md:hidden transition-transform duration-200 ${showMobileDetails ? 'translate-x-0' : 'translate-x-full'}`}>
+              <div className="h-full flex flex-col">
+                <div className="p-4 border-b">
                   <Button 
-                    type="button" 
-                    variant="secondary" 
-                    className="w-full"
-                    onClick={() => navigate("/amortizations")}
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowMobileDetails(false)}
+                    className="gap-2"
                   >
-                    Cancel
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
                   </Button>
                 </div>
-              </form>
-            </Form>
-          </div>
-
-          {/* Right Container (Blue) - Desktop */}
-          <div className="hidden md:block w-[60%] p-6 bg-[#87CEEB]/20 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Payment Details</h2>
-            {/* Add your payment details content here */}
-          </div>
-
-          {/* Right Container (Blue) - Mobile */}
-          <div className={`fixed inset-0 bg-background md:hidden transition-transform duration-200 ${showMobileDetails ? 'translate-x-0' : 'translate-x-full'}`}>
-            <div className="h-full flex flex-col">
-              <div className="p-4 border-b">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setShowMobileDetails(false)}
-                  className="gap-2"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Back
-                </Button>
-              </div>
-              <div className="flex-1 p-6 bg-[#87CEEB]/20">
-                <h2 className="text-xl font-semibold mb-4">Payment Details</h2>
-                {/* Add your payment details content here */}
+                <div className="flex-1 p-6 bg-[#87CEEB]/20">
+                  <h2 className="text-xl font-semibold mb-4">Payment Details</h2>
+                  {/* Add your payment details content here */}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Mobile Toggle Button */}
-          <div className="md:hidden">
-            <Button 
-              className="w-full" 
-              onClick={() => setShowMobileDetails(true)}
-            >
-              View Payment Details
-            </Button>
+            {/* Mobile Toggle Button */}
+            <div className="md:hidden">
+              <Button 
+                className="w-full" 
+                onClick={() => setShowMobileDetails(true)}
+              >
+                View Payment Details
+              </Button>
+            </div>
           </div>
         </div>
       </div>
