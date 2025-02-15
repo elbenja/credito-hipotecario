@@ -32,6 +32,8 @@ import {
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
+import { Toggle } from "@/components/ui/toggle"
+import { toast } from "sonner"
 
 type BonusRule = {
   min_value: number
@@ -56,6 +58,7 @@ export function LoanDetails({
 }: LoanDetailsProps) {
   const { data: exchangeRate } = useExchangeRate()
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
+  const [isSuggested, setIsSuggested] = useState(false)
 
   // Load bonus rules
   useEffect(() => {
@@ -126,6 +129,48 @@ export function LoanDetails({
     interestRate >= interestRateLimits.min_rate && 
     interestRate <= interestRateLimits.max_rate
 
+  // Watch the relevant fields for changes
+  const watchedFields = form.watch([
+    "down_payment",
+    "term_years",
+    "installments_per_year"
+  ])
+
+  // Calculate suggested values based on property cost
+  const suggestScenario = () => {
+    if (!selectedProperty) return
+    
+    form.setValue("down_payment", (selectedProperty.price_cost * 0.10).toString())
+    form.setValue("term_years", "20")
+    form.setValue("installments_per_year", "12")
+    setIsSuggested(true)
+
+    toast.message("Suggested Scenario Applied", {
+      description: "Amortization Term set to 20 years, Down Payment set to 10%, and Installments is 1 per month"
+    })
+  }
+
+  // Reset suggested state if user changes any watched field
+  useEffect(() => {
+    if (isSuggested) {
+      const suggestedValues = {
+        down_payment: selectedProperty ? (selectedProperty.price_cost * 0.10).toString() : "0",
+        term_years: "20",
+        installments_per_year: "12"
+      }
+
+      const currentValues = {
+        down_payment: form.getValues("down_payment"),
+        term_years: form.getValues("term_years"),
+        installments_per_year: form.getValues("installments_per_year")
+      }
+
+      if (JSON.stringify(suggestedValues) !== JSON.stringify(currentValues)) {
+        setIsSuggested(false)
+      }
+    }
+  }, [watchedFields, selectedProperty, isSuggested, form])
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -144,9 +189,17 @@ export function LoanDetails({
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Basics</h2>
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm">
-              Suggest Scenario
-            </Button>
+            <Toggle
+              pressed={isSuggested}
+              onPressedChange={() => {
+                if (!isSuggested) {
+                  suggestScenario()
+                }
+              }}
+              className="w-full"
+            >
+              {isSuggested ? "Suggested" : "Suggest Scenario"}
+            </Toggle>
             <Button variant="secondary" size="sm" className="px-2">
               <PlayCircle className="h-4 w-4" />
             </Button>
