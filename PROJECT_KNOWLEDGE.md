@@ -145,17 +145,27 @@ For component-specific implementation details, refer to:
      - Date pickers
    - Ensures clear and concise date representation while maintaining consistency
 
-2. **Colors**
+2. **Badge Styling**
+   - All badges use `rounded-md` instead of fully rounded corners
+   - Consistent with the application's modern, clean design language
+   - Applied to:
+     - Status indicators
+     - Down payment percentages
+     - Feature tags (e.g., "Coming" in sidebar)
+   - Maintains visual harmony with other UI elements that use `rounded-md`
+   - Implemented through the base `badgeVariants` in the Badge component
+
+3. **Colors**
    - Brand color: HSL(41, 89%, 61%)
    - Accent colors for interactive elements
    - Consistent use of color variables
 
-3. **Typography**
+4. **Typography**
    - System font stack
    - Consistent text sizes using Tailwind classes
    - Responsive text scaling
 
-4. **Focus States**
+5. **Focus States**
    - Clean 3px ring in brand color without offset for all focus states
    - Consistent focus styling across all interactive elements:
      - Form inputs

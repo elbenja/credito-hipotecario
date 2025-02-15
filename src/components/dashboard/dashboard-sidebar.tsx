@@ -1,5 +1,6 @@
 import { Building, Calculator, LayoutDashboard, MessageSquare, User, CreditCard, Bell, Settings, LogOut, ChevronsUpDown } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
+import { useQuery } from "@tanstack/react-query"
 import {
   Sidebar,
   SidebarContent,
@@ -11,6 +12,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuBadge,
 } from "@/components/ui/sidebar"
 import {
   DropdownMenu,
@@ -153,6 +155,49 @@ export function DashboardSidebar() {
   const { user } = useAuth()
   const navigate = useNavigate()
 
+  const { data: propertiesWithAmortizations } = useQuery({
+    queryKey: ["properties-with-amortizations", user?.id],
+    queryFn: async () => {
+      if (!user) return []
+
+      const { data: properties, error: propertiesError } = await supabase
+        .from("properties")
+        .select(`
+          id,
+          name,
+          currency,
+          price_cost,
+          amortizations (
+            id,
+            name,
+            loan_amount,
+            down_payment,
+            interest_rate,
+            term_years,
+            installments_per_year,
+            installment_amount,
+            total_interest,
+            total_payment
+          )
+        `)
+        .eq("user_id", user.id)
+
+      if (propertiesError) {
+        console.error("Error fetching properties:", propertiesError)
+        return []
+      }
+
+      return properties || []
+    },
+    enabled: !!user,
+  })
+
+  const propertiesCount = propertiesWithAmortizations?.length || 0
+  const amortizationsCount = propertiesWithAmortizations?.reduce(
+    (acc, property) => acc + (property.amortizations?.length || 0),
+    0
+  ) || 0
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     navigate("/auth")
@@ -178,6 +223,12 @@ export function DashboardSidebar() {
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                       {item.badge}
+                      {item.title === "Properties" && propertiesCount > 0 && (
+                        <SidebarMenuBadge>{propertiesCount}</SidebarMenuBadge>
+                      )}
+                      {item.title === "Amortizations" && amortizationsCount > 0 && (
+                        <SidebarMenuBadge>{amortizationsCount}</SidebarMenuBadge>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

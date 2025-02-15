@@ -99,15 +99,8 @@ export function PropertyDisplay({ property }: { property: Property }) {
           <span className="text-sm text-foreground">
             Cost: {formatAmount(cost, property.currency)}
             {property.currency === "USD" && ` (≈ ${formatAmount(costInPEN, "PEN")})`}
+            {bonus && ` | First-Home Bonus: ${formatAmount(bonus, "PEN")}`}
           </span>
-          {bonus && (
-            <>
-              <span className="text-sm text-foreground">|</span>
-              <span className="text-sm text-foreground">
-                First-Home Bonus: {formatAmount(bonus, "PEN")}
-              </span>
-            </>
-          )}
         </div>
       </div>
       <div className="absolute right-3 top-1/2 -translate-y-1/2">

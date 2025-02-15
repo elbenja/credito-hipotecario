@@ -70,7 +70,9 @@ export default function EditAmortization() {
               id,
               name,
               currency,
-              price_cost
+              price_cost,
+              is_first_home,
+              is_sustainable
             )
           `)
           .eq("id", id)
@@ -114,8 +116,8 @@ export default function EditAmortization() {
     if (amortization && amortization.property) {
       setSelectedProperty({
         ...amortization.property,
-        is_first_home: false,
-        is_sustainable: false
+        is_first_home: amortization.property.is_first_home || false,
+        is_sustainable: amortization.property.is_sustainable || false
       })
       form.reset({
         name: amortization.name,
@@ -324,8 +326,8 @@ export default function EditAmortization() {
                     <PropertyDisplay 
                       property={{
                         ...amortization.property,
-                        is_first_home: false,
-                        is_sustainable: false
+                        is_first_home: amortization.property.is_first_home || false,
+                        is_sustainable: amortization.property.is_sustainable || false
                       }}
                     />
                   </FormItem>

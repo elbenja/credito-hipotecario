@@ -29,6 +29,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useExchangeRate } from "@/hooks/use-exchange-rate"
+import { useState, useEffect } from "react"
+import { supabase } from "@/integrations/supabase/client"
+
+type BonusRule = {
+  min_value: number
+  max_value: number
+  traditional_bonus: number
+  sustainable_bonus: number
+}
 
 type LoanDetailsProps = {
   form: UseFormReturn<AmortizationFormValues>
@@ -44,6 +54,22 @@ export function LoanDetails({
   selectedProperty, 
   interestRateLimits 
 }: LoanDetailsProps) {
+  const { data: exchangeRate } = useExchangeRate()
+  const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
+
+  // Load bonus rules
+  useEffect(() => {
+    const loadBonusRules = async () => {
+      const { data: rulesData } = await supabase
+        .from("bonus_rules")
+        .select("*")
+        .order('min_value', { ascending: true })
+      
+      setBonusRules(rulesData || [])
+    }
+    loadBonusRules()
+  }, [])
+
   // Ensure we have default values and proper type handling
   const downPaymentValue = form.watch("down_payment") || "0"
   const downPayment = typeof downPaymentValue === "string" 
@@ -54,9 +80,42 @@ export function LoanDetails({
     ? ((downPayment / selectedProperty.price_cost) * 100).toFixed(1)
     : "0.0"
 
-  const loanAmount = selectedProperty?.price_cost 
-    ? selectedProperty.price_cost - downPayment
-    : 0
+  // Convert property value to PEN for bonus calculation
+  const convertToPEN = (amount: number, currency: string): number => {
+    if (currency === 'PEN') return amount
+    return amount * (exchangeRate || 3.7167)
+  }
+
+  // Calculate First Home Bonus
+  const calculateBonus = (property: Property | null): number => {
+    if (!property || !property.is_first_home) return 0
+
+    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency)
+    
+    const applicableRule = bonusRules.find(
+      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
+    )
+
+    if (!applicableRule) return 0
+
+    return property.is_sustainable 
+      ? applicableRule.sustainable_bonus 
+      : applicableRule.traditional_bonus
+  }
+
+  // Calculate loan amount considering bonus and currency conversion
+  const calculateLoanAmount = (): number => {
+    if (!selectedProperty) return 0
+
+    const bonus = calculateBonus(selectedProperty)
+    const bonusInPropertyCurrency = selectedProperty.currency === 'USD' 
+      ? bonus / (exchangeRate || 3.7167)
+      : bonus
+
+    return selectedProperty.price_cost - bonusInPropertyCurrency - downPayment
+  }
+
+  const loanAmount = calculateLoanAmount()
 
   const interestRateValue = form.watch("interest_rate") || "4"
   const interestRate = typeof interestRateValue === "string"
@@ -74,6 +133,9 @@ export function LoanDetails({
         <div className="text-3xl font-bold">
           {selectedProperty?.currency === "USD" ? "$" : "S/"}{" "}
           {Math.round(loanAmount).toLocaleString()}
+        </div>
+        <div className="text-sm text-muted-foreground">
+          = Property Cost - First Home Bonus - Down Payment
         </div>
       </div>
       <Separator />
