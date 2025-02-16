@@ -4,7 +4,14 @@ import { useForm } from "react-hook-form"
 import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 
-import { Form } from "@/components/ui/form"
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -43,28 +50,28 @@ export function ExtraInstallmentForm({ onSubmit, isLoading }: ExtraInstallmentFo
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Form.Field
+            <FormField
               control={form.control}
               name="amount"
               render={({ field }) => (
-                <Form.Item>
-                  <Form.Label>Amount</Form.Label>
-                  <Form.Control>
+                <FormItem>
+                  <FormLabel>Amount</FormLabel>
+                  <FormControl>
                     <Input placeholder="Enter amount..." {...field} />
-                  </Form.Control>
-                  <Form.Message />
-                </Form.Item>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
             />
           </div>
 
           <div className="space-y-2">
-            <Form.Field
+            <FormField
               control={form.control}
               name="frequency"
               render={({ field }) => (
-                <Form.Item>
-                  <Form.Label>Frequency</Form.Label>
+                <FormItem>
+                  <FormLabel>Frequency</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={(value: 'monthly' | 'one-time') => field.onChange(value)}
@@ -77,19 +84,19 @@ export function ExtraInstallmentForm({ onSubmit, isLoading }: ExtraInstallmentFo
                       <SelectItem value="monthly">Monthly</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Form.Message />
-                </Form.Item>
+                  <FormMessage />
+                </FormItem>
               )}
             />
           </div>
 
           <div className="space-y-2">
-            <Form.Field
+            <FormField
               control={form.control}
               name="start_date"
               render={({ field }) => (
-                <Form.Item>
-                  <Form.Label>Start Date</Form.Label>
+                <FormItem>
+                  <FormLabel>Start Date</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -114,8 +121,8 @@ export function ExtraInstallmentForm({ onSubmit, isLoading }: ExtraInstallmentFo
                       />
                     </PopoverContent>
                   </Popover>
-                  <Form.Message />
-                </Form.Item>
+                  <FormMessage />
+                </FormItem>
               )}
             />
           </div>
