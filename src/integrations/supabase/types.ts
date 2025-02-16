@@ -271,6 +271,44 @@ export type Database = {
         }
         Relationships: []
       }
+      refinancing_options: {
+        Row: {
+          amortization_id: string
+          created_at: string
+          effective_date: string
+          id: string
+          new_interest_rate: number
+          new_term_years: number | null
+          updated_at: string
+        }
+        Insert: {
+          amortization_id: string
+          created_at?: string
+          effective_date: string
+          id?: string
+          new_interest_rate: number
+          new_term_years?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amortization_id?: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          new_interest_rate?: number
+          new_term_years?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refinancing_options_amortization_id_fkey"
+            columns: ["amortization_id"]
+            isOneToOne: false
+            referencedRelation: "amortizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
