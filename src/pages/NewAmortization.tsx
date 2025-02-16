@@ -2,7 +2,7 @@ import { Link } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { Plus, PlayCircle } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
@@ -15,7 +15,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form"
-import { EditableHeading } from "@/components/ui/editable-heading"
+import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import {
   Breadcrumb,
@@ -26,56 +26,49 @@ import {
 } from "@/components/ui/breadcrumb"
 import { PropertySelect, type Property } from "@/components/amortizations/property-select"
 import { LoanDetails } from "@/components/amortizations/loan-details"
+import { PaymentSchedule } from "@/components/amortizations/payment-schedule"
 import { 
   amortizationFormSchema, 
   defaultValues, 
   type AmortizationFormValues 
 } from "@/components/amortizations/schema"
+import { PaymentScenariosPanel } from "@/components/amortizations/payment-scenarios-panel"
 
 export default function NewAmortization() {
   const { user } = useAuth()
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [interestRateLimits, setInterestRateLimits] = useState({
-    min_rate: 4,
-    max_rate: 18
+    min_rate: 1,
+    max_rate: 25
   })
+  const [paymentDetails, setPaymentDetails] = useState({
+    regular: {
+      totalInterestAndInsurance: 0,
+      totalMonths: 0,
+      monthlyPayment: 0
+    },
+    accelerated: {
+      totalInterestAndInsurance: 0,
+      totalMonths: 0,
+      monthlyPayment: 0
+    },
+    lower: {
+      totalInterestAndInsurance: 0,
+      totalMonths: 0,
+      monthlyPayment: 0
+    },
+    newRate: {
+      totalInterestAndInsurance: 0,
+      totalMonths: 0,
+      monthlyPayment: 0
+    }
+  })
+  const [showMobileDetails, setShowMobileDetails] = useState(false)
 
   const form = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
     defaultValues,
   })
-
-  const formName = form.watch("name")
-
-  useEffect(() => {
-    const setupDefaultName = async () => {
-      if (!user || formName) return
-
-      try {
-        // Get the user's current counter
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('last_property_number')
-          .eq('id', user.id)
-          .single()
-
-        const nextNumber = (profile?.last_property_number || 0) + 1
-
-        // Update the counter in the database
-        await supabase
-          .from('profiles')
-          .update({ last_property_number: nextNumber })
-          .eq('id', user.id)
-
-        // Set the default name
-        form.setValue("name", `Amortization #${nextNumber}`, { shouldValidate: true })
-      } catch (error) {
-        console.error('Error setting up default amortization name:', error)
-      }
-    }
-
-    setupDefaultName()
-  }, [user, form, formName])
 
   useEffect(() => {
     const loadInterestRateLimits = async () => {
@@ -98,9 +91,30 @@ export default function NewAmortization() {
     loadInterestRateLimits()
   }, [])
 
-  const handleNameChange = (newName: string) => {
-    form.setValue("name", newName, { shouldValidate: true })
-  }
+  useEffect(() => {
+    if (!selectedProperty) return
+
+    const loanAmount = selectedProperty.price_cost - parseFloat(form.getValues("down_payment").replace(/[^0-9.]/g, ""))
+    const interestRate = parseFloat(form.getValues("interest_rate")) / 100
+    const termYears = parseInt(form.getValues("term_years"))
+    const installmentsPerYear = parseInt(form.getValues("installments_per_year"))
+
+    // Regular payment calculation
+    const totalMonths = termYears * installmentsPerYear
+    const monthlyRate = interestRate / installmentsPerYear
+    const monthlyPayment = (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / (Math.pow(1 + monthlyRate, totalMonths) - 1)
+    const totalPayment = monthlyPayment * totalMonths
+    const totalInterest = totalPayment - loanAmount
+
+    setPaymentDetails(prev => ({
+      ...prev,
+      regular: {
+        totalInterestAndInsurance: totalInterest,
+        totalMonths,
+        monthlyPayment
+      }
+    }))
+  }, [selectedProperty, form.watch()])
 
   const onSubmit = async (values: AmortizationFormValues) => {
     try {
@@ -162,44 +176,66 @@ export default function NewAmortization() {
       }}
     >
       <div>
-        <div className="px-8 py-4">
-          <EditableHeading 
-            value={formName || ""} 
-            onChange={handleNameChange}
-          />
-        </div>
+        <div className="space-y-6 px-8">
+          <h1 className="text-3xl font-bold">New Amortization</h1>
+          
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Left Container */}
+            <div className="w-full md:w-[40%]">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter amortization name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-        <Separator />
-        
-        <div className="space-y-6 px-8 pt-6">
-          <div className="max-w-2xl">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <PropertySelect 
-                  form={form}
-                  onPropertyChange={setSelectedProperty}
-                  disabled={false}
-                />
+                  <Separator />
 
-                <LoanDetails 
-                  form={form}
-                  selectedProperty={selectedProperty}
-                  interestRateLimits={interestRateLimits}
-                />
+                  <PropertySelect 
+                    form={form} 
+                    onPropertyChange={setSelectedProperty} 
+                  />
 
-                <Separator className="w-[calc(100%+4rem)] -mx-8" />
+                  <LoanDetails 
+                    form={form}
+                    selectedProperty={selectedProperty}
+                    interestRateLimits={interestRateLimits}
+                  />
 
-                <div className="flex flex-col gap-2">
-                  <Button type="submit" className="w-full">
-                    Save
-                  </Button>
-                  <Button type="button" variant="secondary" className="w-full">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Save & Create Rental Scenario
-                  </Button>
-                </div>
-              </form>
-            </Form>
+                  <Separator />
+
+                  <div className="flex flex-col gap-2">
+                    <Button type="submit">
+                      Save
+                    </Button>
+                    <Button type="button" variant="secondary">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Save & Create Rental Scenario
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </div>
+
+            <PaymentScenariosPanel 
+              paymentDetails={paymentDetails}
+              showMobileDetails={showMobileDetails}
+              onCloseMobilePanel={() => setShowMobileDetails(false)}
+              isMobile={true}
+            />
+
+            <PaymentScenariosPanel 
+              paymentDetails={paymentDetails}
+            />
           </div>
         </div>
       </div>
