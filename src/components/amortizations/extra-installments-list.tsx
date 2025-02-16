@@ -147,11 +147,12 @@ export function ExtraInstallmentsList({ amortizationId }: ExtraInstallmentsListP
                   </Button>
                 </TableCell>
               </TableRow>
-            </TableBody>
-          </Table>
-        )) : (
-          <p className="text-sm text-muted-foreground">No extra installments added yet.</p>
-        )}
+            ))}
+          </TableBody>
+        </Table>
+      ) : (
+        <p className="text-sm text-muted-foreground">No extra installments added yet.</p>
+      )}
     </div>
   )
 }
