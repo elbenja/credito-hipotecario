@@ -14,7 +14,7 @@ import { AmortizationFormValues } from "./schema"
 import { Property } from "./property-select"
 import { cn, formatDate } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
-import { CalendarIcon, PlayCircle } from "lucide-react"
+import { CalendarIcon, PlayCircle, Check } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import {
   Popover,
@@ -196,9 +196,17 @@ export function LoanDetails({
                   suggestScenario()
                 }
               }}
-              className="w-full"
+              className="w-full border border-input hover:bg-accent hover:text-accent-foreground"
+              variant="outline"
             >
-              {isSuggested ? "Suggested" : "Suggest Scenario"}
+              {isSuggested ? (
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4" />
+                  <span>Suggested</span>
+                </div>
+              ) : (
+                "Suggest Scenario"
+              )}
             </Toggle>
             <Button variant="secondary" size="sm" className="px-2">
               <PlayCircle className="h-4 w-4" />
