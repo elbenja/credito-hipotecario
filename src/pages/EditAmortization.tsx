@@ -426,11 +426,7 @@ export default function EditAmortization() {
               paymentDetails={paymentDetails}
               showMobileDetails={showMobileDetails}
               onCloseMobilePanel={() => setShowMobileDetails(false)}
-              isMobile={true}
-            />
-
-            <PaymentScenariosPanel 
-              paymentDetails={paymentDetails}
+              onOpenMobilePanel={() => setShowMobileDetails(true)}
             />
           </div>
         </div>

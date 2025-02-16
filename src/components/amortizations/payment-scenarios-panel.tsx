@@ -18,14 +18,14 @@ interface PaymentScenariosProps {
   }
   showMobileDetails?: boolean
   onCloseMobilePanel?: () => void
-  isMobile?: boolean
+  onOpenMobilePanel?: () => void
 }
 
 export function PaymentScenariosPanel({
   paymentDetails,
   showMobileDetails,
   onCloseMobilePanel,
-  isMobile = false
+  onOpenMobilePanel
 }: PaymentScenariosProps) {
   const content = (
     <>
@@ -77,43 +77,42 @@ export function PaymentScenariosPanel({
     </>
   )
 
-  if (isMobile) {
-    return (
-      <>
-        <div className={`fixed inset-0 bg-background md:hidden transition-transform duration-200 ${showMobileDetails ? 'translate-x-0' : 'translate-x-full'}`}>
-          <div className="h-full flex flex-col">
-            <div className="p-4 border-b">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={onCloseMobilePanel}
-                className="gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back
-              </Button>
-            </div>
-            <div className="flex-1 p-6 overflow-y-auto">
-              {content}
-            </div>
+  return (
+    <>
+      {/* Mobile Slide-in Panel */}
+      <div className={`fixed inset-0 bg-background md:hidden transition-transform duration-200 ${showMobileDetails ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="h-full flex flex-col">
+          <div className="p-4 border-b">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onCloseMobilePanel}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          </div>
+          <div className="flex-1 p-6 overflow-y-auto">
+            {content}
           </div>
         </div>
+      </div>
 
-        <div className="md:hidden">
-          <Button 
-            className="w-full" 
-            onClick={() => onCloseMobilePanel?.()}
-          >
-            View Payment Details
-          </Button>
-        </div>
-      </>
-    )
-  }
+      {/* Mobile Toggle Button */}
+      <div className="md:hidden">
+        <Button 
+          className="w-full" 
+          onClick={onOpenMobilePanel}
+        >
+          View Payment Details
+        </Button>
+      </div>
 
-  return (
-    <div className="hidden md:block w-[60%] p-6">
-      {content}
-    </div>
+      {/* Desktop View */}
+      <div className="hidden md:block w-[60%] p-6">
+        {content}
+      </div>
+    </>
   )
 } 
