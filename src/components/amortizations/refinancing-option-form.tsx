@@ -47,15 +47,15 @@ export function RefinancingOptionForm({
     },
   })
 
-  async function onSubmit(data: RefinancingOptionFormValues) {
+  async function onSubmit(values: RefinancingOptionFormValues) {
     try {
       const { error } = await supabase
         .from("refinancing_options")
         .insert({
           amortization_id: amortizationId,
-          new_interest_rate: data.new_interest_rate,
-          effective_date: format(data.effective_date, 'yyyy-MM-dd'),
-          new_term_years: data.new_term_years,
+          new_interest_rate: values.new_interest_rate,
+          effective_date: format(values.effective_date, 'yyyy-MM-dd'),
+          new_term_years: values.new_term_years,
         })
 
       if (error) throw error
