@@ -128,6 +128,44 @@ export type Database = {
         }
         Relationships: []
       }
+      extra_installments: {
+        Row: {
+          amortization_id: string
+          amount: number
+          created_at: string
+          frequency: string
+          id: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          amortization_id: string
+          amount: number
+          created_at?: string
+          frequency: string
+          id?: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          amortization_id?: string
+          amount?: number
+          created_at?: string
+          frequency?: string
+          id?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extra_installments_amortization_id_fkey"
+            columns: ["amortization_id"]
+            isOneToOne: false
+            referencedRelation: "amortizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interest_rate_limits: {
         Row: {
           created_at: string
