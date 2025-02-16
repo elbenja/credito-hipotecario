@@ -280,14 +280,19 @@ export default function EditAmortization() {
     const totalPayment = monthlyPayment * totalMonths
     const totalInterest = totalPayment - loanAmount
 
-    setPaymentDetails(prev => ({
-      ...prev,
-      regular: {
-        totalInterestAndInsurance: totalInterest,
-        totalMonths,
-        monthlyPayment
-      }
-    }))
+    // Set the same base calculation for all scenarios initially
+    const baseCalculation = {
+      totalInterestAndInsurance: totalInterest,
+      totalMonths,
+      monthlyPayment
+    }
+
+    setPaymentDetails({
+      regular: baseCalculation,
+      accelerated: baseCalculation,
+      lower: baseCalculation,
+      newRate: baseCalculation
+    })
   }, [amortization?.property, form.watch()])
 
   if (isLoading) {
@@ -427,6 +432,7 @@ export default function EditAmortization() {
               showMobileDetails={showMobileDetails}
               onCloseMobilePanel={() => setShowMobileDetails(false)}
               onOpenMobilePanel={() => setShowMobileDetails(true)}
+              currency={amortization.property.currency}
             />
           </div>
         </div>

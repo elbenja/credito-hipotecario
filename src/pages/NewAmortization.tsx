@@ -106,14 +106,19 @@ export default function NewAmortization() {
     const totalPayment = monthlyPayment * totalMonths
     const totalInterest = totalPayment - loanAmount
 
-    setPaymentDetails(prev => ({
-      ...prev,
-      regular: {
-        totalInterestAndInsurance: totalInterest,
-        totalMonths,
-        monthlyPayment
-      }
-    }))
+    // Set the same base calculation for all scenarios initially
+    const baseCalculation = {
+      totalInterestAndInsurance: totalInterest,
+      totalMonths,
+      monthlyPayment
+    }
+
+    setPaymentDetails({
+      regular: baseCalculation,
+      accelerated: baseCalculation,
+      lower: baseCalculation,
+      newRate: baseCalculation
+    })
   }, [selectedProperty, form.watch()])
 
   const onSubmit = async (values: AmortizationFormValues) => {
@@ -231,6 +236,7 @@ export default function NewAmortization() {
               showMobileDetails={showMobileDetails}
               onCloseMobilePanel={() => setShowMobileDetails(false)}
               onOpenMobilePanel={() => setShowMobileDetails(true)}
+              currency={selectedProperty?.currency || "PEN"}
             />
           </div>
         </div>

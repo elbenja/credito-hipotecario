@@ -19,13 +19,15 @@ interface PaymentScenariosProps {
   showMobileDetails?: boolean
   onCloseMobilePanel?: () => void
   onOpenMobilePanel?: () => void
+  currency: "USD" | "PEN"
 }
 
 export function PaymentScenariosPanel({
   paymentDetails,
   showMobileDetails,
   onCloseMobilePanel,
-  onOpenMobilePanel
+  onOpenMobilePanel,
+  currency
 }: PaymentScenariosProps) {
   const content = (
     <>
@@ -42,7 +44,7 @@ export function PaymentScenariosPanel({
             <p className="text-sm text-muted-foreground">
               Base mortgage with standard parameters.
             </p>
-            <PaymentSummary {...paymentDetails.regular} />
+            <PaymentSummary {...paymentDetails.regular} currency={currency} />
             {/* Payment schedule will go here */}
           </div>
         </TabsContent>
@@ -51,7 +53,7 @@ export function PaymentScenariosPanel({
             <p className="text-sm text-muted-foreground">
               Extra payments reduce the term, installment remains constant.
             </p>
-            <PaymentSummary {...paymentDetails.accelerated} />
+            <PaymentSummary {...paymentDetails.accelerated} currency={currency} />
             {/* Accelerated payment schedule will go here */}
           </div>
         </TabsContent>
@@ -60,7 +62,7 @@ export function PaymentScenariosPanel({
             <p className="text-sm text-muted-foreground">
               Extra payments reduce the monthly payment, term remains the same.
             </p>
-            <PaymentSummary {...paymentDetails.lower} />
+            <PaymentSummary {...paymentDetails.lower} currency={currency} />
             {/* Lower payment schedule will go here */}
           </div>
         </TabsContent>
@@ -69,7 +71,7 @@ export function PaymentScenariosPanel({
             <p className="text-sm text-muted-foreground">
               Adjusts the interest rate (and optionally term) from a specified date.
             </p>
-            <PaymentSummary {...paymentDetails.newRate} />
+            <PaymentSummary {...paymentDetails.newRate} currency={currency} />
             {/* New rate payment schedule will go here */}
           </div>
         </TabsContent>
