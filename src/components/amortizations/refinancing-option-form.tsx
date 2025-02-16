@@ -41,9 +41,9 @@ export function RefinancingOptionForm({
   const form = useForm<RefinancingOptionFormValues>({
     resolver: zodResolver(refinancingOptionSchema),
     defaultValues: {
-      new_interest_rate: "",
+      new_interest_rate: 0,
       effective_date: new Date(),
-      new_term_years: "",
+      new_term_years: null,
     },
   })
 
@@ -53,9 +53,9 @@ export function RefinancingOptionForm({
         .from("refinancing_options")
         .insert({
           amortization_id: amortizationId,
-          new_interest_rate: Number(values.new_interest_rate),
+          new_interest_rate: values.new_interest_rate,
           effective_date: format(values.effective_date, 'yyyy-MM-dd'),
-          new_term_years: values.new_term_years ? Number(values.new_term_years) : null,
+          new_term_years: values.new_term_years,
         })
 
       if (error) throw error
@@ -95,6 +95,7 @@ export function RefinancingOptionForm({
                     step="0.1"
                     min={interestRateLimits?.min_rate}
                     max={interestRateLimits?.max_rate}
+                    value={field.value || ""}
                   />
                 </FormControl>
                 <FormMessage />
@@ -157,6 +158,7 @@ export function RefinancingOptionForm({
                     type="number"
                     min={1}
                     max={30}
+                    value={field.value ?? ""}
                   />
                 </FormControl>
                 <FormMessage />
