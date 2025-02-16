@@ -53,9 +53,9 @@ export function RefinancingOptionForm({
         .from("refinancing_options")
         .insert({
           amortization_id: amortizationId,
-          new_interest_rate: values.new_interest_rate,
+          new_interest_rate: Number(values.new_interest_rate),
           effective_date: format(values.effective_date, 'yyyy-MM-dd'),
-          new_term_years: values.new_term_years,
+          new_term_years: values.new_term_years ? Number(values.new_term_years) : null,
         })
 
       if (error) throw error
