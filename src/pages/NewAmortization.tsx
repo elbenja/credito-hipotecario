@@ -181,9 +181,13 @@ export default function NewAmortization() {
       }}
     >
       <div>
-        <div className="space-y-6 px-8">
-          <h1 className="text-3xl font-bold">New Amortization</h1>
-          
+        <div className="flex items-center justify-between px-8 py-4">
+          <h1 className="text-2xl font-bold">New Amortization</h1>
+          </div>
+
+<Separator />
+
+<div className="space-y-6 px-8 pt-6">
           <div className="flex flex-col md:flex-row gap-6">
             {/* Left Container */}
             <div className="w-full md:w-[40%]">

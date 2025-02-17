@@ -46,7 +46,7 @@ export function EditableHeading({ value, onChange, className }: EditableHeadingP
         onBlur={handleSave}
         onKeyDown={handleKeyDown}
         className={cn(
-          "bg-transparent w-full px-0 text-3xl font-bold border-none outline-none focus:ring-0 focus:border-none",
+          "bg-transparent w-full px-0 text-2xl font-bold border-none outline-none focus:ring-0 focus:border-none",
           className
         )}
       />
@@ -58,7 +58,7 @@ export function EditableHeading({ value, onChange, className }: EditableHeadingP
       className={cn("group relative cursor-text", className)}
       onClick={() => setIsEditing(true)}
     >
-      <h1 className="text-3xl font-bold">{value}</h1>
+      <h1 className="text-2xl font-bold">{value}</h1>
       <Pencil className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 absolute -right-6 top-1/2 -translate-y-1/2 transition-opacity" />
     </div>
   )
