@@ -59,6 +59,7 @@ export function LoanDetails({
   const { data: exchangeRate } = useExchangeRate()
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
   const [isSuggested, setIsSuggested] = useState(false)
+  const [downPaymentPercent, setDownPaymentPercent] = useState(0)
 
   // Load bonus rules
   useEffect(() => {
@@ -171,6 +172,14 @@ export function LoanDetails({
     }
   }, [watchedFields, selectedProperty, isSuggested, form])
 
+  useEffect(() => {
+    if (selectedProperty) {
+      const downPayment = parseFloat(form.getValues("down_payment").replace(/[^0-9.]/g, ""))
+      const percent = (downPayment / selectedProperty.price_cost) * 100
+      setDownPaymentPercent(percent)
+    }
+  }, [selectedProperty, form])
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -215,29 +224,57 @@ export function LoanDetails({
         </div>
         
         {/* Down Payment */}
-        <FormField
-          control={form.control}
-          name="down_payment"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Down Payment</FormLabel>
-              <div className="flex gap-4 items-center">
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="down_payment"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Down Payment</FormLabel>
                 <FormControl>
-                  <CurrencyInput
+                  <Input 
+                    placeholder="Enter down payment..." 
                     {...field}
-                    currency={selectedProperty?.currency || "PEN"}
+                    onChange={(e) => {
+                      field.onChange(e)
+                      if (selectedProperty) {
+                        const downPayment = parseFloat(e.target.value.replace(/[^0-9.]/g, ""))
+                        const percent = (downPayment / selectedProperty.price_cost) * 100
+                        setDownPaymentPercent(percent)
+                      }
+                    }}
                   />
                 </FormControl>
-                {selectedProperty && (
-                  <Badge variant="outline">
-                    {downPaymentPercentage}%
-                  </Badge>
-                )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormItem>
+            <FormLabel>Property %</FormLabel>
+            <div className="relative">
+              <Input 
+                type="number"
+                value={downPaymentPercent.toFixed(0)}
+                onChange={(e) => {
+                  const newPercent = parseFloat(e.target.value)
+                  setDownPaymentPercent(newPercent)
+                  if (selectedProperty && !isNaN(newPercent)) {
+                    const newDownPayment = (selectedProperty.price_cost * newPercent / 100).toString()
+                    form.setValue("down_payment", newDownPayment)
+                  }
+                }}
+                min="0"
+                max="100"
+                step="1"
+                className="pr-8"
+              />
+              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted-foreground">
+                %
               </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            </div>
+          </FormItem>
+        </div>
 
         {/* Interest Rate and Term */}
         <div className="grid grid-cols-2 gap-4">

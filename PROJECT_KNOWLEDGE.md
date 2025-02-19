@@ -67,109 +67,91 @@ src/
 - Range 239,800-355,100: S/13,600
 
 ### 2. Amortization Tools
-- **Input Parameters**
-  - Down payment amount and percentage
-  - Interest rate configuration
-  - Flexible term selection (10-30 years)
-  - Multiple instalment frequency options
-  - Customizable first instalment date
 
-- **Calculation Outputs**
-  - Loan amount details
-  - Down payment percentage
-  - Total interest and insurance costs
-  - Complete payment summary
-  - Monthly instalment breakdown
+#### 2.1 Amortization Scenarios
 
-#### 2.1 Mortgage Strategy Comparison
+The Amortization view is split into two main panels:
 
-To give users more control over their mortgage payment strategy, we’ve added a dedicated comparison tool with four distinct options, each presented in a separate tab. This feature allows users to simulate how changes in extra payments or interest rates affect the overall cost, monthly installment, and total mortgage duration.
+**Left Panel (40% width)**
+- Property Information
+  - Property name and details
+  - Property value and currency
+  - First-home and sustainable status
+- Loan Details
+  - Down payment (amount and percentage)
+  - Interest rate with validation
+  - Term selection (10-30 years)
+  - Installments per year
+  - First installment date
+- Action Buttons
+  - Update/Save changes
+  - Cancel/Back to list
 
-Overview
-	•	Tab Names:
-	1.	Regular – Base mortgage with standard parameters
-	2.	Accelerated – Extra payments reduce the term while keeping the installment amount constant
-	3.	Lower Payment – Extra payments lower the installment amount while maintaining the original term
-	4.	New Rate – Adjusts the interest rate from a specified date
-	•	Key Metrics (displayed for each tab):
-	•	Sum Interest & Insurances: Total interest plus any insurance costs over the life of the loan
-	•	Months: The total number of months until the mortgage is fully paid
-	•	Monthly Pay: The resulting monthly installment (which may be reduced or remain constant, depending on the chosen strategy)
-	•	Interactive Graph:
-	•	A line chart that shows the remaining balance over time
-	•	Visual indicators of where extra payments or interest rate changes are applied
-	•	Helps users understand how each strategy affects the principal, interest, and overall payment timeline
+**Right Panel (60% width)**
+- Four payment scenarios displayed as tabs:
+  1. Regular
+  2. Accelerated
+  3. Lower Payment
+  4. New Rate
 
-User Flow
-	1.	Select a Tab
-Users click on one of the four tabs (Regular, Accelerated, Lower Payment, or New Rate) to explore different strategies.
-	2.	Review Summary
-At the top of each tab, a concise summary is displayed:
-	•	Sum Interest & Insurances
-	•	Months
-	•	Monthly Pay
-	3.	Analyze the Graph
-A dynamic chart updates to show how the mortgage balance decreases over time under the selected strategy. For example, large extra payments will create visible “steps” in the amortization curve.
-	4.	Adjust Parameters
-	•	Accelerated / Lower Payment Tabs:
-	•	Add one or more extra installments, specifying the amount, frequency (monthly or one-time), and start date.
-	•	The table below the graph lists each extra installment for clarity.
-	•	New Rate Tab:
-	•	Set a new interest rate, the effective date, and optionally adjust the term.
-	•	The chart and summary recalculate to show how this affects total costs and monthly installments.
-	5.	Compare Outcomes
-Users can switch between tabs to quickly compare how each strategy impacts the total interest, total months, and monthly payments.
+**Each Scenario Tab Contains:**
+1. Description
+   - Regular: "Base mortgage with standard parameters"
+   - Accelerated: "Extra payments reduce the term, installment remains constant"
+   - Lower Payment: "Extra payments reduce the monthly payment, term remains the same"
+   - New Rate: "Adjusts the interest rate (and optionally term) from a specified date"
 
-Design Details
-	•	Tabs
-	•	Regular: Base scenario with no extra payments or rate changes.
-	•	Accelerated:
-	•	Users add extra payments that shorten the total duration.
-	•	The monthly installment remains at its original amount.
-	•	Lower Payment:
-	•	Users add extra payments that lower the monthly installment.
-	•	The total duration remains the same as the base term.
-	•	New Rate:
-	•	Users can specify a new interest rate and the date it becomes effective.
-	•	The amortization schedule recalculates from that point forward.
-	•	Extra Installment Table
-	•	Displays a list of each extra payment, its amount, date, and whether it’s one-time or monthly.
-	•	Users can add or remove rows dynamically.
-	•	Graphical Representation
-	•	The y-axis shows monetary values (remaining balance).
-	•	The x-axis shows time in months (or years, depending on the user’s preference).
-	•	Each significant change—like an extra payment or interest rate adjustment—creates a noticeable inflection point in the curve.
+2. Summary Metrics
+   - Sum Interest & Insurances: Total cost of interest and insurance over the loan term
+   - Months: Total duration of the mortgage in months
+   - Monthly Pay: Regular installment amount
 
-Example UI Flow 
-	1.	Regular Tab
-	•	Shows the base monthly payment (e.g., $691.44), total months (360), and total interest & insurance.
-	•	A smooth curve illustrating principal decline over 30 years.
-	2.	Accelerated Tab
-	•	User adds extra installments (e.g., $500 monthly starting Feb 2025, $20,000 once in Mar 2025, etc.).
-	•	The summary updates to reflect a shortened mortgage duration (e.g., 324 months instead of 360) while keeping the monthly pay the same.
-	•	The graph shows multiple “steps” where the principal drops more sharply.
-	3.	Lower Payment Tab
-	•	Similar extra installments, but the term remains 360 months.
-	•	The monthly payment decreases (e.g., from $691.44 to $550.00).
-	•	The graph still shows “steps,” but the endpoint in months remains the same.
-	4.	New Rate Tab
-	•	Users enter a new interest rate (e.g., 7%), the new mortgage term in years and the date it becomes effective.
-	•	Optionally adjust the term if desired.
-	•	The summary updates the monthly pay and total interest accordingly, and the graph shows a change in slope after the specified date.
+3. Payment Breakdown Graph
+   - Type: Stacked area chart
+   - X-axis: Years (0 to term)
+   - Y-axis: Payment amount
+   - Areas:
+     - Principal (green)
+     - Interest (red)
+   - Features:
+     - Interactive tooltips showing monthly breakdown
+     - 5-year interval markers
+     - Grid lines for better readability
 
-Implementation Notes
-	•	Amortization Logic
-	•	Each tab uses a variant of the standard amortization calculation, but with extra conditions for additional payments or a changed interest rate.
-	•	State Management
-	•	React Context or local state can store the mortgage parameters, extra installment data, and interest rate changes.
-	•	Each tab triggers recalculations and re-renders the chart and summary.
-	•	UI Components
-	•	Tabs: Implemented using ShadCN UI’s Tabs component or a custom solution.
-	•	Tables: A dynamic table for listing extra installments (editable rows).
-	•	Chart: A line chart library (e.g., Recharts, Chart.js, or D3) that updates based on user input.
+4. Summary Statistics (below graph)
+   - Total Interest: Cumulative interest over the loan term
+   - Average Principal Payment: Mean principal portion of payments
 
-By providing these four distinct strategies in a tabbed layout, CreditoHipotecar.io gives users a clear, side-by-side comparison of how different mortgage approaches can affect total interest, monthly payments, and overall loan duration.
+**Mobile Responsiveness:**
+- On mobile devices (<768px):
+  - Left panel takes full width
+  - Right panel becomes a slide-in panel
+  - "View Payment Details" button to toggle panel visibility
+  - Back button to return to loan details
 
+**Interaction Flow:**
+1. User selects a scenario tab
+2. Summary metrics update instantly
+3. Graph refreshes to show the selected payment strategy
+4. For Accelerated/Lower Payment tabs:
+   - Extra payment form appears
+   - Table of scheduled extra payments
+5. For New Rate tab:
+   - Interest rate adjustment form
+   - New term selection (optional)
+
+**Data Updates:**
+- All changes in the left panel (loan details) trigger recalculation of:
+  - Loan amount
+  - Monthly payments
+  - Interest totals
+  - Graph data points
+- Each scenario maintains its own state for:
+  - Extra payments (Accelerated/Lower)
+  - Rate changes (New Rate)
+  - Payment schedule
+
+This layout provides a clear comparison between different payment strategies while maintaining all loan details easily accessible in the left panel.
 
 ### 3. Rental Management (Coming Soon)
 - **Income Tracking**

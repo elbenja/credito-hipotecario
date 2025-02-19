@@ -2,6 +2,10 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { PaymentSummary } from "@/components/amortizations/payment-summary"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { PaymentChart } from "./payment-chart"
+import { Separator } from "@/components/ui/separator"
 
 interface PaymentDetails {
   totalInterestAndInsurance: number
@@ -20,6 +24,9 @@ interface PaymentScenariosProps {
   onCloseMobilePanel?: () => void
   onOpenMobilePanel?: () => void
   currency: "USD" | "PEN"
+  loanAmount: number
+  annualInterestRate: number
+  termYears: number
 }
 
 export function PaymentScenariosPanel({
@@ -27,7 +34,10 @@ export function PaymentScenariosPanel({
   showMobileDetails,
   onCloseMobilePanel,
   onOpenMobilePanel,
-  currency
+  currency,
+  loanAmount,
+  annualInterestRate,
+  termYears
 }: PaymentScenariosProps) {
   const content = (
     <>
@@ -41,36 +51,66 @@ export function PaymentScenariosPanel({
         </TabsList>
         <TabsContent value="regular" className="mt-4">
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Base mortgage with standard parameters.
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Base mortgage with standard parameters.
+              </p>
+              <div className="flex items-center space-x-2">
+                <Switch id="regular-select" />
+                <Label htmlFor="regular-select">Select</Label>
+              </div>
+            </div>
             <PaymentSummary {...paymentDetails.regular} currency={currency} />
-            {/* Payment schedule will go here */}
+            <Separator className="my-4" />
+            <PaymentChart 
+              loanAmount={Number(loanAmount)}
+              annualInterestRate={Number(annualInterestRate)}
+              termYears={Number(termYears)}
+              currency={currency}
+            />
           </div>
         </TabsContent>
         <TabsContent value="accelerated" className="mt-4">
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Extra payments reduce the term, installment remains constant.
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Extra payments reduce the term, installment remains constant.
+              </p>
+              <div className="flex items-center space-x-2">
+                <Switch id="accelerated-select" />
+                <Label htmlFor="accelerated-select">Select</Label>
+              </div>
+            </div>
             <PaymentSummary {...paymentDetails.accelerated} currency={currency} />
             {/* Accelerated payment schedule will go here */}
           </div>
         </TabsContent>
         <TabsContent value="lower" className="mt-4">
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Extra payments reduce the monthly payment, term remains the same.
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Extra payments reduce the monthly payment, term remains the same.
+              </p>
+              <div className="flex items-center space-x-2">
+                <Switch id="lower-select" />
+                <Label htmlFor="lower-select">Select</Label>
+              </div>
+            </div>
             <PaymentSummary {...paymentDetails.lower} currency={currency} />
             {/* Lower payment schedule will go here */}
           </div>
         </TabsContent>
         <TabsContent value="new-rate" className="mt-4">
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Adjusts the interest rate (and optionally term) from a specified date.
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Adjusts the interest rate (and optionally term) from a specified date.
+              </p>
+              <div className="flex items-center space-x-2">
+                <Switch id="new-rate-select" />
+                <Label htmlFor="new-rate-select">Select</Label>
+              </div>
+            </div>
             <PaymentSummary {...paymentDetails.newRate} currency={currency} />
             {/* New rate payment schedule will go here */}
           </div>
