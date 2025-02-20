@@ -385,10 +385,10 @@ export default function EditAmortization() {
 
         <Separator />
 
-        <div className="space-y-6 px-8 pt-6">
+        <div className="space-y-6 ">
           <div className="flex flex-col md:flex-row gap-6">
             {/* Left Container */}
-            <div className="w-full md:w-[40%]">
+            <div className="w-full md:w-[40%] px-8 pt-6">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <FormItem>

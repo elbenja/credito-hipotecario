@@ -70,12 +70,12 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-[1fr_1fr_1fr_84px] gap-4">
           <FormField
             control={form.control}
             name="amount"
             render={({ field }) => (
-              <FormItem className="col-span-1">
+              <FormItem>
                 <FormLabel>Amount</FormLabel>
                 <FormControl>
                   <div className="relative">
@@ -108,7 +108,7 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
             control={form.control}
             name="frequency"
             render={({ field }) => (
-              <FormItem className="col-span-1">
+              <FormItem>
                 <FormLabel>Frequency</FormLabel>
                 <Select
                   value={field.value}
@@ -133,7 +133,7 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
             control={form.control}
             name="start_date"
             render={({ field }) => (
-              <FormItem className="col-span-1">
+              <FormItem>
                 <FormLabel>First Date</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -175,8 +175,7 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
             type="submit" 
             disabled={isLoading}
             variant="outline"
-           
-            className="self-end px-3"
+            className="self-end px-3 w-[84px]"
           >
             <Plus className="h-4 w-4" />
             Add
