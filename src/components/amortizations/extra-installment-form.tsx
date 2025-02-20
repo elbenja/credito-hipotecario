@@ -1,7 +1,6 @@
-
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, Plus } from "lucide-react"
 import { format } from "date-fns"
 
 import {
@@ -28,109 +27,161 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-import {
-  extraInstallmentFormSchema,
-  defaultValues,
-  type ExtraInstallmentFormValues,
-} from "./extra-installment-schema"
+import { z } from "zod"
+import { formatCurrency, cn, formatDate } from "@/lib/utils"
 
-type ExtraInstallmentFormProps = {
+const extraInstallmentSchema = z.object({
+  amount: z.string()
+    .min(1, "Amount is required")
+    .refine((val) => {
+      const amount = parseFloat(val.replace(/[^0-9.]/g, ""))
+      return !isNaN(amount) && amount > 0
+    }, "Amount must be greater than 0"),
+  frequency: z.enum(["monthly", "one-time"]),
+  start_date: z.date({
+    required_error: "Start date is required",
+  }),
+})
+
+type ExtraInstallmentFormValues = z.infer<typeof extraInstallmentSchema>
+
+interface ExtraInstallmentFormProps {
   onSubmit: (values: ExtraInstallmentFormValues) => void
   isLoading?: boolean
+  loanAmount: number
+  currency: "USD" | "PEN"
 }
 
-export function ExtraInstallmentForm({ onSubmit, isLoading }: ExtraInstallmentFormProps) {
+export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency }: ExtraInstallmentFormProps) {
   const form = useForm<ExtraInstallmentFormValues>({
-    resolver: zodResolver(extraInstallmentFormSchema),
-    defaultValues,
+    resolver: zodResolver(extraInstallmentSchema),
+    defaultValues: {
+      amount: "",
+      frequency: "one-time",
+      start_date: new Date(),
+    },
   })
+
+  const handleSubmit = (values: ExtraInstallmentFormValues) => {
+    onSubmit(values)
+    form.reset()
+  }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter amount..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <div className="grid grid-cols-4 gap-4">
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem className="col-span-1">
+                <FormLabel>Amount</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Input 
+                      placeholder="0"
+                      className="pl-8"
+                      {...field}
+                      onChange={(e) => {
+                        // Remove any non-numeric characters except decimal point
+                        const value = e.target.value.replace(/[^0-9.]/g, "")
+                        // Ensure only one decimal point
+                        const parts = value.split('.')
+                        const formattedValue = parts.length > 1 
+                          ? `${parts[0]}.${parts.slice(1).join('')}`
+                          : value
+                        field.onChange(formattedValue)
+                      }}
+                    />
+                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
+                      {currency === "USD" ? "$" : "S/"}
+                    </div>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <div className="space-y-2">
-            <FormField
-              control={form.control}
-              name="frequency"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Frequency</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={(value: 'monthly' | 'one-time') => field.onChange(value)}
-                  >
+          <FormField
+            control={form.control}
+            name="frequency"
+            render={({ field }) => (
+              <FormItem className="col-span-1">
+                <FormLabel>Frequency</FormLabel>
+                <Select
+                  value={field.value}
+                  onValueChange={(value: "monthly" | "one-time") => field.onChange(value)}
+                >
+                  <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select frequency" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="one-time">One-time</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="one-time">Once</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <div className="space-y-2">
-            <FormField
-              control={form.control}
-              name="start_date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Start Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
+          <FormField
+            control={form.control}
+            name="start_date"
+            render={({ field }) => (
+              <FormItem className="col-span-1">
+                <FormLabel>First Date</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
                       <Button
                         variant="outline"
-                        className={`w-full justify-start text-left font-normal ${
+                        className={cn(
+                          "w-full justify-start text-left font-normal form-control-focus",
                           !field.value && "text-muted-foreground"
-                        }`}
+                        )}
                       >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {field.value ? format(field.value, "PPP") : "Pick a date"}
+                        {field.value ? (
+                          formatDate(field.value)
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date < new Date()
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) =>
+                        date < new Date()
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Adding..." : "Add Extra Installment"}
-        </Button>
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            variant="outline"
+           
+            className="self-end px-3"
+          >
+            <Plus className="h-4 w-4" />
+            Add
+          </Button>
+        </div>
       </form>
     </Form>
   )

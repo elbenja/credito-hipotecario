@@ -436,6 +436,7 @@ export default function EditAmortization() {
               loanAmount={amortization.property.price_cost - parseFloat(form.getValues("down_payment"))}
               annualInterestRate={parseFloat(form.getValues("interest_rate"))}
               termYears={parseInt(form.getValues("term_years"))}
+              amortizationId={id || ""}
             />
           </div>
         </div>

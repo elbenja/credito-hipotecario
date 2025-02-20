@@ -69,11 +69,9 @@ function calculateAmortizationData(
 }
 
 export function PaymentChart({ loanAmount, annualInterestRate, termYears, currency }: PaymentChartProps) {
-  console.log('PaymentChart props:', { loanAmount, annualInterestRate, termYears, currency })
-  const chartData = calculateAmortizationData(loanAmount, annualInterestRate, termYears)
-  console.log('Chart data:', chartData)
-
-  if (!chartData.length) {
+  // Validate inputs before calculation
+  if (!loanAmount || !annualInterestRate || !termYears || 
+      isNaN(loanAmount) || isNaN(annualInterestRate) || isNaN(termYears)) {
     return (
       <div className="space-y-4">
         <div className="space-y-1">
@@ -86,6 +84,8 @@ export function PaymentChart({ loanAmount, annualInterestRate, termYears, curren
     )
   }
 
+  const chartData = calculateAmortizationData(loanAmount, annualInterestRate, termYears)
+
   return (
     <div className="space-y-4">
       <div className="space-y-1">
@@ -95,7 +95,7 @@ export function PaymentChart({ loanAmount, annualInterestRate, termYears, curren
         </p>
       </div>
 
-      <div className="h-[300px]">
+      <div className="relative aspect-[2/1] w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={chartData}

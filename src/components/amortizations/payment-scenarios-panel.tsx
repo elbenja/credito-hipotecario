@@ -6,6 +6,8 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { PaymentChart } from "./payment-chart"
 import { Separator } from "@/components/ui/separator"
+import { ExtraInstallmentsSection } from "./extra-installments-section"
+import { useState } from "react"
 
 interface PaymentDetails {
   totalInterestAndInsurance: number
@@ -27,6 +29,7 @@ interface PaymentScenariosProps {
   loanAmount: number
   annualInterestRate: number
   termYears: number
+  amortizationId: string
 }
 
 export function PaymentScenariosPanel({
@@ -37,8 +40,17 @@ export function PaymentScenariosPanel({
   currency,
   loanAmount,
   annualInterestRate,
-  termYears
+  termYears,
+  amortizationId
 }: PaymentScenariosProps) {
+  const [chartKey, setChartKey] = useState(0)
+  const handleInstallmentsChange = () => {
+    // Increment chart key to force re-render with new data
+    setChartKey(prev => prev + 1)
+    // TODO: Recalculate payment details based on extra installments
+    console.log("Extra installments changed")
+  }
+
   const content = (
     <>
       <h2 className="text-xl font-semibold mb-4">Payment Scenarios</h2>
@@ -63,6 +75,7 @@ export function PaymentScenariosPanel({
             <PaymentSummary {...paymentDetails.regular} currency={currency} />
             <Separator className="my-4" />
             <PaymentChart 
+              key={`regular-${chartKey}`}
               loanAmount={Number(loanAmount)}
               annualInterestRate={Number(annualInterestRate)}
               termYears={Number(termYears)}
@@ -82,7 +95,22 @@ export function PaymentScenariosPanel({
               </div>
             </div>
             <PaymentSummary {...paymentDetails.accelerated} currency={currency} />
-            {/* Accelerated payment schedule will go here */}
+            <Separator className="my-4" />
+            <PaymentChart 
+              key={`accelerated-${chartKey}`}
+              loanAmount={Number(loanAmount)}
+              annualInterestRate={Number(annualInterestRate)}
+              termYears={Number(termYears)}
+              currency={currency}
+            />
+            {amortizationId && (
+              <ExtraInstallmentsSection
+                amortizationId={amortizationId}
+                currency={currency}
+                loanAmount={loanAmount}
+                onInstallmentsChange={handleInstallmentsChange}
+              />
+            )}
           </div>
         </TabsContent>
         <TabsContent value="lower" className="mt-4">
@@ -97,7 +125,22 @@ export function PaymentScenariosPanel({
               </div>
             </div>
             <PaymentSummary {...paymentDetails.lower} currency={currency} />
-            {/* Lower payment schedule will go here */}
+            <Separator className="my-4" />
+            <PaymentChart 
+              key={`lower-${chartKey}`}
+              loanAmount={Number(loanAmount)}
+              annualInterestRate={Number(annualInterestRate)}
+              termYears={Number(termYears)}
+              currency={currency}
+            />
+            {amortizationId && (
+              <ExtraInstallmentsSection
+                amortizationId={amortizationId}
+                currency={currency}
+                loanAmount={loanAmount}
+                onInstallmentsChange={handleInstallmentsChange}
+              />
+            )}
           </div>
         </TabsContent>
         <TabsContent value="new-rate" className="mt-4">
