@@ -7,7 +7,12 @@ import { Label } from "@/components/ui/label"
 import { PaymentChart } from "./payment-chart"
 import { Separator } from "@/components/ui/separator"
 import { ExtraInstallmentsSection } from "./extra-installments-section"
+import { NewRateForm } from "./new-rate-form"
 import { useState } from "react"
+import { Input } from "@/components/ui/input"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { Calendar, CalendarIcon } from "@/components/ui/calendar"
 
 interface PaymentDetails {
   totalInterestAndInsurance: number
@@ -44,11 +49,15 @@ export function PaymentScenariosPanel({
   amortizationId
 }: PaymentScenariosProps) {
   const [chartKey, setChartKey] = useState(0)
+  const [selectedNewRate, setSelectedNewRate] = useState(false)
+  
   const handleInstallmentsChange = () => {
-    // Increment chart key to force re-render with new data
     setChartKey(prev => prev + 1)
-    // TODO: Recalculate payment details based on extra installments
-    console.log("Extra installments changed")
+  }
+
+  const handleNewRateSuccess = () => {
+    setChartKey(prev => prev + 1)
+    // TODO: Recalculate payment details with new rate
   }
 
   const content = (
@@ -150,12 +159,32 @@ export function PaymentScenariosPanel({
                 Adjusts the interest rate (and optionally term) from a specified date.
               </p>
               <div className="flex items-center space-x-2">
-                <Switch id="new-rate-select" />
+                <Switch 
+                  id="new-rate-select" 
+                  checked={selectedNewRate}
+                  onCheckedChange={setSelectedNewRate}
+                />
                 <Label htmlFor="new-rate-select">Select</Label>
               </div>
             </div>
+            
+           
+
             <PaymentSummary {...paymentDetails.newRate} currency={currency} />
-            {/* New rate payment schedule will go here */}
+            <Separator className="my-4" />
+            <PaymentChart 
+              key={`new-rate-${chartKey}`}
+              loanAmount={Number(loanAmount)}
+              annualInterestRate={Number(annualInterestRate)}
+              termYears={Number(termYears)}
+              currency={currency}
+            />
+            
+             <NewRateForm 
+              amortizationId={amortizationId}
+              onSuccess={handleNewRateSuccess}
+              className="mb-6"
+            />
           </div>
         </TabsContent>
       </Tabs>
