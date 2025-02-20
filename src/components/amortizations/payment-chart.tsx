@@ -12,11 +12,17 @@ interface PaymentChartProps {
 const chartConfig = {
   principal: {
     label: "Principal",
-    color: "hsl(142, 76%, 36%)", // Green color
+    theme: {
+      light: "hsl(220, 13%, 91%)", // Gray-200
+      dark: "hsl(215, 25%, 27%)",  // Gray-600 for dark mode
+    },
   },
   interest: {
     label: "Interest",
-    color: "hsl(346, 77%, 49%)", // Red color
+    theme: {
+      light: "hsl(217, 19%, 27%)", // Gray-700
+      dark: "hsl(215, 20%, 65%)",  // Gray-400 for dark mode
+    },
   },
 } satisfies ChartConfig
 
@@ -144,17 +150,19 @@ export function PaymentChart({ loanAmount, annualInterestRate, termYears, curren
               dataKey="interest"
               type="monotone"
               stackId="1"
-              stroke={chartConfig.interest.color}
-              fill={chartConfig.interest.color}
-              fillOpacity={0.4}
+              stroke="currentColor"
+              fill="currentColor"
+              fillOpacity={0.6}
+              className="[--color-interest:var(--color-interest)]"
             />
             <Area
               dataKey="principal"
               type="monotone"
               stackId="1"
-              stroke={chartConfig.principal.color}
-              fill={chartConfig.principal.color}
+              stroke="currentColor"
+              fill="currentColor"
               fillOpacity={0.4}
+              className="[--color-principal:var(--color-principal)]"
             />
           </AreaChart>
         </ResponsiveContainer>
