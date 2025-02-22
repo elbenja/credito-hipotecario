@@ -153,6 +153,64 @@ The Amortization view is split into two main panels:
 
 This layout provides a clear comparison between different payment strategies while maintaining all loan details easily accessible in the left panel.
 
+#### 2.2 Loan Protection Insurance
+
+##### Overview
+The Loan Protection Insurance is calculated and managed at the amortization level rather than the property level, as it depends on the loan amount after down payment.
+
+##### Insurance Types
+Four options are available:
+1. **Individual** (0.028% of loan amount)
+2. **Joint** (0.052% of loan amount)
+3. **None** (0)
+4. **Custom** (user-defined amount)
+
+##### Database Structure
+
+**Amortizations Table Extensions:**
+```sql
+ALTER TABLE amortizations ADD COLUMN
+  loan_protection_insurance DECIMAL,
+  loan_protection_type TEXT CHECK (loan_protection_type IN ('individual', 'joint', 'none', 'custom'))
+```
+
+**Insurance Rates Table:**
+```sql
+CREATE TABLE IF NOT EXISTS insurance_rates (
+  id SERIAL PRIMARY KEY,
+  type TEXT NOT NULL,  -- 'individual' or 'joint'
+  percentage NUMERIC(6,5) NOT NULL,
+  effective_year INT NOT NULL
+)
+```
+
+##### Calculation Logic
+- **Base Loan Amount** = Property Cost – Down Payment (minus applicable bonuses)
+- **Monthly Insurance Cost:**
+  - Individual: loan_amount * (0.028 / 100)
+  - Joint: loan_amount * (0.052 / 100)
+  - None: 0
+  - Custom: User-specified amount
+
+##### UI Implementation
+- Located under "Basics" section in Amortization interface
+- Insurance type selector (dropdown)
+- Dynamic amount field:
+  - Read-only for Individual/Joint (calculated)
+  - Zero for None
+  - Editable for Custom
+- Real-time updates on type change or custom amount entry
+- Integrated into monthly payment breakdown and total cost calculations
+
+##### Data Management
+- Insurance rates stored separately for easy updates
+- Rates can be managed per year
+- Calculations use current year's rates by default
+- Monthly insurance cost included in:
+  - Payment schedule
+  - Total cost calculations
+  - Summary statistics
+
 ### 3. Rental Management (Coming Soon)
 - **Income Tracking**
   - Market rent price monitoring
