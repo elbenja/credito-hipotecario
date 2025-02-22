@@ -152,8 +152,8 @@ export default function EditAmortization() {
         term_years: amortization.term_years.toString(),
         installments_per_year: amortization.installments_per_year.toString(),
         first_installment_date: new Date(amortization.first_installment_date),
-        loan_protection_type: amortization.loan_protection_type || "none",
-        loan_protection_insurance: amortization.loan_protection_insurance?.toString() || "0",
+        loan_protection_type: "none",
+        loan_protection_insurance: "0",
       }, {
         keepDefaultValues: true
       })

@@ -26,26 +26,25 @@ export function ExtraInstallmentsTable({
       <table className="w-full">
         <thead>
           <tr className="border-b bg-muted/50">
-            <th className="p-2 text-left font-medium">#</th>
-            <th className="p-2 text-left font-medium">Amount</th>
-            <th className="p-2 text-left font-medium">Frequency</th>
-            <th className="p-2 text-left font-medium">Date</th>
-            <th className="p-2 text-left font-medium w-[50px]"></th>
+            <th className="p-2 text-left font-medium text-xs text-muted-foreground">#</th>
+            <th className="p-2 text-left font-medium text-xs text-muted-foreground">Amount</th>
+            <th className="p-2 text-left font-medium text-xs text-muted-foreground">Frequency</th>
+            <th className="p-2 text-left font-medium text-xs text-muted-foreground">Date</th>
+            <th className="p-2 text-left font-medium w-[50px] text-xs text-muted-foreground"></th>
           </tr>
         </thead>
         <tbody>
           {installments.map((installment, index) => (
             <tr key={installment.id} className="border-b last:border-none">
-              <td className="p-2">{index + 1}</td>
-              <td className="p-2">{formatCurrency(installment.amount, currency)}</td>
-              <td className="p-2 capitalize">{installment.frequency === "one-time" ? "Once" : installment.frequency}</td>
-              <td className="p-2">{formatDate(new Date(installment.start_date))}</td>
+              <td className="p-2 text-sm">{index + 1}</td>
+              <td className="p-2 text-sm">{formatCurrency(installment.amount, currency)}</td>
+              <td className="p-2 capitalize text-sm">{installment.frequency === "one-time" ? "Once" : installment.frequency}</td>
+              <td className="p-2 text-sm">{formatDate(new Date(installment.start_date))}</td>
               <td className="p-2">
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onDelete(installment.id)}
                   className="h-8 w-8"
+                  variant="ghost"
+                  onClick={() => onDelete(installment.id)}
                 >
                   <Trash2 className="h-4 w-4 text-muted-foreground" />
                 </Button>

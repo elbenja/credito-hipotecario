@@ -187,7 +187,7 @@ export function LoanDetails({
   const calculateInsuranceAmount = (type: string, amount: number) => {
     if (!insuranceRates || !amount) return 0
     
-    const rate = insuranceRates.find(r => r.type === type)
+    const rate = insuranceRates.find((r) => r.type === type)
     if (!rate) {
       console.warn(`No rate found for type ${type}, using default`)
       // Use default rates if not found in table
