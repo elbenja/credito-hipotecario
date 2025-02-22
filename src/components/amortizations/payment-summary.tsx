@@ -1,6 +1,6 @@
 import { formatCurrency } from "@/lib/utils"
 
-interface PaymentSummaryProps {
+type PaymentSummaryProps = {
   totalInterestAndInsurance: number
   totalMonths: number
   monthlyPayment: number
@@ -11,33 +11,33 @@ export function PaymentSummary({
   totalInterestAndInsurance,
   totalMonths,
   monthlyPayment,
-  currency,
+  currency
 }: PaymentSummaryProps) {
   return (
-    <div className="grid grid-cols-10 gap-1 p-2 bg-white/50 rounded-lg">
-      <div className="col-span-5 space-y-2">
-        <h3 className="text-sm font-medium text-muted-foreground">
+    <div className="grid gap-4">
+      <div className="grid gap-1">
+        <div className="text-sm font-medium text-muted-foreground">
           Sum Interest & Insurances
-        </h3>
-        <p className="text-2xl font-bold tracking-tight">
+        </div>
+        <div className="text-2xl font-bold">
           {formatCurrency(totalInterestAndInsurance, currency)}
-        </p>
+        </div>
       </div>
-      <div className="col-span-2 space-y-2">
-        <h3 className="text-sm font-medium text-muted-foreground">
+      <div className="grid gap-1">
+        <div className="text-sm font-medium text-muted-foreground">
           Months
-        </h3>
-        <p className="text-2xl font-bold tracking-tight">
+        </div>
+        <div className="text-2xl font-bold">
           {totalMonths}
-        </p>
+        </div>
       </div>
-      <div className="col-span-3 space-y-2">
-        <h3 className="text-sm font-medium text-muted-foreground">
+      <div className="grid gap-1">
+        <div className="text-sm font-medium text-muted-foreground">
           Monthly Pay
-        </h3>
-        <p className="text-2xl font-bold tracking-tight">
+        </div>
+        <div className="text-2xl font-bold">
           {formatCurrency(monthlyPayment, currency)}
-        </p>
+        </div>
       </div>
     </div>
   )

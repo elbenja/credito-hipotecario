@@ -259,7 +259,27 @@ For component-specific implementation details, refer to:
      - Date pickers
    - Ensures clear and concise date representation while maintaining consistency
 
-2. **Badge Styling**
+2. **Currency Formatting**
+   - Standardized money representation across the application
+   - Format: "[Symbol] [Amount with thousands separator and 2 decimal places]"
+   - Examples:
+     - PEN: "S/. 1,234.56"
+     - USD: "$1,234.56"
+   - Implementation details:
+     - Centralized `formatCurrency` utility function
+     - Handles both string and number inputs
+     - Defaults to PEN if no currency specified
+     - Always shows 2 decimal places
+     - Uses comma as thousands separator
+   - Used consistently in:
+     - Form inputs
+     - Payment summaries
+     - Insurance calculations
+     - Loan amounts
+     - Monthly payments
+   - Ensures professional and consistent monetary value display
+
+3. **Badge Styling**
    - All badges use `rounded-md` instead of fully rounded corners
    - Consistent with the application's modern, clean design language
    - Applied to:
@@ -269,17 +289,17 @@ For component-specific implementation details, refer to:
    - Maintains visual harmony with other UI elements that use `rounded-md`
    - Implemented through the base `badgeVariants` in the Badge component
 
-3. **Colors**
+4. **Colors**
    - Brand color: HSL(41, 89%, 61%)
    - Accent colors for interactive elements
    - Consistent use of color variables
 
-4. **Typography**
+5. **Typography**
    - System font stack
    - Consistent text sizes using Tailwind classes
    - Responsive text scaling
 
-5. **Focus States**
+6. **Focus States**
    - Clean 3px ring in brand color without offset for all focus states
    - Consistent focus styling across all interactive elements:
      - Form inputs

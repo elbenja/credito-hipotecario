@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { UseFormReturn } from "react-hook-form"
 import { AmortizationFormValues } from "./schema"
 import { Property } from "./property-select"
-import { cn, formatDate } from "@/lib/utils"
+import { cn, formatDate, formatCurrency } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { CalendarIcon, PlayCircle, Check } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
@@ -207,8 +207,7 @@ export function LoanDetails({
       <div className="space-y-2">
         <div className="text-sm font-medium text-muted-foreground">Loan Amount</div>
         <div className="text-3xl font-bold">
-          {selectedProperty?.currency === "USD" ? "$" : "S/"}{" "}
-          {Math.round(loanAmount).toLocaleString()}
+          {formatCurrency(Math.round(loanAmount), selectedProperty?.currency || "PEN")}
         </div>
         <div className="text-sm text-muted-foreground">
           = Property Cost - First Home Bonus - Down Payment
@@ -254,13 +253,14 @@ export function LoanDetails({
               <FormItem>
                 <FormLabel>Down Payment</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="Enter down payment..." 
+                  <CurrencyInput
+                    placeholder="Enter down payment"
+                    currency={selectedProperty?.currency || "PEN"}
                     {...field}
-                    onChange={(e) => {
-                      field.onChange(e)
+                    onChange={(value) => {
+                      field.onChange(value)
                       if (selectedProperty) {
-                        const downPayment = parseFloat(e.target.value.replace(/[^0-9.]/g, ""))
+                        const downPayment = parseFloat(value.replace(/[^0-9.]/g, "") || "0")
                         const percent = (downPayment / selectedProperty.price_cost) * 100
                         setDownPaymentPercent(percent)
                       }
@@ -298,8 +298,8 @@ export function LoanDetails({
           </FormItem>
         </div>
         
-  {/* Loan Protection Insurance */}
-  <div className="grid grid-cols-2 gap-4">
+        {/* Loan Protection Insurance */}
+        <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="loan_protection_type"
@@ -308,7 +308,6 @@ export function LoanDetails({
                 <FormLabel>Loan Protection Insurance</FormLabel>
                 <Select 
                   onValueChange={(value) => {
-                    console.log('Insurance type changed:', value);
                     field.onChange(value);
                     // If type is none, ensure insurance amount is 0
                     if (value === 'none') {
@@ -349,12 +348,6 @@ export function LoanDetails({
               let calculatedValue = "0"
               if (insuranceType === "individual" || insuranceType === "joint") {
                 calculatedValue = calculateInsuranceAmount(insuranceType, loanAmount).toFixed(2)
-                console.log('Calculated insurance:', {
-                  type: insuranceType,
-                  loanAmount,
-                  rate: insuranceRates?.find(r => r.type === insuranceType)?.percentage,
-                  calculatedValue
-                })
               }
 
               // Update the insurance amount when type or loan amount changes
@@ -370,27 +363,18 @@ export function LoanDetails({
                 <FormItem>
                   <FormLabel>Monthly Insurance Cost</FormLabel>
                   <FormControl>
-                    <div className="relative">
-                      <Input
-                        {...field}
-                        type="number"
-                        step="0.01"
-                        disabled={!isCustom}
-                        value={isCustom ? field.value : calculatedValue}
-                        onChange={(e) => {
-                          if (isCustom) {
-                            field.onChange(e.target.value)
-                          }
-                        }}
-                        className={cn(
-                          "pr-12",
-                          !isCustom && "text-muted-foreground"
-                        )}
-                      />
-                      <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted-foreground">
-                        {selectedProperty?.currency}
-                      </div>
-                    </div>
+                    <CurrencyInput
+                      {...field}
+                      disabled={!isCustom}
+                      value={isCustom ? field.value : calculatedValue}
+                      currency={selectedProperty?.currency || "PEN"}
+                      onChange={(value) => {
+                        if (isCustom) {
+                          field.onChange(value)
+                        }
+                      }}
+                      className={cn(!isCustom && "text-muted-foreground")}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -533,10 +517,6 @@ export function LoanDetails({
             )}
           />
         </div>
-
-      
-
-
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-import { clsx, type ClassValue } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { format } from "date-fns"
 
@@ -6,19 +6,24 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const formatCurrency = (amount: number, currency: string, options: { decimals?: number } = {}) => {
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency === 'PEN' ? 'PEN' : 'USD',
-    currencyDisplay: 'symbol',
-    minimumFractionDigits: options.decimals ?? 2,
-    maximumFractionDigits: options.decimals ?? 2,
-  })
-  
-  const formatted = formatter.format(amount)
-  return currency === 'PEN' ? formatted.replace('PEN', 'S/') : formatted
+export function formatDate(date: Date) {
+  return format(date, "MMM d, yyyy")
 }
 
-export const formatDate = (date: Date) => {
-  return format(date, "MMM d, yyyy")
+export function formatCurrency(amount: number | string, currency: "USD" | "PEN" = "PEN") {
+  // Convert string to number if needed
+  const numericAmount = typeof amount === "string" ? parseFloat(amount) : amount
+
+  // Handle invalid numbers
+  if (isNaN(numericAmount)) return currency === "USD" ? "$0.00" : "S/. 0.00"
+
+  const formatter = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+
+  // Format with proper currency symbol and spacing
+  return currency === "USD" 
+    ? `$${formatter.format(numericAmount)}`
+    : `S/. ${formatter.format(numericAmount)}`
 }
