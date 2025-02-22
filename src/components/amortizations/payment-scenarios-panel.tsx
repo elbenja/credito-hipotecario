@@ -7,12 +7,15 @@ import { Label } from "@/components/ui/label"
 import { PaymentChart } from "./payment-chart"
 import { Separator } from "@/components/ui/separator"
 import { ExtraInstallmentsSection } from "./extra-installments-section"
+import { ExtraInstallmentForm } from "./extra-installment-form"
+import { ExtraInstallmentsTable } from "./extra-installments-table"
 import { NewRateForm } from "./new-rate-form"
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
-import { Calendar, CalendarIcon } from "@/components/ui/calendar"
+import { Calendar } from "@/components/ui/calendar"
+import { type ExtraInstallment } from "./types"
 
 interface PaymentDetails {
   totalInterestAndInsurance: number
@@ -35,6 +38,9 @@ interface PaymentScenariosProps {
   annualInterestRate: number
   termYears: number
   amortizationId: string
+  extraInstallments?: ExtraInstallment[]
+  onExtraInstallmentAdd?: (installment: Omit<ExtraInstallment, "id">) => void
+  onExtraInstallmentDelete?: (id: string) => void
 }
 
 export function PaymentScenariosPanel({
@@ -46,7 +52,10 @@ export function PaymentScenariosPanel({
   loanAmount,
   annualInterestRate,
   termYears,
-  amortizationId
+  amortizationId,
+  extraInstallments = [],
+  onExtraInstallmentAdd,
+  onExtraInstallmentDelete
 }: PaymentScenariosProps) {
   const [chartKey, setChartKey] = useState(0)
   const [selectedNewRate, setSelectedNewRate] = useState(false)
@@ -58,6 +67,59 @@ export function PaymentScenariosPanel({
   const handleNewRateSuccess = () => {
     setChartKey(prev => prev + 1)
     // TODO: Recalculate payment details with new rate
+  }
+
+  const renderExtraInstallmentsSection = () => {
+    if (amortizationId) {
+      return (
+        <ExtraInstallmentsSection
+          amortizationId={amortizationId}
+          currency={currency}
+          loanAmount={loanAmount}
+          onInstallmentsChange={handleInstallmentsChange}
+        />
+      )
+    }
+
+    if (onExtraInstallmentAdd && onExtraInstallmentDelete) {
+      return (
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-lg font-medium">Extra Installments</h3>
+            <p className="text-sm text-muted-foreground">
+              Add extra payments to reduce your loan term or monthly payment.
+            </p>
+          </div>
+
+          <ExtraInstallmentForm
+            onSubmit={(values) => {
+              onExtraInstallmentAdd({
+                amount: parseFloat(values.amount.replace(/[^0-9.]/g, "")),
+                frequency: values.frequency,
+                start_date: values.start_date.toISOString(),
+                amortization_id: "",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              handleInstallmentsChange()
+            }}
+            loanAmount={loanAmount}
+            currency={currency}
+          />
+
+          <ExtraInstallmentsTable
+            installments={extraInstallments}
+            currency={currency}
+            onDelete={(id) => {
+              onExtraInstallmentDelete(id)
+              handleInstallmentsChange()
+            }}
+          />
+        </div>
+      )
+    }
+
+    return null
   }
 
   const content = (
@@ -112,14 +174,7 @@ export function PaymentScenariosPanel({
               termYears={Number(termYears)}
               currency={currency}
             />
-            {amortizationId && (
-              <ExtraInstallmentsSection
-                amortizationId={amortizationId}
-                currency={currency}
-                loanAmount={loanAmount}
-                onInstallmentsChange={handleInstallmentsChange}
-              />
-            )}
+            {renderExtraInstallmentsSection()}
           </div>
         </TabsContent>
         <TabsContent value="lower" className="mt-4">
@@ -142,14 +197,7 @@ export function PaymentScenariosPanel({
               termYears={Number(termYears)}
               currency={currency}
             />
-            {amortizationId && (
-              <ExtraInstallmentsSection
-                amortizationId={amortizationId}
-                currency={currency}
-                loanAmount={loanAmount}
-                onInstallmentsChange={handleInstallmentsChange}
-              />
-            )}
+            {renderExtraInstallmentsSection()}
           </div>
         </TabsContent>
         <TabsContent value="new-rate" className="mt-4">
@@ -180,11 +228,13 @@ export function PaymentScenariosPanel({
               currency={currency}
             />
             
-             <NewRateForm 
-              amortizationId={amortizationId}
-              onSuccess={handleNewRateSuccess}
-              className="mb-6"
-            />
+            {selectedNewRate && (
+              <NewRateForm
+                rate={annualInterestRate}
+                term={termYears}
+                onSuccess={handleNewRateSuccess}
+              />
+            )}
           </div>
         </TabsContent>
       </Tabs>

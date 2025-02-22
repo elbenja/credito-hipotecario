@@ -33,10 +33,13 @@ import {
   type AmortizationFormValues 
 } from "@/components/amortizations/schema"
 import { PaymentScenariosPanel } from "@/components/amortizations/payment-scenarios-panel"
+import { ExtraInstallmentsSection } from "@/components/amortizations/extra-installments-section"
+import { type ExtraInstallment } from "@/components/amortizations/types"
 
 export default function NewAmortization() {
   const { user } = useAuth()
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+  const [temporaryInstallments, setTemporaryInstallments] = useState<ExtraInstallment[]>([])
   const [interestRateLimits, setInterestRateLimits] = useState({
     min_rate: 1,
     max_rate: 25
@@ -106,20 +109,48 @@ export default function NewAmortization() {
     const totalPayment = monthlyPayment * totalMonths
     const totalInterest = totalPayment - loanAmount
 
-    // Set the same base calculation for all scenarios initially
-    const baseCalculation = {
+    // Calculate total extra payments
+    const extraPayments = temporaryInstallments.reduce((total, installment) => {
+      if (installment.frequency === 'monthly') {
+        return total + (installment.amount * totalMonths)
+      }
+      return total + installment.amount
+    }, 0)
+
+    // Base calculation for regular payments
+    const regularCalculation = {
       totalInterestAndInsurance: totalInterest,
       totalMonths,
       monthlyPayment
     }
 
+    // Accelerated calculation (reduced term)
+    const acceleratedMonthlyPayment = monthlyPayment
+    const acceleratedTotalMonths = Math.max(1, Math.ceil((loanAmount - extraPayments) * monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / (acceleratedMonthlyPayment * (Math.pow(1 + monthlyRate, totalMonths) - 1)))
+    const acceleratedTotalPayment = acceleratedMonthlyPayment * acceleratedTotalMonths
+    const acceleratedTotalInterest = acceleratedTotalPayment - (loanAmount - extraPayments)
+
+    // Lower payment calculation (same term)
+    const reducedLoanAmount = loanAmount - extraPayments
+    const lowerMonthlyPayment = (reducedLoanAmount * monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / (Math.pow(1 + monthlyRate, totalMonths) - 1)
+    const lowerTotalPayment = lowerMonthlyPayment * totalMonths
+    const lowerTotalInterest = lowerTotalPayment - reducedLoanAmount
+
     setPaymentDetails({
-      regular: baseCalculation,
-      accelerated: baseCalculation,
-      lower: baseCalculation,
-      newRate: baseCalculation
+      regular: regularCalculation,
+      accelerated: {
+        totalInterestAndInsurance: acceleratedTotalInterest,
+        totalMonths: acceleratedTotalMonths,
+        monthlyPayment: acceleratedMonthlyPayment
+      },
+      lower: {
+        totalInterestAndInsurance: lowerTotalInterest,
+        totalMonths,
+        monthlyPayment: lowerMonthlyPayment
+      },
+      newRate: regularCalculation // This will be updated when a new rate is selected
     })
-  }, [selectedProperty, form.watch()])
+  }, [selectedProperty, form.watch(), temporaryInstallments])
 
   const onSubmit = async (values: AmortizationFormValues) => {
     try {
@@ -150,11 +181,30 @@ export default function NewAmortization() {
         loan_protection_insurance: parseFloat(values.loan_protection_insurance),
       }
 
-      const { error } = await supabase
+      // Insert amortization and get the ID
+      const { data: amortizationResult, error: amortizationError } = await supabase
         .from("amortizations")
         .insert(amortizationData)
+        .select("id")
+        .single()
 
-      if (error) throw error
+      if (amortizationError) throw amortizationError
+
+      // If we have temporary installments, insert them with the new amortization ID
+      if (temporaryInstallments.length > 0 && amortizationResult) {
+        const installmentsToInsert = temporaryInstallments.map(installment => ({
+          amortization_id: amortizationResult.id,
+          amount: installment.amount,
+          frequency: installment.frequency,
+          start_date: installment.start_date
+        }))
+
+        const { error: installmentsError } = await supabase
+          .from("extra_installments")
+          .insert(installmentsToInsert)
+
+        if (installmentsError) throw installmentsError
+      }
 
       window.location.href = "/amortizations"
     } catch (error) {
@@ -189,10 +239,10 @@ export default function NewAmortization() {
 
 <Separator />
 
-<div className="space-y-6 px-8 pt-6">
-          <div className="flex flex-col md:flex-row gap-6">
+<div className="space-y-6 ">
+          <div className="flex flex-col md:flex-row ">
             {/* Left Container */}
-            <div className="w-full md:w-[40%]">
+            <div className="w-full md:w-[40%] px-8 pt-6">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <FormField
@@ -243,6 +293,21 @@ export default function NewAmortization() {
               onCloseMobilePanel={() => setShowMobileDetails(false)}
               onOpenMobilePanel={() => setShowMobileDetails(true)}
               currency={selectedProperty?.currency || "PEN"}
+              loanAmount={selectedProperty ? selectedProperty.price_cost - parseFloat(form.getValues("down_payment").replace(/[^0-9.]/g, "")) : 0}
+              annualInterestRate={parseFloat(form.getValues("interest_rate"))}
+              termYears={parseInt(form.getValues("term_years"))}
+              amortizationId=""
+              extraInstallments={temporaryInstallments}
+              onExtraInstallmentAdd={(installment) => {
+                const newInstallment: Omit<ExtraInstallment, 'amortization_id' | 'created_at' | 'updated_at'> = {
+                  id: Math.random().toString(36).substr(2, 9), // Temporary ID
+                  ...installment
+                }
+                setTemporaryInstallments([...temporaryInstallments, newInstallment as ExtraInstallment])
+              }}
+              onExtraInstallmentDelete={(id) => {
+                setTemporaryInstallments(temporaryInstallments.filter(i => i.id !== id))
+              }}
             />
           </div>
         </div>

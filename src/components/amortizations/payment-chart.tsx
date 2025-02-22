@@ -94,12 +94,12 @@ export function PaymentChart({ loanAmount, annualInterestRate, termYears, curren
 
   return (
     <div className="space-y-4">
-      <div className="space-y-1">
+      {/* <div className="space-y-1">
         <h3 className="text-sm font-medium">Payment Breakdown Over Time</h3>
         <p className="text-sm text-muted-foreground">
           Shows how your monthly payment is split between principal and interest
         </p>
-      </div>
+      </div> */}
 
       <div className="relative aspect-[2/1] w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">

@@ -106,6 +106,11 @@ The Amortization view is split into two main panels:
    - Months: Total duration of the mortgage in months
    - Monthly Pay: Regular installment amount
 
+   Layout: Grid with 10 columns total
+   - Sum Interest & Insurances: 5 columns (50%)
+   - Months: 2 columns (20%)
+   - Monthly Pay: 3 columns (30%)
+
 3. Payment Breakdown Graph
    - Type: Stacked area chart
    - X-axis: Years (0 to term)

@@ -14,8 +14,8 @@ export function PaymentSummary({
   currency
 }: PaymentSummaryProps) {
   return (
-    <div className="grid gap-4">
-      <div className="grid gap-1">
+    <div className="grid grid-cols-10 gap-4">
+      <div className="col-span-5 grid gap-1">
         <div className="text-sm font-medium text-muted-foreground">
           Sum Interest & Insurances
         </div>
@@ -23,7 +23,7 @@ export function PaymentSummary({
           {formatCurrency(totalInterestAndInsurance, currency)}
         </div>
       </div>
-      <div className="grid gap-1">
+      <div className="col-span-2 grid gap-1">
         <div className="text-sm font-medium text-muted-foreground">
           Months
         </div>
@@ -31,7 +31,7 @@ export function PaymentSummary({
           {totalMonths}
         </div>
       </div>
-      <div className="grid gap-1">
+      <div className="col-span-3 grid gap-1">
         <div className="text-sm font-medium text-muted-foreground">
           Monthly Pay
         </div>
