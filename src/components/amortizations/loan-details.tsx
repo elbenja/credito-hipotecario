@@ -34,6 +34,8 @@ import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { Toggle } from "@/components/ui/toggle"
 import { toast } from "sonner"
+import { useInsuranceRates } from "@/hooks/use-insurance-rates"
+import React from "react"
 
 type BonusRule = {
   min_value: number
@@ -57,6 +59,7 @@ export function LoanDetails({
   interestRateLimits 
 }: LoanDetailsProps) {
   const { data: exchangeRate } = useExchangeRate()
+  const { data: insuranceRates } = useInsuranceRates()
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
   const [isSuggested, setIsSuggested] = useState(false)
   const [downPaymentPercent, setDownPaymentPercent] = useState(0)
@@ -180,6 +183,25 @@ export function LoanDetails({
     }
   }, [selectedProperty, form])
 
+  // Calculate insurance amount based on type and loan amount
+  const calculateInsuranceAmount = (type: string, amount: number) => {
+    if (!insuranceRates || !amount) return 0
+    
+    const rate = insuranceRates.find(r => r.type === type)
+    if (!rate) {
+      console.warn(`No rate found for type ${type}, using default`)
+      // Use default rates if not found in table
+      const defaultRates = {
+        individual: 0.028,
+        joint: 0.052
+      }
+      return amount * (defaultRates[type as keyof typeof defaultRates] / 100)
+    }
+    
+    // Use rate from table
+    return amount * (rate.percentage / 100)
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -274,6 +296,107 @@ export function LoanDetails({
               </div>
             </div>
           </FormItem>
+        </div>
+        
+  {/* Loan Protection Insurance */}
+  <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="loan_protection_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Loan Protection Insurance</FormLabel>
+                <Select 
+                  onValueChange={(value) => {
+                    console.log('Insurance type changed:', value);
+                    field.onChange(value);
+                    // If type is none, ensure insurance amount is 0
+                    if (value === 'none') {
+                      form.setValue('loan_protection_insurance', '0');
+                    }
+                  }} 
+                  value={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger className="form-control-focus">
+                      <SelectValue placeholder="Select insurance type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="individual">
+                      Individual ({insuranceRates?.find(r => r.type === "individual")?.percentage ?? 0.028}%)
+                    </SelectItem>
+                    <SelectItem value="joint">
+                      Joint ({insuranceRates?.find(r => r.type === "joint")?.percentage ?? 0.052}%)
+                    </SelectItem>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="custom">Custom Amount</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="loan_protection_insurance"
+            render={({ field }) => {
+              const insuranceType = form.watch("loan_protection_type")
+              const isCustom = insuranceType === "custom"
+              const isNone = insuranceType === "none"
+              
+              let calculatedValue = "0"
+              if (insuranceType === "individual" || insuranceType === "joint") {
+                calculatedValue = calculateInsuranceAmount(insuranceType, loanAmount).toFixed(2)
+                console.log('Calculated insurance:', {
+                  type: insuranceType,
+                  loanAmount,
+                  rate: insuranceRates?.find(r => r.type === insuranceType)?.percentage,
+                  calculatedValue
+                })
+              }
+
+              // Update the insurance amount when type or loan amount changes
+              React.useEffect(() => {
+                if (!isCustom && !isNone) {
+                  form.setValue("loan_protection_insurance", calculatedValue)
+                } else if (isNone) {
+                  form.setValue("loan_protection_insurance", "0")
+                }
+              }, [insuranceType, loanAmount, calculatedValue, isCustom, isNone])
+
+              return (
+                <FormItem>
+                  <FormLabel>Monthly Insurance Cost</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        type="number"
+                        step="0.01"
+                        disabled={!isCustom}
+                        value={isCustom ? field.value : calculatedValue}
+                        onChange={(e) => {
+                          if (isCustom) {
+                            field.onChange(e.target.value)
+                          }
+                        }}
+                        className={cn(
+                          "pr-12",
+                          !isCustom && "text-muted-foreground"
+                        )}
+                      />
+                      <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted-foreground">
+                        {selectedProperty?.currency}
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )
+            }}
+          />
         </div>
 
         {/* Interest Rate and Term */}
@@ -410,6 +533,10 @@ export function LoanDetails({
             )}
           />
         </div>
+
+      
+
+
       </div>
     </div>
   )

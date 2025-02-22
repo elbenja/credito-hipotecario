@@ -146,6 +146,8 @@ export default function NewAmortization() {
         total_payment: 0,
         total_interest: 0,
         installment_amount: 0,
+        loan_protection_type: values.loan_protection_type,
+        loan_protection_insurance: parseFloat(values.loan_protection_insurance),
       }
 
       const { error } = await supabase

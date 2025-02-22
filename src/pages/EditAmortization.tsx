@@ -152,6 +152,8 @@ export default function EditAmortization() {
         term_years: amortization.term_years.toString(),
         installments_per_year: amortization.installments_per_year.toString(),
         first_installment_date: new Date(amortization.first_installment_date),
+        loan_protection_type: amortization.loan_protection_type || "none",
+        loan_protection_insurance: amortization.loan_protection_insurance?.toString() || "0",
       }, {
         keepDefaultValues: true
       })
@@ -183,6 +185,8 @@ export default function EditAmortization() {
         total_payment: 0, // These will be calculated by the database trigger
         total_interest: 0,
         installment_amount: 0,
+        loan_protection_type: values.loan_protection_type,
+        loan_protection_insurance: parseFloat(values.loan_protection_insurance),
       }
 
       const { error } = await supabase

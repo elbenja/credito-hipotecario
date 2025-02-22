@@ -165,24 +165,8 @@ Four options are available:
 3. **None** (0)
 4. **Custom** (user-defined amount)
 
-##### Database Structure
 
-**Amortizations Table Extensions:**
-```sql
-ALTER TABLE amortizations ADD COLUMN
-  loan_protection_insurance DECIMAL,
-  loan_protection_type TEXT CHECK (loan_protection_type IN ('individual', 'joint', 'none', 'custom'))
-```
 
-**Insurance Rates Table:**
-```sql
-CREATE TABLE IF NOT EXISTS insurance_rates (
-  id SERIAL PRIMARY KEY,
-  type TEXT NOT NULL,  -- 'individual' or 'joint'
-  percentage NUMERIC(6,5) NOT NULL,
-  effective_year INT NOT NULL
-)
-```
 
 ##### Calculation Logic
 - **Base Loan Amount** = Property Cost – Down Payment (minus applicable bonuses)

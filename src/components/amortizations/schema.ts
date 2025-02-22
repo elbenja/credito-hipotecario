@@ -35,6 +35,10 @@ export const amortizationFormSchema = z.object({
     required_error: "First installment date is required",
     invalid_type_error: "Please enter a valid date in the format 'MMM d, yyyy' (e.g., Feb 28, 2025)",
   }),
+  loan_protection_type: z.enum(["individual", "joint", "none", "custom"], {
+    required_error: "Please select an insurance type",
+  }).default("none"),
+  loan_protection_insurance: z.string().default("0"),
 })
 
 export const defaultValues: AmortizationFormValues = {
@@ -45,6 +49,8 @@ export const defaultValues: AmortizationFormValues = {
   term_years: "20",
   installments_per_year: "12",
   first_installment_date: startOfMonth(addMonths(new Date(), 1)),
+  loan_protection_type: "none",
+  loan_protection_insurance: "0",
 }
 
 export type AmortizationFormValues = z.infer<typeof amortizationFormSchema>
