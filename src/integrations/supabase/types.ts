@@ -26,6 +26,8 @@ export type Database = {
           total_payment: number
           updated_at: string
           user_id: string
+          loan_protection_type: "individual" | "joint" | "none" | "custom" | null
+          loan_protection_insurance: number | null
         }
         Insert: {
           created_at?: string
@@ -43,6 +45,8 @@ export type Database = {
           total_payment: number
           updated_at?: string
           user_id: string
+          loan_protection_type?: "individual" | "joint" | "none" | "custom" | null
+          loan_protection_insurance?: number | null
         }
         Update: {
           created_at?: string
@@ -60,6 +64,8 @@ export type Database = {
           total_payment?: number
           updated_at?: string
           user_id?: string
+          loan_protection_type?: "individual" | "joint" | "none" | "custom" | null
+          loan_protection_insurance?: number | null
         }
         Relationships: [
           {
