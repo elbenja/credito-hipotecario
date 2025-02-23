@@ -142,8 +142,30 @@ The Amortization view is split into two main panels:
    - Extra payment form appears
    - Table of scheduled extra payments
 5. For New Rate tab:
-   - Interest rate adjustment form
-   - New term selection (optional)
+   - Description: "Adjusts the interest rate (and optionally term) from a specified date"
+   - Form title: "Refinancing Options"
+   - Data is persisted in Supabase `refinancing_options` table with fields:
+     - `id` (uuid, primary key)
+     - `amortization_id` (uuid, foreign key)
+     - `new_interest_rate` (numeric)
+     - `effective_date` (date)
+     - `new_term_years` (int4, nullable)
+     - `created_at` (timestamptz)
+     - `updated_at` (timestamptz)
+   - Form fields:
+     - New Interest Rate: Numeric input (9%)
+     - New Term: Dropdown (10 years)
+     - Start Date: Date picker with calendar
+   - Default state:
+     - Interest rate and term are 0/empty
+     - Button shows "✔ OK"
+   - When refinancing option exists:
+     - Form shows existing values
+     - Button shows "✔ Update"
+   - Form validation:
+     - Interest rate: Between 4% and 18%
+     - Start date: Required, must be future date
+     - New term: Optional, values 5-30 years in 5-year increments
 
 **Data Updates:**
 - All changes in the left panel (loan details) trigger recalculation of:

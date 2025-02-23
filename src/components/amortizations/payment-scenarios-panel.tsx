@@ -16,6 +16,10 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { type ExtraInstallment } from "./types"
+import { CalendarIcon, Check } from "lucide-react"
+import { supabase } from "@/integrations/supabase/client"
+import { useToast } from "@/hooks/use-toast"
+import { format } from "date-fns"
 
 interface PaymentDetails {
   totalInterestAndInsurance: number
@@ -57,8 +61,15 @@ export function PaymentScenariosPanel({
   onExtraInstallmentAdd,
   onExtraInstallmentDelete
 }: PaymentScenariosProps) {
+  const { toast } = useToast()
   const [chartKey, setChartKey] = useState(0)
   const [selectedNewRate, setSelectedNewRate] = useState(false)
+  const [refinancingForm, setRefinancingForm] = useState({
+    newInterestRate: "",
+    newTerm: "",
+    startDate: undefined as Date | undefined
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
   
   const handleInstallmentsChange = () => {
     setChartKey(prev => prev + 1)
@@ -67,6 +78,47 @@ export function PaymentScenariosPanel({
   const handleNewRateSuccess = () => {
     setChartKey(prev => prev + 1)
     // TODO: Recalculate payment details with new rate
+  }
+
+  const handleRefinancingSubmit = async () => {
+    if (!amortizationId) return
+
+    try {
+      setIsSubmitting(true)
+
+      const { error } = await supabase
+        .from("refinancing_options")
+        .insert({
+          amortization_id: amortizationId,
+          new_interest_rate: parseFloat(refinancingForm.newInterestRate),
+          new_term_years: refinancingForm.newTerm ? parseInt(refinancingForm.newTerm) : null,
+          effective_date: refinancingForm.startDate ? format(refinancingForm.startDate, 'yyyy-MM-dd') : null,
+        })
+
+      if (error) throw error
+
+      toast({
+        title: "Success",
+        description: "Refinancing option saved successfully",
+      })
+
+      // Reset form and refresh calculations
+      setRefinancingForm({
+        newInterestRate: "",
+        newTerm: "",
+        startDate: undefined
+      })
+      handleNewRateSuccess()
+    } catch (error) {
+      console.error("Error saving refinancing option:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save refinancing option. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const renderExtraInstallmentsSection = () => {
@@ -215,8 +267,6 @@ export function PaymentScenariosPanel({
                 <Label htmlFor="new-rate-select">Select</Label>
               </div>
             </div>
-            
-           
 
             <PaymentSummary {...paymentDetails.newRate} currency={currency} />
             <Separator className="my-4" />
@@ -228,13 +278,10 @@ export function PaymentScenariosPanel({
               currency={currency}
             />
             
-            {selectedNewRate && (
-              <NewRateForm
-                rate={annualInterestRate}
-                term={termYears}
-                onSuccess={handleNewRateSuccess}
-              />
-            )}
+            <NewRateForm
+              amortizationId={amortizationId}
+              onSuccess={handleNewRateSuccess}
+            />
           </div>
         </TabsContent>
       </Tabs>
