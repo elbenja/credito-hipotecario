@@ -101,7 +101,7 @@ export function PaymentChart({ loanAmount, annualInterestRate, termYears, curren
         </p>
       </div> */}
 
-      <div className="relative aspect-[2/1] w-full min-w-0">
+      <div className="relative aspect-[3/1] w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={chartData}
