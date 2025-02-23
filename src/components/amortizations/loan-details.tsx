@@ -187,7 +187,7 @@ export function LoanDetails({
   const calculateInsuranceAmount = (type: string, amount: number) => {
     if (!insuranceRates || !amount) return 0
     
-    const rate = insuranceRates.find((r) => r.type === type)
+    const rate = insuranceRates.find((r): r is InsuranceRate => 'type' in r && r.type === type)
     if (!rate) {
       console.warn(`No rate found for type ${type}, using default`)
       // Use default rates if not found in table
@@ -323,10 +323,10 @@ export function LoanDetails({
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="individual">
-                      Individual ({insuranceRates?.find(r => r.type === "individual")?.percentage ?? 0.028}%)
+                      Individual ({insuranceRates && 'type' in insuranceRates[0] ? insuranceRates.find(r => r.type === "individual")?.percentage ?? 0.028 : 0.028}%)
                     </SelectItem>
                     <SelectItem value="joint">
-                      Joint ({insuranceRates?.find(r => r.type === "joint")?.percentage ?? 0.052}%)
+                      Joint ({insuranceRates && 'type' in insuranceRates[0] ? insuranceRates.find(r => r.type === "joint")?.percentage ?? 0.052 : 0.052}%)
                     </SelectItem>
                     <SelectItem value="none">None</SelectItem>
                     <SelectItem value="custom">Custom Amount</SelectItem>

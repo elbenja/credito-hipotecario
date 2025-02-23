@@ -1,7 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { CalendarIcon, Plus } from "lucide-react"
-import { format } from "date-fns"
+import { Plus } from "lucide-react"
 
 import {
   Form,
@@ -13,7 +12,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
 import {
   Select,
   SelectContent,
@@ -21,11 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 
 import { z } from "zod"
 import { formatCurrency, cn, formatDate } from "@/lib/utils"
@@ -135,37 +129,19 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
             render={({ field }) => (
               <FormItem>
                 <FormLabel>First Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal form-control-focus",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          formatDate(field.value)
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) =>
-                        date < new Date()
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <FormControl>
+                  <CalendarDatePicker
+                    date={{ from: field.value, to: field.value }}
+                    onDateSelect={({ from }) => field.onChange(from)}
+                    numberOfMonths={1}
+                    closeOnSelect={true}
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal form-control-focus",
+                      !field.value && "text-muted-foreground"
+                    )}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
