@@ -27,14 +27,14 @@ export default function Test() {
     },
   });
 
-  // Calculate years range to reach 30 years from now
-  const currentYear = new Date().getFullYear();
-  const targetYear = currentYear + 30;
-  const yearsRange = (targetYear - currentYear) * 2; // Multiply by 2 to account for past years as well
-
   // Get the date boundaries
   const lastWeek = startOfDay(subWeeks(new Date(), 1));
   const thirtyYearsFromNow = startOfDay(addYears(new Date(), 30));
+
+  // Calculate years range from last week to 30 years ahead
+  const startYear = lastWeek.getFullYear();
+  const endYear = thirtyYearsFromNow.getFullYear();
+  const yearsRange = endYear - startYear + 1;
 
   // Function to determine if a date should be disabled
   const isDateDisabled = (date: Date) => {
@@ -67,6 +67,7 @@ export default function Test() {
                   variant="outline"
                   numberOfMonths={1}
                   yearsRange={yearsRange}
+                  fromYear={startYear}
                   disabled={isDateDisabled}
                   className={cn(
                     "w-full justify-start text-left font-normal form-control-focus",

@@ -79,6 +79,7 @@ interface CalendarDatePickerProps
   closeOnSelect?: boolean;
   numberOfMonths?: 1 | 2;
   yearsRange?: number;
+  fromYear?: number;
   disabled?: ((date: Date) => boolean) | { before?: Date; after?: Date };
   onDateSelect: (range: { from: Date; to: Date }) => void;
 }
@@ -95,6 +96,7 @@ export const CalendarDatePicker = React.forwardRef<
       closeOnSelect = false,
       numberOfMonths = 2,
       yearsRange = 10,
+      fromYear,
       disabled,
       onDateSelect,
       variant,
@@ -262,8 +264,8 @@ export const CalendarDatePicker = React.forwardRef<
     const today = new Date();
 
     const years = Array.from(
-      { length: yearsRange + 1 },
-      (_, i) => today.getFullYear() - Math.floor(yearsRange / 2) + i
+      { length: yearsRange },
+      (_, i) => (fromYear || today.getFullYear()) + i
     );
 
     const dateRanges = [
@@ -677,7 +679,18 @@ export const CalendarDatePicker = React.forwardRef<
                       onSelect={handleDateSelect}
                       numberOfMonths={numberOfMonths}
                       showOutsideDays={false}
-                      disabled={disabled}
+                      disabled={(date: Date) => {
+                        if (typeof disabled === 'function') {
+                          return disabled(date);
+                        }
+                        if (disabled && 'before' in disabled) {
+                          return date < disabled.before;
+                        }
+                        if (disabled && 'after' in disabled) {
+                          return date > disabled.after;
+                        }
+                        return false;
+                      }}
                       className={className}
                     />
                   </div>

@@ -1,3 +1,4 @@
+import { SEO } from "@/components/seo"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { DashboardSidebar } from "./dashboard-sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -29,6 +30,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, header }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
+      <SEO title="Dashboard - CreditoHipotecar.io" />
       <div className="min-h-screen flex w-full">
         <DashboardSidebar />
         <main className="flex-1 flex flex-col">

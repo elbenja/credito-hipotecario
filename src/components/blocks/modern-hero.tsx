@@ -5,25 +5,20 @@ import { cn } from "@/lib/utils"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/context/auth-context"
 
-interface HeroProps extends React.HTMLAttributes<HTMLElement> {
+export interface HeroProps {
   title: string
   description: string
   buttonText: string
-  avatars: Array<{
-    src: string
-    alt: string
-  }>
-  rating: {
-    value: number
-    count: number
-  }
+  avatars?: string[]
+  rating?: number
+  className?: string
 }
 
 export function Hero({
   title,
   description,
   buttonText,
-  avatars,
+  avatars = [],
   rating,
   className,
   ...props
@@ -65,29 +60,40 @@ export function Hero({
             Watch Demo
           </Button>
         </div>
-        <div className="mt-10 flex w-full max-w-fit flex-col items-center justify-center gap-4 sm:flex-row">
-          <span className="inline-flex items-center -space-x-4">
-            {avatars.map((avatar, index) => (
-              <Avatar key={index} className="h-14 w-14 border">
-                <AvatarImage src={avatar.src} alt={avatar.alt} />
-              </Avatar>
-            ))}
-          </span>
-          <div className="flex flex-col items-center sm:items-start">
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, index) => (
-                <Star
-                  key={index}
-                  className="h-5 w-5 fill-yellow-400 text-yellow-400"
-                />
-              ))}
-              <span className="font-semibold text-slate-900">{rating.value.toFixed(1)}</span>
-            </div>
-            <p className="font-medium text-slate-600">
-              from {rating.count}+ reviews
-            </p>
+        {(avatars.length > 0 || rating) && (
+          <div className="mt-10 flex w-full max-w-fit flex-col items-center justify-center gap-4 sm:flex-row">
+            {avatars.length > 0 && (
+              <span className="inline-flex items-center -space-x-4">
+                {avatars.map((avatar, index) => (
+                  <Avatar key={index} className="h-14 w-14 border">
+                    <AvatarImage src={avatar} alt={`Avatar ${index + 1}`} />
+                  </Avatar>
+                ))}
+              </span>
+            )}
+            {rating && (
+              <div className="flex flex-col items-center sm:items-start">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, index) => (
+                    <Star
+                      key={index}
+                      className={cn(
+                        "h-5 w-5",
+                        index < Math.floor(rating) 
+                          ? "fill-yellow-400 text-yellow-400" 
+                          : "fill-slate-200 text-slate-200"
+                      )}
+                    />
+                  ))}
+                  <span className="font-semibold text-slate-900">{rating.toFixed(1)}</span>
+                </div>
+                <p className="font-medium text-slate-600">
+                  from {Math.floor(rating * 100)}+ reviews
+                </p>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
     </section>
   )

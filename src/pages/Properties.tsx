@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
 import { useToast } from "@/components/ui/use-toast"
 import { Separator } from "@/components/ui/separator"
+import { SEO } from "@/components/seo"
 
 type Property = {
   id: string
@@ -160,6 +161,10 @@ export default function Properties() {
         actions: headerActions
       }}
     >
+      <SEO 
+        title="Properties - CreditoHipotecar.io"
+        description="Manage your property portfolio with our comprehensive property management tools. Track property details, costs, and mortgage information."
+      />
       <div className="p-8">
         <div className="rounded-md border">
           <PropertyList

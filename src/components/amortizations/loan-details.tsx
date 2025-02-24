@@ -34,7 +34,7 @@ import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { Toggle } from "@/components/ui/toggle"
 import { toast } from "sonner"
-import { useInsuranceRates } from "@/hooks/use-insurance-rates"
+import { useInsuranceRates, type InsuranceRate } from "@/hooks/use-insurance-rates"
 import React from "react"
 
 type BonusRule = {
@@ -190,15 +190,15 @@ export function LoanDetails({
     const rate = insuranceRates.find((r): r is InsuranceRate => 'type' in r && r.type === type)
     if (!rate) {
       console.warn(`No rate found for type ${type}, using default`)
-      // Use default rates if not found in table
+      // Use default rates if not found in table (convert percentage to decimal)
       const defaultRates = {
-        individual: 0.028,
-        joint: 0.052
+        individual: 0.028 / 100, // 0.028% -> 0.00028
+        joint: 0.052 / 100      // 0.052% -> 0.00052
       }
-      return amount * (defaultRates[type as keyof typeof defaultRates] / 100)
+      return amount * defaultRates[type as keyof typeof defaultRates]
     }
     
-    // Use rate from table
+    // Use rate from table - convert percentage to decimal
     return amount * (rate.percentage / 100)
   }
 
@@ -323,10 +323,10 @@ export function LoanDetails({
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="individual">
-                      Individual ({insuranceRates && 'type' in insuranceRates[0] ? insuranceRates.find(r => r.type === "individual")?.percentage ?? 0.028 : 0.028}%)
+                      Individual ({Array.isArray(insuranceRates) ? insuranceRates.find((r: any) => r.type === "individual")?.percentage ?? 0.028 : 0.028}%)
                     </SelectItem>
                     <SelectItem value="joint">
-                      Joint ({insuranceRates && 'type' in insuranceRates[0] ? insuranceRates.find(r => r.type === "joint")?.percentage ?? 0.052 : 0.052}%)
+                      Joint ({Array.isArray(insuranceRates) ? insuranceRates.find((r: any) => r.type === "joint")?.percentage ?? 0.052 : 0.052}%)
                     </SelectItem>
                     <SelectItem value="none">None</SelectItem>
                     <SelectItem value="custom">Custom Amount</SelectItem>

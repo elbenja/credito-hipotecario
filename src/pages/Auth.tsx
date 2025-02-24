@@ -1,10 +1,10 @@
-
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { GalleryVerticalEnd } from "lucide-react"
 import { LoginForm } from "@/components/login-form"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
+import { SEO } from "@/components/seo"
 
 export default function Auth() {
   const navigate = useNavigate()
@@ -26,6 +26,10 @@ export default function Auth() {
 
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
+      <SEO 
+        title="Sign In - CreditoHipotecar.io"
+        description="Sign in to CreditoHipotecar.io to manage your mortgage credits, property listings, and rental properties."
+      />
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
           <a href="/" className="flex items-center gap-2 font-medium">

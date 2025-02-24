@@ -15,11 +15,12 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/utils"
+import { SEO } from "@/components/seo"
 
 type Property = {
   id: string
   name: string
-  currency: string
+  currency: "USD" | "PEN"
   price_cost: number
   amortizations: Amortization[]
 }
@@ -104,6 +105,10 @@ export default function Amortizations() {
         actions: headerActions
       }}
     >
+      <SEO 
+        title="Amortizations - CreditoHipotecar.io"
+        description="Calculate and manage your mortgage amortization schedules. Track payments, interest rates, and explore different payment scenarios."
+      />
       <div className="p-8 space-y-8">
         {propertiesWithAmortizations?.map((property) => (
           property.amortizations.length > 0 && (

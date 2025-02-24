@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster"
 import { Toaster as Sonner } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -14,65 +13,70 @@ import Properties from "./pages/Properties"
 import Amortizations from "./pages/Amortizations"
 import NewAmortization from "./pages/NewAmortization"
 import EditAmortization from "./pages/EditAmortization"
+import Test from "./pages/Test"
+import { HelmetProvider } from 'react-helmet-async'
 
 const queryClient = new QueryClient()
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/properties"
-              element={
-                <ProtectedRoute>
-                  <Properties />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/amortizations"
-              element={
-                <ProtectedRoute>
-                  <Amortizations />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/amortizations/new"
-              element={
-                <ProtectedRoute>
-                  <NewAmortization />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/amortizations/:id"
-              element={
-                <ProtectedRoute>
-                  <EditAmortization />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/test" element={<Test />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/properties"
+                element={
+                  <ProtectedRoute>
+                    <Properties />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/amortizations"
+                element={
+                  <ProtectedRoute>
+                    <Amortizations />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/amortizations/new"
+                element={
+                  <ProtectedRoute>
+                    <NewAmortization />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/amortizations/:id"
+                element={
+                  <ProtectedRoute>
+                    <EditAmortization />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 )
 
 export default App

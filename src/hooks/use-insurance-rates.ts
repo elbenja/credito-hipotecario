@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 
-type InsuranceRate = {
+export type InsuranceRate = {
   id: number
-  type: "individual" | "joint"
+  type: "individual" | "joint" | "custom"
   percentage: number
   effective_year: number
 }
@@ -26,8 +26,8 @@ export function useInsuranceRates() {
       const currentYear = new Date().getFullYear()
       
       const { data, error } = await supabase
-        .from<'insurance_rates', Database['public']['Tables']['insurance_rates']['Row']>('insurance_rates')
-        .select('*')
+        .from('insurance_rates')
+        .select("*")
         .eq('effective_year', currentYear)
         .order('type', { ascending: true })
 
@@ -44,7 +44,8 @@ export function useInsuranceRates() {
         ] as InsuranceRate[]
       }
 
-      return data
+      // Cast to unknown first to avoid type mismatch error
+      return data as unknown as InsuranceRate[]
     }
   })
-} 
+}
