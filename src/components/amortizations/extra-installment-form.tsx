@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Plus } from "lucide-react"
+import { addYears, subWeeks, startOfDay, isBefore, isAfter, isSameDay } from "date-fns"
 
 import {
   Form,
@@ -56,6 +57,26 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
     },
   })
 
+  // Get the date boundaries
+  const lastWeek = startOfDay(subWeeks(new Date(), 1));
+  const thirtyYearsFromNow = startOfDay(addYears(new Date(), 30));
+
+  // Calculate years range from last week to 30 years ahead
+  const startYear = lastWeek.getFullYear();
+  const endYear = thirtyYearsFromNow.getFullYear();
+  const yearsRange = endYear - startYear + 1;
+
+  // Function to determine if a date should be disabled
+  const isDateDisabled = (date: Date) => {
+    const startOfDate = startOfDay(date);
+    return (
+      isBefore(startOfDate, lastWeek) || 
+      isAfter(startOfDate, thirtyYearsFromNow) ||
+      isSameDay(startOfDate, lastWeek) || 
+      isSameDay(startOfDate, thirtyYearsFromNow)
+    );
+  };
+
   const handleSubmit = (values: ExtraInstallmentFormValues) => {
     onSubmit(values)
     form.reset()
@@ -64,7 +85,7 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <div className="grid grid-cols-[1fr_1fr_1fr_84px] gap-4">
+        <div className="grid grid-cols-[1fr_1fr_1fr_88px] gap-4">
           <FormField
             control={form.control}
             name="amount"
@@ -136,6 +157,9 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
                     numberOfMonths={1}
                     closeOnSelect={true}
                     variant="outline"
+                    yearsRange={yearsRange}
+                    fromYear={startYear}
+                    disabled={isDateDisabled}
                     className={cn(
                       "w-full justify-start text-left font-normal form-control-focus",
                       !field.value && "text-muted-foreground"
@@ -151,7 +175,7 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
             type="submit" 
             disabled={isLoading}
             variant="outline"
-            className="self-end px-3 w-[84px]"
+            className="self-end px-3 w-[88px]"
           >
             <Plus className="h-4 w-4" />
             Add
