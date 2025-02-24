@@ -162,9 +162,7 @@ export function ExtraInstallmentsSection({
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">Extra Installments</h3>
-        <p className="text-sm text-muted-foreground">
-          Add extra payments to reduce your loan term or monthly payment.
-        </p>
+ 
       </div>
 
       <ExtraInstallmentForm
