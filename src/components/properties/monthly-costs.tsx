@@ -1,7 +1,9 @@
-
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { CurrencyInput } from "@/components/ui/currency-input"
 import { UseFormReturn } from "react-hook-form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useQuery } from "@tanstack/react-query"
+import { supabase } from "@/integrations/supabase/client"
 import * as z from "zod"
 
 const formSchema = z.object({
@@ -10,7 +12,7 @@ const formSchema = z.object({
   price_cost: z.string().min(1, "Price is required"),
   currency: z.enum(["PEN", "USD"]).default("PEN"),
   property_insurance: z.string().optional(),
-  other_expenses: z.string().optional(),
+  property_insurance_type: z.enum(["auto", "manual"]).default("auto"),
   is_sustainable: z.boolean().default(false),
   is_first_home: z.boolean().default(false),
 })
@@ -21,11 +23,62 @@ type MonthlyCostsProps = {
 
 export function MonthlyCosts({ form }: MonthlyCostsProps) {
   const selectedCurrency = form.watch("currency")
+  const propertyValue = parseFloat(form.watch("price_cost") || "0")
+  const insuranceType = form.watch("property_insurance_type")
+
+  // Fetch current insurance rate
+  const { data: insuranceRate } = useQuery({
+    queryKey: ["propertyInsuranceRate"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("property_insurance_rates")
+        .select("percentage")
+        .order("effective_year", { ascending: false })
+        .limit(1)
+        .single()
+
+      if (error) throw error
+      return data.percentage
+    },
+    staleTime: Infinity,
+  })
+
+  // Calculate auto insurance amount when property value or rate changes
+  const autoInsuranceAmount = (propertyValue * (insuranceRate || 0.0280)) / 100
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium text-muted-foreground">Monthly Cost Breakdown</h3>
+  
       <div className="grid grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="property_insurance_type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Property Insurance Type</FormLabel>
+              <Select
+                onValueChange={(value) => {
+                  field.onChange(value)
+                  if (value === "auto") {
+                    form.setValue("property_insurance", autoInsuranceAmount.toFixed(2))
+                  }
+                }}
+                value={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select insurance type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="auto">Auto ({(insuranceRate || 0.0280).toFixed(4)}%)</SelectItem>
+                  <SelectItem value="manual">Manual</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="property_insurance"
@@ -37,23 +90,8 @@ export function MonthlyCosts({ form }: MonthlyCostsProps) {
                   placeholder="Monthly insurance"
                   currency={selectedCurrency}
                   {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="other_expenses"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Other Monthly Expenses</FormLabel>
-              <FormControl>
-                <CurrencyInput
-                  placeholder="Other expenses"
-                  currency={selectedCurrency}
-                  {...field}
+                  value={insuranceType === "auto" ? autoInsuranceAmount.toFixed(2) : field.value}
+                  disabled={insuranceType === "auto"}
                 />
               </FormControl>
               <FormMessage />

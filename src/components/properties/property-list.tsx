@@ -1,4 +1,3 @@
-
 import { Switch } from "@/components/ui/switch"
 import {
   Table,
@@ -18,7 +17,7 @@ type Property = {
   price_cost: number
   currency: string
   property_insurance: number | null
-  other_expenses: number | null
+  property_insurance_type: "auto" | "manual"
   is_first_home: boolean
   is_sustainable: boolean
   description?: string | null
@@ -64,12 +63,6 @@ export function PropertyList({
 }: PropertyListProps) {
   const { toast } = useToast()
   const { data: exchangeRate } = useExchangeRate()
-
-  const getMonthlyExpenses = (property: Property) => {
-    const insurance = property.property_insurance || 0
-    const other = property.other_expenses || 0
-    return insurance + other
-  }
 
   const convertToPEN = (amount: number, currency: string): number => {
     if (currency === 'PEN') return amount
@@ -127,7 +120,7 @@ export function PropertyList({
                 {formatCurrency(property.price_cost, property.currency)}
               </TableCell>
               <TableCell>
-                {formatCurrency(getMonthlyExpenses(property), property.currency)}
+                {formatCurrency(property.property_insurance || 0, property.currency)}
               </TableCell>
               <TableCell>
                 {bonusAmount ? formatCurrency(bonusAmount, 'PEN') : '-'}

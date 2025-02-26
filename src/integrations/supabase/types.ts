@@ -239,9 +239,9 @@ export type Database = {
           is_sustainable: boolean | null
           loan_protection_insurance: number | null
           name: string
-          other_expenses: number | null
           price_cost: number
           property_insurance: number | null
+          property_insurance_type: "auto" | "manual"
           updated_at: string
           user_id: string
         }
@@ -254,9 +254,9 @@ export type Database = {
           is_sustainable?: boolean | null
           loan_protection_insurance?: number | null
           name: string
-          other_expenses?: number | null
           price_cost: number
           property_insurance?: number | null
+          property_insurance_type?: "auto" | "manual"
           updated_at?: string
           user_id: string
         }
@@ -269,9 +269,9 @@ export type Database = {
           is_sustainable?: boolean | null
           loan_protection_insurance?: number | null
           name?: string
-          other_expenses?: number | null
           price_cost?: number
           property_insurance?: number | null
+          property_insurance_type?: "auto" | "manual"
           updated_at?: string
           user_id?: string
         }
@@ -314,6 +314,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      property_insurance_rates: {
+        Row: {
+          id: string
+          percentage: number
+          effective_year: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          percentage: number
+          effective_year: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          percentage?: number
+          effective_year?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {

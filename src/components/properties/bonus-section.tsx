@@ -1,4 +1,3 @@
-
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
 import { UseFormReturn } from "react-hook-form"
@@ -14,7 +13,7 @@ const formSchema = z.object({
   price_cost: z.string().min(1, "Price is required"),
   currency: z.enum(["PEN", "USD"]).default("PEN"),
   property_insurance: z.string().optional(),
-  other_expenses: z.string().optional(),
+  property_insurance_type: z.enum(["auto", "manual"]).default("auto"),
   is_sustainable: z.boolean().default(false),
   is_first_home: z.boolean().default(false),
 })

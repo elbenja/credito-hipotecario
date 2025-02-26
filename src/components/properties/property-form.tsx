@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -18,7 +17,7 @@ const formSchema = z.object({
   price_cost: z.string().min(1, "Price is required"),
   currency: z.enum(["PEN", "USD"]).default("PEN"),
   property_insurance: z.string().optional(),
-  other_expenses: z.string().optional(),
+  property_insurance_type: z.enum(["auto", "manual"]).default("auto"),
   is_sustainable: z.boolean().default(false),
   is_first_home: z.boolean().default(false),
 })
@@ -42,7 +41,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty, bonusRules 
       price_cost: selectedProperty?.price_cost.toString() || "",
       currency: (selectedProperty?.currency as "PEN" | "USD") || "PEN",
       property_insurance: selectedProperty?.property_insurance?.toString() || "",
-      other_expenses: selectedProperty?.other_expenses?.toString() || "",
+      property_insurance_type: selectedProperty?.property_insurance_type || "auto",
       is_sustainable: selectedProperty?.is_sustainable || false,
       is_first_home: selectedProperty?.is_first_home || false,
     },
@@ -58,7 +57,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty, bonusRules 
         price_cost: parseFloat(values.price_cost),
         currency: values.currency,
         property_insurance: values.property_insurance ? parseFloat(values.property_insurance) : null,
-        other_expenses: values.other_expenses ? parseFloat(values.other_expenses) : 0,
+        property_insurance_type: values.property_insurance_type,
         is_sustainable: values.is_sustainable,
         is_first_home: values.is_first_home,
         user_id: user.id,

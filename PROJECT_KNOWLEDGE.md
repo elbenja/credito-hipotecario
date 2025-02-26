@@ -43,10 +43,11 @@ src/
   - Price cost with currency selection (PEN/USD)
   - Dynamic currency conversion
   
-- **Monthly Cost Breakdown**
-  - Loan Protection Insurance (4 options)
-  - Property Insurance
-  - Other Monthly Expenses
+- **Property Insurance**
+  - Auto: Automatically calculated at 0.0280% of property's value
+  - Manual: User-defined insurance amount
+  - Insurance rates managed through property_insurance_rates table
+  - Real-time calculation for auto option
   
 - **First-Home Bonus System**
   - Automatic bonus calculation based on property value
