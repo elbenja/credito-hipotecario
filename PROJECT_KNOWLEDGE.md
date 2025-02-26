@@ -69,117 +69,98 @@ src/
 
 ### 2. Amortization Tools
 
-#### 2.1 Amortization Scenarios
+#### 2.1 Core Services and Organization
 
-The Amortization view is split into two main panels:
+The amortization system is organized into the following structure:
 
-**Left Panel (40% width)**
-- Property Information
-  - Property name and details
-  - Property value and currency
-  - First-home and sustainable status
-- Loan Details
-  - Down payment (amount and percentage)
-  - Interest rate with validation
-  - Term selection (10-30 years)
-  - Installments per year
-  - First installment date
-- Action Buttons
-  - Update/Save changes
-  - Cancel/Back to list
+```
+src/
+├── services/
+│   └── amortization/
+│       ├── calculations/
+│       │   ├── loan.ts         # Core loan calculations
+│       │   ├── scenarios.ts    # Scenario-specific calculations
+│       │   └── cache.ts        # Calculation caching service
+│       ├── types/
+│       │   ├── common.ts       # Shared types and interfaces
+│       │   └── scenarios.ts    # Scenario-specific types
+│       └── hooks/
+│           └── useLiveCalculation.ts  # Live calculation hook
+└── store/
+    └── amortization/
+        └── store.ts            # Zustand state management
+```
 
-**Right Panel (60% width)**
-- Four payment scenarios displayed as tabs:
-  1. Regular
-  2. Accelerated
-  3. Lower Payment
-  4. New Rate
+**Core Features:**
+1. **Centralized Calculation Service**
+   - Base loan calculations (loan amount, monthly payments)
+   - Payment schedule generation
+   - Support for 12 or 14 installments per year
+   - Double payments in July and December for 14-installment scheme
 
-**Each Scenario Tab Contains:**
-1. Description
-   - Regular: "Base mortgage with standard parameters"
-   - Accelerated: "Extra payments reduce the term, installment remains constant"
-   - Lower Payment: "Extra payments reduce the monthly payment, term remains the same"
-   - New Rate: "Adjusts the interest rate (and optionally term) from a specified date"
+2. **Scenario Management**
+   - Regular: Standard amortization schedule
+   - Accelerated: Extra payments reduce term
+   - Lower Payment: Extra payments reduce monthly payment
+   - New Rate: Interest rate changes with optional term adjustment
 
-2. Summary Metrics
-   - Sum Interest & Insurances: Total cost of interest and insurance over the loan term
-   - Months: Total duration of the mortgage in months
-   - Monthly Pay: Regular installment amount
+3. **State Management (Zustand)**
+   - Property and loan details
+   - Scenario states and selections
+   - Calculation results
+   - Error handling
 
-   Layout: Grid with 10 columns total
-   - Sum Interest & Insurances: 5 columns (50%)
-   - Months: 2 columns (20%)
-   - Monthly Pay: 3 columns (30%)
+4. **Caching Strategy**
+   - In-memory cache for expensive calculations
+   - TTL-based expiration (30 minutes default)
+   - Maximum cache size (100 entries default)
+   - Key generation based on property, loan values, and scenario
 
-3. Payment Breakdown Graph
-   - Type: Stacked area chart
-   - X-axis: Years (0 to term)
-   - Y-axis: Payment amount
-   - Areas:
-     - Principal (green)
-     - Interest (red)
-   - Features:
-     - Interactive tooltips showing monthly breakdown
-     - 5-year interval markers
-     - Grid lines for better readability
+5. **Live Calculations**
+   - Debounced updates (500ms default)
+   - Automatic recalculation on value changes
+   - Real-time UI updates
 
-4. Summary Statistics (below graph)
-   - Total Interest: Cumulative interest over the loan term
-   - Average Principal Payment: Mean principal portion of payments
+**Fixed Values:**
+- Suggested term: 20 years
+- Suggested down payment: 10%
+- Default installments: 12 per year
 
-**Mobile Responsiveness:**
-- On mobile devices (<768px):
-  - Left panel takes full width
-  - Right panel becomes a slide-in panel
-  - "View Payment Details" button to toggle panel visibility
-  - Back button to return to loan details
+**Calculation Rules:**
+1. **Loan Amount**
+   ```typescript
+   loanAmount = (propertyCost - bonus) - downPayment
+   ```
 
-**Interaction Flow:**
-1. User selects a scenario tab
-2. Summary metrics update instantly
-3. Graph refreshes to show the selected payment strategy
-4. For Accelerated/Lower Payment tabs:
-   - Extra payment form appears
-   - Table of scheduled extra payments
-5. For New Rate tab:
-   - Description: "Adjusts the interest rate (and optionally term) from a specified date"
-   - Form title: "Refinancing Options"
-   - Data is persisted in Supabase `refinancing_options` table with fields:
-     - `id` (uuid, primary key)
-     - `amortization_id` (uuid, foreign key)
-     - `new_interest_rate` (numeric)
-     - `effective_date` (date)
-     - `new_term_years` (int4, nullable)
-     - `created_at` (timestamptz)
-     - `updated_at` (timestamptz)
-   - Form fields:
-     - New Interest Rate: Numeric input (9%)
-     - New Term: Dropdown (10 years)
-     - Start Date: Date picker with calendar
-   - Default state:
-     - Interest rate and term are 0/empty
-     - Button shows "✔ OK"
-   - When refinancing option exists:
-     - Form shows existing values
-     - Button shows "✔ Update"
-   - Form validation:
-     - Interest rate: Between 4% and 18%
-     - Start date: Required, must be future date
-     - New term: Optional, values 5-30 years in 5-year increments
+2. **Monthly Payment**
+   ```typescript
+   monthlyRate = (annualRate / 100) / installmentsPerYear
+   totalPayments = termYears * installmentsPerYear
+   
+   if (monthlyRate === 0) {
+     monthlyPayment = loanAmount / totalPayments
+   } else {
+     monthlyPayment = (loanAmount * monthlyRate * (1 + monthlyRate)^totalPayments) / 
+                      ((1 + monthlyRate)^totalPayments - 1)
+   }
+   ```
 
-**Data Updates:**
-- All changes in the left panel (loan details) trigger recalculation of:
-  - Loan amount
-  - Monthly payments
-  - Interest totals
-  - Graph data points
-- Each scenario maintains its own state for:
-  - Extra payments (Accelerated/Lower)
-  - Rate changes (New Rate)
-  - Payment schedule
+3. **Extra Payments**
+   - Can be one-time, monthly, or yearly
+   - Reduce principal immediately
+   - Recalculate remaining payments
+   - Update total interest and term/payment based on scenario
 
-This layout provides a clear comparison between different payment strategies while maintaining all loan details easily accessible in the left panel.
+4. **Rate Changes**
+   - Can specify new interest rate and optional new term
+   - Effective from specified date
+   - Recalculate remaining payments with new rate
+   - Maintain extra payments if any
+
+**Data Persistence:**
+- Scenarios stored in Supabase
+- State persisted in local storage
+- Cache in memory only
 
 #### 2.2 Loan Protection Insurance
 
