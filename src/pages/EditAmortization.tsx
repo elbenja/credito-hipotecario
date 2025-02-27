@@ -382,63 +382,66 @@ export default function EditAmortization() {
         )
       }}
     >
-      <div>
+      <div className="flex flex-col min-h-screen">
+   
+
+        <div className="flex flex-col md:flex-row flex-1">
+          {/* Left Container */}
+          <div className="w-full md:w-[40%] px-8 pt-6 relative flex-shrink-0">
+            <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-border"></div>
 
 
-        <div className="space-y-6 ">
-          <div className="flex flex-col md:flex-row ">
-            {/* Left Container */}
-            <div className="w-full md:w-[40%] px-8 pt-6">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormItem>
-                    <FormLabel>Property</FormLabel>
-                    <PropertyDisplay 
-                      property={{
-                        ...amortization.property,
-                        is_first_home: amortization.property.is_first_home || false,
-                        is_sustainable: amortization.property.is_sustainable || false
-                      }}
-                    />
-                  </FormItem>
 
-                  <LoanDetails 
-                    form={form}
-                    selectedProperty={selectedProperty}
-                    interestRateLimits={amortization?.interestRateLimits || { min_rate: 4, max_rate: 18 }}
+        
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormItem>
+                  <FormLabel>Property</FormLabel>
+                  <PropertyDisplay 
+                    property={{
+                      ...amortization.property,
+                      is_first_home: amortization.property.is_first_home || false,
+                      is_sustainable: amortization.property.is_sustainable || false
+                    }}
                   />
+                </FormItem>
 
-                  <Separator className="w-full" />
+                <LoanDetails 
+                  form={form}
+                  selectedProperty={selectedProperty}
+                  interestRateLimits={amortization?.interestRateLimits || { min_rate: 4, max_rate: 18 }}
+                />
 
-                  <div className="flex flex-col gap-2">
-                    <Button type="submit" className="w-full">
-                      Update
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="secondary" 
-                      className="w-full"
-                      onClick={() => navigate("/amortizations")}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </div>
+                <Separator className="w-full" />
 
-            <PaymentScenariosPanel 
-              paymentDetails={paymentDetails}
-              showMobileDetails={showMobileDetails}
-              onCloseMobilePanel={() => setShowMobileDetails(false)}
-              onOpenMobilePanel={() => setShowMobileDetails(true)}
-              currency={amortization.property.currency}
-              loanAmount={amortization.property.price_cost - parseFloat(form.getValues("down_payment"))}
-              annualInterestRate={parseFloat(form.getValues("interest_rate"))}
-              termYears={parseInt(form.getValues("term_years"))}
-              amortizationId={id || ""}
-            />
+                <div className="flex flex-col gap-2">
+                  <Button type="submit" className="w-full">
+                    Update
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="secondary" 
+                    className="w-full"
+                    onClick={() => navigate("/amortizations")}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </div>
+
+          <PaymentScenariosPanel 
+            paymentDetails={paymentDetails}
+            showMobileDetails={showMobileDetails}
+            onCloseMobilePanel={() => setShowMobileDetails(false)}
+            onOpenMobilePanel={() => setShowMobileDetails(true)}
+            currency={amortization.property.currency}
+            loanAmount={amortization.property.price_cost - parseFloat(form.getValues("down_payment"))}
+            annualInterestRate={parseFloat(form.getValues("interest_rate"))}
+            termYears={parseInt(form.getValues("term_years"))}
+            amortizationId={id || ""}
+          />
         </div>
       </div>
     </DashboardLayout>

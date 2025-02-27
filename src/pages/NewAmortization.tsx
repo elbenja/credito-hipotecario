@@ -232,84 +232,83 @@ export default function NewAmortization() {
         )
       }}
     >
-      <div>
+      <div className="flex flex-col min-h-screen">
         <div className="flex items-center justify-between px-8 py-4">
           <h1 className="text-2xl font-bold">New Amortization</h1>
+        </div>
+
+        <Separator />
+
+        <div className="flex flex-col md:flex-row flex-1">
+          {/* Left Container */}
+          <div className="w-full md:w-[40%] px-8 pt-6 relative flex-shrink-0">
+            <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-border"></div>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter amortization name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Separator />
+
+                <PropertySelect 
+                  form={form} 
+                  onPropertyChange={setSelectedProperty} 
+                />
+
+                <LoanDetails 
+                  form={form}
+                  selectedProperty={selectedProperty}
+                  interestRateLimits={interestRateLimits}
+                />
+
+                <Separator />
+
+                <div className="flex flex-col gap-2">
+                  <Button type="submit">
+                    Save
+                  </Button>
+                  <Button type="button" variant="secondary">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Save & Create Rental Scenario
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </div>
 
-<Separator />
-
-<div className="space-y-6 ">
-          <div className="flex flex-col md:flex-row ">
-            {/* Left Container */}
-            <div className="w-full md:w-[40%] px-8 pt-6">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter amortization name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Separator />
-
-                  <PropertySelect 
-                    form={form} 
-                    onPropertyChange={setSelectedProperty} 
-                  />
-
-                  <LoanDetails 
-                    form={form}
-                    selectedProperty={selectedProperty}
-                    interestRateLimits={interestRateLimits}
-                  />
-
-                  <Separator />
-
-                  <div className="flex flex-col gap-2">
-                    <Button type="submit">
-                      Save
-                    </Button>
-                    <Button type="button" variant="secondary">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Save & Create Rental Scenario
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </div>
-
-            <PaymentScenariosPanel 
-              paymentDetails={paymentDetails}
-              showMobileDetails={showMobileDetails}
-              onCloseMobilePanel={() => setShowMobileDetails(false)}
-              onOpenMobilePanel={() => setShowMobileDetails(true)}
-              currency={selectedProperty?.currency || "PEN"}
-              loanAmount={selectedProperty ? selectedProperty.price_cost - parseFloat(form.getValues("down_payment").replace(/[^0-9.]/g, "")) : 0}
-              annualInterestRate={parseFloat(form.getValues("interest_rate"))}
-              termYears={parseInt(form.getValues("term_years"))}
-              amortizationId=""
-              extraInstallments={temporaryInstallments}
-              onExtraInstallmentAdd={(installment) => {
-                const newInstallment: Omit<ExtraInstallment, 'amortization_id' | 'created_at' | 'updated_at'> = {
-                  id: Math.random().toString(36).substr(2, 9), // Temporary ID
-                  ...installment
-                }
-                setTemporaryInstallments([...temporaryInstallments, newInstallment as ExtraInstallment])
-              }}
-              onExtraInstallmentDelete={(id) => {
-                setTemporaryInstallments(temporaryInstallments.filter(i => i.id !== id))
-              }}
-            />
-          </div>
+          <PaymentScenariosPanel 
+            paymentDetails={paymentDetails}
+            showMobileDetails={showMobileDetails}
+            onCloseMobilePanel={() => setShowMobileDetails(false)}
+            onOpenMobilePanel={() => setShowMobileDetails(true)}
+            currency={selectedProperty?.currency || "PEN"}
+            loanAmount={selectedProperty ? selectedProperty.price_cost - parseFloat(form.getValues("down_payment").replace(/[^0-9.]/g, "")) : 0}
+            annualInterestRate={parseFloat(form.getValues("interest_rate"))}
+            termYears={parseInt(form.getValues("term_years"))}
+            amortizationId=""
+            extraInstallments={temporaryInstallments}
+            onExtraInstallmentAdd={(installment) => {
+              const newInstallment: Omit<ExtraInstallment, 'amortization_id' | 'created_at' | 'updated_at'> = {
+                id: Math.random().toString(36).substr(2, 9), // Temporary ID
+                ...installment
+              }
+              setTemporaryInstallments([...temporaryInstallments, newInstallment as ExtraInstallment])
+            }}
+            onExtraInstallmentDelete={(id) => {
+              setTemporaryInstallments(temporaryInstallments.filter(i => i.id !== id))
+            }}
+          />
         </div>
       </div>
     </DashboardLayout>

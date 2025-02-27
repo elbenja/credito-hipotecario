@@ -63,6 +63,12 @@ export function LoanDetails({
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
   const [isSuggested, setIsSuggested] = useState(false)
   const [downPaymentPercent, setDownPaymentPercent] = useState(0)
+  const [highlightFields, setHighlightFields] = useState({
+    downPayment: false,
+    propertyPercent: false,
+    termYears: false,
+    installments: false
+  })
 
   // Load bonus rules
   useEffect(() => {
@@ -147,7 +153,26 @@ export function LoanDetails({
     form.setValue("down_payment", (selectedProperty.price_cost * 0.10).toString())
     form.setValue("term_years", "20")
     form.setValue("installments_per_year", "12")
+    setDownPaymentPercent(10)
     setIsSuggested(true)
+
+    // Set highlight effect
+    setHighlightFields({
+      downPayment: true,
+      propertyPercent: true,
+      termYears: true,
+      installments: true
+    })
+
+    // Clear highlight effect after delay
+    setTimeout(() => {
+      setHighlightFields({
+        downPayment: false,
+        propertyPercent: false,
+        termYears: false,
+        installments: false
+      })
+    }, 500) // 500ms total (200ms highlight + 300ms fade)
 
     toast.message("Suggested Scenario Applied", {
       description: "Amortization Term set to 20 years, Down Payment set to 10%, and Installments is 1 per month"
@@ -257,6 +282,9 @@ export function LoanDetails({
                     placeholder="Enter down payment"
                     currency={selectedProperty?.currency || "PEN"}
                     {...field}
+                    className={cn(
+                      highlightFields.downPayment && "ring-2 ring-primary transition-all duration-500"
+                    )}
                     onChange={(value) => {
                       field.onChange(value)
                       if (selectedProperty) {
@@ -289,7 +317,10 @@ export function LoanDetails({
                 min="0"
                 max="100"
                 step="1"
-                className="pr-8"
+                className={cn(
+                  "pr-8",
+                  highlightFields.propertyPercent && "ring-2 ring-primary transition-all duration-500"
+                )}
               />
               <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted-foreground">
                 %
@@ -425,7 +456,12 @@ export function LoanDetails({
                 <FormLabel>Amortization Term</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger className="form-control-focus">
+                    <SelectTrigger 
+                      className={cn(
+                        "form-control-focus",
+                        highlightFields.termYears && "ring-2 ring-primary transition-all duration-500"
+                      )}
+                    >
                       <SelectValue placeholder="Select term" />
                     </SelectTrigger>
                   </FormControl>
@@ -453,7 +489,12 @@ export function LoanDetails({
                 <FormLabel>Instalments per Year</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger className="form-control-focus">
+                    <SelectTrigger 
+                      className={cn(
+                        "form-control-focus",
+                        highlightFields.installments && "ring-2 ring-primary transition-all duration-500"
+                      )}
+                    >
                       <SelectValue placeholder="Select frequency" />
                     </SelectTrigger>
                   </FormControl>
