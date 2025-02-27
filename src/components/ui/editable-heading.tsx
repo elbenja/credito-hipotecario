@@ -1,5 +1,4 @@
-
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, ElementType } from "react"
 import { Pencil } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -7,9 +6,17 @@ interface EditableHeadingProps {
   value: string
   onChange: (value: string) => void
   className?: string
+  as?: ElementType
+  size?: "default" | "sm" | "lg" | "breadcrumb"
 }
 
-export function EditableHeading({ value, onChange, className }: EditableHeadingProps) {
+export function EditableHeading({ 
+  value, 
+  onChange, 
+  className,
+  as: Component = "h1",
+  size = "default" 
+}: EditableHeadingProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [inputValue, setInputValue] = useState(value)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -20,6 +27,10 @@ export function EditableHeading({ value, onChange, className }: EditableHeadingP
       inputRef.current.select()
     }
   }, [isEditing])
+
+  useEffect(() => {
+    setInputValue(value)
+  }, [value])
 
   const handleSave = () => {
     if (inputValue.trim() !== value) {
@@ -37,6 +48,13 @@ export function EditableHeading({ value, onChange, className }: EditableHeadingP
     }
   }
 
+  const sizeClasses = {
+    default: "text-2xl font-bold",
+    sm: "text-lg font-semibold",
+    lg: "text-3xl font-bold",
+    breadcrumb: "text-sm font-normal"
+  }
+
   if (isEditing) {
     return (
       <input
@@ -46,7 +64,8 @@ export function EditableHeading({ value, onChange, className }: EditableHeadingP
         onBlur={handleSave}
         onKeyDown={handleKeyDown}
         className={cn(
-          "bg-transparent w-full px-0 text-2xl font-bold border-none outline-none focus:ring-0 focus:border-none",
+          "bg-transparent w-full px-0 border-none outline-none focus:ring-0 focus:border-none",
+          sizeClasses[size],
           className
         )}
       />
@@ -58,7 +77,9 @@ export function EditableHeading({ value, onChange, className }: EditableHeadingP
       className={cn("group relative cursor-text", className)}
       onClick={() => setIsEditing(true)}
     >
-      <h1 className="text-2xl font-bold">{value}</h1>
+      <Component className={cn(sizeClasses[size])}>
+        {value}
+      </Component>
       <Pencil className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 absolute -right-6 top-1/2 -translate-y-1/2 transition-opacity" />
     </div>
   )

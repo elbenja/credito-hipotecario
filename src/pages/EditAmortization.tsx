@@ -369,7 +369,13 @@ export default function EditAmortization() {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>{amortization?.name || 'Not Found'}</BreadcrumbPage>
+                <EditableHeading 
+                  value={amortization.name} 
+                  onChange={handleNameChange}
+                  size="breadcrumb"
+                  as="span"
+                  className="text-foreground"
+                />
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -377,17 +383,7 @@ export default function EditAmortization() {
       }}
     >
       <div>
-        <div className="flex items-center justify-between px-8 py-4">
-          <EditableHeading 
-            value={amortization.name} 
-            onChange={handleNameChange}
-          />
-          <Button variant="destructive" onClick={handleDelete}>
-            Delete
-          </Button>
-        </div>
 
-        <Separator />
 
         <div className="space-y-6 ">
           <div className="flex flex-col md:flex-row ">
