@@ -127,19 +127,19 @@ export function PaymentChart({ loanAmount, annualInterestRate, termYears, curren
                 const data = payload[0].payload
 
                 return (
-                  <div className="rounded-lg border bg-background p-2 shadow-sm">
-                    <div className="grid gap-2">
+                  <div className="rounded-md border bg-background px-3 py-1 shadow-sm">
+                    <div className="grid gap-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium">Monthly Pay</span>
-                        <span>{formatCurrency(data.monthlyPayment, currency)}</span>
+                        <span className="text-sm font-medium">Monthly Pay</span>
+                        <span className="text-sm font-medium">{formatCurrency(data.monthlyPayment, currency)}</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium">Principal</span>
-                        <span>{formatCurrency(data.principal, currency)}</span>
+                        <span className="text-sm font-medium text-muted-foreground">Principal</span>
+                        <span className="text-sm font-medium">{formatCurrency(data.principal, currency)}</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium">Interest</span>
-                        <span>{formatCurrency(data.interest, currency)}</span>
+                        <span className="text-sm font-medium text-muted-foreground">Interest</span>
+                        <span className="text-sm font-medium">{formatCurrency(data.interest, currency)}</span>
                       </div>
                     </div>
                   </div>
