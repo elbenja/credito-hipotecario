@@ -500,8 +500,8 @@ export function LoanDetails({
                   </FormControl>
                   <SelectContent>
                     {[
-                      { value: "12", label: "12 (Monthly)" },
-                      { value: "14", label: "14 (Biweekly)" },
+                      { value: "12", label: "Simple" },
+                      { value: "14", label: "Double" },
                       { value: "24", label: "24 (Twice Monthly)" },
                       { value: "26", label: "26 (Every 2 Weeks)" }
                     ].map((option) => (

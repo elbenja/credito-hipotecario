@@ -145,13 +145,32 @@ src/
    }
    ```
 
-3. **Extra Payments**
+3. **14 Installments (Double) Payment Calculation**
+   The Peruvian "Double" frequency payment scheme involves 12 monthly payments with double payments in July and December:
+   - Regular months (10 months): Single payment amount
+   - July and December: Double payment amount
+   - Interest rate remains monthly (annual rate / 12)
+   - Total yearly payments equivalent to 14 regular installments
+   
+   ```typescript
+   // Example calculation for a loan of $100,000, 10% annual interest, 10-year term:
+   // Regular monthly payment: $1,068.19016039371
+   // July and December payment: $2,136.38032078742 (double)
+   
+   // The calculation ensures:
+   // 1. Interest is computed monthly (annual rate / 12)
+   // 2. Principal reduction accounts for double payments in July/December
+   // 3. Loan balance reaches exactly $0 at the end of the term
+   // 4. Total yearly payment equals 14 times the regular monthly amount
+   ```
+
+4. **Extra Payments**
    - Can be one-time, monthly, or yearly
    - Reduce principal immediately
    - Recalculate remaining payments
    - Update total interest and term/payment based on scenario
 
-4. **Rate Changes**
+5. **Rate Changes**
    - Can specify new interest rate and optional new term
    - Effective from specified date
    - Recalculate remaining payments with new rate
