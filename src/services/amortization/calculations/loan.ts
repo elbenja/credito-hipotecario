@@ -103,7 +103,9 @@ export class LoanCalculator {
     const monthlyRate = (baseValues.interest_rate / 100) / baseValues.installments_per_year;
     let remainingBalance = Number(loanAmount.toFixed(10));
     let paymentDate = new Date(baseValues.first_installment_date);
-    const monthlyPayment = this.calculateMonthlyPayment(
+    
+    // Calculate base installment amount (loan payment only, without insurances)
+    const baseMonthlyPayment = this.calculateMonthlyPayment(
       loanAmount,
       baseValues.interest_rate,
       baseValues.term_years,
@@ -116,23 +118,36 @@ export class LoanCalculator {
       const isDoublePayment = baseValues.installments_per_year === 14 && 
         (paymentDate.getMonth() === 6 || paymentDate.getMonth() === 11);
 
-      const currentPayment = isDoublePayment ? monthlyPayment * 2 : monthlyPayment;
+      // Base payment without insurance
+      const currentBasePayment = isDoublePayment ? baseMonthlyPayment * 2 : baseMonthlyPayment;
+      
+      // Insurance amounts (monthly)
+      const monthlyPropertyInsurance = Number(property.property_insurance || 0);
+      const monthlyLoanProtection = Number(baseValues.loan_protection_insurance || 0);
+      
+      // Double the insurance for double payment months
+      const currentPropertyInsurance = isDoublePayment ? monthlyPropertyInsurance * 2 : monthlyPropertyInsurance;
+      const currentLoanProtection = isDoublePayment ? monthlyLoanProtection * 2 : monthlyLoanProtection;
+
       const interestPayment = Number((remainingBalance * monthlyRate).toFixed(10));
-      const principalPayment = Number((currentPayment - interestPayment).toFixed(10));
+      const principalPayment = Number((currentBasePayment - interestPayment).toFixed(10));
       const endingBalance = i === totalPayments ? 0 : Number((remainingBalance - principalPayment).toFixed(10));
+
+      // Total payment includes base payment plus both insurances
+      const totalPayment = Number((currentBasePayment + currentPropertyInsurance + currentLoanProtection).toFixed(10));
 
       const payment: PaymentDetail = {
         date: new Date(paymentDate),
         payment_number: i,
         beginning_balance: remainingBalance,
-        scheduled_payment: currentPayment,
+        scheduled_payment: totalPayment,
         extra_payment: 0,
-        total_payment: currentPayment,
+        total_payment: totalPayment,
         principal: principalPayment,
         interest: interestPayment,
         ending_balance: endingBalance,
-        property_insurance: property.property_insurance,
-        loan_protection_insurance: baseValues.loan_protection_insurance,
+        property_insurance: currentPropertyInsurance,
+        loan_protection_insurance: currentLoanProtection,
         is_extra_payment: false,
         is_double_payment: isDoublePayment
       };
@@ -152,15 +167,22 @@ export class LoanCalculator {
     baseValues: BaseAmortizationValues
   ): CalculationResults {
     const loanAmount = this.calculateLoanAmount(property, baseValues.down_payment);
-    const schedule = this.generatePaymentSchedule(loanAmount, baseValues, property);
     
-    const totalMonths = baseValues.term_years * LoanCalculator.MONTHS_IN_YEAR;
-    const monthlyPayment = this.calculateMonthlyPayment(
+    // Calculate base monthly payment (without insurances)
+    const baseMonthlyPayment = this.calculateMonthlyPayment(
       loanAmount,
       baseValues.interest_rate,
       baseValues.term_years,
       baseValues.installments_per_year
     );
+
+    // Add monthly insurance amounts to get total monthly payment
+    const monthlyPropertyInsurance = Number(property.property_insurance || 0);
+    const monthlyLoanProtection = Number(baseValues.loan_protection_insurance || 0);
+    const totalMonthlyPayment = Number((baseMonthlyPayment + monthlyPropertyInsurance + monthlyLoanProtection).toFixed(10));
+
+    const schedule = this.generatePaymentSchedule(loanAmount, baseValues, property);
+    const totalMonths = baseValues.term_years * LoanCalculator.MONTHS_IN_YEAR;
 
     const totalInterestAndInsurance = schedule.reduce((sum, payment) => 
       sum + payment.interest + payment.property_insurance + payment.loan_protection_insurance,
@@ -171,7 +193,8 @@ export class LoanCalculator {
       loan_amount: loanAmount,
       total_interest_and_insurance: totalInterestAndInsurance,
       total_months: totalMonths,
-      monthly_payment: monthlyPayment,
+      base_monthly_payment: baseMonthlyPayment,
+      monthly_payment: totalMonthlyPayment,
       payment_schedule: schedule
     };
   }

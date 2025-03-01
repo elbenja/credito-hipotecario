@@ -41,6 +41,7 @@ export interface CalculationResults {
   loan_amount: number;
   total_interest_and_insurance: number;
   total_months: number;
+  base_monthly_payment: number;
   monthly_payment: number;
   payment_schedule: PaymentDetail[];
 }

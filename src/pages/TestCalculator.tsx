@@ -68,14 +68,57 @@ export default function TestCalculator() {
     // Calculate monthly rate
     const calculatedMonthlyRate = (interestRateValue / 100) / installmentsPerYearValue
 
+    // Function to calculate final balance given a monthly installment
+    const calculateFinalBalance = (monthlyInstallmentGuess: number): number => {
+      let balance = costValue - downPaymentValue;
+      const months = termYearsValue * 12;
+      
+      for (let i = 0; i < months; i++) {
+        const isDoubleMonth = installmentsPerYear === "14" && (i % 12 === 6 || i % 12 === 11);
+        const interest = Number((balance * calculatedMonthlyRate).toFixed(10));
+        const installment = isDoubleMonth ? monthlyInstallmentGuess * 2 : monthlyInstallmentGuess;
+        const principal = Number((installment - interest).toFixed(10));
+        balance = Number((balance - principal).toFixed(10));
+      }
+      
+      return balance;
+    };
+
+    // Binary search to find the correct monthly installment
+    const findCorrectMonthlyInstallment = () => {
+      let low = 0;
+      let high = (costValue - downPaymentValue) * 2; // Start with a high upper bound
+      let guess = (low + high) / 2;
+      const tolerance = 0.0000001; // Increased precision
+      let iterations = 0;
+      const maxIterations = 1000; // Increased max iterations
+
+      while (Math.abs(calculateFinalBalance(guess)) > tolerance && iterations < maxIterations) {
+        const balance = calculateFinalBalance(guess);
+        
+        if (balance > 0) {
+          low = guess;
+        } else {
+          high = guess;
+        }
+        
+        guess = Number(((low + high) / 2).toFixed(10));
+        iterations++;
+      }
+
+      return guess;
+    };
+
+    // Find the correct monthly installment
+    const baseMonthlyInstallment = findCorrectMonthlyInstallment();
+    
     // Create a mock property object for the calculator
     const mockProperty: Property = {
       id: "test",
       cost: costValue,
       currency: "PEN",
       property_insurance: propertyInsuranceValue,
-      is_first_home: false,
-      is_sustainable: false,
+      property_insurance_type: "manual",
       bonus: 0
     }
 
@@ -96,42 +139,44 @@ export default function TestCalculator() {
     const results = loanCalculator.calculateResults(mockProperty, baseValues)
 
     // Update output states
-    setInstallmentAmount(results.monthly_payment)
+    setInstallmentAmount(results.base_monthly_payment)
     setTotalInterestAndPayments(results.total_interest_and_insurance)
     setTotalMonths(results.total_months)
     setMonthlyPayment(results.monthly_payment)
-    setMonthlyRate(calculatedMonthlyRate * 100) // Convert back to percentage for display
+    setMonthlyRate(calculatedMonthlyRate * 100)
 
-    // Calculate payment schedule
+    // Calculate payment schedule with the goal-seeked monthly installment
     const generatePaymentSchedule = () => {
       const rows: PaymentScheduleRow[] = [];
       let currentDate = new Date(firstInstallmentDate);
-      let beginBalance = costValue - downPaymentValue;
+      let beginBalance = Number((costValue - downPaymentValue).toFixed(10));
       const monthlyRate = calculatedMonthlyRate;
-      const monthlyInsurance = propertyInsuranceValue / installmentsPerYearValue;
-      const monthlyLoanProtection = loanProtectionValue / installmentsPerYearValue;
-      const baseMonthlyInstallment = results.monthly_payment - monthlyInsurance - monthlyLoanProtection;
+      const baseMonthlyInstallment = results.base_monthly_payment;
 
       for (let i = 0; i < totalMonths; i++) {
         const currentMonth = currentDate.getMonth();
         const isDoublePaymentMonth = installmentsPerYear === "14" && (currentMonth === 6 || currentMonth === 11);
         const monthlyInstallment = isDoublePaymentMonth ? baseMonthlyInstallment * 2 : baseMonthlyInstallment;
-        const monthlyPaymentAmount = isDoublePaymentMonth ? results.monthly_payment * 2 : results.monthly_payment;
         
-        const interest = beginBalance * monthlyRate;
-        const principal = monthlyInstallment - interest;
-        const endBalance = Math.max(0, beginBalance - principal); // Ensure we don't go below 0
+        // Insurance amounts
+        const currentPropertyInsurance = isDoublePaymentMonth ? propertyInsuranceValue * 2 : propertyInsuranceValue;
+        const currentLoanProtection = isDoublePaymentMonth ? loanProtectionValue * 2 : loanProtectionValue;
+        const monthlyPaymentAmount = monthlyInstallment + currentPropertyInsurance + currentLoanProtection;
+        
+        const interest = Number((beginBalance * monthlyRate).toFixed(10));
+        const principal = Number((monthlyInstallment - interest).toFixed(10));
+        const endBalance = i === totalMonths - 1 ? 0 : Number((beginBalance - principal).toFixed(10));
         
         rows.push({
           row: i + 1,
           date: new Date(currentDate),
-          monthlyPayment: monthlyPaymentAmount,
-          monthlyInstallment: monthlyInstallment,
-          interestAndPayments: interest + monthlyInstallment,
-          principal,
-          interest,
-          beginBalance,
-          endBalance
+          monthlyPayment: Number(monthlyPaymentAmount.toFixed(10)),
+          monthlyInstallment: Number(monthlyInstallment.toFixed(10)),
+          interestAndPayments: Number((interest + monthlyInstallment).toFixed(10)),
+          principal: Number(principal.toFixed(10)),
+          interest: Number(interest.toFixed(10)),
+          beginBalance: Number(beginBalance.toFixed(10)),
+          endBalance: endBalance
         });
 
         beginBalance = endBalance;
@@ -295,7 +340,7 @@ export default function TestCalculator() {
             </div>
 
             <div>
-              <Label className="text-muted-foreground">Installment Amount</Label>
+              <Label className="text-muted-foreground">Base Installment Amount</Label>
               <div className="text-2xl font-bold">
                 {formatCurrency(installmentAmount, "PEN")}
               </div>
