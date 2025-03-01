@@ -14,6 +14,55 @@ export class LoanCalculator {
 
   private static readonly MONTHS_IN_YEAR = 12;
 
+  // Add new method for goal-seeking calculation
+  private findCorrectMonthlyInstallment(
+    loanAmount: number,
+    annualRate: number,
+    termYears: number,
+    installmentsPerYear: number
+  ): number {
+    const monthlyRate = (annualRate / 100) / installmentsPerYear;
+    
+    // Function to calculate final balance for a given monthly installment
+    const calculateFinalBalance = (monthlyInstallmentGuess: number): number => {
+      let balance = loanAmount;
+      const months = termYears * 12;
+      
+      for (let i = 0; i < months; i++) {
+        const isDoubleMonth = installmentsPerYear === 14 && (i % 12 === 6 || i % 12 === 11);
+        const interest = Number((balance * monthlyRate).toFixed(10));
+        const installment = isDoubleMonth ? monthlyInstallmentGuess * 2 : monthlyInstallmentGuess;
+        const principal = Number((installment - interest).toFixed(10));
+        balance = Number((balance - principal).toFixed(10));
+      }
+      
+      return balance;
+    };
+
+    // Binary search implementation
+    let low = 0;
+    let high = loanAmount * 2; // Start with a high upper bound
+    let guess = (low + high) / 2;
+    const tolerance = 0.0000001;
+    let iterations = 0;
+    const maxIterations = 1000;
+
+    while (Math.abs(calculateFinalBalance(guess)) > tolerance && iterations < maxIterations) {
+      const balance = calculateFinalBalance(guess);
+      
+      if (balance > 0) {
+        low = guess;
+      } else {
+        high = guess;
+      }
+      
+      guess = Number(((low + high) / 2).toFixed(10));
+      iterations++;
+    }
+
+    return guess;
+  }
+
   calculateLoanAmount(property: Property, downPayment: number): number {
     // Apply bonus before down payment
     const costAfterBonus = property.cost - property.bonus;
@@ -26,6 +75,12 @@ export class LoanCalculator {
     termYears: number,
     installmentsPerYear: number
   ): number {
+    // Use the goal-seeking method for 14 installments per year
+    if (installmentsPerYear === 14) {
+      return this.findCorrectMonthlyInstallment(loanAmount, annualRate, termYears, installmentsPerYear);
+    }
+
+    // Use the standard formula for 12 installments
     const monthlyRate = (annualRate / 100) / installmentsPerYear;
     const totalPayments = termYears * installmentsPerYear;
     
@@ -46,7 +101,7 @@ export class LoanCalculator {
   ): PaymentDetail[] {
     const schedule: PaymentDetail[] = [];
     const monthlyRate = (baseValues.interest_rate / 100) / baseValues.installments_per_year;
-    let remainingBalance = loanAmount;
+    let remainingBalance = Number(loanAmount.toFixed(10));
     let paymentDate = new Date(baseValues.first_installment_date);
     const monthlyPayment = this.calculateMonthlyPayment(
       loanAmount,
@@ -55,13 +110,16 @@ export class LoanCalculator {
       baseValues.installments_per_year
     );
 
-    for (let i = 1; i <= baseValues.term_years * baseValues.installments_per_year; i++) {
+    const totalPayments = baseValues.term_years * baseValues.installments_per_year;
+
+    for (let i = 1; i <= totalPayments; i++) {
       const isDoublePayment = baseValues.installments_per_year === 14 && 
-        (paymentDate.getMonth() === 6 || paymentDate.getMonth() === 11); // July or December
+        (paymentDate.getMonth() === 6 || paymentDate.getMonth() === 11);
 
       const currentPayment = isDoublePayment ? monthlyPayment * 2 : monthlyPayment;
-      const interestPayment = remainingBalance * monthlyRate;
-      const principalPayment = currentPayment - interestPayment;
+      const interestPayment = Number((remainingBalance * monthlyRate).toFixed(10));
+      const principalPayment = Number((currentPayment - interestPayment).toFixed(10));
+      const endingBalance = i === totalPayments ? 0 : Number((remainingBalance - principalPayment).toFixed(10));
 
       const payment: PaymentDetail = {
         date: new Date(paymentDate),
@@ -72,7 +130,7 @@ export class LoanCalculator {
         total_payment: currentPayment,
         principal: principalPayment,
         interest: interestPayment,
-        ending_balance: remainingBalance - principalPayment,
+        ending_balance: endingBalance,
         property_insurance: property.property_insurance,
         loan_protection_insurance: baseValues.loan_protection_insurance,
         is_extra_payment: false,
@@ -80,7 +138,7 @@ export class LoanCalculator {
       };
 
       schedule.push(payment);
-      remainingBalance = payment.ending_balance;
+      remainingBalance = endingBalance;
       
       // Move to next payment date
       paymentDate.setMonth(paymentDate.getMonth() + 1);
