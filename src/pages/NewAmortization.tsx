@@ -35,6 +35,7 @@ import {
 import { PaymentScenariosPanel } from "@/components/amortizations/payment-scenarios-panel"
 import { ExtraInstallmentsSection } from "@/components/amortizations/extra-installments-section"
 import { type ExtraInstallment } from "@/components/amortizations/types"
+import { LoanCalculator } from "@/services/amortization/calculations/loan"
 
 export default function NewAmortization() {
   const { user } = useAuth()
@@ -67,6 +68,7 @@ export default function NewAmortization() {
     }
   })
   const [showMobileDetails, setShowMobileDetails] = useState(false)
+  const loanCalculator = new LoanCalculator()
 
   const form = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
@@ -97,56 +99,70 @@ export default function NewAmortization() {
   useEffect(() => {
     if (!selectedProperty) return
 
-    const loanAmount = selectedProperty.price_cost - parseFloat(form.getValues("down_payment").replace(/[^0-9.]/g, ""))
-    const interestRate = parseFloat(form.getValues("interest_rate")) / 100
-    const termYears = parseInt(form.getValues("term_years"))
-    const installmentsPerYear = parseInt(form.getValues("installments_per_year"))
+    const mockProperty = {
+      id: selectedProperty.id,
+      cost: selectedProperty.price_cost,
+      currency: selectedProperty.currency,
+      property_insurance: 0,
+      property_insurance_type: "manual" as const,
+      bonus: 0
+    }
 
-    // Regular payment calculation
-    const totalMonths = termYears * installmentsPerYear
-    const monthlyRate = interestRate / installmentsPerYear
-    const monthlyPayment = (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / (Math.pow(1 + monthlyRate, totalMonths) - 1)
-    const totalPayment = monthlyPayment * totalMonths
-    const totalInterest = totalPayment - loanAmount
+    const baseValues = {
+      property_id: selectedProperty.id,
+      down_payment: parseFloat(form.getValues("down_payment")),
+      down_payment_percentage: (parseFloat(form.getValues("down_payment")) / selectedProperty.price_cost) * 100,
+      interest_rate: parseFloat(form.getValues("interest_rate")),
+      term_years: parseInt(form.getValues("term_years")),
+      installments_per_year: parseInt(form.getValues("installments_per_year")) as 12 | 14,
+      first_installment_date: form.getValues("first_installment_date"),
+      loan_protection_type: form.getValues("loan_protection_type") as "individual" | "joint" | "none" | "custom",
+      loan_protection_insurance: parseFloat(form.getValues("loan_protection_insurance"))
+    }
+
+    // Calculate results using the loan calculator service
+    const results = loanCalculator.calculateResults(mockProperty, baseValues)
+
+    // Base calculation for regular payments
+    const regularCalculation = {
+      totalInterestAndInsurance: results.total_interest_and_insurance,
+      totalMonths: results.total_months,
+      monthlyPayment: results.monthly_payment
+    }
 
     // Calculate total extra payments
     const extraPayments = temporaryInstallments.reduce((total, installment) => {
       if (installment.frequency === 'monthly') {
-        return total + (installment.amount * totalMonths)
+        return total + (installment.amount * results.total_months)
       }
       return total + installment.amount
     }, 0)
 
-    // Base calculation for regular payments
-    const regularCalculation = {
-      totalInterestAndInsurance: totalInterest,
-      totalMonths,
-      monthlyPayment
-    }
-
     // Accelerated calculation (reduced term)
-    const acceleratedMonthlyPayment = monthlyPayment
-    const acceleratedTotalMonths = Math.max(1, Math.ceil((loanAmount - extraPayments) * monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / (acceleratedMonthlyPayment * (Math.pow(1 + monthlyRate, totalMonths) - 1)))
-    const acceleratedTotalPayment = acceleratedMonthlyPayment * acceleratedTotalMonths
-    const acceleratedTotalInterest = acceleratedTotalPayment - (loanAmount - extraPayments)
+    const acceleratedMonthlyPayment = results.monthly_payment
+    const reducedLoanAmount = selectedProperty.price_cost - parseFloat(form.getValues("down_payment")) - extraPayments
+    const acceleratedResults = loanCalculator.calculateResults(mockProperty, {
+      ...baseValues,
+      down_payment: parseFloat(form.getValues("down_payment")) + extraPayments
+    })
 
     // Lower payment calculation (same term)
-    const reducedLoanAmount = loanAmount - extraPayments
-    const lowerMonthlyPayment = (reducedLoanAmount * monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / (Math.pow(1 + monthlyRate, totalMonths) - 1)
-    const lowerTotalPayment = lowerMonthlyPayment * totalMonths
-    const lowerTotalInterest = lowerTotalPayment - reducedLoanAmount
+    const lowerResults = loanCalculator.calculateResults(mockProperty, {
+      ...baseValues,
+      down_payment: parseFloat(form.getValues("down_payment")) + extraPayments
+    })
 
     setPaymentDetails({
       regular: regularCalculation,
       accelerated: {
-        totalInterestAndInsurance: acceleratedTotalInterest,
-        totalMonths: acceleratedTotalMonths,
-        monthlyPayment: acceleratedMonthlyPayment
+        totalInterestAndInsurance: acceleratedResults.total_interest_and_insurance,
+        totalMonths: acceleratedResults.total_months,
+        monthlyPayment: acceleratedResults.monthly_payment
       },
       lower: {
-        totalInterestAndInsurance: lowerTotalInterest,
-        totalMonths,
-        monthlyPayment: lowerMonthlyPayment
+        totalInterestAndInsurance: lowerResults.total_interest_and_insurance,
+        totalMonths: lowerResults.total_months,
+        monthlyPayment: lowerResults.monthly_payment
       },
       newRate: regularCalculation // This will be updated when a new rate is selected
     })

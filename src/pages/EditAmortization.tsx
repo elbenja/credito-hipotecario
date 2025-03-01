@@ -37,6 +37,7 @@ import { PlayCircle, ArrowLeft } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { PaymentSummary } from "@/components/amortizations/payment-summary"
 import { PaymentScenariosPanel } from "@/components/amortizations/payment-scenarios-panel"
+import { LoanCalculator } from "@/services/amortization/calculations/loan"
 
 export default function EditAmortization() {
   const { id } = useParams()
@@ -136,6 +137,8 @@ export default function EditAmortization() {
     },
     enabled: !!user && !!id,
   })
+
+  const loanCalculator = new LoanCalculator()
 
   useEffect(() => {
     if (amortization && amortization.property) {
@@ -270,25 +273,35 @@ export default function EditAmortization() {
   useEffect(() => {
     if (!amortization?.property) return
 
-    // TODO: Implement actual calculations based on form values
-    // This is just a placeholder for now
-    const loanAmount = amortization.property.price_cost - parseFloat(form.getValues("down_payment"))
-    const interestRate = parseFloat(form.getValues("interest_rate")) / 100
-    const termYears = parseInt(form.getValues("term_years"))
-    const installmentsPerYear = parseInt(form.getValues("installments_per_year"))
+    const mockProperty = {
+      id: amortization.property.id,
+      cost: amortization.property.price_cost,
+      currency: amortization.property.currency,
+      property_insurance: 0,
+      property_insurance_type: "manual" as const,
+      bonus: 0
+    }
 
-    // Regular payment calculation
-    const totalMonths = termYears * installmentsPerYear
-    const monthlyRate = interestRate / installmentsPerYear
-    const monthlyPayment = (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / (Math.pow(1 + monthlyRate, totalMonths) - 1)
-    const totalPayment = monthlyPayment * totalMonths
-    const totalInterest = totalPayment - loanAmount
+    const baseValues = {
+      property_id: amortization.property.id,
+      down_payment: parseFloat(form.getValues("down_payment")),
+      down_payment_percentage: (parseFloat(form.getValues("down_payment")) / amortization.property.price_cost) * 100,
+      interest_rate: parseFloat(form.getValues("interest_rate")),
+      term_years: parseInt(form.getValues("term_years")),
+      installments_per_year: parseInt(form.getValues("installments_per_year")) as 12 | 14,
+      first_installment_date: form.getValues("first_installment_date"),
+      loan_protection_type: form.getValues("loan_protection_type") as "individual" | "joint" | "none" | "custom",
+      loan_protection_insurance: parseFloat(form.getValues("loan_protection_insurance"))
+    }
+
+    // Calculate results using the loan calculator service
+    const results = loanCalculator.calculateResults(mockProperty, baseValues)
 
     // Set the same base calculation for all scenarios initially
     const baseCalculation = {
-      totalInterestAndInsurance: totalInterest,
-      totalMonths,
-      monthlyPayment
+      totalInterestAndInsurance: results.total_interest_and_insurance,
+      totalMonths: results.total_months,
+      monthlyPayment: results.monthly_payment
     }
 
     setPaymentDetails({

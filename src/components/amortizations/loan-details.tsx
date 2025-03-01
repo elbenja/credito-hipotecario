@@ -501,9 +501,7 @@ export function LoanDetails({
                   <SelectContent>
                     {[
                       { value: "12", label: "Simple" },
-                      { value: "14", label: "Double" },
-                      { value: "24", label: "24 (Twice Monthly)" },
-                      { value: "26", label: "26 (Every 2 Weeks)" }
+                      { value: "14", label: "Double" }
                     ].map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
