@@ -2,6 +2,7 @@ import { SEO } from "@/components/seo"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { DashboardSidebar } from "./dashboard-sidebar"
 import { Separator } from "@/components/ui/separator"
+import { useSidebarAutoCollapse } from "@/hooks/use-sidebar-auto-collapse"
 
 interface HeaderProps {
   title?: React.ReactNode
@@ -21,25 +22,32 @@ function Header({ title, actions }: HeaderProps) {
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  header?: {
-    title?: React.ReactNode
-    actions?: React.ReactNode
-  }
+  header?: HeaderProps
+}
+
+function DashboardContent({ children, header }: DashboardLayoutProps) {
+  useSidebarAutoCollapse()
+  
+  return (
+    <div className="min-h-screen flex w-full">
+      <DashboardSidebar />
+      <main className="flex-1 flex flex-col">
+        <Header title={header?.title} actions={header?.actions} />
+        <div className="flex-1">
+          {children}
+        </div>
+      </main>
+    </div>
+  )
 }
 
 export function DashboardLayout({ children, header }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
       <SEO title="Dashboard - CreditoHipotecar.io" />
-      <div className="min-h-screen flex w-full">
-        <DashboardSidebar />
-        <main className="flex-1 flex flex-col">
-          <Header title={header?.title} actions={header?.actions} />
-          <div className="flex-1">
-            {children}
-          </div>
-        </main>
-      </div>
+      <DashboardContent header={header}>
+        {children}
+      </DashboardContent>
     </SidebarProvider>
   )
 }
