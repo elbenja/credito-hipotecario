@@ -98,7 +98,9 @@ export default function EditAmortization() {
               currency,
               price_cost,
               is_first_home,
-              is_sustainable
+              is_sustainable,
+              property_insurance,
+              property_insurance_type
             )
           `)
           .eq("id", id)
@@ -277,8 +279,8 @@ export default function EditAmortization() {
       id: amortization.property.id,
       cost: amortization.property.price_cost,
       currency: amortization.property.currency,
-      property_insurance: 0,
-      property_insurance_type: "manual" as const,
+      property_insurance: amortization.property.property_insurance || 0,
+      property_insurance_type: amortization.property.property_insurance_type,
       bonus: 0
     }
 

@@ -33,7 +33,7 @@ export function PaymentSummary({
       </div>
       <div className="col-span-3 grid gap-1">
         <div className="text-sm font-medium text-muted-foreground">
-          Monthly Pay
+          Monthly Payment
         </div>
         <div className="text-2xl font-bold">
           {formatCurrency(monthlyPayment, currency)}

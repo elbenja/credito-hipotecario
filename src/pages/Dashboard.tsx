@@ -8,7 +8,7 @@ export default function Dashboard() {
       }}
     >
       <div className="p-8">
-        <p className="text-muted-foreground">Welcome to your HomeSavvy dashboard.</p>
+        <p className="text-muted-foreground">Welcome to your CreditoHipotecar.io dashboard.</p>
       </div>
     </DashboardLayout>
   )

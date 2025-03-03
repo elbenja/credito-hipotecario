@@ -347,7 +347,7 @@ export default function TestCalculator() {
             </div>
 
             <div>
-              <Label className="text-muted-foreground">Sum Interest + Monthly Payments</Label>
+              <Label className="text-muted-foreground">Sum Interest & Insurances</Label>
               <div className="text-2xl font-bold">
                 {formatCurrency(totalInterestAndPayments, "PEN")}
               </div>

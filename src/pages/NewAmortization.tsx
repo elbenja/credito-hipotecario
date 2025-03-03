@@ -103,8 +103,8 @@ export default function NewAmortization() {
       id: selectedProperty.id,
       cost: selectedProperty.price_cost,
       currency: selectedProperty.currency,
-      property_insurance: 0,
-      property_insurance_type: "manual" as const,
+      property_insurance: selectedProperty.property_insurance || 0,
+      property_insurance_type: selectedProperty.property_insurance_type,
       bonus: 0
     }
 
