@@ -17,24 +17,11 @@ import {
 import { Button } from "@/components/ui/button"
 import { CalendarIcon } from "lucide-react"
 import { cn, formatDate, formatCurrency } from "@/lib/utils"
-import { LoanCalculator } from "@/services/amortization/calculations/loan"
+import { amortizationDataService } from "@/services/amortization/calculations/amortizationData"
 import type { Property } from "@/services/amortization/types/common"
-
-interface PaymentScheduleRow {
-  row: number;
-  date: Date;
-  monthlyPayment: number;
-  monthlyInstallment: number;
-  interestAndPayments: number;
-  principal: number;
-  interest: number;
-  beginBalance: number;
-  endBalance: number;
-}
+import type { AmortizationRow } from "@/services/amortization/calculations/amortizationData"
 
 export default function TestCalculator() {
-  const loanCalculator = new LoanCalculator()
-
   // Input states
   const [cost, setCost] = useState<string>("0")
   const [propertyInsurance, setPropertyInsurance] = useState<string>("0")
@@ -42,7 +29,7 @@ export default function TestCalculator() {
   const [loanProtection, setLoanProtection] = useState<string>("0")
   const [interestRate, setInterestRate] = useState<string>("4")
   const [termYears, setTermYears] = useState<string>("20")
-  const [installmentsPerYear, setInstallmentsPerYear] = useState<string>("12")
+  const [installmentsPerYear, setInstallmentsPerYear] = useState<"12" | "14">("12")
   const [firstInstallmentDate, setFirstInstallmentDate] = useState<Date>(new Date())
   const [loanProtectionType, setLoanProtectionType] = useState<string>("none")
 
@@ -52,7 +39,7 @@ export default function TestCalculator() {
   const [totalMonths, setTotalMonths] = useState<number>(0)
   const [monthlyPayment, setMonthlyPayment] = useState<number>(0)
   const [monthlyRate, setMonthlyRate] = useState<number>(0)
-  const [paymentSchedule, setPaymentSchedule] = useState<PaymentScheduleRow[]>([]);
+  const [paymentSchedule, setPaymentSchedule] = useState<AmortizationRow[]>([]);
 
   // Calculate outputs whenever inputs change
   useEffect(() => {
@@ -63,56 +50,8 @@ export default function TestCalculator() {
     const loanProtectionValue = parseFloat(loanProtection) || 0
     const interestRateValue = parseFloat(interestRate) || 0
     const termYearsValue = parseInt(termYears) || 0
-    const installmentsPerYearValue = parseInt(installmentsPerYear) || 12
 
-    // Calculate monthly rate
-    const calculatedMonthlyRate = (interestRateValue / 100) / installmentsPerYearValue
-
-    // Function to calculate final balance given a monthly installment
-    const calculateFinalBalance = (monthlyInstallmentGuess: number): number => {
-      let balance = costValue - downPaymentValue;
-      const months = termYearsValue * 12;
-      
-      for (let i = 0; i < months; i++) {
-        const isDoubleMonth = installmentsPerYear === "14" && (i % 12 === 6 || i % 12 === 11);
-        const interest = Number((balance * calculatedMonthlyRate).toFixed(10));
-        const installment = isDoubleMonth ? monthlyInstallmentGuess * 2 : monthlyInstallmentGuess;
-        const principal = Number((installment - interest).toFixed(10));
-        balance = Number((balance - principal).toFixed(10));
-      }
-      
-      return balance;
-    };
-
-    // Binary search to find the correct monthly installment
-    const findCorrectMonthlyInstallment = () => {
-      let low = 0;
-      let high = (costValue - downPaymentValue) * 2; // Start with a high upper bound
-      let guess = (low + high) / 2;
-      const tolerance = 0.0000001; // Increased precision
-      let iterations = 0;
-      const maxIterations = 1000; // Increased max iterations
-
-      while (Math.abs(calculateFinalBalance(guess)) > tolerance && iterations < maxIterations) {
-        const balance = calculateFinalBalance(guess);
-        
-        if (balance > 0) {
-          low = guess;
-        } else {
-          high = guess;
-        }
-        
-        guess = Number(((low + high) / 2).toFixed(10));
-        iterations++;
-      }
-
-      return guess;
-    };
-
-    // Find the correct monthly installment
-    const baseMonthlyInstallment = findCorrectMonthlyInstallment();
-    
-    // Create a mock property object for the calculator
+    // Create mock property object
     const mockProperty: Property = {
       id: "test",
       cost: costValue,
@@ -122,71 +61,29 @@ export default function TestCalculator() {
       bonus: 0
     }
 
-    // Create base values for calculation
-    const baseValues = {
-      property_id: "test",
-      down_payment: downPaymentValue,
-      down_payment_percentage: (downPaymentValue / costValue) * 100,
-      interest_rate: interestRateValue,
-      term_years: termYearsValue,
-      installments_per_year: installmentsPerYearValue as 12 | 14,
-      first_installment_date: firstInstallmentDate,
-      loan_protection_type: loanProtectionType as "individual" | "joint" | "none" | "custom",
-      loan_protection_insurance: loanProtectionValue
+    // Calculate amortization schedule using the centralized service
+    const schedule = amortizationDataService.calculateAmortizationSchedule({
+      property: mockProperty,
+      downPayment: downPaymentValue,
+      interestRate: interestRateValue,
+      termYears: termYearsValue,
+      installmentsPerYear: parseInt(installmentsPerYear) as 12 | 14,
+      firstInstallmentDate,
+      propertyInsurance: propertyInsuranceValue,
+      loanProtection: loanProtectionValue
+    });
+
+    if (schedule.length > 0) {
+      const firstRow = schedule[0];
+      
+      // Update output states
+      setInstallmentAmount(firstRow.monthlyInstallment)
+      setMonthlyPayment(firstRow.monthlyPayment)
+      setTotalMonths(schedule.length)
+      setMonthlyRate((interestRateValue / 100) / parseInt(installmentsPerYear))
+      setTotalInterestAndPayments(schedule.reduce((sum, row) => sum + row.interest, 0))
+      setPaymentSchedule(schedule)
     }
-
-    // Calculate results using the loan calculator service
-    const results = loanCalculator.calculateResults(mockProperty, baseValues)
-
-    // Update output states
-    setInstallmentAmount(results.base_monthly_payment)
-    setTotalInterestAndPayments(results.total_interest_and_insurance)
-    setTotalMonths(results.total_months)
-    setMonthlyPayment(results.monthly_payment)
-    setMonthlyRate(calculatedMonthlyRate * 100)
-
-    // Calculate payment schedule with the goal-seeked monthly installment
-    const generatePaymentSchedule = () => {
-      const rows: PaymentScheduleRow[] = [];
-      let currentDate = new Date(firstInstallmentDate);
-      let beginBalance = Number((costValue - downPaymentValue).toFixed(10));
-      const monthlyRate = calculatedMonthlyRate;
-      const baseMonthlyInstallment = results.base_monthly_payment;
-
-      for (let i = 0; i < totalMonths; i++) {
-        const currentMonth = currentDate.getMonth();
-        const isDoublePaymentMonth = installmentsPerYear === "14" && (currentMonth === 6 || currentMonth === 11);
-        const monthlyInstallment = isDoublePaymentMonth ? baseMonthlyInstallment * 2 : baseMonthlyInstallment;
-        
-        // Insurance amounts
-        const currentPropertyInsurance = isDoublePaymentMonth ? propertyInsuranceValue * 2 : propertyInsuranceValue;
-        const currentLoanProtection = isDoublePaymentMonth ? loanProtectionValue * 2 : loanProtectionValue;
-        const monthlyPaymentAmount = monthlyInstallment + currentPropertyInsurance + currentLoanProtection;
-        
-        const interest = Number((beginBalance * monthlyRate).toFixed(10));
-        const principal = Number((monthlyInstallment - interest).toFixed(10));
-        const endBalance = i === totalMonths - 1 ? 0 : Number((beginBalance - principal).toFixed(10));
-        
-        rows.push({
-          row: i + 1,
-          date: new Date(currentDate),
-          monthlyPayment: Number(monthlyPaymentAmount.toFixed(10)),
-          monthlyInstallment: Number(monthlyInstallment.toFixed(10)),
-          interestAndPayments: Number((interest + monthlyInstallment).toFixed(10)),
-          principal: Number(principal.toFixed(10)),
-          interest: Number(interest.toFixed(10)),
-          beginBalance: Number(beginBalance.toFixed(10)),
-          endBalance: endBalance
-        });
-
-        beginBalance = endBalance;
-        currentDate.setMonth(currentDate.getMonth() + 1);
-      }
-
-      setPaymentSchedule(rows);
-    };
-
-    generatePaymentSchedule();
   }, [cost, propertyInsurance, downPayment, loanProtection, interestRate, termYears, installmentsPerYear, loanProtectionType, firstInstallmentDate])
 
   return (

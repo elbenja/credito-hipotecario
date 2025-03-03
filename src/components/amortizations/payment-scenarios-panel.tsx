@@ -41,6 +41,10 @@ interface PaymentScenariosProps {
   loanAmount: number
   annualInterestRate: number
   termYears: number
+  installmentsPerYear?: 12 | 14
+  firstInstallmentDate?: Date
+  propertyInsurance?: number
+  loanProtection?: number
   amortizationId: string
   extraInstallments?: ExtraInstallment[]
   onExtraInstallmentAdd?: (installment: Omit<ExtraInstallment, "id">) => void
@@ -56,6 +60,10 @@ export function PaymentScenariosPanel({
   loanAmount,
   annualInterestRate,
   termYears,
+  installmentsPerYear = 12,
+  firstInstallmentDate = new Date(),
+  propertyInsurance = 0,
+  loanProtection = 0,
   amortizationId,
   extraInstallments = [],
   onExtraInstallmentAdd,
@@ -174,6 +182,26 @@ export function PaymentScenariosPanel({
     return null
   }
 
+  const chartProperty = {
+    id: "temp",
+    cost: loanAmount + (parseFloat(refinancingForm.newInterestRate) || 0),
+    currency,
+    property_insurance: propertyInsurance,
+    property_insurance_type: "manual",
+    bonus: 0
+  }
+
+  const baseChartProps = {
+    property: chartProperty,
+    downPayment: 0,
+    annualInterestRate,
+    termYears,
+    installmentsPerYear,
+    firstInstallmentDate,
+    propertyInsurance,
+    loanProtection
+  }
+
   const content = (
     <>
       <h2 className="text-sm font-medium mb-4">Payment Scenarios</h2>
@@ -199,10 +227,7 @@ export function PaymentScenariosPanel({
             <Separator className="my-4" />
             <PaymentChart 
               key={`regular-${chartKey}`}
-              loanAmount={Number(loanAmount)}
-              annualInterestRate={Number(annualInterestRate)}
-              termYears={Number(termYears)}
-              currency={currency}
+              {...baseChartProps}
             />
           </div>
         </TabsContent>
@@ -221,10 +246,7 @@ export function PaymentScenariosPanel({
             <Separator className="my-4" />
             <PaymentChart 
               key={`accelerated-${chartKey}`}
-              loanAmount={Number(loanAmount)}
-              annualInterestRate={Number(annualInterestRate)}
-              termYears={Number(termYears)}
-              currency={currency}
+              {...baseChartProps}
             />
             {renderExtraInstallmentsSection()}
           </div>
@@ -244,10 +266,7 @@ export function PaymentScenariosPanel({
             <Separator className="my-4" />
             <PaymentChart 
               key={`lower-${chartKey}`}
-              loanAmount={Number(loanAmount)}
-              annualInterestRate={Number(annualInterestRate)}
-              termYears={Number(termYears)}
-              currency={currency}
+              {...baseChartProps}
             />
             {renderExtraInstallmentsSection()}
           </div>
@@ -256,32 +275,101 @@ export function PaymentScenariosPanel({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                Adjusts the interest rate (and optionally term) from a specified date.
+                Simulate a new interest rate.
               </p>
               <div className="flex items-center space-x-2">
-                <Switch 
-                  id="new-rate-select" 
-                  checked={selectedNewRate}
-                  onCheckedChange={setSelectedNewRate}
-                />
+                <Switch id="new-rate-select" />
                 <Label htmlFor="new-rate-select">Select</Label>
               </div>
             </div>
-
             <PaymentSummary {...paymentDetails.newRate} currency={currency} />
             <Separator className="my-4" />
             <PaymentChart 
               key={`new-rate-${chartKey}`}
-              loanAmount={Number(loanAmount)}
-              annualInterestRate={Number(annualInterestRate)}
-              termYears={Number(termYears)}
-              currency={currency}
+              {...baseChartProps}
+              annualInterestRate={parseFloat(refinancingForm.newInterestRate) || annualInterestRate}
+              termYears={parseInt(refinancingForm.newTerm) || termYears}
             />
             
-            <NewRateForm
-              amortizationId={amortizationId}
-              onSuccess={handleNewRateSuccess}
-            />
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium">New Rate Details</h3>
+                <p className="text-sm text-muted-foreground">
+                  Simulate how your payments would change with a new interest rate.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="new-interest-rate">New Interest Rate (%)</Label>
+                  <Input
+                    id="new-interest-rate"
+                    type="number"
+                    placeholder="Enter new rate"
+                    value={refinancingForm.newInterestRate}
+                    onChange={(e) => setRefinancingForm(prev => ({ ...prev, newInterestRate: e.target.value }))}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="new-term">New Term (Years)</Label>
+                  <Input
+                    id="new-term"
+                    type="number"
+                    placeholder="Enter new term"
+                    value={refinancingForm.newTerm}
+                    onChange={(e) => setRefinancingForm(prev => ({ ...prev, newTerm: e.target.value }))}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Start Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        {refinancingForm.startDate ? (
+                          format(refinancingForm.startDate, "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={refinancingForm.startDate}
+                        onSelect={(date) => setRefinancingForm(prev => ({ ...prev, startDate: date || undefined }))}
+                        disabled={(date) =>
+                          date < new Date()
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {amortizationId && (
+                  <Button 
+                    className="w-full"
+                    onClick={handleRefinancingSubmit}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <div className="flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </div>
+                    ) : (
+                      "Save Refinancing Option"
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

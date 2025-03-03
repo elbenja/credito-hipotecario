@@ -1,12 +1,18 @@
 import { Area, AreaChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { formatCurrency } from "@/lib/utils"
+import { amortizationDataService } from "@/services/amortization/calculations/amortizationData"
+import type { Property } from "@/services/amortization/types/common"
 
 interface PaymentChartProps {
-  loanAmount: number
+  property: Property
+  downPayment: number
   annualInterestRate: number
   termYears: number
-  currency: "USD" | "PEN"
+  installmentsPerYear: 12 | 14
+  firstInstallmentDate: Date
+  propertyInsurance: number
+  loanProtection: number
 }
 
 const chartConfig = {
@@ -26,58 +32,19 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-function calculateAmortizationData(
-  loanAmount: number,
-  annualInterestRate: number,
-  termYears: number
-) {
-  // Validate inputs
-  if (!loanAmount || !annualInterestRate || !termYears || 
-      isNaN(loanAmount) || isNaN(annualInterestRate) || isNaN(termYears)) {
-    console.warn('Invalid inputs for payment chart:', { loanAmount, annualInterestRate, termYears })
-    return []
-  }
-
-  const monthlyRate = annualInterestRate / 12 / 100
-  const totalMonths = termYears * 12
-  const monthlyPayment =
-    (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) /
-    (Math.pow(1 + monthlyRate, totalMonths) - 1)
-
-  if (isNaN(monthlyPayment)) {
-    console.warn('Invalid monthly payment calculation:', { monthlyRate, totalMonths, loanAmount })
-    return []
-  }
-
-  const semiAnnualData = []
-  let remainingPrincipal = loanAmount
-
-  // Calculate one point every 6 months
-  for (let month = 0; month <= totalMonths; month += 6) {
-    const monthlyInterest = remainingPrincipal * monthlyRate
-    const monthlyPrincipal = monthlyPayment - monthlyInterest
-
-    semiAnnualData.push({
-      period: month / 6, // This will represent the half-year periods
-      monthlyPayment,
-      principal: monthlyPrincipal,
-      interest: monthlyInterest,
-      total: monthlyPayment,
-    })
-
-    // Update remaining principal for next iteration (6 months of payments)
-    if (month < totalMonths) {
-      remainingPrincipal = Math.max(0, remainingPrincipal - (monthlyPrincipal * 6))
-    }
-  }
-
-  return semiAnnualData
-}
-
-export function PaymentChart({ loanAmount, annualInterestRate, termYears, currency }: PaymentChartProps) {
+export function PaymentChart({ 
+  property,
+  downPayment,
+  annualInterestRate,
+  termYears,
+  installmentsPerYear,
+  firstInstallmentDate,
+  propertyInsurance,
+  loanProtection
+}: PaymentChartProps) {
   // Validate inputs before calculation
-  if (!loanAmount || !annualInterestRate || !termYears || 
-      isNaN(loanAmount) || isNaN(annualInterestRate) || isNaN(termYears)) {
+  if (!property?.cost || !annualInterestRate || !termYears || 
+      isNaN(property.cost) || isNaN(annualInterestRate) || isNaN(termYears)) {
     return (
       <div className="space-y-4">
         <div className="space-y-1">
@@ -90,17 +57,23 @@ export function PaymentChart({ loanAmount, annualInterestRate, termYears, curren
     )
   }
 
-  const chartData = calculateAmortizationData(loanAmount, annualInterestRate, termYears)
+  // Calculate amortization schedule using the centralized service
+  const schedule = amortizationDataService.calculateAmortizationSchedule({
+    property,
+    downPayment,
+    interestRate: annualInterestRate,
+    termYears,
+    installmentsPerYear,
+    firstInstallmentDate,
+    propertyInsurance,
+    loanProtection
+  });
+
+  // Get chart data from the schedule
+  const chartData = amortizationDataService.getChartData(schedule);
 
   return (
     <div className="space-y-4">
-      {/* <div className="space-y-1">
-        <h3 className="text-sm font-medium">Payment Breakdown Over Time</h3>
-        <p className="text-sm text-muted-foreground">
-          Shows how your monthly payment is split between principal and interest
-        </p>
-      </div> */}
-
       <div className="relative aspect-[2/1] w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
@@ -132,16 +105,16 @@ export function PaymentChart({ loanAmount, annualInterestRate, termYears, curren
                   <div className="rounded-md border bg-background px-3 py-1 shadow-sm">
                     <div className="grid gap-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium">Monthly Pay</span>
-                        <span className="text-sm font-medium">{formatCurrency(data.monthlyPayment, currency)}</span>
+                        <span className="text-sm font-medium">Monthly Payment</span>
+                        <span className="text-sm font-medium">{formatCurrency(data.monthlyPayment, property.currency)}</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-medium text-muted-foreground">Principal</span>
-                        <span className="text-sm font-medium">{formatCurrency(data.principal, currency)}</span>
+                        <span className="text-sm font-medium">{formatCurrency(data.principal, property.currency)}</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-medium text-muted-foreground">Interest</span>
-                        <span className="text-sm font-medium">{formatCurrency(data.interest, currency)}</span>
+                        <span className="text-sm font-medium">{formatCurrency(data.interest, property.currency)}</span>
                       </div>
                     </div>
                   </div>
@@ -175,8 +148,8 @@ export function PaymentChart({ loanAmount, annualInterestRate, termYears, curren
           <div className="font-medium">Total Interest</div>
           <div className="text-muted-foreground">
             {formatCurrency(
-              chartData.reduce((sum, data) => sum + data.interest, 0) * 12,
-              currency
+              schedule.reduce((sum, data) => sum + data.interest, 0),
+              property.currency
             )}
           </div>
         </div>
@@ -184,8 +157,8 @@ export function PaymentChart({ loanAmount, annualInterestRate, termYears, curren
           <div className="font-medium">Average Principal Payment</div>
           <div className="text-muted-foreground">
             {formatCurrency(
-              chartData.reduce((sum, data) => sum + data.principal, 0) / chartData.length,
-              currency
+              schedule.reduce((sum, data) => sum + data.principal, 0) / schedule.length,
+              property.currency
             )}
           </div>
         </div>
