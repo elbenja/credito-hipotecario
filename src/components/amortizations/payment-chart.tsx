@@ -49,29 +49,29 @@ function calculateAmortizationData(
     return []
   }
 
-  const yearlyData = []
+  const semiAnnualData = []
   let remainingPrincipal = loanAmount
 
-  // Calculate one point per year
-  for (let year = 0; year <= termYears; year++) {
+  // Calculate one point every 6 months
+  for (let month = 0; month <= totalMonths; month += 6) {
     const monthlyInterest = remainingPrincipal * monthlyRate
     const monthlyPrincipal = monthlyPayment - monthlyInterest
 
-    yearlyData.push({
-      year,
+    semiAnnualData.push({
+      period: month / 6, // This will represent the half-year periods
       monthlyPayment,
       principal: monthlyPrincipal,
       interest: monthlyInterest,
       total: monthlyPayment,
     })
 
-    // Update remaining principal for next iteration
-    if (year < termYears) {
-      remainingPrincipal = Math.max(0, remainingPrincipal - (monthlyPrincipal * 12))
+    // Update remaining principal for next iteration (6 months of payments)
+    if (month < totalMonths) {
+      remainingPrincipal = Math.max(0, remainingPrincipal - (monthlyPrincipal * 6))
     }
   }
 
-  return yearlyData
+  return semiAnnualData
 }
 
 export function PaymentChart({ loanAmount, annualInterestRate, termYears, currency }: PaymentChartProps) {
@@ -101,7 +101,7 @@ export function PaymentChart({ loanAmount, annualInterestRate, termYears, curren
         </p>
       </div> */}
 
-      <div className="relative aspect-[3/1] w-full min-w-0">
+      <div className="relative aspect-[2/1] w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={chartData}
@@ -114,12 +114,14 @@ export function PaymentChart({ loanAmount, annualInterestRate, termYears, curren
           >
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis
-              dataKey="year"
+              dataKey="period"
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              interval={5}
-              tickFormatter={(value) => `${value}y`}
+              ticks={[0, 10, 20, 30, 40, 50, 60]}
+              tick={{ fill: 'currentColor' }}
+              className="text-sm text-gray-900 fill-gray-900"
+              tickFormatter={(value) => `${value / 2}y`}
             />
             <Tooltip
               content={({ active, payload }) => {

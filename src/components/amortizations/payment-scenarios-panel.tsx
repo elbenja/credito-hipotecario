@@ -176,7 +176,7 @@ export function PaymentScenariosPanel({
 
   const content = (
     <>
-      <h2 className="text-xl font-semibold mb-4">Payment Scenarios</h2>
+      <h2 className="text-sm font-medium mb-4">Payment Scenarios</h2>
       <Tabs defaultValue="regular" className="w-full">
         <TabsList className="grid w-full grid-cols-4 gap-1">
           <TabsTrigger value="regular" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">Regular</TabsTrigger>
@@ -316,7 +316,7 @@ export function PaymentScenariosPanel({
           className="w-full" 
           onClick={onOpenMobilePanel}
         >
-          View Payment Details
+          View Payment Scenarios
         </Button>
       </div>
 
