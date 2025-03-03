@@ -30,6 +30,13 @@ const chartConfig = {
       dark: "hsl(215, 20%, 65%)",  // Gray-400 for dark mode
     },
   },
+  insurance: {
+    label: "Insurance",
+    theme: {
+      light: "hsl(217, 91%, 60%)", // Blue-500
+      dark: "hsl(217, 91%, 60%)",  // Blue-500 for dark mode
+    },
+  },
 } satisfies ChartConfig
 
 export function PaymentChart({ 
@@ -69,8 +76,12 @@ export function PaymentChart({
     loanProtection
   });
 
-  // Get chart data from the schedule
-  const chartData = amortizationDataService.getChartData(schedule);
+  // Get chart data from the schedule and add insurance values
+  const chartData = amortizationDataService.getChartData(schedule).map(data => ({
+    ...data,
+    insurances: propertyInsurance + loanProtection,
+    interestAndInsurances: data.interest + propertyInsurance + loanProtection
+  }));
 
   return (
     <div className="space-y-4">
@@ -113,13 +124,22 @@ export function PaymentChart({
                         <span className="text-sm font-medium">{formatCurrency(data.principal, property.currency)}</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-muted-foreground">Interest</span>
-                        <span className="text-sm font-medium">{formatCurrency(data.interest, property.currency)}</span>
+                        <span className="text-sm font-medium text-muted-foreground">Interest & Insurances</span>
+                        <span className="text-sm font-medium">{formatCurrency(data.interestAndInsurances, property.currency)}</span>
                       </div>
                     </div>
                   </div>
                 )
               }}
+            />
+            <Area
+              dataKey="insurances"
+              type="monotone"
+              stackId="1"
+              stroke="currentColor"
+              fill="currentColor"
+              fillOpacity={0.6}
+              className="[--color-insurance:var(--color-insurance)]"
             />
             <Area
               dataKey="interest"
@@ -154,10 +174,10 @@ export function PaymentChart({
           </div>
         </div>
         <div className="grid gap-1">
-          <div className="font-medium">Average Principal Payment</div>
+          <div className="font-medium">Total Insurance</div>
           <div className="text-muted-foreground">
             {formatCurrency(
-              schedule.reduce((sum, data) => sum + data.principal, 0) / schedule.length,
+              (propertyInsurance + loanProtection) * schedule.length,
               property.currency
             )}
           </div>
