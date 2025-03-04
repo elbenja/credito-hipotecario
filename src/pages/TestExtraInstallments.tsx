@@ -1,13 +1,16 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { PropertySelect, Property } from "@/components/amortizations/property-select"
+import { PropertySelect, Property, PropertyDisplay } from "@/components/amortizations/property-select"
 import { SEO } from "@/components/seo"
 import { amortizationFormSchema, type AmortizationFormValues, defaultValues } from "@/components/amortizations/schema"
 import { Form } from "@/components/ui/form"
+import { Button } from "@/components/ui/button"
+import { Pencil } from "lucide-react"
 
 export default function TestExtraInstallments() {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+  const [isEditing, setIsEditing] = useState(true)
   const form = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
     defaultValues: {
@@ -15,6 +18,13 @@ export default function TestExtraInstallments() {
       name: "Test Amortization"
     },
   })
+
+  const handlePropertyChange = (property: Property | null) => {
+    setSelectedProperty(property)
+    if (property) {
+      setIsEditing(false)
+    }
+  }
 
   return (
     <div className="container mx-auto py-8">
@@ -30,10 +40,29 @@ export default function TestExtraInstallments() {
         <div className="space-y-4">
           <Form {...form}>
             <form className="space-y-6">
-              <PropertySelect 
-                form={form} 
-                onPropertyChange={setSelectedProperty}
-              />
+              {isEditing ? (
+                <PropertySelect 
+                  form={form} 
+                  onPropertyChange={handlePropertyChange}
+                />
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      Property
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditing(true)}
+                      className="h-8 px-2"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {selectedProperty && <PropertyDisplay property={selectedProperty} />}
+                </div>
+              )}
             </form>
           </Form>
         </div>

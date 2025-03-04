@@ -206,7 +206,11 @@ export default function EditAmortization() {
         description: "Amortization updated successfully",
       })
 
-      navigate("/amortizations")
+      // Only navigate if this was an explicit form submission
+      const isExplicitSubmit = (event?.target as HTMLElement)?.tagName === 'FORM'
+      if (isExplicitSubmit) {
+        navigate("/amortizations")
+      }
     } catch (error) {
       console.error("Error updating amortization:", error)
       toast({
@@ -314,6 +318,11 @@ export default function EditAmortization() {
     })
   }, [amortization?.property, form.watch()])
 
+  const handlePropertyUpdate = (updatedProperty: Property) => {
+    setSelectedProperty(updatedProperty)
+    refetch() // Refresh the amortization data to get the latest property info
+  }
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -418,6 +427,7 @@ export default function EditAmortization() {
                       is_first_home: amortization.property.is_first_home || false,
                       is_sustainable: amortization.property.is_sustainable || false
                     }}
+                    onPropertyUpdate={handlePropertyUpdate}
                   />
                 </FormItem>
 

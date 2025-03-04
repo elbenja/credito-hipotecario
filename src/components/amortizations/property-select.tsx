@@ -12,6 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
@@ -19,12 +26,13 @@ import { UseFormReturn } from "react-hook-form"
 import { AmortizationFormValues } from "./schema"
 import { formatCurrency } from "@/lib/utils"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
-import { Lock } from "lucide-react"
+import { Pencil } from "lucide-react"
+import { PropertyForm } from "@/components/properties/property-form"
 
 // Helper function for currency formatting
 const formatAmount = (amount: number, currency: string) => {
   const roundedAmount = Math.round(amount)
-  return formatCurrency(roundedAmount, currency, { decimals: 0 })
+  return formatCurrency(roundedAmount, currency)
 }
 
 export type Property = {
@@ -35,6 +43,7 @@ export type Property = {
   is_first_home: boolean
   is_sustainable: boolean
   property_insurance: number | null
+  property_insurance_type: "auto" | "manual"
 }
 
 type BonusRule = {
@@ -51,9 +60,17 @@ type PropertySelectProps = {
   initialProperty?: Property | null
 }
 
-export function PropertyDisplay({ property }: { property: Property }) {
+export function PropertyDisplay({ 
+  property,
+  onPropertyUpdate
+}: { 
+  property: Property
+  onPropertyUpdate?: (updatedProperty: Property) => void
+}) {
   const { data: exchangeRate } = useExchangeRate()
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
+  const [open, setOpen] = useState(false)
+  const [currentProperty, setCurrentProperty] = useState<Property>(property)
 
   useEffect(() => {
     const loadBonusRules = async () => {
@@ -66,6 +83,27 @@ export function PropertyDisplay({ property }: { property: Property }) {
     }
     loadBonusRules()
   }, [])
+
+  useEffect(() => {
+    const loadProperty = async () => {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("*")
+        .eq('id', property.id)
+        .single()
+
+      if (error) {
+        console.error("Error loading property:", error)
+        return
+      }
+
+      if (data) {
+        setCurrentProperty(data as Property)
+      }
+    }
+
+    loadProperty()
+  }, [property.id])
 
   const convertToPEN = (amount: number, currency: string): number => {
     if (currency === 'PEN') return amount
@@ -88,41 +126,82 @@ export function PropertyDisplay({ property }: { property: Property }) {
       : applicableRule.traditional_bonus
   }
 
-  const cost = property.price_cost
-  const bonus = calculateBonus(property)
-  const costInPEN = convertToPEN(cost, property.currency)
+  const cost = currentProperty.price_cost
+  const bonus = calculateBonus(currentProperty)
+  const costInPEN = convertToPEN(cost, currentProperty.currency)
+
+  const handlePropertyUpdate = async () => {
+    // Fetch the updated property data
+    const { data, error } = await supabase
+      .from("properties")
+      .select("*")
+      .eq('id', currentProperty.id)
+      .single()
+
+    if (error) {
+      console.error("Error fetching updated property:", error)
+      return
+    }
+
+    if (data) {
+      const updatedProperty = data as Property
+      setCurrentProperty(updatedProperty)
+      // Call the onPropertyUpdate callback if provided
+      if (onPropertyUpdate) {
+        onPropertyUpdate(updatedProperty)
+      }
+    }
+    setOpen(false)
+  }
 
   return (
-    <div className="relative w-full rounded-md border border-input bg-background px-3 py-2">
-      <div className="flex flex-col items-start">
-        <span className="font-medium">{property.name}</span>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-foreground">
-            Cost: {formatAmount(cost, property.currency)}
-            {property.currency === "USD" && ` (≈ ${formatAmount(costInPEN, "PEN")})`}
-          </span>
-          {bonus && (
-            <>
-              <span className="text-sm text-muted-foreground/75">|</span>
-              <span className="text-sm text-foreground">
-                Bonus: {formatAmount(bonus, "PEN")}
-              </span>
-            </>
-          )}
-          {property.property_insurance && (
-            <>
-              <span className="text-sm text-muted-foreground/75">|</span>
-              <span className="text-sm text-foreground">
-                Insurance: {formatAmount(property.property_insurance, property.currency)}
-              </span>
-            </>
-          )}
+    <Sheet open={open} onOpenChange={setOpen}>
+      <div className="relative w-full rounded-md border border-input bg-background px-3 py-2">
+        <div className="flex flex-col items-start">
+          <span className="font-medium">{currentProperty.name}</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm text-foreground">
+              Cost: {formatAmount(cost, currentProperty.currency)}
+            </span>
+            {bonus && (
+              <>
+                <span className="text-sm text-muted-foreground/75">|</span>
+                <span className="text-sm text-foreground">
+                  Bonus: {formatAmount(bonus, "PEN")}
+                </span>
+              </>
+            )}
+            {currentProperty.property_insurance && (
+              <>
+                <span className="text-sm text-muted-foreground/75">|</span>
+                <span className="text-sm text-foreground">
+                  Insurance: {formatAmount(currentProperty.property_insurance, currentProperty.currency)}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+        <div 
+          className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer hover:text-primary transition-colors"
+          onClick={() => setOpen(true)}
+        >
+          <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
         </div>
       </div>
-      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-        <Lock className="h-4 w-4 text-muted-foreground" />
-      </div>
-    </div>
+      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Edit Property</SheetTitle>
+        </SheetHeader>
+        <div className="mt-8">
+          <PropertyForm
+            onSuccess={handlePropertyUpdate}
+            onClose={() => setOpen(false)}
+            selectedProperty={currentProperty}
+            bonusRules={bonusRules}
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }
 
