@@ -130,7 +130,9 @@ export default function TestExtraInstallments() {
       })
 
       // Refresh the amortizations list
-      queryClient.invalidateQueries(["linked-amortizations", selectedProperty.id])
+      queryClient.invalidateQueries({
+        queryKey: ["linked-amortizations", selectedProperty.id]
+      })
     } catch (error) {
       console.error("Error updating amortization:", error)
       toast({
@@ -432,7 +434,9 @@ export default function TestExtraInstallments() {
             loanAmount={selectedAmortization.loan_amount}
             onInstallmentsChange={() => {
               // Refresh the amortizations list when installments change
-              queryClient.invalidateQueries(["linked-amortizations", selectedProperty.id])
+              queryClient.invalidateQueries({
+                queryKey: ["linked-amortizations", selectedProperty.id]
+              })
             }}
           />
         </div>
