@@ -15,6 +15,7 @@ import NewAmortization from "./pages/NewAmortization"
 import EditAmortization from "./pages/EditAmortization"
 import Test from "./pages/Test"
 import TestCalculator from "./pages/TestCalculator"
+import TestExtraInstallments from "./pages/TestExtraInstallments"
 import { HelmetProvider } from 'react-helmet-async'
 
 const queryClient = new QueryClient()
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/test" element={<Test />} />
               <Route path="/test-calculator" element={<TestCalculator />} />
+              <Route path="/test-extra-installments" element={<TestExtraInstallments />} />
               <Route
                 path="/dashboard"
                 element={

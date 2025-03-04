@@ -164,7 +164,10 @@ export default function TestCalculator() {
 
           <div className="space-y-2">
             <Label>Installments per Year</Label>
-            <Select value={installmentsPerYear} onValueChange={setInstallmentsPerYear}>
+            <Select 
+              value={installmentsPerYear} 
+              onValueChange={(value: "12" | "14") => setInstallmentsPerYear(value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select frequency" />
               </SelectTrigger>
@@ -208,20 +211,7 @@ export default function TestCalculator() {
             </Popover>
           </div>
 
-          <div className="space-y-2">
-            <Label>Loan Protection Type</Label>
-            <Select value={loanProtectionType} onValueChange={setLoanProtectionType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="individual">Individual</SelectItem>
-                <SelectItem value="joint">Joint</SelectItem>
-                <SelectItem value="none">None</SelectItem>
-                <SelectItem value="custom">Custom</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+
         </div>
 
         {/* Outputs Section */}

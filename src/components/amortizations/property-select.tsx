@@ -34,6 +34,7 @@ export type Property = {
   currency: "USD" | "PEN"
   is_first_home: boolean
   is_sustainable: boolean
+  property_insurance: number | null
 }
 
 type BonusRule = {
@@ -157,7 +158,7 @@ export function PropertySelect({
         const [{ data: propertiesData, error: propertiesError }, { data: rulesData, error: rulesError }] = await Promise.all([
           supabase
             .from("properties")
-            .select("id, name, price_cost, currency, is_first_home, is_sustainable")
+            .select("id, name, price_cost, currency, is_first_home, is_sustainable, property_insurance")
             .eq("user_id", user.id),
           supabase
             .from("bonus_rules")
@@ -186,7 +187,6 @@ export function PropertySelect({
         if (initialProperty) {
           setSelectedPropertyName(initialProperty.name)
           onPropertyChange(initialProperty)
-          form.setValue("property_id", initialProperty.id)
         } else if (propertyId) {
           const selectedProperty = validProperties.find(p => p.id === propertyId)
           if (selectedProperty) {
@@ -203,7 +203,7 @@ export function PropertySelect({
     }
 
     loadProperties()
-  }, [user, propertyId, disabled, initialLoad, initialProperty, form, onPropertyChange])
+  }, [user, propertyId, disabled, initialLoad, initialProperty, onPropertyChange])
 
   const handlePropertyChange = (propertyId: string) => {
     const property = properties.find((p) => p.id === propertyId)
@@ -225,17 +225,27 @@ export function PropertySelect({
     return (
       <div className="w-full py-1">
         <div className="flex flex-col items-start">
-          <span className="font-medium">{property.name}</span>
-          <div className="flex items-center gap-2">
-            <span className={`text-sm ${isSelected ? 'text-foreground/90' : 'text-muted-foreground'}`}>
+          <span className={`text-base font-regular ${isSelected ? 'text-inherit' : 'text-foreground'}`}>
+            {property.name}
+          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`text-sm ${isSelected ? 'text-inherit/90' : 'text-muted-foreground'}`}>
               Cost: {formatAmount(cost, property.currency)}
-              {property.currency === "USD" && ` (≈ ${formatAmount(costInPEN, "PEN")})`}
+           
             </span>
             {bonus && (
               <>
-                <span className={`text-sm ${isSelected ? 'text-foreground/90' : 'text-muted-foreground'}`}>|</span>
-                <span className={`text-sm ${isSelected ? 'text-foreground/90' : 'text-muted-foreground'}`}>
-                  First-Home Bonus: {formatAmount(bonus, "PEN")}
+                <span className={`text-sm ${isSelected ? 'text-inherit/75' : 'text-muted-foreground/75'}`}>|</span>
+                <span className={`text-sm ${isSelected ? 'text-inherit/90' : 'text-muted-foreground'}`}>
+                  Bonus: {formatAmount(bonus, "PEN")}
+                </span>
+              </>
+            )}
+            {property.property_insurance && (
+              <>
+                <span className={`text-sm ${isSelected ? 'text-inherit/75' : 'text-muted-foreground/75'}`}>|</span>
+                <span className={`text-sm ${isSelected ? 'text-inherit/90' : 'text-muted-foreground'}`}>
+                  Insurance: {formatAmount(property.property_insurance, property.currency)}
                 </span>
               </>
             )}
@@ -266,7 +276,7 @@ export function PropertySelect({
             disabled={disabled || isLoading}
           >
             <FormControl>
-              <SelectTrigger className="form-control-focus h-16 items-start pt-2">
+              <SelectTrigger className="form-control-focus h-auto  items-start py-2">
                 <SelectValue placeholder="Select a property" className="text-left">
                   {getSelectedPropertyDisplay()}
                 </SelectValue>
@@ -274,7 +284,11 @@ export function PropertySelect({
             </FormControl>
             <SelectContent>
               {properties.map((property) => (
-                <SelectItem key={property.id} value={property.id} className="h-16 py-2">
+                <SelectItem 
+                  key={property.id} 
+                  value={property.id} 
+                  className="h-auto py-2 hover:bg-accent/40 data-[state=checked]:bg-accent data-[state=checked]:text-muted-foreground"
+                >
                   {formatPropertyOption(property)}
                 </SelectItem>
               ))}
