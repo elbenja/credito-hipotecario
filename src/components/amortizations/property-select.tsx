@@ -96,12 +96,27 @@ export function PropertyDisplay({ property }: { property: Property }) {
     <div className="relative w-full rounded-md border border-input bg-background px-3 py-2">
       <div className="flex flex-col items-start">
         <span className="font-medium">{property.name}</span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm text-foreground">
             Cost: {formatAmount(cost, property.currency)}
             {property.currency === "USD" && ` (≈ ${formatAmount(costInPEN, "PEN")})`}
-            {bonus && ` | First-Home Bonus: ${formatAmount(bonus, "PEN")}`}
           </span>
+          {bonus && (
+            <>
+              <span className="text-sm text-muted-foreground/75">|</span>
+              <span className="text-sm text-foreground">
+                Bonus: {formatAmount(bonus, "PEN")}
+              </span>
+            </>
+          )}
+          {property.property_insurance && (
+            <>
+              <span className="text-sm text-muted-foreground/75">|</span>
+              <span className="text-sm text-foreground">
+                Insurance: {formatAmount(property.property_insurance, property.currency)}
+              </span>
+            </>
+          )}
         </div>
       </div>
       <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -276,7 +291,7 @@ export function PropertySelect({
             disabled={disabled || isLoading}
           >
             <FormControl>
-              <SelectTrigger className="form-control-focus h-auto  items-start py-2">
+              <SelectTrigger className="form-control-focus h-auto flex items-center py-2">
                 <SelectValue placeholder="Select a property" className="text-left">
                   {getSelectedPropertyDisplay()}
                 </SelectValue>
