@@ -51,14 +51,6 @@ export default function TestExtraInstallments() {
                     <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                       Property
                     </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsEditing(true)}
-                      className="h-8 px-2"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
                   </div>
                   {selectedProperty && <PropertyDisplay property={selectedProperty} />}
                 </div>
