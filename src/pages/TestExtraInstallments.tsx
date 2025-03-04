@@ -16,6 +16,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn, formatCurrency, formatDate } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
+import { ExtraInstallmentsSection } from "@/components/amortizations/extra-installments-section"
 
 type Amortization = {
   id: string
@@ -419,6 +420,21 @@ export default function TestExtraInstallments() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Extra Installments Section */}
+      {selectedAmortization && selectedProperty && (
+        <div className="mt-8">
+          <ExtraInstallmentsSection
+            amortizationId={selectedAmortization.id}
+            currency={selectedProperty.currency}
+            loanAmount={selectedAmortization.loan_amount}
+            onInstallmentsChange={() => {
+              // Refresh the amortizations list when installments change
+              queryClient.invalidateQueries(["linked-amortizations", selectedProperty.id])
+            }}
+          />
         </div>
       )}
     </div>

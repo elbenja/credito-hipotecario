@@ -171,7 +171,8 @@ export function PropertyDisplay({
                 </span>
               </>
             )}
-            {currentProperty.property_insurance && (
+            {currentProperty.property_insurance !== null && 
+             !(currentProperty.property_insurance_type === "manual" && currentProperty.property_insurance === 0) && (
               <>
                 <span className="text-sm text-muted-foreground/75">|</span>
                 <span className="text-sm text-foreground">
@@ -335,7 +336,8 @@ export function PropertySelect({
                 </span>
               </>
             )}
-            {property.property_insurance && (
+            {property.property_insurance !== null && 
+             !(property.property_insurance_type === "manual" && property.property_insurance === 0) && (
               <>
                 <span className={`text-sm ${isSelected ? 'text-inherit/75' : 'text-muted-foreground/75'}`}>|</span>
                 <span className={`text-sm ${isSelected ? 'text-inherit/90' : 'text-muted-foreground'}`}>
