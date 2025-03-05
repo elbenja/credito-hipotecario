@@ -17,20 +17,41 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn, formatCurrency, formatDate } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
 import { ExtraInstallmentsSection } from "@/components/amortizations/extra-installments-section"
+import { ScenariosComparison } from "@/components/amortizations/scenarios-comparison"
+import { LoanCalculator } from "@/services/amortization/calculations/loan"
+import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
+import type { Database } from "@/types/supabase"
 
-type Amortization = {
-  id: string
-  name: string
-  loan_amount: number
-  down_payment: number
-  interest_rate: number
-  term_years: number
-  installments_per_year: number
-  installment_amount: number
-  total_interest: number
-  total_payment: number
-  first_installment_date: string
-  property_id: string
+type Amortization = Database['public']['Tables']['amortizations']['Row']
+type ExtraInstallment = Database['public']['Tables']['extra_installments']['Row']
+type RateChange = Database['public']['Tables']['rate_changes']['Row']
+
+interface PaymentRow {
+  payment_date: string | Date
+  capital: number
+  interest: number
+  property_insurance: number
+  loan_insurance: number
+  monthly_payment: number
+  is_different_from_base: boolean
+}
+
+interface ScenarioSummary {
+  total_interest_and_insurance: number
+  total_months: number
+  monthly_payment: number
+}
+
+interface Scenario {
+  summary: ScenarioSummary
+  payments: PaymentRow[]
+}
+
+interface Scenarios {
+  regular?: Scenario
+  accelerated?: Scenario
+  lower_payment?: Scenario
+  new_rate?: Scenario
 }
 
 export default function TestExtraInstallments() {
@@ -93,8 +114,8 @@ export default function TestExtraInstallments() {
       term_years: amortization.term_years.toString(),
       installments_per_year: amortization.installments_per_year.toString(),
       first_installment_date: new Date(amortization.first_installment_date),
-      loan_protection_type: "custom",
-      loan_protection_insurance: "20.00",
+      loan_protection_type: amortization.loan_protection_type,
+      loan_protection_insurance: amortization.loan_protection_insurance?.toString(),
     })
   }
 
@@ -114,7 +135,7 @@ export default function TestExtraInstallments() {
         first_installment_date: values.first_installment_date.toISOString(),
         loan_amount: loanAmount,
         loan_protection_type: values.loan_protection_type,
-        loan_protection_insurance: parseFloat(values.loan_protection_insurance),
+        loan_protection_insurance: values.loan_protection_insurance ? parseFloat(values.loan_protection_insurance) : undefined,
       }
 
       const { error } = await supabase
@@ -427,20 +448,280 @@ export default function TestExtraInstallments() {
 
       {/* Extra Installments Section */}
       {selectedAmortization && selectedProperty && (
-        <div className="mt-8">
-          <ExtraInstallmentsSection
-            amortizationId={selectedAmortization.id}
-            currency={selectedProperty.currency}
-            loanAmount={selectedAmortization.loan_amount}
-            onInstallmentsChange={() => {
-              // Refresh the amortizations list when installments change
-              queryClient.invalidateQueries({
-                queryKey: ["linked-amortizations", selectedProperty.id]
-              })
-            }}
+        <>
+          <div className="mt-8">
+            <ExtraInstallmentsSection
+              amortizationId={selectedAmortization.id}
+              currency={selectedProperty.currency}
+              loanAmount={selectedAmortization.loan_amount}
+              onInstallmentsChange={() => {
+                // Refresh the amortizations list when installments change
+                queryClient.invalidateQueries({
+                  queryKey: ["linked-amortizations", selectedProperty.id]
+                })
+                // Also invalidate scenarios
+                queryClient.invalidateQueries({
+                  queryKey: ["scenarios", selectedAmortization.id]
+                })
+              }}
+            />
+          </div>
+
+          <ScenarioCalculationsSection 
+            amortization={selectedAmortization}
+            property={selectedProperty}
           />
-        </div>
+        </>
       )}
+    </div>
+  )
+}
+
+// New component to handle scenario calculations
+function ScenarioCalculationsSection({ 
+  amortization,
+  property 
+}: { 
+  amortization: Amortization
+  property: Property
+}) {
+  console.log('Amortization:', amortization)
+  console.log('Property:', property)
+
+  const { scenarios, isLoading, extraInstallments, rateChanges } = useScenarioCalculations({
+    amortizationId: amortization.id,
+    loan_amount: amortization.loan_amount,
+    interest_rate: amortization.interest_rate,
+    term_years: amortization.term_years,
+    installments_per_year: amortization.installments_per_year,
+    first_installment_date: amortization.first_installment_date,
+    property_insurance: property.property_insurance || 0,
+    loan_insurance: amortization.loan_protection_insurance || 0
+  })
+
+  console.log('Scenarios:', scenarios)
+  console.log('Extra Installments:', extraInstallments)
+  console.log('Rate Changes:', rateChanges)
+  console.log('Is Loading:', isLoading)
+
+  if (isLoading) {
+    return (
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-6">Payment Scenarios</h2>
+        <div className="flex items-center justify-center h-48">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p className="mt-2 text-sm text-muted-foreground">Calculating scenarios...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-8">
+      <h2 className="text-2xl font-bold mb-6">Payment Scenarios</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="p-6 border rounded-lg">
+          <h3 className="text-xl font-semibold mb-4">Accelerated Scenario</h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Sum Interest & Insurances</p>
+                <p className="text-lg font-medium">
+                  {formatCurrency(scenarios.accelerated?.summary.total_interest_and_insurance || 0, property.currency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Months</p>
+                <p className="text-lg font-medium">{scenarios.accelerated?.summary.total_months || 0}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Monthly Payment</p>
+                <p className="text-lg font-medium">
+                  {formatCurrency(scenarios.accelerated?.summary.monthly_payment || 0, property.currency)}
+                </p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="text-left text-sm font-medium text-muted-foreground">Date</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Capital</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Interest</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Property Insurance</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Loan Insurance</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Monthly Payment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scenarios.accelerated?.payments.map((payment, index) => (
+                    <tr key={index} className={payment.is_different_from_base ? "bg-muted/50" : undefined}>
+                      <td className="text-left">{formatDate(new Date(payment.payment_date))}</td>
+                      <td className="text-right">{formatCurrency(payment.capital, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.interest, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.property_insurance, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.loan_insurance, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.monthly_payment, property.currency)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 border rounded-lg">
+          <h3 className="text-xl font-semibold mb-4">Lower Payment Scenario</h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Sum Interest & Insurances</p>
+                <p className="text-lg font-medium">
+                  {formatCurrency(scenarios.lower_payment?.summary.total_interest_and_insurance || 0, property.currency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Months</p>
+                <p className="text-lg font-medium">{scenarios.lower_payment?.summary.total_months || 0}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Monthly Payment</p>
+                <p className="text-lg font-medium">
+                  {formatCurrency(scenarios.lower_payment?.summary.monthly_payment || 0, property.currency)}
+                </p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="text-left text-sm font-medium text-muted-foreground">Date</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Capital</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Interest</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Property Insurance</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Loan Insurance</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Monthly Payment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scenarios.lower_payment?.payments.map((payment, index) => (
+                    <tr key={index} className={payment.is_different_from_base ? "bg-muted/50" : undefined}>
+                      <td className="text-left">{formatDate(new Date(payment.payment_date))}</td>
+                      <td className="text-right">{formatCurrency(payment.capital, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.interest, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.property_insurance, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.loan_insurance, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.monthly_payment, property.currency)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 border rounded-lg">
+          <h3 className="text-xl font-semibold mb-4">Regular Scenario</h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Sum Interest & Insurances</p>
+                <p className="text-lg font-medium">
+                  {formatCurrency(scenarios.regular?.summary.total_interest_and_insurance || 0, property.currency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Months</p>
+                <p className="text-lg font-medium">{scenarios.regular?.summary.total_months || 0}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Monthly Payment</p>
+                <p className="text-lg font-medium">
+                  {formatCurrency(scenarios.regular?.summary.monthly_payment || 0, property.currency)}
+                </p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="text-left text-sm font-medium text-muted-foreground">Date</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Capital</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Interest</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Property Insurance</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Loan Insurance</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Monthly Payment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scenarios.regular?.payments.map((payment, index) => (
+                    <tr key={index} className={payment.is_different_from_base ? "bg-muted/50" : undefined}>
+                      <td className="text-left">{formatDate(new Date(payment.payment_date))}</td>
+                      <td className="text-right">{formatCurrency(payment.capital, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.interest, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.property_insurance, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.loan_insurance, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.monthly_payment, property.currency)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 border rounded-lg">
+          <h3 className="text-xl font-semibold mb-4">New Rate Scenario</h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Sum Interest & Insurances</p>
+                <p className="text-lg font-medium">
+                  {formatCurrency(scenarios.new_rate?.summary.total_interest_and_insurance || 0, property.currency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Months</p>
+                <p className="text-lg font-medium">{scenarios.new_rate?.summary.total_months || 0}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Monthly Payment</p>
+                <p className="text-lg font-medium">
+                  {formatCurrency(scenarios.new_rate?.summary.monthly_payment || 0, property.currency)}
+                </p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="text-left text-sm font-medium text-muted-foreground">Date</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Capital</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Interest</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Property Insurance</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Loan Insurance</th>
+                    <th className="text-right text-sm font-medium text-muted-foreground">Monthly Payment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scenarios.new_rate?.payments.map((payment, index) => (
+                    <tr key={index} className={payment.is_different_from_base ? "bg-muted/50" : undefined}>
+                      <td className="text-left">{formatDate(new Date(payment.payment_date))}</td>
+                      <td className="text-right">{formatCurrency(payment.capital, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.interest, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.property_insurance, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.loan_insurance, property.currency)}</td>
+                      <td className="text-right">{formatCurrency(payment.monthly_payment, property.currency)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 } 
