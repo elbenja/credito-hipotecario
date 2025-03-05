@@ -112,6 +112,9 @@ export function useScenarioCalculations({
         loan_insurance
       }
 
+      const calculator = new ScenarioCalculator()
+
+      // Calculate all scenarios
       const [regularScenario, acceleratedScenario, lowerPaymentScenario, newRateScenario] = await Promise.all([
         calculator.calculateScenario(amortizationInput, [], [], 'regular'),
         calculator.calculateScenario(amortizationInput, extraInstallments as ExtraInstallment[], [], 'accelerated'),
@@ -119,12 +122,17 @@ export function useScenarioCalculations({
         calculator.calculateScenario(amortizationInput, [], rateChanges as RateChange[], 'new_rate')
       ])
 
-      return {
+      const allScenarios = {
         regular: regularScenario,
         accelerated: acceleratedScenario,
         lower_payment: lowerPaymentScenario,
         new_rate: newRateScenario
       }
+
+      // Store all scenarios in one transaction
+      await calculator.storeScenarios(amortizationInput, allScenarios)
+
+      return allScenarios
     },
     enabled: !!amortizationId
   })

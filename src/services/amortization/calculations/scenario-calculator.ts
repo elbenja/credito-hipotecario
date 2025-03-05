@@ -64,10 +64,11 @@ export class ScenarioCalculator {
           totalExtraPayments += installment.amount
         }
       } else { // monthly
-        const remainingMonths = Math.floor(
-          (firstInstallmentDate.getTime() - startDate.getTime()) / (30.44 * 24 * 60 * 60 * 1000)
+        const monthsSinceStart = Math.floor(
+          (startDate.getTime() - firstInstallmentDate.getTime()) / (30.44 * 24 * 60 * 60 * 1000)
         )
-        totalExtraPayments += installment.amount * Math.max(0, totalMonths - remainingMonths)
+        const remainingMonths = totalMonths - monthsSinceStart
+        totalExtraPayments += installment.amount * Math.max(0, remainingMonths)
       }
     })
 
@@ -249,52 +250,126 @@ export class ScenarioCalculator {
     const totalInterest = payments.reduce((sum, payment) => sum + payment.interest, 0)
     const totalInsurance = (amortization.property_insurance + amortization.loan_insurance) * payments.length
 
-    const summary: ScenarioSummaryResult = {
-      total_interest_and_insurance: totalInterest + totalInsurance,
-      total_months: payments.length,
-      monthly_payment: payments[0].monthly_payment
+    return {
+      summary: {
+        total_interest_and_insurance: totalInterest + totalInsurance,
+        total_months: payments.length,
+        monthly_payment: payments[0].monthly_payment
+      },
+      payments
     }
+  }
 
-    // Store the results in the database
+  private async cleanupExistingScenarios(amortizationId: string): Promise<void> {
     try {
-      // First, create or update the scenario summary
-      const { data: summaryData, error: summaryError } = await supabase
-        .from("scenario_summaries")
-        .upsert({
-          amortization_id: amortization.id,
-          scenario_type: scenarioType,
-          total_interest_and_insurance: summary.total_interest_and_insurance,
-          total_months: summary.total_months,
-          monthly_payment: summary.monthly_payment
-        })
+      // First get all scenario summaries for this amortization
+      const { data: summaries, error: fetchError } = await supabase
+        .from('scenario_summaries')
         .select('id')
-        .single()
+        .eq('amortization_id', amortizationId);
 
-      if (summaryError) throw summaryError
+      if (fetchError) throw fetchError;
 
-      // Then, update the payment schedule
-      if (summaryData) {
-        const paymentsToInsert = payments.map(payment => ({
+      if (summaries && summaries.length > 0) {
+        const scenarioIds = summaries.map(s => s.id);
+
+        // Delete all payments first
+        const { error: paymentsError } = await supabase
+          .from('scenario_payments')
+          .delete()
+          .in('scenario_summary_id', scenarioIds);
+
+        if (paymentsError) throw paymentsError;
+
+        // Then delete all summaries
+        const { error: summariesError } = await supabase
+          .from('scenario_summaries')
+          .delete()
+          .eq('amortization_id', amortizationId);
+
+        if (summariesError) throw summariesError;
+      }
+    } catch (error) {
+      console.error('Error cleaning up scenarios:', error);
+      throw error;
+    }
+  }
+
+  async storeScenarios(
+    amortization: AmortizationInput,
+    scenarios: Record<ScenarioType, {
+      summary: ScenarioSummaryResult
+      payments: PaymentRow[]
+    }>
+  ): Promise<void> {
+    try {
+      // Insert or update scenarios one by one
+      for (const [scenarioType, scenario] of Object.entries(scenarios)) {
+        // Upsert the scenario summary
+        const { data: summaryData, error: summaryError } = await supabase
+          .from('scenario_summaries')
+          .upsert({
+            amortization_id: amortization.id,
+            scenario_type: scenarioType as ScenarioType,
+            total_interest_and_insurance: scenario.summary.total_interest_and_insurance,
+            total_months: scenario.summary.total_months,
+            monthly_payment: scenario.summary.monthly_payment
+          }, {
+            onConflict: 'amortization_id,scenario_type',
+            ignoreDuplicates: false
+          })
+          .select()
+          .single();
+
+        if (summaryError) {
+          console.error('Error upserting scenario summary:', summaryError);
+          throw summaryError;
+        }
+
+        if (!summaryData) {
+          throw new Error('No summary data returned after upsert');
+        }
+
+        // Delete existing payments for this summary
+        const { error: deleteError } = await supabase
+          .from('scenario_payments')
+          .delete()
+          .eq('scenario_summary_id', summaryData.id);
+
+        if (deleteError) {
+          console.error('Error deleting existing payments:', deleteError);
+          throw deleteError;
+        }
+
+        // Insert the new payments for this scenario
+        const paymentsToInsert = scenario.payments.map(payment => ({
           scenario_summary_id: summaryData.id,
-          payment_date: payment.payment_date.toISOString(),
+          payment_date: payment.payment_date.toISOString().split('T')[0], // Convert to YYYY-MM-DD format
           capital: payment.capital,
           interest: payment.interest,
           property_insurance: payment.property_insurance,
           loan_insurance: payment.loan_insurance,
           monthly_payment: payment.monthly_payment,
           is_different_from_base: payment.is_different_from_base
-        }))
+        }));
 
-        const { error: paymentsError } = await supabase
-          .from("scenario_payments")
-          .upsert(paymentsToInsert)
+        // Insert payments in chunks to avoid hitting request size limits
+        const chunkSize = 100;
+        for (let i = 0; i < paymentsToInsert.length; i += chunkSize) {
+          const chunk = paymentsToInsert.slice(i, i + chunkSize);
+          const { error: paymentsError } = await supabase
+            .from('scenario_payments')
+            .insert(chunk);
 
-        if (paymentsError) throw paymentsError
+          if (paymentsError) {
+            console.error('Error inserting scenario payments:', paymentsError);
+            throw paymentsError;
+          }
+        }
       }
     } catch (error) {
-      console.error('Error storing scenario calculations:', error)
+      console.error('Error in storeScenarios:', error);
+      throw error;
     }
-
-    return { summary, payments }
   }
 } 

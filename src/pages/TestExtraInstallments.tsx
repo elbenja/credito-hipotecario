@@ -21,6 +21,7 @@ import { ScenariosComparison } from "@/components/amortizations/scenarios-compar
 import { LoanCalculator } from "@/services/amortization/calculations/loan"
 import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
 import type { Database } from "@/types/supabase"
+import { ScenarioTable } from "@/components/amortizations/scenario-table"
 
 type Amortization = Database['public']['Tables']['amortizations']['Row']
 type ExtraInstallment = Database['public']['Tables']['extra_installments']['Row']
@@ -165,7 +166,7 @@ export default function TestExtraInstallments() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="max-w-[1600px] mx-auto py-8 px-8">
       <SEO 
         title="Test Extra Installments - CreditoHipotecar.io"
         description="Testing page for property selection and extra installments functionality"
@@ -485,9 +486,6 @@ function ScenarioCalculationsSection({
   amortization: Amortization
   property: Property
 }) {
-  console.log('Amortization:', amortization)
-  console.log('Property:', property)
-
   const { scenarios, isLoading, extraInstallments, rateChanges } = useScenarioCalculations({
     amortizationId: amortization.id,
     loan_amount: amortization.loan_amount,
@@ -498,11 +496,6 @@ function ScenarioCalculationsSection({
     property_insurance: property.property_insurance || 0,
     loan_insurance: amortization.loan_protection_insurance || 0
   })
-
-  console.log('Scenarios:', scenarios)
-  console.log('Extra Installments:', extraInstallments)
-  console.log('Rate Changes:', rateChanges)
-  console.log('Is Loading:', isLoading)
 
   if (isLoading) {
     return (
@@ -543,32 +536,21 @@ function ScenarioCalculationsSection({
                 </p>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    <th className="text-left text-sm font-medium text-muted-foreground">Date</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Capital</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Interest</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Property Insurance</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Loan Insurance</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Monthly Payment</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {scenarios.accelerated?.payments.map((payment, index) => (
-                    <tr key={index} className={payment.is_different_from_base ? "bg-muted/50" : undefined}>
-                      <td className="text-left">{formatDate(new Date(payment.payment_date))}</td>
-                      <td className="text-right">{formatCurrency(payment.capital, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.interest, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.property_insurance, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.loan_insurance, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.monthly_payment, property.currency)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {scenarios.accelerated?.payments && (
+              <ScenarioTable
+                rows={scenarios.accelerated.payments.map(payment => ({
+                  date: new Date(payment.payment_date),
+                  capital: payment.capital,
+                  interest: payment.interest,
+                  property_insurance: payment.property_insurance,
+                  loan_insurance: payment.loan_insurance,
+                  monthly_payment: payment.monthly_payment,
+                  is_different_from_base: payment.is_different_from_base
+                }))}
+                currency={property.currency}
+                compareWithBaseScenario={true}
+              />
+            )}
           </div>
         </div>
 
@@ -593,32 +575,21 @@ function ScenarioCalculationsSection({
                 </p>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    <th className="text-left text-sm font-medium text-muted-foreground">Date</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Capital</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Interest</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Property Insurance</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Loan Insurance</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Monthly Payment</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {scenarios.lower_payment?.payments.map((payment, index) => (
-                    <tr key={index} className={payment.is_different_from_base ? "bg-muted/50" : undefined}>
-                      <td className="text-left">{formatDate(new Date(payment.payment_date))}</td>
-                      <td className="text-right">{formatCurrency(payment.capital, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.interest, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.property_insurance, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.loan_insurance, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.monthly_payment, property.currency)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {scenarios.lower_payment?.payments && (
+              <ScenarioTable
+                rows={scenarios.lower_payment.payments.map(payment => ({
+                  date: new Date(payment.payment_date),
+                  capital: payment.capital,
+                  interest: payment.interest,
+                  property_insurance: payment.property_insurance,
+                  loan_insurance: payment.loan_insurance,
+                  monthly_payment: payment.monthly_payment,
+                  is_different_from_base: payment.is_different_from_base
+                }))}
+                currency={property.currency}
+                compareWithBaseScenario={true}
+              />
+            )}
           </div>
         </div>
 
@@ -643,32 +614,21 @@ function ScenarioCalculationsSection({
                 </p>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    <th className="text-left text-sm font-medium text-muted-foreground">Date</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Capital</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Interest</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Property Insurance</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Loan Insurance</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Monthly Payment</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {scenarios.regular?.payments.map((payment, index) => (
-                    <tr key={index} className={payment.is_different_from_base ? "bg-muted/50" : undefined}>
-                      <td className="text-left">{formatDate(new Date(payment.payment_date))}</td>
-                      <td className="text-right">{formatCurrency(payment.capital, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.interest, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.property_insurance, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.loan_insurance, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.monthly_payment, property.currency)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {scenarios.regular?.payments && (
+              <ScenarioTable
+                rows={scenarios.regular.payments.map(payment => ({
+                  date: new Date(payment.payment_date),
+                  capital: payment.capital,
+                  interest: payment.interest,
+                  property_insurance: payment.property_insurance,
+                  loan_insurance: payment.loan_insurance,
+                  monthly_payment: payment.monthly_payment,
+                  is_different_from_base: payment.is_different_from_base
+                }))}
+                currency={property.currency}
+                compareWithBaseScenario={false}
+              />
+            )}
           </div>
         </div>
 
@@ -693,32 +653,21 @@ function ScenarioCalculationsSection({
                 </p>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    <th className="text-left text-sm font-medium text-muted-foreground">Date</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Capital</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Interest</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Property Insurance</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Loan Insurance</th>
-                    <th className="text-right text-sm font-medium text-muted-foreground">Monthly Payment</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {scenarios.new_rate?.payments.map((payment, index) => (
-                    <tr key={index} className={payment.is_different_from_base ? "bg-muted/50" : undefined}>
-                      <td className="text-left">{formatDate(new Date(payment.payment_date))}</td>
-                      <td className="text-right">{formatCurrency(payment.capital, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.interest, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.property_insurance, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.loan_insurance, property.currency)}</td>
-                      <td className="text-right">{formatCurrency(payment.monthly_payment, property.currency)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {scenarios.new_rate?.payments && (
+              <ScenarioTable
+                rows={scenarios.new_rate.payments.map(payment => ({
+                  date: new Date(payment.payment_date),
+                  capital: payment.capital,
+                  interest: payment.interest,
+                  property_insurance: payment.property_insurance,
+                  loan_insurance: payment.loan_insurance,
+                  monthly_payment: payment.monthly_payment,
+                  is_different_from_base: payment.is_different_from_base
+                }))}
+                currency={property.currency}
+                compareWithBaseScenario={true}
+              />
+            )}
           </div>
         </div>
       </div>

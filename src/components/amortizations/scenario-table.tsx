@@ -23,38 +23,38 @@ export function ScenarioTable({
   compareWithBaseScenario = false
 }: ScenarioTableProps) {
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md ">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead className="text-right">Capital</TableHead>
-            <TableHead className="text-right">Interest</TableHead>
-            <TableHead className="text-right">Property Insurance</TableHead>
-            <TableHead className="text-right">Loan Insurance</TableHead>
-            <TableHead className="text-right">Monthly Payment</TableHead>
+            <TableHead className="text-xs">Date</TableHead>
+            <TableHead className="text-xs text-right">Capital</TableHead>
+            <TableHead className="text-xs text-right">Interest</TableHead>
+            <TableHead className="text-xs text-right">Property Insurance</TableHead>
+            <TableHead className="text-xs text-right">Loan Insurance</TableHead>
+            <TableHead className="text-xs text-right">Monthly Payment</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.map((row, index) => (
             <TableRow 
               key={index}
-              className={row.is_different_from_base ? "bg-muted/50" : undefined}
+              className={row.is_different_from_base ? "bg-muted/50 text-sm" : "text-sm"}
             >
-              <TableCell>{formatDate(row.date)}</TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-sm">{formatDate(row.date)}</TableCell>
+              <TableCell className="text-sm text-right">
                 {formatCurrency(row.capital, currency)}
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-sm text-right">
                 {formatCurrency(row.interest, currency)}
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-sm text-right">
                 {formatCurrency(row.property_insurance, currency)}
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-sm text-right">
                 {formatCurrency(row.loan_insurance, currency)}
               </TableCell>
-              <TableCell className="text-right font-medium">
+              <TableCell className="text-sm text-right font-medium">
                 {formatCurrency(row.monthly_payment, currency)}
               </TableCell>
             </TableRow>

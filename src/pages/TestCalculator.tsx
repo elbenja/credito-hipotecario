@@ -163,12 +163,12 @@ export default function TestCalculator() {
           </div>
 
           <div className="space-y-2">
-            <Label>Installments per Year</Label>
+            <Label htmlFor="installmentsPerYear">Installments per Year</Label>
             <Select 
               value={installmentsPerYear} 
               onValueChange={(value: "12" | "14") => setInstallmentsPerYear(value)}
             >
-              <SelectTrigger>
+              <SelectTrigger id="installmentsPerYear">
                 <SelectValue placeholder="Select frequency" />
               </SelectTrigger>
               <SelectContent>
@@ -179,10 +179,11 @@ export default function TestCalculator() {
           </div>
 
           <div className="space-y-2">
-            <Label>First Installment Date</Label>
+            <Label htmlFor="firstInstallmentDate">First Installment Date</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
+                  id="firstInstallmentDate"
                   variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal",
