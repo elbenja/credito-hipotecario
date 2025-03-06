@@ -19,6 +19,8 @@ export type Database = {
           installments_per_year: number
           interest_rate: number
           loan_amount: number
+          loan_protection_insurance: number | null
+          loan_protection_type: string | null
           name: string
           property_id: string
           term_years: number
@@ -26,8 +28,6 @@ export type Database = {
           total_payment: number
           updated_at: string
           user_id: string
-          loan_protection_type: "individual" | "joint" | "none" | "custom" | null
-          loan_protection_insurance: number | null
         }
         Insert: {
           created_at?: string
@@ -38,6 +38,8 @@ export type Database = {
           installments_per_year: number
           interest_rate: number
           loan_amount: number
+          loan_protection_insurance?: number | null
+          loan_protection_type?: string | null
           name: string
           property_id: string
           term_years: number
@@ -45,8 +47,6 @@ export type Database = {
           total_payment: number
           updated_at?: string
           user_id: string
-          loan_protection_type?: "individual" | "joint" | "none" | "custom" | null
-          loan_protection_insurance?: number | null
         }
         Update: {
           created_at?: string
@@ -57,6 +57,8 @@ export type Database = {
           installments_per_year?: number
           interest_rate?: number
           loan_amount?: number
+          loan_protection_insurance?: number | null
+          loan_protection_type?: string | null
           name?: string
           property_id?: string
           term_years?: number
@@ -64,8 +66,6 @@ export type Database = {
           total_payment?: number
           updated_at?: string
           user_id?: string
-          loan_protection_type?: "individual" | "joint" | "none" | "custom" | null
-          loan_protection_insurance?: number | null
         }
         Relationships: [
           {
@@ -172,6 +172,27 @@ export type Database = {
           },
         ]
       }
+      insurance_rates: {
+        Row: {
+          effective_year: number
+          id: number
+          percentage: number
+          type: string
+        }
+        Insert: {
+          effective_year: number
+          id?: number
+          percentage: number
+          type: string
+        }
+        Update: {
+          effective_year?: number
+          id?: number
+          percentage?: number
+          type?: string
+        }
+        Relationships: []
+      }
       interest_rate_limits: {
         Row: {
           created_at: string
@@ -237,11 +258,10 @@ export type Database = {
           id: string
           is_first_home: boolean | null
           is_sustainable: boolean | null
-          loan_protection_insurance: number | null
           name: string
           price_cost: number
           property_insurance: number | null
-          property_insurance_type: "auto" | "manual"
+          property_insurance_type: string | null
           updated_at: string
           user_id: string
         }
@@ -252,11 +272,10 @@ export type Database = {
           id?: string
           is_first_home?: boolean | null
           is_sustainable?: boolean | null
-          loan_protection_insurance?: number | null
           name: string
           price_cost: number
           property_insurance?: number | null
-          property_insurance_type?: "auto" | "manual"
+          property_insurance_type?: string | null
           updated_at?: string
           user_id: string
         }
@@ -267,15 +286,73 @@ export type Database = {
           id?: string
           is_first_home?: boolean | null
           is_sustainable?: boolean | null
-          loan_protection_insurance?: number | null
           name?: string
           price_cost?: number
           property_insurance?: number | null
-          property_insurance_type?: "auto" | "manual"
+          property_insurance_type?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      property_insurance_rates: {
+        Row: {
+          created_at: string | null
+          effective_year: number
+          id: string
+          percentage: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          effective_year: number
+          id?: string
+          percentage: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          effective_year?: number
+          id?: string
+          percentage?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      rate_changes: {
+        Row: {
+          amortization_id: string
+          created_at: string
+          effective_date: string
+          id: string
+          new_interest_rate: number
+          updated_at: string
+        }
+        Insert: {
+          amortization_id: string
+          created_at?: string
+          effective_date: string
+          id?: string
+          new_interest_rate: number
+          updated_at?: string
+        }
+        Update: {
+          amortization_id?: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          new_interest_rate?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_changes_amortization_id_fkey"
+            columns: ["amortization_id"]
+            isOneToOne: false
+            referencedRelation: "amortizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       refinancing_options: {
         Row: {
@@ -315,29 +392,96 @@ export type Database = {
           },
         ]
       }
-      property_insurance_rates: {
+      scenario_payments: {
         Row: {
-          id: string
-          percentage: number
-          effective_year: number
+          capital: number
           created_at: string
+          id: string
+          interest: number
+          is_different_from_base: boolean | null
+          loan_insurance: number
+          monthly_payment: number
+          payment_date: string
+          property_insurance: number
+          scenario_summary_id: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          percentage: number
-          effective_year: number
+          capital: number
           created_at?: string
+          id?: string
+          interest: number
+          is_different_from_base?: boolean | null
+          loan_insurance: number
+          monthly_payment: number
+          payment_date: string
+          property_insurance: number
+          scenario_summary_id: string
           updated_at?: string
         }
         Update: {
-          id?: string
-          percentage?: number
-          effective_year?: number
+          capital?: number
           created_at?: string
+          id?: string
+          interest?: number
+          is_different_from_base?: boolean | null
+          loan_insurance?: number
+          monthly_payment?: number
+          payment_date?: string
+          property_insurance?: number
+          scenario_summary_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "scenario_payments_scenario_summary_id_fkey"
+            columns: ["scenario_summary_id"]
+            isOneToOne: false
+            referencedRelation: "scenario_summaries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scenario_summaries: {
+        Row: {
+          amortization_id: string
+          created_at: string
+          id: string
+          monthly_payment: number
+          scenario_type: Database["public"]["Enums"]["scenario_type"]
+          total_interest_and_insurance: number
+          total_months: number
+          updated_at: string
+        }
+        Insert: {
+          amortization_id: string
+          created_at?: string
+          id?: string
+          monthly_payment: number
+          scenario_type: Database["public"]["Enums"]["scenario_type"]
+          total_interest_and_insurance: number
+          total_months: number
+          updated_at?: string
+        }
+        Update: {
+          amortization_id?: string
+          created_at?: string
+          id?: string
+          monthly_payment?: number
+          scenario_type?: Database["public"]["Enums"]["scenario_type"]
+          total_interest_and_insurance?: number
+          total_months?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenario_summaries_amortization_id_fkey"
+            columns: ["amortization_id"]
+            isOneToOne: false
+            referencedRelation: "amortizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -347,7 +491,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      scenario_type: "regular" | "accelerated" | "lower_payment" | "new_rate"
     }
     CompositeTypes: {
       [_ in never]: never
