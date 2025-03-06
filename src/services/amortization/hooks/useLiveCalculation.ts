@@ -1,20 +1,22 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { useQuery } from "@tanstack/react-query";
-import { useAmortizationStore } from "@/store/amortization/store";
-import type { BaseAmortizationValues, Property } from '../types/common';
 
-interface UseLiveCalculationProps {
-  property?: Property | null;
-  baseValues?: BaseAmortizationValues | null;
-  debounceMs?: number;
+import { useCallback, useEffect } from 'react'
+import { useAmortizationStore } from '@/store/amortization/store'
+import { AmortizationBaseValues, Property } from '@/services/amortization/types/common'
+
+// Define the store shape for type safety
+interface AmortizationStoreType {
+  setProperty: (property: Property) => void
+  setBaseValues: (values: AmortizationBaseValues) => void
+  calculateScenarios: () => void
+  isCalculating: boolean
+  error: string | null
+  calculationResults: any
 }
 
-export const useLiveCalculation = ({
-  property,
-  baseValues,
-  debounceMs = 500
-}: UseLiveCalculationProps = {}) => {
-  const debounceTimer = useRef<NodeJS.Timeout>();
+export function useLiveCalculation() {
+  // Cast the store to have the expected properties
+  const store = useAmortizationStore() as unknown as AmortizationStoreType
+  
   const {
     setProperty,
     setBaseValues,
@@ -22,42 +24,25 @@ export const useLiveCalculation = ({
     isCalculating,
     error,
     calculationResults
-  } = useAmortizationStore();
+  } = store
 
-  const debouncedCalculate = useCallback(() => {
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
+  const updatePropertyDetails = useCallback((property: Property) => {
+    setProperty(property)
+  }, [setProperty])
 
-    debounceTimer.current = setTimeout(() => {
-      calculateScenarios();
-    }, debounceMs);
-  }, [calculateScenarios, debounceMs]);
+  const updateLoanDetails = useCallback((values: AmortizationBaseValues) => {
+    setBaseValues(values)
+  }, [setBaseValues])
 
   useEffect(() => {
-    if (property) {
-      setProperty(property);
-    }
-  }, [property, setProperty]);
-
-  useEffect(() => {
-    if (baseValues) {
-      setBaseValues(baseValues);
-    }
-  }, [baseValues, setBaseValues]);
-
-  useEffect(() => {
-    return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
-    };
-  }, []);
+    calculateScenarios()
+  }, [calculateScenarios])
 
   return {
+    updatePropertyDetails,
+    updateLoanDetails,
     isCalculating,
     error,
-    calculationResults,
-    debouncedCalculate
-  };
-};
+    results: calculationResults
+  }
+}

@@ -1,392 +1,70 @@
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
-import { useEffect, useState } from "react"
-import { useAuth } from "@/context/auth-context"
-import { supabase } from "@/integrations/supabase/client"
-import { UseFormReturn } from "react-hook-form"
-import { AmortizationFormValues } from "./schema"
-import { formatCurrency } from "@/lib/utils"
-import { useExchangeRate } from "@/hooks/use-exchange-rate"
-import { Pencil } from "lucide-react"
-import { PropertyForm } from "@/components/properties/property-form"
+import { useState, useEffect } from 'react'
+import { useQuery } from "@tanstack/react-query"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { Property as PropertyType } from "@/services/amortization/types/common"
 
-const formatAmount = (amount: number, currency: string) => {
-  const roundedAmount = Math.round(amount)
-  return formatCurrency(roundedAmount, currency)
-}
-
-export type Property = {
+type Property = {
   id: string
   name: string
-  price_cost: number
-  currency: "USD" | "PEN"
-  is_first_home: boolean
-  is_sustainable: boolean
-  property_insurance: number | null
-  property_insurance_type: "auto" | "manual"
+  cost: number
+  currency: string
+  property_insurance: number
+  property_insurance_type: string
+  bonus: number
 }
 
-type BonusRule = {
-  min_value: number
-  max_value: number
-  traditional_bonus: number
-  sustainable_bonus: number
+async function getProperties(): Promise<Property[]> {
+  const res = await fetch('/api/properties')
+  return res.json()
 }
 
-type PropertySelectProps = {
-  form: UseFormReturn<AmortizationFormValues>
-  onPropertyChange: (property: Property | null) => void
-  disabled?: boolean
-  initialProperty?: Property | null
+interface PropertySelectProps {
+  onChange: (property: PropertyType) => void
 }
 
-export function PropertyDisplay({ 
-  property,
-  onPropertyUpdate
-}: { 
-  property: Property
-  onPropertyUpdate?: (updatedProperty: Property) => void
-}) {
-  const { data: exchangeRate } = useExchangeRate()
-  const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
-  const [open, setOpen] = useState(false)
-  const [currentProperty, setCurrentProperty] = useState<Property>(property)
+export function PropertySelect({ onChange }: PropertySelectProps) {
+  const [selected, setSelected] = useState<Property | null>(null)
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['properties'],
+    queryFn: getProperties
+  })
 
   useEffect(() => {
-    const loadBonusRules = async () => {
-      const { data: rulesData } = await supabase
-        .from("bonus_rules")
-        .select("*")
-        .order('min_value', { ascending: true })
-      
-      setBonusRules(rulesData || [])
+    if (selected) {
+      const property = {
+        id: selected.id,
+        cost: selected.cost,
+        currency: selected.currency as "USD" | "PEN",
+        property_insurance: selected.property_insurance,
+        property_insurance_type: selected.property_insurance_type as "auto" | "manual",
+        bonus: selected.bonus
+      };
+      onChange(property)
     }
-    loadBonusRules()
-  }, [])
+  }, [selected, onChange])
 
-  useEffect(() => {
-    const loadProperty = async () => {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("*")
-        .eq('id', property.id)
-        .single()
-
-      if (error) {
-        console.error("Error loading property:", error)
-        return
-      }
-
-      if (data) {
-        setCurrentProperty(data as Property)
-      }
-    }
-
-    loadProperty()
-  }, [property.id])
-
-  const convertToPEN = (amount: number, currency: string): number => {
-    if (currency === 'PEN') return amount
-    return amount * (exchangeRate || 3.7167)
-  }
-
-  const calculateBonus = (property: Property): number | null => {
-    if (!property.is_first_home) return null
-
-    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency)
-    
-    const applicableRule = bonusRules.find(
-      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
-    )
-
-    if (!applicableRule) return null
-
-    return property.is_sustainable 
-      ? applicableRule.sustainable_bonus 
-      : applicableRule.traditional_bonus
-  }
-
-  const cost = currentProperty.price_cost
-  const bonus = calculateBonus(currentProperty)
-  const costInPEN = convertToPEN(cost, currentProperty.currency)
-
-  const handlePropertyUpdate = async () => {
-    const { data, error } = await supabase
-      .from("properties")
-      .select("*")
-      .eq('id', currentProperty.id)
-      .single()
-
-    if (error) {
-      console.error("Error fetching updated property:", error)
-      return
-    }
-
-    if (data) {
-      const updatedProperty = data as Property
-      setCurrentProperty(updatedProperty)
-      if (onPropertyUpdate) {
-        onPropertyUpdate(updatedProperty)
-      }
-    }
-    setOpen(false)
-  }
+  if (isLoading) return <div>Loading properties...</div>
+  if (isError) return <div>Error fetching properties</div>
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <div className="relative w-full rounded-md border border-input bg-background px-3 py-2">
-        <div className="flex flex-col items-start">
-          <span className="font-medium">{currentProperty.name}</span>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-foreground">
-              Cost: {formatAmount(cost, currentProperty.currency)}
-            </span>
-            {bonus && (
-              <>
-                <span className="text-sm text-muted-foreground/75">|</span>
-                <span className="text-sm text-foreground">
-                  Bonus: {formatAmount(bonus, "PEN")}
-                </span>
-              </>
-            )}
-            {currentProperty.property_insurance !== null && 
-             !(currentProperty.property_insurance_type === "manual" && currentProperty.property_insurance === 0) && (
-              <>
-                <span className="text-sm text-muted-foreground/75">|</span>
-                <span className="text-sm text-foreground">
-                  Insurance: {formatAmount(currentProperty.property_insurance, currentProperty.currency)}
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-        <div 
-          className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer hover:text-primary transition-colors"
-          onClick={() => setOpen(true)}
-        >
-          <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
-        </div>
-      </div>
-      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Edit Property</SheetTitle>
-        </SheetHeader>
-        <div className="mt-8">
-          <PropertyForm
-            onSuccess={handlePropertyUpdate}
-            onClose={() => setOpen(false)}
-            selectedProperty={currentProperty}
-            bonusRules={bonusRules}
-          />
-        </div>
-      </SheetContent>
-    </Sheet>
-  )
-}
-
-export function PropertySelect({ 
-  form, 
-  onPropertyChange, 
-  disabled = false,
-  initialProperty = null
-}: PropertySelectProps) {
-  const { user } = useAuth()
-  const [properties, setProperties] = useState<Property[]>([])
-  const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
-  const [selectedPropertyName, setSelectedPropertyName] = useState<string>("")
-  const [initialLoad, setInitialLoad] = useState(true)
-  const [isLoading, setIsLoading] = useState(false)
-  const propertyId = form.watch("property_id")
-  const { data: exchangeRate } = useExchangeRate()
-
-  const convertToPEN = (amount: number, currency: string): number => {
-    if (currency === 'PEN') return amount
-    return amount * (exchangeRate || 3.7167)
-  }
-
-  const calculateBonus = (property: Property): number | null => {
-    if (!property.is_first_home) return null
-
-    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency)
-    
-    const applicableRule = bonusRules.find(
-      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
-    )
-
-    if (!applicableRule) return null
-
-    return property.is_sustainable 
-      ? applicableRule.sustainable_bonus 
-      : applicableRule.traditional_bonus
-  }
-
-  useEffect(() => {
-    const loadProperties = async () => {
-      if (!user || (disabled && !initialLoad && !initialProperty)) return
-      
-      setIsLoading(true)
-      try {
-        const [{ data: propertiesData, error: propertiesError }, { data: rulesData, error: rulesError }] = await Promise.all([
-          supabase
-            .from("properties")
-            .select("id, name, price_cost, currency, is_first_home, is_sustainable, property_insurance")
-            .eq("user_id", user.id),
-          supabase
-            .from("bonus_rules")
-            .select("*")
-            .order('min_value', { ascending: true })
-        ])
-
-        if (propertiesError) {
-          console.error("Error loading properties:", propertiesError)
-          return
-        }
-
-        if (rulesError) {
-          console.error("Error loading bonus rules:", rulesError)
-          return
-        }
-
-        const validProperties = (propertiesData || []).filter(
-          (p): p is Property => p.currency === "USD" || p.currency === "PEN"
-        )
-        
-        setProperties(validProperties)
-        setBonusRules(rulesData || [])
-
-        if (initialProperty) {
-          setSelectedPropertyName(initialProperty.name)
-          onPropertyChange(initialProperty)
-        } else if (propertyId) {
-          const selectedProperty = validProperties.find(p => p.id === propertyId)
-          if (selectedProperty) {
-            setSelectedPropertyName(selectedProperty.name)
-            onPropertyChange(selectedProperty)
-          }
-        }
-      } catch (error) {
-        console.error("Error loading properties:", error)
-      } finally {
-        setIsLoading(false)
-        setInitialLoad(false)
-      }
-    }
-
-    loadProperties()
-  }, [user, propertyId, disabled, initialLoad, initialProperty, onPropertyChange])
-
-  const handlePropertyChange = (propertyId: string) => {
-    const property = properties.find((p) => p.id === propertyId)
-    if (property) {
-      setSelectedPropertyName(property.name)
-      onPropertyChange(property)
-    } else {
-      setSelectedPropertyName("")
-      onPropertyChange(null)
-    }
-    form.setValue("property_id", propertyId)
-  }
-
-  const formatPropertyOption = (property: Property, isSelected: boolean = false) => {
-    const cost = property.price_cost
-    const bonus = calculateBonus(property)
-    const costInPEN = convertToPEN(cost, property.currency)
-
-    return (
-      <div className="w-full py-1">
-        <div className="flex flex-col items-start">
-          <span className={`text-base font-regular ${isSelected ? 'text-inherit' : 'text-foreground'}`}>
-            {property.name}
-          </span>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-sm ${isSelected ? 'text-inherit/90' : 'text-muted-foreground'}`}>
-              Cost: {formatAmount(cost, property.currency)}
-           
-            </span>
-            {bonus && (
-              <>
-                <span className={`text-sm ${isSelected ? 'text-inherit/75' : 'text-muted-foreground/75'}`}>|</span>
-                <span className={`text-sm ${isSelected ? 'text-inherit/90' : 'text-muted-foreground'}`}>
-                  Bonus: {formatAmount(bonus, "PEN")}
-                </span>
-              </>
-            )}
-            {property.property_insurance !== null && 
-             !(property.property_insurance_type === "manual" && property.property_insurance === 0) && (
-              <>
-                <span className={`text-sm ${isSelected ? 'text-inherit/75' : 'text-muted-foreground/75'}`}>|</span>
-                <span className={`text-sm ${isSelected ? 'text-inherit/90' : 'text-muted-foreground'}`}>
-                  Insurance: {formatAmount(property.property_insurance, property.currency)}
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  const getSelectedPropertyDisplay = () => {
-    if (isLoading) return "Loading properties..."
-    if (!propertyId) return "Select a property"
-    const property = properties.find(p => p.id === propertyId)
-    if (!property) return "Select a property"
-    return formatPropertyOption(property, true)
-  }
-
-  return (
-    <FormField
-      control={form.control}
-      name="property_id"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Property</FormLabel>
-          <Select
-            onValueChange={handlePropertyChange}
-            value={field.value}
-            disabled={disabled || isLoading}
-          >
-            <FormControl>
-              <SelectTrigger className="form-control-focus h-auto flex items-center py-2">
-                <SelectValue placeholder="Select a property" className="text-left">
-                  {getSelectedPropertyDisplay()}
-                </SelectValue>
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {properties.map((property) => (
-                <SelectItem 
-                  key={property.id} 
-                  value={property.id} 
-                  className="h-auto py-2 hover:bg-accent/40 data-[state=checked]:bg-accent data-[state=checked]:text-muted-foreground"
-                >
-                  {formatPropertyOption(property)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    <div className="grid gap-2">
+      <Label htmlFor="property">Property</Label>
+      <Select onValueChange={(value) => {
+        const property = data?.find(property => property.id === value)
+        setSelected(property || null)
+      }}>
+        <SelectTrigger id="property">
+          <SelectValue placeholder="Select a property" />
+        </SelectTrigger>
+        <SelectContent>
+          {data?.map((property) => (
+            <SelectItem key={property.id} value={property.id}>
+              {property.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   )
 }
