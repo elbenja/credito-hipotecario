@@ -1,10 +1,10 @@
+
 export type Json =
   | string
   | number
   | boolean
   | null
-  | { [key: s
-ring]: Json | undefined }
+  | { [key: string]: Json | undefined }
   | Json[]
 
 export interface Database {
