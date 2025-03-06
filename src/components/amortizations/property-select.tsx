@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from 'react'
 import { useQuery } from "@tanstack/react-query"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Property as PropertyType } from "@/services/amortization/types/common"
 
-type Property = {
+export type Property = {
   id: string
   name: string
   cost: number
@@ -19,7 +20,7 @@ async function getProperties(): Promise<Property[]> {
   return res.json()
 }
 
-interface PropertySelectProps {
+export interface PropertySelectProps {
   onChange: (property: PropertyType) => void
 }
 
@@ -67,4 +68,22 @@ export function PropertySelect({ onChange }: PropertySelectProps) {
       </Select>
     </div>
   )
+}
+
+// Create a PropertyDisplay component to display property details
+export function PropertyDisplay({ property }: { property: PropertyType }) {
+  if (!property) return null;
+  
+  return (
+    <div className="grid gap-2">
+      <div className="font-medium">Property Information</div>
+      <div className="text-sm text-gray-500">
+        <div>ID: {property.id}</div>
+        <div>Cost: {property.cost} {property.currency}</div>
+        <div>Insurance: {property.property_insurance}</div>
+        <div>Insurance Type: {property.property_insurance_type}</div>
+        <div>Bonus: {property.bonus}</div>
+      </div>
+    </div>
+  );
 }
