@@ -29,7 +29,6 @@ import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { Pencil } from "lucide-react"
 import { PropertyForm } from "@/components/properties/property-form"
 
-// Helper function for currency formatting
 const formatAmount = (amount: number, currency: string) => {
   const roundedAmount = Math.round(amount)
   return formatCurrency(roundedAmount, currency)
@@ -131,7 +130,6 @@ export function PropertyDisplay({
   const costInPEN = convertToPEN(cost, currentProperty.currency)
 
   const handlePropertyUpdate = async () => {
-    // Fetch the updated property data
     const { data, error } = await supabase
       .from("properties")
       .select("*")
@@ -146,7 +144,6 @@ export function PropertyDisplay({
     if (data) {
       const updatedProperty = data as Property
       setCurrentProperty(updatedProperty)
-      // Call the onPropertyUpdate callback if provided
       if (onPropertyUpdate) {
         onPropertyUpdate(updatedProperty)
       }
@@ -229,7 +226,6 @@ export function PropertySelect({
   const calculateBonus = (property: Property): number | null => {
     if (!property.is_first_home) return null
 
-    // Convert property value to PEN for bonus calculation without rounding
     const propertyValueInPEN = convertToPEN(property.price_cost, property.currency)
     
     const applicableRule = bonusRules.find(
@@ -238,7 +234,6 @@ export function PropertySelect({
 
     if (!applicableRule) return null
 
-    // Return the exact bonus amount - rounding will be handled in display
     return property.is_sustainable 
       ? applicableRule.sustainable_bonus 
       : applicableRule.traditional_bonus
@@ -278,7 +273,6 @@ export function PropertySelect({
         setProperties(validProperties)
         setBonusRules(rulesData || [])
 
-        // Handle initial property if provided
         if (initialProperty) {
           setSelectedPropertyName(initialProperty.name)
           onPropertyChange(initialProperty)

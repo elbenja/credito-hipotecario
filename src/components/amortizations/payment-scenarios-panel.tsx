@@ -187,7 +187,7 @@ export function PaymentScenariosPanel({
     cost: loanAmount + (parseFloat(refinancingForm.newInterestRate) || 0),
     currency,
     property_insurance: propertyInsurance,
-    property_insurance_type: "manual",
+    property_insurance_type: "manual" as "auto" | "manual",
     bonus: 0
   }
 
@@ -414,4 +414,4 @@ export function PaymentScenariosPanel({
       </div>
     </>
   )
-} 
+}

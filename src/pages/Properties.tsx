@@ -1,3 +1,4 @@
+
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
@@ -16,25 +17,7 @@ import { useAuth } from "@/context/auth-context"
 import { useToast } from "@/components/ui/use-toast"
 import { Separator } from "@/components/ui/separator"
 import { SEO } from "@/components/seo"
-
-type Property = {
-  id: string
-  name: string
-  price_cost: number
-  currency: string
-  property_insurance: number | null
-  other_expenses: number | null
-  is_first_home: boolean
-  is_sustainable: boolean
-  description?: string | null
-}
-
-type BonusRule = {
-  min_value: number
-  max_value: number
-  traditional_bonus: number
-  sustainable_bonus: number
-}
+import { Property, BonusRule } from "@/components/properties/types"
 
 export default function Properties() {
   const [open, setOpen] = useState(false)
@@ -78,7 +61,14 @@ export default function Properties() {
         .eq('user_id', user.id)
 
       if (error) throw error
-      setProperties(data || [])
+      
+      // Ensure all properties have the required property_insurance_type field
+      const updatedData = (data || []).map(p => ({
+        ...p,
+        property_insurance_type: p.property_insurance_type || "auto"
+      })) as Property[]
+      
+      setProperties(updatedData)
     } catch (error) {
       console.error('Error loading properties:', error)
       toast({
