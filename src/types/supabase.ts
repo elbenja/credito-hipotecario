@@ -138,6 +138,53 @@ export interface Database {
           updated_at?: string
         }
       }
+      amortizations: {
+        Row: {
+          id: string
+          property_id: string
+          down_payment: number
+          down_payment_percentage: number
+          interest_rate: number
+          term_years: number
+          installments_per_year: number
+          first_installment_date: string
+          loan_protection_type: string
+          loan_protection_insurance: number
+          user_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          property_id: string
+          down_payment: number
+          down_payment_percentage: number
+          interest_rate: number
+          term_years: number
+          installments_per_year: number
+          first_installment_date: string | Date
+          loan_protection_type: string
+          loan_protection_insurance: number
+          user_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          property_id?: string
+          down_payment?: number
+          down_payment_percentage?: number
+          interest_rate?: number
+          term_years?: number
+          installments_per_year?: number
+          first_installment_date?: string | Date
+          loan_protection_type?: string
+          loan_protection_insurance?: number
+          user_id?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

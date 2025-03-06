@@ -1,164 +1,78 @@
-import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
-import type {
-  BaseAmortizationValues,
-  CalculationResults,
-  Property
-} from '../../services/amortization/types/common';
-import type {
-  Scenario,
-  ScenarioState,
-  ScenarioType
-} from '../../services/amortization/types/scenarios';
-import { LoanCalculator } from '../../services/amortization/calculations/loan';
-import { ScenarioCalculator } from '../../services/amortization/calculations/scenarios';
 
-interface AmortizationState {
-  property: Property | null;
-  baseValues: BaseAmortizationValues | null;
-  scenarios: ScenarioState;
-  calculationResults: Record<ScenarioType, CalculationResults> | null;
-  isCalculating: boolean;
-  error: string | null;
+import { create } from 'zustand'
+import { devtools } from 'zustand/middleware'
+import { PaymentDetail } from '@/services/amortization/types/common'
+
+export type ScenarioData = {
+  total_interest_and_insurance: number
+  total_months: number
+  monthly_payment: number
+  payment_schedule: PaymentDetail[]
 }
 
-interface AmortizationActions {
-  setProperty: (property: Property) => void;
-  setBaseValues: (values: BaseAmortizationValues) => void;
-  updateScenario: (type: ScenarioType, scenario: Scenario) => void;
-  selectScenario: (type: ScenarioType) => void;
-  calculateScenarios: () => void;
-  resetCalculations: () => void;
-  setError: (error: string | null) => void;
-}
-
-const initialScenarioState: ScenarioState = {
-  selected: 'regular',
-  regular: {
-    type: 'regular',
-    is_selected: true
-  },
-  accelerated: {
-    type: 'accelerated',
-    is_selected: false,
-    extra_payments: []
-  },
-  lower_payment: {
-    type: 'lower_payment',
-    is_selected: false,
-    extra_payments: []
-  },
-  new_rate: {
-    type: 'new_rate',
-    is_selected: false,
-    rate_changes: []
+export type ScenarioState = {
+  selectedScenario: 'regular' | 'accelerated' | 'lower_payment' | 'new_rate'
+  scenarios: {
+    regular: ScenarioData | null
+    accelerated: ScenarioData | null
+    lower_payment: ScenarioData | null
+    new_rate: ScenarioData | null
   }
-};
+}
 
-const useAmortizationStore = create<AmortizationState & AmortizationActions>()(
+interface AmortizationStore extends ScenarioState {
+  setSelectedScenario: (scenario: 'regular' | 'accelerated' | 'lower_payment' | 'new_rate') => void
+  setScenarioData: (
+    scenario: 'regular' | 'accelerated' | 'lower_payment' | 'new_rate',
+    data: ScenarioData
+  ) => void
+  resetScenarios: () => void
+  getScenarioData: (scenario: 'regular' | 'accelerated' | 'lower_payment' | 'new_rate') => ScenarioData | null
+}
+
+const initialState: ScenarioState = {
+  selectedScenario: 'regular',
+  scenarios: {
+    regular: null,
+    accelerated: null,
+    lower_payment: null,
+    new_rate: null
+  }
+}
+
+export const useAmortizationStore = create<AmortizationStore>()(
   devtools(
-    persist(
-      (set, get) => ({
-        // State
-        property: null,
-        baseValues: null,
-        scenarios: initialScenarioState,
-        calculationResults: null,
-        isCalculating: false,
-        error: null,
+    (set, get) => ({
+      ...initialState,
 
-        // Actions
-        setProperty: (property) => {
-          set({ property });
-          get().calculateScenarios();
-        },
+      setSelectedScenario: (scenario) => {
+        set((state) => ({
+          ...state,
+          selectedScenario: scenario
+        }))
+      },
 
-        setBaseValues: (values) => {
-          set({ baseValues: values });
-          get().calculateScenarios();
-        },
-
-        updateScenario: (type, scenario) => {
-          set((state) => ({
-            scenarios: {
-              ...state.scenarios,
-              [type]: {
-                ...scenario,
-                is_selected: type === state.scenarios.selected
-              }
-            }
-          }));
-          get().calculateScenarios();
-        },
-
-        selectScenario: (type) => {
-          set((state) => ({
-            scenarios: {
-              ...state.scenarios,
-              selected: type,
-              regular: {
-                ...state.scenarios.regular,
-                is_selected: type === 'regular'
-              },
-              accelerated: {
-                ...state.scenarios.accelerated,
-                is_selected: type === 'accelerated'
-              },
-              lower_payment: {
-                ...state.scenarios.lower_payment,
-                is_selected: type === 'lower_payment'
-              },
-              new_rate: {
-                ...state.scenarios.new_rate,
-                is_selected: type === 'new_rate'
-              }
-            }
-          }));
-        },
-
-        calculateScenarios: () => {
-          const { property, baseValues } = get();
-          
-          if (!property || !baseValues) {
-            return;
+      setScenarioData: (scenario, data) => {
+        set((state) => ({
+          ...state,
+          scenarios: {
+            ...state.scenarios,
+            [scenario]: data
           }
+        }))
+      },
 
-          set({ isCalculating: true, error: null });
+      resetScenarios: () => {
+        set((state) => ({
+          ...state,
+          scenarios: initialState.scenarios
+        }))
+      },
 
-          try {
-            const scenarioCalculator = new ScenarioCalculator();
-            const results = scenarioCalculator.generateAllScenarios(property, baseValues);
-            
-            set({ calculationResults: results });
-          } catch (error) {
-            set({ error: error instanceof Error ? error.message : 'An error occurred during calculation' });
-          } finally {
-            set({ isCalculating: false });
-          }
-        },
-
-        resetCalculations: () => {
-          set({
-            scenarios: initialScenarioState,
-            calculationResults: null,
-            error: null
-          });
-        },
-
-        setError: (error) => {
-          set({ error });
-        }
-      }),
-      {
-        name: 'amortization-store',
-        partialize: (state) => ({
-          property: state.property,
-          baseValues: state.baseValues,
-          scenarios: state.scenarios
-        })
+      getScenarioData: (scenario) => {
+        return get().scenarios[scenario]
       }
-    )
+    }),
+    { name: 'amortization-store' }
   )
-);
-
-export default useAmortizationStore; 
+)

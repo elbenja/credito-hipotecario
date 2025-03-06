@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
+import { Currency } from "@/services/amortization/types/common"
 
 export const useExchangeRate = () => {
   return useQuery({
