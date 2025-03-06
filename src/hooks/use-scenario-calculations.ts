@@ -61,6 +61,7 @@ export function useScenarioCalculations({
   const { data: extraInstallments = [] } = useQuery<ExtraInstallment[]>({
     queryKey: ["extra-installments", amortizationId],
     queryFn: async () => {
+      console.log("Fetching extra installments for amortization:", amortizationId)
       const { data, error } = await supabase
         .from("extra_installments")
         .select("*")
@@ -69,9 +70,10 @@ export function useScenarioCalculations({
 
       if (error) {
         console.error("Error fetching extra installments:", error)
-        return []
+        throw error
       }
 
+      console.log("Fetched extra installments:", data)
       return data
     },
     enabled: !!amortizationId
@@ -81,6 +83,7 @@ export function useScenarioCalculations({
   const { data: rateChanges = [] } = useQuery<RateChange[]>({
     queryKey: ["rate-changes", amortizationId],
     queryFn: async () => {
+      console.log("Fetching rate changes for amortization:", amortizationId)
       const { data, error } = await supabase
         .from("rate_changes")
         .select("*")
@@ -89,18 +92,29 @@ export function useScenarioCalculations({
 
       if (error) {
         console.error("Error fetching rate changes:", error)
-        return []
+        throw error
       }
 
+      console.log("Fetched rate changes:", data)
       return data
     },
     enabled: !!amortizationId
   })
 
   // Query to fetch scenario calculations
-  const { data: scenarios = {}, isLoading } = useQuery<Scenarios>({
+  const { data: scenarios = {}, isLoading, error } = useQuery<Scenarios>({
     queryKey: ["scenarios", amortizationId, extraInstallments, rateChanges],
     queryFn: async () => {
+      console.log("Calculating scenarios for amortization:", amortizationId, {
+        loan_amount,
+        interest_rate,
+        term_years,
+        installments_per_year,
+        first_installment_date,
+        property_insurance,
+        loan_insurance
+      })
+
       const amortizationInput = {
         id: amortizationId,
         loan_amount,
@@ -112,34 +126,45 @@ export function useScenarioCalculations({
         loan_insurance
       }
 
-      const calculator = new ScenarioCalculator()
+      try {
+        // Calculate all scenarios
+        const [regularScenario, acceleratedScenario, lowerPaymentScenario, newRateScenario] = await Promise.all([
+          calculator.calculateScenario(amortizationInput, [], [], 'regular'),
+          calculator.calculateScenario(amortizationInput, extraInstallments as ExtraInstallment[], [], 'accelerated'),
+          calculator.calculateScenario(amortizationInput, extraInstallments as ExtraInstallment[], [], 'lower_payment'),
+          calculator.calculateScenario(amortizationInput, [], rateChanges as RateChange[], 'new_rate')
+        ])
 
-      // Calculate all scenarios
-      const [regularScenario, acceleratedScenario, lowerPaymentScenario, newRateScenario] = await Promise.all([
-        calculator.calculateScenario(amortizationInput, [], [], 'regular'),
-        calculator.calculateScenario(amortizationInput, extraInstallments as ExtraInstallment[], [], 'accelerated'),
-        calculator.calculateScenario(amortizationInput, extraInstallments as ExtraInstallment[], [], 'lower_payment'),
-        calculator.calculateScenario(amortizationInput, [], rateChanges as RateChange[], 'new_rate')
-      ])
+        const allScenarios = {
+          regular: regularScenario,
+          accelerated: acceleratedScenario,
+          lower_payment: lowerPaymentScenario,
+          new_rate: newRateScenario
+        }
 
-      const allScenarios = {
-        regular: regularScenario,
-        accelerated: acceleratedScenario,
-        lower_payment: lowerPaymentScenario,
-        new_rate: newRateScenario
+        console.log("Calculated scenarios:", allScenarios)
+
+        // Store all scenarios in one transaction
+        await calculator.storeScenarios(amortizationInput, allScenarios)
+
+        return allScenarios
+      } catch (error) {
+        console.error("Error calculating scenarios:", error)
+        throw error
       }
-
-      // Store all scenarios in one transaction
-      await calculator.storeScenarios(amortizationInput, allScenarios)
-
-      return allScenarios
     },
-    enabled: !!amortizationId
+    enabled: !!amortizationId,
+    retry: 1  // Only retry once on failure
   })
+
+  if (error) {
+    console.error("Error in useScenarioCalculations:", error)
+  }
 
   return {
     scenarios,
     isLoading,
+    error,
     extraInstallments,
     rateChanges
   }

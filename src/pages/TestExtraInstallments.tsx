@@ -486,7 +486,7 @@ function ScenarioCalculationsSection({
   amortization: Amortization
   property: Property
 }) {
-  const { scenarios, isLoading, extraInstallments, rateChanges } = useScenarioCalculations({
+  const { scenarios, isLoading, error, extraInstallments, rateChanges } = useScenarioCalculations({
     amortizationId: amortization.id,
     loan_amount: amortization.loan_amount,
     interest_rate: amortization.interest_rate,
@@ -506,6 +506,18 @@ function ScenarioCalculationsSection({
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             <p className="mt-2 text-sm text-muted-foreground">Calculating scenarios...</p>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-6">Payment Scenarios</h2>
+        <div className="p-4 border border-red-200 bg-red-50 rounded-lg">
+          <p className="text-red-700">Error calculating scenarios: {error.message}</p>
+          <p className="text-sm text-red-600 mt-2">Please try refreshing the page or contact support if the issue persists.</p>
         </div>
       </div>
     )

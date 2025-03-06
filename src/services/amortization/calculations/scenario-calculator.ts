@@ -37,16 +37,74 @@ interface ScenarioSummaryResult {
 }
 
 export class ScenarioCalculator {
+  private calculateMonthlyRate(interestRate: number, installmentsPerYear: number): number {
+    return (interestRate / 100) / installmentsPerYear;
+  }
+
   private calculateMonthlyPayment(
-    principal: number,
+    loanAmount: number,
     annualRate: number,
-    totalPayments: number
+    totalMonths: number,
+    installmentsPerYear: number = 12
   ): number {
-    const monthlyRate = annualRate / 12 / 100
-    return (
-      (principal * monthlyRate * Math.pow(1 + monthlyRate, totalPayments)) /
-      (Math.pow(1 + monthlyRate, totalPayments) - 1)
+    const monthlyRate = this.calculateMonthlyRate(annualRate, installmentsPerYear)
+    
+    // Use binary search for all cases to be consistent
+    return this.findCorrectMonthlyInstallment(
+      loanAmount,
+      monthlyRate,
+      totalMonths,
+      installmentsPerYear
     )
+  }
+
+  private findCorrectMonthlyInstallment(
+    loanAmount: number,
+    monthlyRate: number,  // Changed: now receiving monthly rate instead of annual
+    totalMonths: number,
+    installmentsPerYear: number
+  ): number {
+    // Function to calculate final balance for a given monthly installment
+    const calculateFinalBalance = (monthlyInstallmentGuess: number): number => {
+      let balance = loanAmount
+      
+      for (let i = 0; i < totalMonths; i++) {
+        const isDoubleMonth = installmentsPerYear === 14 && (i % 12 === 6 || i % 12 === 11)
+        const interest = Number((balance * monthlyRate).toFixed(10))
+        const installment = isDoubleMonth ? monthlyInstallmentGuess * 2 : monthlyInstallmentGuess
+        const principal = Number((installment - interest).toFixed(10))
+        balance = Number((balance - principal).toFixed(10))
+      }
+      
+      return balance
+    }
+
+    // Binary search implementation
+    let low = 0
+    let high = loanAmount * 2  // Changed: Use loanAmount * 2 as upper bound
+    let guess = (low + high) / 2
+    const tolerance = 0.0000001
+    let iterations = 0
+    const maxIterations = 1000
+
+    while (Math.abs(calculateFinalBalance(guess)) > tolerance && iterations < maxIterations) {
+      const balance = calculateFinalBalance(guess)
+      
+      if (balance > 0) {
+        low = guess
+      } else {
+        high = guess
+      }
+      
+      guess = Number(((low + high) / 2).toFixed(10))
+      iterations++
+    }
+
+    if (iterations >= maxIterations) {
+      console.warn('Maximum iterations reached in findCorrectMonthlyInstallment')
+    }
+
+    return guess
   }
 
   private calculateExtraPaymentsImpact(
@@ -79,34 +137,54 @@ export class ScenarioCalculator {
     amortization: AmortizationInput,
     firstInstallmentDate: Date
   ): PaymentRow[] {
-    const totalMonths = amortization.term_years * 12
-    const monthlyPayment = this.calculateMonthlyPayment(
-      amortization.loan_amount,
-      amortization.interest_rate,
-      totalMonths
-    )
+    try {
+      const totalMonths = amortization.term_years * 12
+      const monthlyRate = this.calculateMonthlyRate(amortization.interest_rate, amortization.installments_per_year)
+      const monthlyPayment = this.findCorrectMonthlyInstallment(
+        amortization.loan_amount,
+        monthlyRate,
+        totalMonths,
+        amortization.installments_per_year
+      )
 
-    const payments: PaymentRow[] = []
-    let remainingBalance = amortization.loan_amount
+      const payments: PaymentRow[] = []
+      let remainingBalance = amortization.loan_amount
 
-    for (let month = 0; month < totalMonths; month++) {
-      const monthlyInterest = remainingBalance * (amortization.interest_rate / 12 / 100)
-      const monthlyPrincipal = monthlyPayment - monthlyInterest
-      
-      payments.push({
-        payment_date: addMonths(firstInstallmentDate, month),
-        capital: monthlyPrincipal,
-        interest: monthlyInterest,
-        property_insurance: amortization.property_insurance,
-        loan_insurance: amortization.loan_insurance,
-        monthly_payment: monthlyPayment + amortization.property_insurance + amortization.loan_insurance,
-        is_different_from_base: false
-      })
+      for (let month = 0; month < totalMonths; month++) {
+        const currentDate = addMonths(firstInstallmentDate, month)
+        const isDoublePayment = amortization.installments_per_year === 14 && 
+          (currentDate.getMonth() === 6 || currentDate.getMonth() === 11)
+        
+        const currentMonthlyPayment = isDoublePayment ? monthlyPayment * 2 : monthlyPayment
+        const monthlyInterest = remainingBalance * monthlyRate
+        const monthlyPrincipal = currentMonthlyPayment - monthlyInterest
+        
+        const currentPropertyInsurance = isDoublePayment ? 
+          amortization.property_insurance * 2 : 
+          amortization.property_insurance
+        
+        const currentLoanInsurance = isDoublePayment ? 
+          amortization.loan_insurance * 2 : 
+          amortization.loan_insurance
 
-      remainingBalance -= monthlyPrincipal
+        payments.push({
+          payment_date: currentDate,
+          capital: monthlyPrincipal,
+          interest: monthlyInterest,
+          property_insurance: currentPropertyInsurance,
+          loan_insurance: currentLoanInsurance,
+          monthly_payment: currentMonthlyPayment + currentPropertyInsurance + currentLoanInsurance,
+          is_different_from_base: false
+        })
+
+        remainingBalance -= monthlyPrincipal
+      }
+
+      return payments
+    } catch (error) {
+      console.error('Error in calculateRegularPayments:', error)
+      throw error
     }
-
-    return payments
   }
 
   async calculateScenario(
@@ -120,6 +198,7 @@ export class ScenarioCalculator {
   }> {
     const totalMonths = amortization.term_years * 12
     const firstInstallmentDate = startOfMonth(new Date(amortization.first_installment_date))
+    const monthlyRate = this.calculateMonthlyRate(amortization.interest_rate, amortization.installments_per_year)
     
     let payments: PaymentRow[] = []
 
@@ -135,32 +214,47 @@ export class ScenarioCalculator {
           totalMonths
         )
         const adjustedLoanAmount = amortization.loan_amount - totalExtraPayments
-        const baseMonthlyPayment = this.calculateMonthlyPayment(
+        const baseMonthlyPayment = this.findCorrectMonthlyInstallment(
           amortization.loan_amount,
-          amortization.interest_rate,
-          totalMonths
+          monthlyRate,
+          totalMonths,
+          amortization.installments_per_year
         )
 
         // Keep the same monthly payment but reduce the number of months
         const adjustedTotalMonths = Math.ceil(
           Math.log(
             baseMonthlyPayment /
-              (baseMonthlyPayment - (adjustedLoanAmount * amortization.interest_rate / 12 / 100))
-          ) / Math.log(1 + amortization.interest_rate / 12 / 100)
+              (baseMonthlyPayment - (adjustedLoanAmount * monthlyRate))
+          ) / Math.log(1 + monthlyRate)
         )
 
         let remainingBalance = adjustedLoanAmount
+
         for (let month = 0; month < adjustedTotalMonths; month++) {
-          const monthlyInterest = remainingBalance * (amortization.interest_rate / 12 / 100)
-          const monthlyPrincipal = baseMonthlyPayment - monthlyInterest
+          const currentDate = addMonths(firstInstallmentDate, month)
+          const isDoublePayment = amortization.installments_per_year === 14 && 
+            (currentDate.getMonth() === 6 || currentDate.getMonth() === 11)
           
+          const currentMonthlyPayment = isDoublePayment ? baseMonthlyPayment * 2 : baseMonthlyPayment
+          const monthlyInterest = remainingBalance * monthlyRate
+          const monthlyPrincipal = currentMonthlyPayment - monthlyInterest
+          
+          const currentPropertyInsurance = isDoublePayment ? 
+            amortization.property_insurance * 2 : 
+            amortization.property_insurance
+          
+          const currentLoanInsurance = isDoublePayment ? 
+            amortization.loan_insurance * 2 : 
+            amortization.loan_insurance
+
           payments.push({
-            payment_date: addMonths(firstInstallmentDate, month),
+            payment_date: currentDate,
             capital: monthlyPrincipal,
             interest: monthlyInterest,
-            property_insurance: amortization.property_insurance,
-            loan_insurance: amortization.loan_insurance,
-            monthly_payment: baseMonthlyPayment + amortization.property_insurance + amortization.loan_insurance,
+            property_insurance: currentPropertyInsurance,
+            loan_insurance: currentLoanInsurance,
+            monthly_payment: currentMonthlyPayment + currentPropertyInsurance + currentLoanInsurance,
             is_different_from_base: true
           })
 
@@ -175,24 +269,39 @@ export class ScenarioCalculator {
           totalMonths
         )
         const adjustedLoanAmount = amortization.loan_amount - totalExtraPayments
-        const adjustedMonthlyPayment = this.calculateMonthlyPayment(
+        const adjustedMonthlyPayment = this.findCorrectMonthlyInstallment(
           adjustedLoanAmount,
-          amortization.interest_rate,
-          totalMonths
+          monthlyRate,
+          totalMonths,
+          amortization.installments_per_year
         )
 
         let remainingBalance = adjustedLoanAmount
+
         for (let month = 0; month < totalMonths; month++) {
-          const monthlyInterest = remainingBalance * (amortization.interest_rate / 12 / 100)
-          const monthlyPrincipal = adjustedMonthlyPayment - monthlyInterest
+          const currentDate = addMonths(firstInstallmentDate, month)
+          const isDoublePayment = amortization.installments_per_year === 14 && 
+            (currentDate.getMonth() === 6 || currentDate.getMonth() === 11)
           
+          const currentMonthlyPayment = isDoublePayment ? adjustedMonthlyPayment * 2 : adjustedMonthlyPayment
+          const monthlyInterest = remainingBalance * monthlyRate
+          const monthlyPrincipal = currentMonthlyPayment - monthlyInterest
+          
+          const currentPropertyInsurance = isDoublePayment ? 
+            amortization.property_insurance * 2 : 
+            amortization.property_insurance
+          
+          const currentLoanInsurance = isDoublePayment ? 
+            amortization.loan_insurance * 2 : 
+            amortization.loan_insurance
+
           payments.push({
-            payment_date: addMonths(firstInstallmentDate, month),
+            payment_date: currentDate,
             capital: monthlyPrincipal,
             interest: monthlyInterest,
-            property_insurance: amortization.property_insurance,
-            loan_insurance: amortization.loan_insurance,
-            monthly_payment: adjustedMonthlyPayment + amortization.property_insurance + amortization.loan_insurance,
+            property_insurance: currentPropertyInsurance,
+            loan_insurance: currentLoanInsurance,
+            monthly_payment: currentMonthlyPayment + currentPropertyInsurance + currentLoanInsurance,
             is_different_from_base: true
           })
 
@@ -203,14 +312,17 @@ export class ScenarioCalculator {
       case 'new_rate': {
         let currentRate = amortization.interest_rate
         let remainingBalance = amortization.loan_amount
-        let currentMonthlyPayment = this.calculateMonthlyPayment(
+        let currentMonthlyPayment = this.findCorrectMonthlyInstallment(
           amortization.loan_amount,
-          currentRate,
-          totalMonths
+          monthlyRate,
+          totalMonths,
+          amortization.installments_per_year
         )
 
         for (let month = 0; month < totalMonths; month++) {
           const currentDate = addMonths(firstInstallmentDate, month)
+          const isDoublePayment = amortization.installments_per_year === 14 && 
+            (currentDate.getMonth() === 6 || currentDate.getMonth() === 11)
           
           // Check if there's a rate change for this month
           const rateChange = rateChanges.find(change => 
@@ -220,23 +332,35 @@ export class ScenarioCalculator {
           if (rateChange) {
             currentRate = rateChange.new_interest_rate
             const remainingPayments = totalMonths - month
-            currentMonthlyPayment = this.calculateMonthlyPayment(
+            const newMonthlyRate = this.calculateMonthlyRate(currentRate, amortization.installments_per_year)
+            currentMonthlyPayment = this.findCorrectMonthlyInstallment(
               remainingBalance,
-              currentRate,
-              remainingPayments
+              newMonthlyRate,
+              remainingPayments,
+              amortization.installments_per_year
             )
           }
 
-          const monthlyInterest = remainingBalance * (currentRate / 12 / 100)
-          const monthlyPrincipal = currentMonthlyPayment - monthlyInterest
+          const currentMonthlyRate = this.calculateMonthlyRate(currentRate, amortization.installments_per_year)
+          const currentBasePayment = isDoublePayment ? currentMonthlyPayment * 2 : currentMonthlyPayment
+          const monthlyInterest = remainingBalance * currentMonthlyRate
+          const monthlyPrincipal = currentBasePayment - monthlyInterest
           
+          const currentPropertyInsurance = isDoublePayment ? 
+            amortization.property_insurance * 2 : 
+            amortization.property_insurance
+          
+          const currentLoanInsurance = isDoublePayment ? 
+            amortization.loan_insurance * 2 : 
+            amortization.loan_insurance
+
           payments.push({
             payment_date: currentDate,
             capital: monthlyPrincipal,
             interest: monthlyInterest,
-            property_insurance: amortization.property_insurance,
-            loan_insurance: amortization.loan_insurance,
-            monthly_payment: currentMonthlyPayment + amortization.property_insurance + amortization.loan_insurance,
+            property_insurance: currentPropertyInsurance,
+            loan_insurance: currentLoanInsurance,
+            monthly_payment: currentBasePayment + currentPropertyInsurance + currentLoanInsurance,
             is_different_from_base: true
           })
 
@@ -248,7 +372,8 @@ export class ScenarioCalculator {
 
     // Calculate summary
     const totalInterest = payments.reduce((sum, payment) => sum + payment.interest, 0)
-    const totalInsurance = (amortization.property_insurance + amortization.loan_insurance) * payments.length
+    const totalInsurance = payments.reduce((sum, payment) => 
+      sum + payment.property_insurance + payment.loan_insurance, 0)
 
     return {
       summary: {
