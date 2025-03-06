@@ -16,6 +16,8 @@ import EditAmortization from "./pages/EditAmortization"
 import Test from "./pages/Test"
 import TestCalculator from "./pages/TestCalculator"
 import TestExtraInstallments from "./pages/TestExtraInstallments"
+import ComingSoon from "./pages/coming-soon"
+import EarlyAccessAdmin from "./pages/admin/early-access"
 import { HelmetProvider } from 'react-helmet-async'
 
 const queryClient = new QueryClient()
@@ -29,11 +31,17 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<ComingSoon />} />
+              <Route path="/app" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/test" element={<Test />} />
-              <Route path="/test-calculator" element={<TestCalculator />} />
-              <Route path="/test-extra-installments" element={<TestExtraInstallments />} />
+              <Route
+                path="/admin/early-access"
+                element={
+                  <ProtectedRoute>
+                    <EarlyAccessAdmin />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/dashboard"
                 element={
@@ -74,6 +82,9 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route path="/test" element={<Test />} />
+              <Route path="/test-calculator" element={<TestCalculator />} />
+              <Route path="/test-extra-installments" element={<TestExtraInstallments />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
