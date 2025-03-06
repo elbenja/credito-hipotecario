@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
-import useAmortizationStore from '../../../store/amortization/store';
+import { useQuery } from "@tanstack/react-query";
+import { useAmortizationStore } from "@/store/amortization/store";
 import type { BaseAmortizationValues, Property } from '../types/common';
 
 interface UseLiveCalculationProps {
@@ -59,4 +60,4 @@ export const useLiveCalculation = ({
     calculationResults,
     debouncedCalculate
   };
-}; 
+};

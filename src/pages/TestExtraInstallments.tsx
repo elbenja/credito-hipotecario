@@ -106,16 +106,15 @@ export default function TestExtraInstallments() {
 
   const handleAmortizationSelect = (amortization: Amortization) => {
     setSelectedAmortization(amortization)
-    // Update form values when selecting an amortization
     amortizationForm.reset({
-      name: amortization.name,
+      name: amortization.name || "",
       property_id: amortization.property_id,
       down_payment: amortization.down_payment.toString(),
       interest_rate: amortization.interest_rate.toString(),
       term_years: amortization.term_years.toString(),
       installments_per_year: amortization.installments_per_year.toString(),
       first_installment_date: new Date(amortization.first_installment_date),
-      loan_protection_type: amortization.loan_protection_type,
+      loan_protection_type: amortization.loan_protection_type as "none" | "custom" | "individual" | "joint",
       loan_protection_insurance: amortization.loan_protection_insurance?.toString(),
     })
   }
@@ -151,7 +150,6 @@ export default function TestExtraInstallments() {
         description: "Amortization updated successfully",
       })
 
-      // Refresh the amortizations list
       queryClient.invalidateQueries({
         queryKey: ["linked-amortizations", selectedProperty.id]
       })
@@ -175,7 +173,6 @@ export default function TestExtraInstallments() {
       <h1 className="text-2xl font-bold mb-6">Property Selection Test</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Property Selection Section */}
         <div className="space-y-4">
           <Form {...propertyForm}>
             <form className="space-y-6">
@@ -198,7 +195,6 @@ export default function TestExtraInstallments() {
           </Form>
         </div>
 
-        {/* Selected Property Details Section */}
         <div className="space-y-6">
           <h2 className="text-xl font-semibold mb-4">Selected Property Details</h2>
           <div className="p-6 border rounded-lg">
@@ -216,12 +212,10 @@ export default function TestExtraInstallments() {
         </div>
       </div>
 
-      {/* Amortizations Section - Only shown when property is selected */}
       {selectedProperty && (
         <div className="mt-8">
           <h2 className="text-2xl font-bold mb-6">Amortizations</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Linked Amortizations List */}
             <div className="space-y-4">
               <h3 className="text-xl font-semibold mb-4">Linked Amortizations</h3>
               <div className="space-y-4">
@@ -236,9 +230,9 @@ export default function TestExtraInstallments() {
                       }`}
                       onClick={() => handleAmortizationSelect(amortization)}
                     >
-                      <h4 className="font-medium">{amortization.name}</h4>
+                      <h4 className="font-medium">{amortization.name || "Unnamed"}</h4>
                       <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                        <p>Loan Amount: {formatCurrency(amortization.loan_amount, selectedProperty.currency)}</p>
+                        <p>Loan Amount: {formatCurrency(amortization.loan_amount || 0, selectedProperty.currency)}</p>
                         <p>Interest Rate: {amortization.interest_rate}%</p>
                         <p>First Payment: {formatDate(new Date(amortization.first_installment_date))}</p>
                       </div>
@@ -250,7 +244,6 @@ export default function TestExtraInstallments() {
               </div>
             </div>
 
-            {/* Editable Amortization Information */}
             <div className="space-y-4">
               <h3 className="text-xl font-semibold mb-4">Amortization Details</h3>
               <div className="p-6 border rounded-lg">
@@ -447,7 +440,6 @@ export default function TestExtraInstallments() {
         </div>
       )}
 
-      {/* Extra Installments Section */}
       {selectedAmortization && selectedProperty && (
         <>
           <div className="mt-8">
@@ -456,11 +448,9 @@ export default function TestExtraInstallments() {
               currency={selectedProperty.currency}
               loanAmount={selectedAmortization.loan_amount}
               onInstallmentsChange={() => {
-                // Refresh the amortizations list when installments change
                 queryClient.invalidateQueries({
                   queryKey: ["linked-amortizations", selectedProperty.id]
                 })
-                // Also invalidate scenarios
                 queryClient.invalidateQueries({
                   queryKey: ["scenarios", selectedAmortization.id]
                 })
@@ -478,7 +468,6 @@ export default function TestExtraInstallments() {
   )
 }
 
-// New component to handle scenario calculations
 function ScenarioCalculationsSection({ 
   amortization,
   property 
@@ -488,7 +477,7 @@ function ScenarioCalculationsSection({
 }) {
   const { scenarios, isLoading, error, extraInstallments, rateChanges } = useScenarioCalculations({
     amortizationId: amortization.id,
-    loan_amount: amortization.loan_amount,
+    loan_amount: amortization.loan_amount || 0,
     interest_rate: amortization.interest_rate,
     term_years: amortization.term_years,
     installments_per_year: amortization.installments_per_year,
@@ -685,4 +674,4 @@ function ScenarioCalculationsSection({
       </div>
     </div>
   )
-} 
+}

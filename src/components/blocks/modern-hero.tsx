@@ -10,7 +10,7 @@ export interface HeroProps {
   title: string
   description: string
   buttonText: string
-  avatars?: string[]
+  avatars?: string[] | { src: string, alt: string }[]
   rating?: number
   className?: string
 }
@@ -67,7 +67,10 @@ export function Hero({
               <span className="inline-flex items-center -space-x-4">
                 {avatars.map((avatar, index) => (
                   <Avatar key={index} className="h-14 w-14 border">
-                    <AvatarImage src={avatar} alt={`Avatar ${index + 1}`} />
+                    <AvatarImage 
+                      src={typeof avatar === 'string' ? avatar : avatar.src} 
+                      alt={typeof avatar === 'string' ? `Avatar ${index + 1}` : avatar.alt} 
+                    />
                   </Avatar>
                 ))}
               </span>

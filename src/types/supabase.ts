@@ -148,11 +148,13 @@ export interface Database {
           term_years: number
           installments_per_year: number
           first_installment_date: string
-          loan_protection_type: string
+          loan_protection_type: 'individual' | 'joint' | 'none' | 'custom'
           loan_protection_insurance: number
           user_id: string
           created_at: string
           updated_at: string
+          name: string
+          loan_amount: number
         }
         Insert: {
           id?: string
@@ -163,11 +165,13 @@ export interface Database {
           term_years: number
           installments_per_year: number
           first_installment_date: string | Date
-          loan_protection_type: string
+          loan_protection_type: 'individual' | 'joint' | 'none' | 'custom'
           loan_protection_insurance: number
           user_id: string
           created_at?: string
           updated_at?: string
+          name: string
+          loan_amount: number
         }
         Update: {
           id?: string
@@ -178,11 +182,13 @@ export interface Database {
           term_years?: number
           installments_per_year?: number
           first_installment_date?: string | Date
-          loan_protection_type?: string
+          loan_protection_type?: 'individual' | 'joint' | 'none' | 'custom'
           loan_protection_insurance?: number
           user_id?: string
           created_at?: string
           updated_at?: string
+          name?: string
+          loan_amount?: number
         }
       }
     }
