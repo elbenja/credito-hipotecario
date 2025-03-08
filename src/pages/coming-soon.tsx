@@ -41,10 +41,10 @@ export default function ComingSoonPage() {
             
             <div className="space-y-2 text-center">
               <div className="mb-20 mt-16">
-                <h2 className="text-4xl font-black">
-                  <span className="text-brand leading-[80%]">crédito</span>
+                <h2 className="text-5xl font-black">
+                  <span className="text-brand leading-[70%]">crédito</span>
                   <br />
-                  <span className="text-black leading-[80%]">hipotecar.io</span>
+                  <span className="text-black leading-[70%]">hipotecar.io</span>
                 </h2>
                 <p className="mt-4 text-lg">
                   Analyze different scenarios, and
