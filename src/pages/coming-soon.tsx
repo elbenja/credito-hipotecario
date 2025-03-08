@@ -13,7 +13,7 @@ export default function ComingSoonPage() {
         name="CreditoHipotecar.io"
       />
       <div className="grid min-h-svh lg:grid-cols-2">
-        <div className="relative bg-[hsl(41,89%,61%)] p-6 lg:p-10">
+        <div className="relative bg-brand p-6 lg:p-10">
           <div className="absolute left-6 top-6">
             <Link href="/app" className="flex items-center gap-2">
               <div className="flex h-12 w-12 items-center justify-center">
