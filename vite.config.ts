@@ -1,4 +1,3 @@
-
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -36,6 +35,14 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    // Removed define block to use the actual environment variables instead
+    // Handle SPA routing
+    preview: {
+      port: 8080,
+      strictPort: true,
+      host: true,
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    },
   };
 });

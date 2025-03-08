@@ -1,6 +1,6 @@
 import { LanguageSwitcher } from "@/components/ui/language-switcher"
 import { EarlyAccessForm } from "@/components/early-access-form"
-import { Link } from "@/components/ui/link"
+import { Link } from "react-router-dom"
 import { SEO } from "@/components/seo"
 
 export default function ComingSoonPage() {
@@ -15,7 +15,7 @@ export default function ComingSoonPage() {
       <div className="grid min-h-svh lg:grid-cols-2">
         <div className="relative bg-brand p-6 lg:p-10">
           <div className="absolute left-6 top-6">
-            <Link href="/app" className="flex items-center gap-2">
+            <Link to="/app" className="flex items-center gap-2">
               <div className="flex h-12 w-12 items-center justify-center">
                 <img
                   src="/lovable-uploads/Logo.svg"
