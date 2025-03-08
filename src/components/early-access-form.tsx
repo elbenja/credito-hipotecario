@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useTranslation } from "react-i18next"
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -28,6 +29,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 export function EarlyAccessForm() {
+  const { t } = useTranslation()
   const [showSuccess, setShowSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -82,7 +84,7 @@ export function EarlyAccessForm() {
               <FormItem>
                 <FormControl>
                   <Input
-                    placeholder="name@example.com"
+                    placeholder={t('email_placeholder')}
                     type="email"
                     autoComplete="email"
                     {...field}
@@ -105,10 +107,10 @@ export function EarlyAccessForm() {
 
           <Button 
             type="submit" 
-            className="w-full "
+            className="w-full"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Submitting..." : "Notify Me!"}
+            {isSubmitting ? "Submitting..." : t('notify_me')}
           </Button>
         </form>
       </Form>
@@ -116,9 +118,9 @@ export function EarlyAccessForm() {
       <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Thank you for your interest!</DialogTitle>
+            <DialogTitle>{t('success_title')}</DialogTitle>
             <DialogDescription>
-              We've received your email and will notify you as soon as we launch the beta version.
+              {t('success_message')}
             </DialogDescription>
           </DialogHeader>
         </DialogContent>

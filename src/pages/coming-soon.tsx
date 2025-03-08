@@ -2,13 +2,16 @@ import { LanguageSwitcher } from "@/components/ui/language-switcher"
 import { EarlyAccessForm } from "@/components/early-access-form"
 import { Link } from "react-router-dom"
 import { SEO } from "@/components/seo"
+import { useTranslation } from "react-i18next"
 
 export default function ComingSoonPage() {
+  const { t } = useTranslation()
+  
   return (
     <>
       <SEO 
-        title="Coming Soon - CreditoHipotecar.io"
-        description="Get early access to CreditoHipotecar.io - Your comprehensive platform for analyzing mortgage scenarios and understanding your credit options. Sign up now to be notified when we launch!"
+        title={`${t('coming_soon')} - CreditoHipotecar.io`}
+        description={t('register_email')}
         type="website"
         name="CreditoHipotecar.io"
       />
@@ -27,7 +30,7 @@ export default function ComingSoonPage() {
             <LanguageSwitcher />
           </div>
           <div className="flex h-full flex-col items-center justify-center text-center relative ">
-            <h1 className="absolute top-[28%] left-1/2 -translate-x-1/2 -translate-y-1/2 mb-4 w-[504px] text-[117px] font-black text-white leading-[90%] z-0">COMING SOON</h1>
+            <h1 className="absolute top-[28%] left-1/2 -translate-x-1/2 -translate-y-1/2 mb-4 w-[504px] text-[117px] font-black text-white leading-[90%] z-0">{t('coming_soon')}</h1>
             <img
               src="/lovable-uploads/Latina w Laptop.png"
               alt="Person working on laptop"
@@ -47,21 +50,17 @@ export default function ComingSoonPage() {
                   <span className="text-black leading-[70%]">hipotecar.io</span>
                 </h2>
                 <p className="mt-4 text-lg">
-                  Analyze different scenarios, and
-                  <br />
-                  clearly understand your credit.
+                  {t('analyze_scenarios')}
                 </p>
               </div>
-              <h2 className="text-3xl font-bold">Get Early Access</h2>
+              <h2 className="text-3xl font-bold">{t('get_early_access')}</h2>
               <p className="text-muted-foreground">
-                Register your email to be notified and be among the first to access
-                the beta version.
+                {t('register_email')}
               </p>
             </div>
             <EarlyAccessForm />
             <p className="text-center text-sm text-muted-foreground">
-              We won't spam you and won't share your email. By clicking "Notify Me",
-              you agree to our Terms of Service and Security Policy
+              {t('privacy_notice')}
             </p>
           </div>
         </div>
