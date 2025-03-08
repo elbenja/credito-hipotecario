@@ -13,7 +13,27 @@ const resources = {
       "privacy_notice": "We won't spam you and won't share your email. By clicking \"Notify Me\", you agree to our Terms of Service and Security Policy",
       "email_placeholder": "name@example.com",
       "success_title": "Thank you for your interest!",
-      "success_message": "We've received your email and will notify you as soon as we launch the beta version."
+      "success_message": "We've received your email and will notify you as soon as we launch the beta version.",
+      "settings": "Settings",
+      "appearance": "Appearance",
+      "appearance_description": "Customize how the app looks and feels.",
+      "theme": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "language": "Language",
+      "language_description": "Choose your preferred language.",
+      "display_language": "Display Language",
+      "main": "Main",
+      "dashboard": "Dashboard",
+      "properties": "Properties",
+      "amortizations": "Amortizations",
+      "rentals": "Rentals",
+      "coming": "Coming",
+      "ai_chat": "AI Chat",
+      "account": "Account",
+      "billing": "Billing",
+      "notifications": "Notifications",
+      "log_out": "Log out"
     }
   },
   es: {
@@ -26,7 +46,27 @@ const resources = {
       "privacy_notice": "No enviaremos spam ni compartiremos tu correo. Al hacer clic en \"Notifícame\", aceptas nuestros Términos de Servicio y Política de Seguridad",
       "email_placeholder": "nombre@ejemplo.com",
       "success_title": "¡Gracias por tu interés!",
-      "success_message": "Hemos recibido tu correo y te notificaremos tan pronto lancemos la versión beta."
+      "success_message": "Hemos recibido tu correo y te notificaremos tan pronto lancemos la versión beta.",
+      "settings": "Configuración",
+      "appearance": "Apariencia",
+      "appearance_description": "Personaliza el aspecto de la aplicación.",
+      "theme": "Tema",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "language": "Idioma",
+      "language_description": "Elige tu idioma preferido.",
+      "display_language": "Idioma de visualización",
+      "main": "Principal",
+      "dashboard": "Dashboard",
+      "properties": "Propiedades",
+      "amortizations": "Amortizaciones",
+      "rentals": "Alquileres",
+      "coming": "Pronto",
+      "ai_chat": "Chat IA",
+      "account": "Cuenta",
+      "billing": "Facturación",
+      "notifications": "Notificaciones",
+      "log_out": "Cerrar sesión"
     }
   }
 };

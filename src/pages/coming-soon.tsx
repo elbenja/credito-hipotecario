@@ -47,7 +47,7 @@ export default function ComingSoonPage() {
                 <h2 className="text-5xl font-black">
                   <span className="text-brand leading-[70%]">crédito</span>
                   <br />
-                  <span className="text-black leading-[70%]">hipotecar.io</span>
+                  <span className="text-primary leading-[70%]">hipotecar.io</span>
                 </h2>
                 <p className="mt-4 text-lg">
                   {t('analyze_scenarios')}

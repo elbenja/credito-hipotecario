@@ -1,6 +1,7 @@
 import { Building, Calculator, LayoutDashboard, MessageSquare, User, CreditCard, Bell, Settings, LogOut, ChevronsUpDown } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
+import { useTheme } from "next-themes"
 
 function PropertyIcon({ className }: { className?: string }) {
   return (
@@ -145,24 +147,26 @@ function RentalIcon({ className }: { className?: string }) {
 }
 
 const mainNavItems = [
-  { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { title: "Properties", icon: PropertyIcon, href: "/properties" },
-  { title: "Amortizations", icon: AmortizationIcon, href: "/amortizations" },
+  { title: "dashboard", icon: LayoutDashboard, href: "/dashboard" },
+  { title: "properties", icon: PropertyIcon, href: "/properties" },
+  { title: "amortizations", icon: AmortizationIcon, href: "/amortizations" },
   { 
-    title: "Rentals", 
+    title: "rentals", 
     icon: RentalIcon, 
     href: "/rentals",
-    badge: <Badge variant="outline" className="ml-2 text-xs">Coming</Badge>
+    badge: "coming"
   },
 ]
 
 const footerNavItems = [
-  { title: "AI Chat", icon: MessageSquare, href: "/chat" },
+  { title: "ai_chat", icon: MessageSquare, href: "/chat" },
 ]
 
 export function DashboardSidebar() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { t } = useTranslation()
+  const { theme } = useTheme()
 
   const { data: propertiesWithAmortizations } = useQuery({
     queryKey: ["properties-with-amortizations", user?.id],
@@ -216,13 +220,21 @@ export function DashboardSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b">
         <Link to="/dashboard" className="flex items-center gap-2 px-4 py-4">
-          <img src="/lovable-uploads/17eb0714-2b3e-4b08-a1d6-a92337781e6d.png" alt="Logo" className="h-6 w-6" />
+          <svg 
+            width="24" 
+            height="24" 
+            viewBox="0 0 37 41" 
+            xmlns="http://www.w3.org/2000/svg" 
+            className={`h-6 w-6 ${theme === 'dark' ? 'fill-white' : 'fill-black'} transition-colors`}
+          >
+            <path fillRule="evenodd" clipRule="evenodd" d="M19.7051 1.02024C19.0175 0.460054 18.0289 0.46005 17.3413 1.02023L1.13491 14.2236C-0.223223 15.3301 0.562253 17.5225 2.31682 17.5225H3.98161V31.4973C3.98161 32.5243 4.81742 33.3568 5.84844 33.3568H8.78323V38.7373C8.78323 40.2604 10.5209 41.1375 11.754 40.2368L21.1728 33.3568H31.198C32.229 33.3568 33.0648 32.5243 33.0648 31.4973V17.5225H34.7296C36.4842 17.5225 37.2697 15.3301 35.9115 14.2236L19.7051 1.02024ZM8.98275 28.3753V14.2655L18.5232 6.49289L28.0637 14.2655V28.3753H19.5356L13.7844 32.5763V28.3753H8.98275Z" />
+          </svg>
           <span className="font-bold text-lg">CreditoHipotecar.io</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('main')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => (
@@ -230,12 +242,14 @@ export function DashboardSidebar() {
                   <SidebarMenuButton asChild>
                     <Link to={item.href} className="flex items-center gap-2">
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                      {item.badge}
-                      {item.title === "Properties" && propertiesCount > 0 && (
+                      <span>{t(item.title)}</span>
+                      {item.badge && (
+                        <Badge variant="outline" className="ml-2 text-xs">{t(item.badge)}</Badge>
+                      )}
+                      {item.title === "properties" && propertiesCount > 0 && (
                         <SidebarMenuBadge>{propertiesCount}</SidebarMenuBadge>
                       )}
-                      {item.title === "Amortizations" && amortizationsCount > 0 && (
+                      {item.title === "amortizations" && amortizationsCount > 0 && (
                         <SidebarMenuBadge>{amortizationsCount}</SidebarMenuBadge>
                       )}
                     </Link>
@@ -255,7 +269,7 @@ export function DashboardSidebar() {
                   <SidebarMenuButton asChild>
                     <Link to={item.href} className="flex items-center gap-2">
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <span>{t(item.title)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -275,31 +289,31 @@ export function DashboardSidebar() {
                     <DropdownMenuItem asChild>
                       <Link to="/profile" className="flex items-center">
                         <User className="mr-2 h-4 w-4" />
-                        <span>Account</span>
+                        <span>{t('account')}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/billing" className="flex items-center">
                         <CreditCard className="mr-2 h-4 w-4" />
-                        <span>Billing</span>
+                        <span>{t('billing')}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/notifications" className="flex items-center">
                         <Bell className="mr-2 h-4 w-4" />
-                        <span>Notifications</span>
+                        <span>{t('notifications')}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/settings" className="flex items-center">
                         <Settings className="mr-2 h-4 w-4" />
-                        <span>Settings</span>
+                        <span>{t('settings')}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="flex items-center text-red-500 focus:text-red-500">
                       <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
+                      <span>{t('log_out')}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
