@@ -105,7 +105,7 @@ export function EarlyAccessForm() {
 
           <Button 
             type="submit" 
-            className="w-full bg-[hsl(41,89%,61%)] hover:bg-[hsl(41,89%,55%)]"
+            className="w-full "
             disabled={isSubmitting}
           >
             {isSubmitting ? "Submitting..." : "Notify Me!"}

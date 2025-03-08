@@ -31,7 +31,7 @@ export default function ComingSoonPage() {
             <img
               src="/lovable-uploads/Latina w Laptop.png"
               alt="Person working on laptop"
-              className="relative z-10 mx-auto mb-8 max-w-md rounded-lg"
+              className="relative z-10 mx-auto mt-12 max-w-md rounded-lg"
             />
 
           </div>
@@ -40,7 +40,7 @@ export default function ComingSoonPage() {
           <div className="w-full max-w-sm space-y-6">
             
             <div className="space-y-2 text-center">
-              <div className="mb-16">
+              <div className="mb-20 mt-16">
                 <h2 className="text-4xl font-black">
                   <span className="text-brand leading-[80%]">crédito</span>
                   <br />
