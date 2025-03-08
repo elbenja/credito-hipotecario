@@ -13,7 +13,7 @@ export default function ComingSoonPage() {
         name="CreditoHipotecar.io"
       />
       <div className="grid min-h-svh lg:grid-cols-2">
-        <div className="relative bg-brand p-6 lg:p-10">
+        <div className="relative bg-brand p-6 lg:p-10 overflow-hidden">
           <div className="absolute left-6 top-6">
             <Link to="/app" className="flex items-center gap-2">
               <div className="flex h-12 w-12 items-center justify-center">
@@ -26,21 +26,14 @@ export default function ComingSoonPage() {
           <div className="absolute right-6 top-6">
             <LanguageSwitcher />
           </div>
-          <div className="flex h-full flex-col items-center justify-center text-center relative">
-            <h1 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 mb-4 w-[504px] text-[117px] font-black text-white leading-[90%] z-0">COMING SOON</h1>
+          <div className="flex h-full flex-col items-center justify-center text-center relative ">
+            <h1 className="absolute top-[25%] left-1/2 -translate-x-1/2 -translate-y-1/2 mb-4 w-[504px] text-[117px] font-black text-white leading-[90%] z-0">COMING SOON</h1>
             <img
               src="/lovable-uploads/Latina w Laptop.png"
               alt="Person working on laptop"
               className="relative z-10 mx-auto mb-8 max-w-md rounded-lg"
             />
-            <div className="text-center relative z-10">
-              <h2 className="mb-2 text-2xl font-bold text-white">
-                créditohipotecar.io
-              </h2>
-              <p className="text-lg text-white/90">
-                Analyze different scenarios, and clearly understand your credit.
-              </p>
-            </div>
+
           </div>
         </div>
         <div className="flex items-center justify-center p-6 lg:p-10">
