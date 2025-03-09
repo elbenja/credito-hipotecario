@@ -6,11 +6,12 @@ import { BonusRule } from "./types"
 import { formatCurrency } from "@/lib/utils"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
+import { useTranslation } from "react-i18next"
 
 const formSchema = z.object({
-  name: z.string().min(1, "Property name is required"),
+  name: z.string().min(1, "property_name_required"),
   description: z.string().optional(),
-  price_cost: z.string().min(1, "Price is required"),
+  price_cost: z.string().min(1, "price_required"),
   currency: z.enum(["PEN", "USD"]).default("PEN"),
   property_insurance: z.string().optional(),
   property_insurance_type: z.enum(["auto", "manual"]).default("auto"),
@@ -24,6 +25,7 @@ type BonusSectionProps = {
 }
 
 export function BonusSection({ form, bonusRules }: BonusSectionProps) {
+  const { t } = useTranslation()
   const price = form.watch("price_cost")
   const currency = form.watch("currency")
   const isFirstHome = form.watch("is_first_home")
@@ -75,10 +77,10 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <FormLabel className="text-xl font-semibold">
-                First Home Buyer Bonus
+                  {t('first_home_buyer_bonus')}
                 </FormLabel>
                 <div className="text-sm text-muted-foreground">
-                 Bonus for prices between S/67,400 - S/355,100.
+                  {t('bonus_price_range')}
                 </div>
               </div>
               <FormControl>
@@ -100,10 +102,10 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
                         <FormItem className="flex flex-row items-center justify-between border-t pt-4">
                           <div className="space-y-0.5">
                             <FormLabel className="text-lg font-semibold">
-                              Sustainable Property
+                              {t('sustainable_property')}
                             </FormLabel>
                             <div className="text-sm text-muted-foreground">
-                              Qualifies for higher bonus amount
+                              {t('qualifies_higher_bonus')}
                             </div>
                           </div>
                           <FormControl>
@@ -118,7 +120,7 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
 
                     {getApplicableRule(parseFloat(price)) && (
                       <div className="mt-4 rounded-md bg-primary-foreground p-6">
-                        <p className="text-lg font-medium">Bonus Amount:</p>
+                        <p className="text-lg font-medium">{t('bonus_amount')}:</p>
                         <p className="text-4xl font-bold">
                           {formatCurrency(
                             isSustainable
@@ -130,7 +132,10 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
                         <div className="space-y-2">
                           {getApplicableRule(parseFloat(price)) && (
                             <p className="text-sm text-muted-foreground">
-                              Applicable range: S/{getApplicableRule(parseFloat(price))?.min_value.toLocaleString()} - S/{getApplicableRule(parseFloat(price))?.max_value.toLocaleString()}
+                              {t('applicable_range', {
+                                min: getApplicableRule(parseFloat(price))?.min_value.toLocaleString(),
+                                max: getApplicableRule(parseFloat(price))?.max_value.toLocaleString()
+                              })}
                             </p>
                           )}
                         </div>
@@ -140,8 +145,10 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
                 ) : (
                   <div className="mt-2 text-sm text-muted-foreground">
                     {currency === 'USD' ? 
-                      `Price (S/${convertToPEN(parseFloat(price)).toLocaleString()}) outside the range.` :
-                      'Price outside the range.'
+                      t('price_outside_range_usd', {
+                        penAmount: convertToPEN(parseFloat(price)).toLocaleString()
+                      }) :
+                      t('price_outside_range')
                     }
                   </div>
                 )}

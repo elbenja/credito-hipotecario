@@ -10,6 +10,7 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
+import { useTranslation } from "react-i18next"
 
 type Property = {
   id: string
@@ -61,6 +62,7 @@ export function PropertyList({
   sortConfig,
   onSort
 }: PropertyListProps) {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const { data: exchangeRate } = useExchangeRate()
 
@@ -72,7 +74,6 @@ export function PropertyList({
   const calculateBonus = (property: Property): number | null => {
     if (!property.is_first_home) return null
 
-    // Convert property value to PEN for bonus calculation
     const propertyValueInPEN = convertToPEN(property.price_cost, property.currency)
     
     const applicableRule = bonusRules.find(
@@ -86,6 +87,13 @@ export function PropertyList({
       : applicableRule.traditional_bonus
   }
 
+  const getSortIcon = (key: keyof Property) => {
+    if (sortConfig?.key === key) {
+      return sortConfig.direction === 'asc' ? t('sort_ascending') : t('sort_descending')
+    }
+    return null
+  }
+
   return (
     <Table>
       <TableHeader>
@@ -94,40 +102,52 @@ export function PropertyList({
             className="cursor-pointer hover:bg-muted/50"
             onClick={() => onSort('name')}
           >
-            Name {sortConfig?.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+            {t('property_name')} {getSortIcon('name')}
           </TableHead>
           <TableHead 
             className="cursor-pointer hover:bg-muted/50"
             onClick={() => onSort('price_cost')}
           >
-            Cost {sortConfig?.key === 'price_cost' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+            {t('property_cost')} {getSortIcon('price_cost')}
           </TableHead>
-          <TableHead>Monthly Expenses</TableHead>
-          <TableHead>Bonus Amount (S/)</TableHead>
+          <TableHead>{t('property_insurance')}</TableHead>
+          <TableHead>{t('bonus_amount_currency')}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {properties.map((property) => {
-          const bonusAmount = calculateBonus(property)
-          return (
-            <TableRow 
-              key={property.id}
-              className="cursor-pointer hover:bg-muted/50"
-              onClick={() => onPropertySelect(property)}
-            >
-              <TableCell>{property.name}</TableCell>
-              <TableCell>
-                {formatCurrency(property.price_cost, property.currency)}
-              </TableCell>
-              <TableCell>
-                {formatCurrency(property.property_insurance || 0, property.currency)}
-              </TableCell>
-              <TableCell>
-                {bonusAmount ? formatCurrency(bonusAmount, 'PEN') : '-'}
-              </TableCell>
-            </TableRow>
-          )
-        })}
+        {properties.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={4} className="text-center py-4">
+              {t('no_properties')}
+            </TableCell>
+          </TableRow>
+        ) : (
+          properties.map((property) => {
+            const bonusAmount = calculateBonus(property)
+            return (
+              <TableRow 
+                key={property.id}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => onPropertySelect(property)}
+                title={t('click_to_edit')}
+              >
+                <TableCell>{property.name}</TableCell>
+                <TableCell>
+                  {formatCurrency(property.price_cost, property.currency)}
+                </TableCell>
+                <TableCell>
+                  {formatCurrency(property.property_insurance || 0, property.currency)}
+                  <span className="text-xs text-muted-foreground ml-1">
+                    ({t(property.property_insurance_type)})
+                  </span>
+                </TableCell>
+                <TableCell>
+                  {bonusAmount ? formatCurrency(bonusAmount, 'PEN') : t('no_bonus')}
+                </TableCell>
+              </TableRow>
+            )
+          })
+        )}
       </TableBody>
     </Table>
   )

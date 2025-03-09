@@ -4,12 +4,13 @@ import { UseFormReturn } from "react-hook-form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
+import { useTranslation } from "react-i18next"
 import * as z from "zod"
 
 const formSchema = z.object({
-  name: z.string().min(1, "Property name is required"),
+  name: z.string().min(1, "property_name_required"),
   description: z.string().optional(),
-  price_cost: z.string().min(1, "Price is required"),
+  price_cost: z.string().min(1, "price_required"),
   currency: z.enum(["PEN", "USD"]).default("PEN"),
   property_insurance: z.string().optional(),
   property_insurance_type: z.enum(["auto", "manual"]).default("auto"),
@@ -22,6 +23,7 @@ type MonthlyCostsProps = {
 }
 
 export function MonthlyCosts({ form }: MonthlyCostsProps) {
+  const { t } = useTranslation()
   const selectedCurrency = form.watch("currency")
   const propertyValue = parseFloat(form.watch("price_cost") || "0")
   const insuranceType = form.watch("property_insurance_type")
@@ -55,7 +57,7 @@ export function MonthlyCosts({ form }: MonthlyCostsProps) {
           name="property_insurance_type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Property Insurance Type</FormLabel>
+              <FormLabel>{t('property_insurance_type')}</FormLabel>
               <Select
                 onValueChange={(value) => {
                   field.onChange(value)
@@ -67,12 +69,14 @@ export function MonthlyCosts({ form }: MonthlyCostsProps) {
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select insurance type" />
+                    <SelectValue placeholder={t('select_insurance_type')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="auto">Auto ({(insuranceRate || 0.0280).toFixed(4)}%)</SelectItem>
-                  <SelectItem value="manual">Manual</SelectItem>
+                  <SelectItem value="auto">
+                    {t('auto_insurance_rate', { rate: (insuranceRate || 0.0280).toFixed(4) })}
+                  </SelectItem>
+                  <SelectItem value="manual">{t('manual')}</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -84,10 +88,10 @@ export function MonthlyCosts({ form }: MonthlyCostsProps) {
           name="property_insurance"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Property Insurance</FormLabel>
+              <FormLabel>{t('property_insurance_amount')}</FormLabel>
               <FormControl>
                 <CurrencyInput
-                  placeholder="Monthly insurance"
+                  placeholder={t('monthly_insurance')}
                   currency={selectedCurrency}
                   {...field}
                   value={insuranceType === "auto" ? autoInsuranceAmount.toFixed(2) : field.value}

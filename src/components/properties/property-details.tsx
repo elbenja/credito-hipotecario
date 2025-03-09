@@ -7,12 +7,13 @@ import { EditableHeading } from "@/components/ui/editable-heading"
 import { useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
+import { useTranslation } from "react-i18next"
 import * as z from "zod"
 
 const formSchema = z.object({
-  name: z.string().min(1, "Property name is required"),
+  name: z.string().min(1, "property_name_required"),
   description: z.string().optional(),
-  price_cost: z.string().min(1, "Price is required"),
+  price_cost: z.string().min(1, "price_required"),
   currency: z.enum(["PEN", "USD"]).default("PEN"),
   property_insurance: z.string().optional(),
   property_insurance_type: z.enum(["auto", "manual"]).default("auto"),
@@ -26,6 +27,7 @@ type PropertyDetailsProps = {
 }
 
 export function PropertyDetails({ form, isNewProperty = false }: PropertyDetailsProps) {
+  const { t } = useTranslation()
   const selectedCurrency = form.watch("currency")
   const currentName = form.watch("name")
   const { user } = useAuth()
@@ -35,7 +37,6 @@ export function PropertyDetails({ form, isNewProperty = false }: PropertyDetails
       if (!isNewProperty || !user || currentName) return
 
       try {
-        // Get the user's current counter
         const { data: profile } = await supabase
           .from('profiles')
           .select('last_property_number')
@@ -44,21 +45,19 @@ export function PropertyDetails({ form, isNewProperty = false }: PropertyDetails
 
         const nextNumber = (profile?.last_property_number || 0) + 1
 
-        // Update the counter in the database
         await supabase
           .from('profiles')
           .update({ last_property_number: nextNumber })
           .eq('id', user.id)
 
-        // Set the default name
-        form.setValue("name", `New Property #${nextNumber}`, { shouldValidate: true })
+        form.setValue("name", t('new_property', { number: nextNumber }), { shouldValidate: true })
       } catch (error) {
         console.error('Error setting up default property name:', error)
       }
     }
 
     setupDefaultName()
-  }, [isNewProperty, user, form])
+  }, [isNewProperty, user, form, t])
 
   const handleNameChange = (newName: string) => {
     form.setValue("name", newName, { shouldValidate: true })
@@ -76,11 +75,11 @@ export function PropertyDetails({ form, isNewProperty = false }: PropertyDetails
         name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Description</FormLabel>
+            <FormLabel>{t('description')}</FormLabel>
             <FormControl>
               <Textarea 
-                placeholder="Enter property details (address, notes, etc.)" 
-                className="min-h-[100px]"
+                placeholder={t('description_placeholder')}
+                className="min-h-[60px]"
                 {...field} 
               />
             </FormControl>
@@ -94,10 +93,10 @@ export function PropertyDetails({ form, isNewProperty = false }: PropertyDetails
           name="price_cost"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Price</FormLabel>
+              <FormLabel>{t('price')}</FormLabel>
               <FormControl>
                 <CurrencyInput
-                  placeholder="Enter price"
+                  placeholder={t('enter_price')}
                   currency={selectedCurrency}
                   {...field}
                 />
@@ -111,14 +110,14 @@ export function PropertyDetails({ form, isNewProperty = false }: PropertyDetails
           name="currency"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Currency</FormLabel>
+              <FormLabel>{t('currency')}</FormLabel>
               <Select
                 onValueChange={field.onChange}
                 defaultValue={field.value}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select currency" />
+                    <SelectValue placeholder={t('select_currency')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>

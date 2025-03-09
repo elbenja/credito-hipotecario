@@ -1,4 +1,3 @@
-
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
@@ -18,8 +17,10 @@ import { useToast } from "@/components/ui/use-toast"
 import { Separator } from "@/components/ui/separator"
 import { SEO } from "@/components/seo"
 import { Property, BonusRule } from "@/components/properties/types"
+import { useTranslation } from "react-i18next"
 
 export default function Properties() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const { user } = useAuth()
   const { toast } = useToast()
@@ -45,8 +46,8 @@ export default function Properties() {
       console.error('Error loading bonus rules:', error)
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Could not load bonus rules",
+        title: t('error'),
+        description: t('error_loading_bonus_rules'),
       })
     }
   }
@@ -62,7 +63,6 @@ export default function Properties() {
 
       if (error) throw error
       
-      // Ensure all properties have the required property_insurance_type field
       const updatedData = (data || []).map(p => ({
         ...p,
         property_insurance_type: p.property_insurance_type || "auto"
@@ -73,8 +73,8 @@ export default function Properties() {
       console.error('Error loading properties:', error)
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Could not load properties",
+        title: t('error'),
+        description: t('error_loading_properties'),
       })
     }
   }
@@ -123,13 +123,13 @@ export default function Properties() {
       <SheetTrigger asChild>
         <Button onClick={handleAddNewClick}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Property
+          {t('add_property')}
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>
-            {selectedProperty ? 'Edit Property' : 'Add New Property'}
+            {selectedProperty ? t('edit_property') : t('add_property')}
           </SheetTitle>
         </SheetHeader>
         <div className="mt-8">
@@ -147,13 +147,13 @@ export default function Properties() {
   return (
     <DashboardLayout
       header={{
-        title: <h1 className="text-3xl font-bold">Properties</h1>,
+        title: <h1 className="text-3xl font-bold">{t('properties')}</h1>,
         actions: headerActions
       }}
     >
       <SEO 
-        title="Properties - CreditoHipotecar.io"
-        description="Manage your property portfolio with our comprehensive property management tools. Track property details, costs, and mortgage information."
+        title={`${t('properties')} - CreditoHipotecar.io`}
+        description={t('properties_description')}
       />
       <div className="p-8">
         <div className="rounded-md border">
