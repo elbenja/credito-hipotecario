@@ -29,7 +29,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 export function EarlyAccessForm() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [showSuccess, setShowSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -45,24 +45,23 @@ export function EarlyAccessForm() {
     try {
       setIsSubmitting(true)
       
-      // If honeypot field is filled, silently reject
-      if (data.website) {
-        setShowSuccess(true)
-        return
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/early-access-signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          email: data.email,
+          language: i18n.language,
+          website: data.website, // Pass honeypot field to Edge Function
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message)
       }
-
-      const { error } = await supabase
-        .from("early_access_signups")
-        .insert([
-          {
-            email: data.email,
-            language: "en", // Default to English for now
-            ip_address: "", // We'll need to get this from the server
-            status: "unverified",
-          },
-        ])
-
-      if (error) throw error
 
       setShowSuccess(true)
       form.reset()
