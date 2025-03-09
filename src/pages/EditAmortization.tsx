@@ -38,12 +38,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { PaymentSummary } from "@/components/amortizations/payment-summary"
 import { PaymentScenariosPanel } from "@/components/amortizations/payment-scenarios-panel"
 import { LoanCalculator } from "@/services/amortization/calculations/loan"
+import { useTranslation } from "react-i18next"
 
 export default function EditAmortization() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [showMobileDetails, setShowMobileDetails] = useState(false)
   const [paymentDetails, setPaymentDetails] = useState({
@@ -202,8 +204,8 @@ export default function EditAmortization() {
       if (error) throw error
 
       toast({
-        title: "Success",
-        description: "Amortization updated successfully",
+        title: t("success"),
+        description: t("success_update"),
       })
 
       // Only navigate if this was an explicit form submission
@@ -215,8 +217,8 @@ export default function EditAmortization() {
       console.error("Error updating amortization:", error)
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "There was an error updating the amortization",
+        title: t("error"),
+        description: t("error_update"),
       })
     }
   }
@@ -233,8 +235,8 @@ export default function EditAmortization() {
       if (error) throw error
 
       toast({
-        title: "Success",
-        description: "Amortization deleted successfully",
+        title: t("success"),
+        description: t("success_delete"),
       })
 
       navigate("/amortizations")
@@ -242,8 +244,8 @@ export default function EditAmortization() {
       console.error("Error deleting amortization:", error)
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "There was an error deleting the amortization",
+        title: t("error"),
+        description: t("error_delete"),
       })
     }
   }
@@ -260,8 +262,8 @@ export default function EditAmortization() {
       if (error) throw error
 
       toast({
-        title: "Success",
-        description: "Name updated successfully",
+        title: t("success"),
+        description: t("success_name_update"),
       })
 
       refetch()
@@ -269,8 +271,8 @@ export default function EditAmortization() {
       console.error("Error updating name:", error)
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "There was an error updating the name",
+        title: t("error"),
+        description: t("error_name_update"),
       })
     }
   }
@@ -329,7 +331,7 @@ export default function EditAmortization() {
         <div className="flex items-center justify-center h-[50vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="mt-2 text-sm text-muted-foreground">Loading amortization...</p>
+            <p className="mt-2 text-sm text-muted-foreground">{t("loading_amortization")}</p>
           </div>
         </div>
       </DashboardLayout>
@@ -345,12 +347,12 @@ export default function EditAmortization() {
               <BreadcrumbList>
                 <BreadcrumbItem>
                   <Link to="/amortizations" className="transition-colors hover:text-foreground">
-                    Amortizations
+                    {t("amortizations")}
                   </Link>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{amortization?.name || 'Not Found'}</BreadcrumbPage>
+                  <BreadcrumbPage>{amortization?.name || t("amortization_not_found")}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -358,12 +360,12 @@ export default function EditAmortization() {
         }}
       >
         <div className="text-center py-8">
-          <h1 className="text-2xl font-semibold mb-2">Amortization not found</h1>
+          <h1 className="text-2xl font-semibold mb-2">{t("amortization_not_found")}</h1>
           <p className="text-muted-foreground mb-4">
-            The amortization you're looking for doesn't exist or has been deleted.
+            {t("amortization_not_found_description")}
           </p>
           <Button onClick={() => navigate("/amortizations")}>
-            Back to Amortizations
+            {t("back_to_amortizations")}
           </Button>
         </div>
       </DashboardLayout>
@@ -388,7 +390,7 @@ export default function EditAmortization() {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <Link to="/amortizations" className="transition-colors hover:text-foreground">
-                  Amortizations
+                  {t("amortizations")}
                 </Link>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -407,20 +409,13 @@ export default function EditAmortization() {
       }}
     >
       <div className="flex flex-col min-h-screen">
-   
-
         <div className="flex flex-col md:flex-row flex-1">
-          {/* Left Container */}
           <div className="w-full md:w-[40%] px-8 pt-6 relative flex-shrink-0">
             <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-border"></div>
-
-
-
-        
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormItem>
-                  <FormLabel>Property</FormLabel>
+                  <FormLabel>{t("property")}</FormLabel>
                   <PropertyDisplay 
                     property={{
                       ...amortization.property,
@@ -441,7 +436,7 @@ export default function EditAmortization() {
 
                 <div className="flex flex-col gap-2">
                   <Button type="submit" className="w-full">
-                    Update
+                    {t("update")}
                   </Button>
                   <Button 
                     type="button" 
@@ -449,7 +444,7 @@ export default function EditAmortization() {
                     className="w-full"
                     onClick={() => navigate("/amortizations")}
                   >
-                    Cancel
+                    {t("cancel")}
                   </Button>
                 </div>
               </form>

@@ -7,6 +7,7 @@ import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "react-i18next"
 import {
   Form,
   FormField,
@@ -38,6 +39,7 @@ import { type ExtraInstallment } from "@/components/amortizations/types"
 import { LoanCalculator } from "@/services/amortization/calculations/loan"
 
 export default function NewAmortization() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [temporaryInstallments, setTemporaryInstallments] = useState<ExtraInstallment[]>([])
@@ -236,12 +238,12 @@ export default function NewAmortization() {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <Link to="/amortizations" className="transition-colors hover:text-foreground">
-                  Amortizations
+                  {t("amortizations")}
                 </Link>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>New Amortization</BreadcrumbPage>
+                <BreadcrumbPage>{t("new_amortization")}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -250,7 +252,7 @@ export default function NewAmortization() {
     >
       <div className="flex flex-col min-h-screen">
         <div className="flex items-center justify-between px-8 py-4">
-          <h1 className="text-2xl font-bold">New Amortization</h1>
+          <h1 className="text-2xl font-bold">{t("new_amortization")}</h1>
         </div>
 
         <Separator />
@@ -266,9 +268,9 @@ export default function NewAmortization() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>{t("amortization_name")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter amortization name" {...field} />
+                        <Input placeholder={t("enter_amortization_name")} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -292,11 +294,11 @@ export default function NewAmortization() {
 
                 <div className="flex flex-col gap-2">
                   <Button type="submit">
-                    Save
+                    {t("save")}
                   </Button>
                   <Button type="button" variant="secondary">
                     <Plus className="mr-2 h-4 w-4" />
-                    Save & Create Rental Scenario
+                    {t("save_and_create_rental")}
                   </Button>
                 </div>
               </form>

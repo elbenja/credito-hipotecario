@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/utils"
 import { SEO } from "@/components/seo"
+import { useTranslation } from "react-i18next"
 
 type Property = {
   id: string
@@ -42,6 +43,7 @@ type Amortization = {
 export default function Amortizations() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { t } = useTranslation()
 
   const { data: propertiesWithAmortizations, isLoading } = useQuery({
     queryKey: ["properties-with-amortizations", user?.id],
@@ -86,14 +88,14 @@ export default function Amortizations() {
   const headerActions = (
     <Button onClick={() => navigate("/amortizations/new")}>
       <Plus className="mr-2 h-4 w-4" />
-      Add Amortization
+      {t('add_amortization')}
     </Button>
   )
 
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div>Loading...</div>
+        <div>{t('loading')}</div>
       </DashboardLayout>
     )
   }
@@ -101,13 +103,13 @@ export default function Amortizations() {
   return (
     <DashboardLayout
       header={{
-        title: <h1 className="text-3xl font-bold">Amortizations</h1>,
+        title: <h1 className="text-3xl font-bold">{t('amortizations_title')}</h1>,
         actions: headerActions
       }}
     >
       <SEO 
-        title="Amortizations - CreditoHipotecar.io"
-        description="Calculate and manage your mortgage amortization schedules. Track payments, interest rates, and explore different payment scenarios."
+        title={`${t('amortizations_title')} - CreditoHipotecar.io`}
+        description={t('amortizations_description')}
       />
       <div className="p-8 space-y-8">
         {propertiesWithAmortizations?.map((property) => (
@@ -124,15 +126,15 @@ export default function Amortizations() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[20%]">Name</TableHead>
-                    <TableHead className="w-[12%]">Loan Amount</TableHead>
-                    <TableHead className="w-[12%]">Down Payment</TableHead>
-                    <TableHead className="w-[8%]">Interest Rate</TableHead>
-                    <TableHead className="w-[8%]">Term</TableHead>
-                    <TableHead className="w-[10%]">Installments/Year</TableHead>
-                    <TableHead className="w-[10%]">Monthly Payment</TableHead>
-                    <TableHead className="w-[10%]">Total Interest</TableHead>
-                    <TableHead className="w-[10%]">Total Payment</TableHead>
+                    <TableHead className="w-[20%]">{t('loan_name')}</TableHead>
+                    <TableHead className="w-[12%]">{t('loan_amount')}</TableHead>
+                    <TableHead className="w-[12%]">{t('down_payment')}</TableHead>
+                    <TableHead className="w-[8%]">{t('interest_rate')}</TableHead>
+                    <TableHead className="w-[8%]">{t('term')}</TableHead>
+                    <TableHead className="w-[10%]">{t('installments_per_year')}</TableHead>
+                    <TableHead className="w-[10%]">{t('monthly_payment')}</TableHead>
+                    <TableHead className="w-[10%]">{t('total_interest')}</TableHead>
+                    <TableHead className="w-[10%]">{t('total_payment')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -150,7 +152,7 @@ export default function Amortizations() {
                         {formatCurrency(amortization.down_payment, property.currency)}
                       </TableCell>
                       <TableCell className="w-[8%]">{amortization.interest_rate}%</TableCell>
-                      <TableCell className="w-[8%]">{amortization.term_years} years</TableCell>
+                      <TableCell className="w-[8%]">{amortization.term_years} {t('years')}</TableCell>
                       <TableCell className="w-[10%]">{amortization.installments_per_year}</TableCell>
                       <TableCell className="w-[10%]">
                         {formatCurrency(amortization.installment_amount, property.currency)}
@@ -171,7 +173,7 @@ export default function Amortizations() {
 
         {(!propertiesWithAmortizations || propertiesWithAmortizations.length === 0) && (
           <div className="text-center text-muted-foreground py-8">
-            No amortizations found. Create your first amortization by clicking the button above.
+            {t('no_amortizations')}
           </div>
         )}
       </div>
