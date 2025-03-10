@@ -36,6 +36,8 @@ import { Toggle } from "@/components/ui/toggle"
 import { toast } from "sonner"
 import { useInsuranceRates, type InsuranceRate } from "@/hooks/use-insurance-rates"
 import React from "react"
+import { useTranslation } from "react-i18next"
+import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
 
 type BonusRule = {
   min_value: number
@@ -58,6 +60,7 @@ export function LoanDetails({
   selectedProperty, 
   interestRateLimits 
 }: LoanDetailsProps) {
+  const { t } = useTranslation()
   const { data: exchangeRate } = useExchangeRate()
   const { data: insuranceRates } = useInsuranceRates()
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
@@ -174,8 +177,8 @@ export function LoanDetails({
       })
     }, 500) // 500ms total (200ms highlight + 300ms fade)
 
-    toast.message("Suggested Scenario Applied", {
-      description: "Amortization Term set to 20 years, Down Payment set to 10%, and Installments is 1 per month"
+    toast.message(t("suggested_scenario_applied"), {
+      description: t("suggested_scenario_description")
     })
   }
 
@@ -230,19 +233,19 @@ export function LoanDetails({
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <div className="text-sm font-medium text-muted-foreground">Loan Amount</div>
+        <div className="text-sm font-medium text-muted-foreground">{t("loan_amount")}</div>
         <div className="text-3xl font-bold">
           {formatCurrency(Math.round(loanAmount), selectedProperty?.currency || "PEN")}
         </div>
         <div className="text-sm text-muted-foreground">
-          = Property Cost - First Home Bonus - Down Payment
+          {t("loan_amount_formula")}
         </div>
       </div>
       <Separator />
 
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Basics</h2>
+          <h2 className="text-lg font-semibold">{t("basics")}</h2>
           <div className="flex gap-2">
             <Toggle
               pressed={isSuggested}
@@ -257,10 +260,10 @@ export function LoanDetails({
               {isSuggested ? (
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4" />
-                  <span>Suggested</span>
+                  <span>{t("suggested")}</span>
                 </div>
               ) : (
-                "Suggest Scenario"
+                t("suggest_scenario")
               )}
             </Toggle>
             <Button variant="secondary" size="sm" className="px-2">
@@ -276,10 +279,10 @@ export function LoanDetails({
             name="down_payment"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Down Payment</FormLabel>
+                <FormLabel>{t("down_payment")}</FormLabel>
                 <FormControl>
                   <CurrencyInput
-                    placeholder="Enter down payment"
+                    placeholder={t("enter_down_payment")}
                     currency={selectedProperty?.currency || "PEN"}
                     {...field}
                     className={cn(
@@ -301,7 +304,7 @@ export function LoanDetails({
           />
 
           <FormItem>
-            <FormLabel>Property %</FormLabel>
+            <FormLabel>{t("property_percentage")}</FormLabel>
             <div className="relative">
               <Input 
                 type="number"
@@ -336,11 +339,10 @@ export function LoanDetails({
             name="loan_protection_type"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Loan Protection Insurance</FormLabel>
+                <FormLabel>{t("loan_protection_insurance")}</FormLabel>
                 <Select 
                   onValueChange={(value) => {
                     field.onChange(value);
-                    // If type is none, ensure insurance amount is 0
                     if (value === 'none') {
                       form.setValue('loan_protection_insurance', '0');
                     }
@@ -349,18 +351,26 @@ export function LoanDetails({
                 >
                   <FormControl>
                     <SelectTrigger className="form-control-focus">
-                      <SelectValue placeholder="Select insurance type" />
+                      <SelectValue placeholder={t("select_insurance_type")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="individual">
-                      Individual ({Array.isArray(insuranceRates) ? insuranceRates.find((r: any) => r.type === "individual")?.percentage ?? 0.028 : 0.028}%)
+                      {t("individual_insurance", { 
+                        rate: Array.isArray(insuranceRates) 
+                          ? insuranceRates.find((r: any) => r.type === "individual")?.percentage ?? 0.028 
+                          : 0.028 
+                      })}
                     </SelectItem>
                     <SelectItem value="joint">
-                      Joint ({Array.isArray(insuranceRates) ? insuranceRates.find((r: any) => r.type === "joint")?.percentage ?? 0.052 : 0.052}%)
+                      {t("joint_insurance", { 
+                        rate: Array.isArray(insuranceRates) 
+                          ? insuranceRates.find((r: any) => r.type === "joint")?.percentage ?? 0.052 
+                          : 0.052 
+                      })}
                     </SelectItem>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="custom">Custom Amount</SelectItem>
+                    <SelectItem value="none">{t("none")}</SelectItem>
+                    <SelectItem value="custom">{t("custom_amount")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -381,7 +391,6 @@ export function LoanDetails({
                 calculatedValue = calculateInsuranceAmount(insuranceType, loanAmount).toFixed(2)
               }
 
-              // Update the insurance amount when type or loan amount changes
               React.useEffect(() => {
                 if (!isCustom && !isNone) {
                   form.setValue("loan_protection_insurance", calculatedValue)
@@ -392,7 +401,7 @@ export function LoanDetails({
 
               return (
                 <FormItem>
-                  <FormLabel>Monthly Insurance Cost</FormLabel>
+                  <FormLabel>{t("monthly_insurance_cost")}</FormLabel>
                   <FormControl>
                     <CurrencyInput
                       {...field}
@@ -421,7 +430,7 @@ export function LoanDetails({
             name="interest_rate"
             render={({ field, fieldState: { error } }) => (
               <FormItem>
-                <FormLabel className={cn(error && "text-destructive")}>Interest rate</FormLabel>
+                <FormLabel className={cn(error && "text-destructive")}>{t("interest_rate")}</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input
@@ -453,7 +462,7 @@ export function LoanDetails({
             name="term_years"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Amortization Term</FormLabel>
+                <FormLabel>{t("amortization_term")}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger 
@@ -462,13 +471,13 @@ export function LoanDetails({
                         highlightFields.termYears && "ring-2 ring-primary transition-all duration-500"
                       )}
                     >
-                      <SelectValue placeholder="Select term" />
+                      <SelectValue placeholder={t("select_term")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     {[10, 15, 20, 25, 30].map((years) => (
                       <SelectItem key={years} value={years.toString()}>
-                        {years} years
+                        {t("years_term", { years })}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -486,7 +495,7 @@ export function LoanDetails({
             name="installments_per_year"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Instalments per Year</FormLabel>
+                <FormLabel>{t("installments_per_year")}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger 
@@ -495,13 +504,13 @@ export function LoanDetails({
                         highlightFields.installments && "ring-2 ring-primary transition-all duration-500"
                       )}
                     >
-                      <SelectValue placeholder="Select frequency" />
+                      <SelectValue placeholder={t("select_frequency")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     {[
-                      { value: "12", label: "Simple" },
-                      { value: "14", label: "Double" }
+                      { value: "12", label: t("simple_installments") },
+                      { value: "14", label: t("double_installments") }
                     ].map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
@@ -519,38 +528,24 @@ export function LoanDetails({
             name="first_installment_date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>First Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal form-control-focus",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          formatDate(field.value)
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) =>
-                        date < new Date()
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <FormLabel>{t("first_date")}</FormLabel>
+                <FormControl>
+                  <CalendarDatePicker
+                    date={{
+                      from: field.value,
+                      to: field.value
+                    }}
+                    onDateSelect={({ from }) => field.onChange(from)}
+                    variant="outline"
+                    numberOfMonths={1}
+                    closeOnSelect={true}
+                    disabled={(date) => date < new Date()}
+                    className={cn(
+                      "w-full justify-start text-left font-normal form-control-focus",
+                      !field.value && "text-muted-foreground"
+                    )}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
