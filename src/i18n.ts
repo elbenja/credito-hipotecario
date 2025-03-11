@@ -141,7 +141,149 @@ const resources = {
       "success_delete": "Amortization deleted successfully",
       "error_delete": "There was an error deleting the amortization",
       "success_name_update": "Name updated successfully",
-      "error_name_update": "There was an error updating the name"
+      "error_name_update": "There was an error updating the name",
+      "loan_amount_formula": "= Property Cost - First Home Bonus - Down Payment",
+      "basics": "Basics",
+      "suggest_scenario": "Suggest Scenario",
+      "suggested": "Suggested",
+      "enter_down_payment": "Enter down payment",
+      "property_percentage": "Property %",
+      "loan_protection_insurance": "Loan Protection Insurance",
+      "individual_insurance": "Individual ({{rate}}%)",
+      "joint_insurance": "Joint ({{rate}}%)",
+      "none": "None",
+      "custom_amount": "Custom Amount",
+      "monthly_insurance_cost": "Monthly Insurance Cost",
+      "amortization_term": "Amortization Term",
+      "select_term": "Select term",
+      "years_term": "{{years}} years",
+      "select_frequency": "Select frequency",
+      "simple_installments": "Simple",
+      "double_installments": "Double",
+      "first_date": "First Date",
+      "pick_date": "Pick a date",
+      "suggested_scenario_applied": "Suggested Scenario Applied",
+      "suggested_scenario_description": "Amortization Term set to 20 years, Down Payment set to 10%, and Installments is 1 per month",
+      "select_date": "Select Date",
+      "calendar": {
+        "today": "Today",
+        "month": "Month",
+        "year": "Year",
+        "previous_month": "Previous month",
+        "next_month": "Next month",
+        "previous_year": "Previous year",
+        "next_year": "Next year"
+      },
+      "payment_scenarios": {
+        "title": "Payment Scenarios",
+        "regular": "Regular",
+        "accelerated": "Accelerated",
+        "lower_payment": "Lower Payment",
+        "new_rate": "New Rate",
+        "regular_description": "Base mortgage with standard parameters.",
+        "accelerated_description": "Extra payments reduce the term, installment remains constant.",
+        "lower_description": "Extra payments reduce the monthly payment, term remains the same.",
+        "new_rate_description": "Simulate a new interest rate.",
+        "select": "Select",
+        "extra_installments": {
+          "title": "Extra Installments",
+          "description": "Add extra payments to reduce your loan term or monthly payment."
+        },
+        "new_rate_details": {
+          "title": "New Rate Details",
+          "description": "Simulate how your payments would change with a new interest rate.",
+          "new_interest_rate": "New Interest Rate (%)",
+          "enter_new_rate": "Enter new rate",
+          "new_term": "New Term (Years)",
+          "enter_new_term": "Enter new term",
+          "start_date": "Start Date",
+          "pick_date": "Pick a date",
+          "save_refinancing": "Save Refinancing Option",
+          "saving": "Saving...",
+          "success_title": "Success",
+          "success_message": "Refinancing option saved successfully",
+          "error_title": "Error",
+          "error_message": "Failed to save refinancing option. Please try again."
+        },
+        "view_scenarios": "View Payment Scenarios",
+        "back": "Back",
+        "new_rate_form": {
+          "title": "Refinancing Options",
+          "new_interest_rate": "New Interest Rate",
+          "new_term": "New Term",
+          "start_date": "Start Date",
+          "remaining": "Remaining",
+          "years": "{{value}} years",
+          "add_button": "Add",
+          "saving": "Saving...",
+          "success_title": "Success",
+          "success_message": "Refinancing option saved successfully",
+          "error_title": "Error",
+          "error_message": "Failed to save refinancing option. Please try again.",
+          "no_options": "No refinancing options yet",
+          "table": {
+            "number": "#",
+            "interest_rate": "Interest Rate",
+            "new_term": "New Term",
+            "start_date": "Start Date",
+            "actions": "Actions",
+            "delete_tooltip": "Delete refinancing option"
+          }
+        }
+      },
+      "payment_summary": {
+        "total_interest_insurance": "Sum Interest & Insurances",
+        "months": "Months",
+        "monthly_payment": "Monthly Payment"
+      },
+      "payment_chart": {
+        "title": "Payment Breakdown Over Time",
+        "no_data": "No data available. Please check the loan parameters.",
+        "monthly_payment": "Monthly Payment",
+        "principal": "Principal",
+        "interest_insurance": "Interest & Insurances",
+        "total_interest": "Total Interest",
+        "total_insurance": "Total Insurance",
+        "years_short": "{{value}}y"
+      },
+      "extra_installments_section": {
+        "title": "Extra Installments",
+        "success": {
+          "add": "Extra installment added successfully",
+          "delete": "Extra installment deleted successfully"
+        },
+        "error": {
+          "title": "Error",
+          "invalid_amount": "Invalid amount",
+          "invalid_frequency": "Invalid frequency value. Must be 'monthly' or 'one-time'",
+          "add": "There was an error adding the extra installment. Please check the console for details.",
+          "delete": "There was an error deleting the extra installment"
+        },
+        "form": {
+          "amount": "Amount",
+          "amount_placeholder": "0",
+          "frequency": "Frequency",
+          "frequency_placeholder": "Select frequency",
+          "frequency_monthly": "Monthly",
+          "frequency_once": "Once",
+          "first_date": "First Date",
+          "add_button": "Add",
+          "amount_required": "Amount is required",
+          "amount_positive": "Amount must be greater than 0",
+          "start_date_required": "Start date is required"
+        },
+        "table": {
+          "number": "#",
+          "amount": "Amount",
+          "frequency": "Frequency",
+          "date": "Date",
+          "actions": "Actions",
+          "delete_tooltip": "Delete installment",
+          "no_installments": "No extra installments added",
+          "frequency_once": "Once",
+          "frequency_monthly": "Monthly"
+        }
+      }
     }
   },
   es: {
@@ -262,7 +404,7 @@ const resources = {
       "down_payment": "Cuota Inicial",
       "interest_rate": "Tasa de Interés",
       "term": "Plazo",
-      "installments_per_year": "Cuotas/Año",
+      "installments_per_year": "Cuotas al Año",
       "monthly_payment": "Pago Mensual",
       "total_interest": "Interés Total",
       "total_payment": "Pago Total",
@@ -282,7 +424,149 @@ const resources = {
       "success_delete": "Amortización eliminada exitosamente",
       "error_delete": "Hubo un error al eliminar la amortización",
       "success_name_update": "Nombre actualizado exitosamente",
-      "error_name_update": "Hubo un error al actualizar el nombre"
+      "error_name_update": "Hubo un error al actualizar el nombre",
+      "loan_amount_formula": "= Costo de Propiedad - Bono MiVivienda - Cuota Inicial",
+      "basics": "Datos Básicos",
+      "suggest_scenario": "Sugerir Escenario",
+      "suggested": "Sugerido",
+      "enter_down_payment": "Ingresa la cuota inicial",
+      "property_percentage": "% de Propiedad",
+      "loan_protection_insurance": "Seguro de Desgravamen",
+      "individual_insurance": "Individual ({{rate}}%)",
+      "joint_insurance": "Mancomunado ({{rate}}%)",
+      "none": "Ninguno",
+      "custom_amount": "Monto Personalizado",
+      "monthly_insurance_cost": "Costo Mensual del Seguro",
+      "amortization_term": "Plazo de Amortización",
+      "select_term": "Selecciona plazo",
+      "years_term": "{{years}} años",
+      "select_frequency": "Selecciona frecuencia",
+      "simple_installments": "Simple",
+      "double_installments": "Doble",
+      "first_date": "Fecha Inicial",
+      "pick_date": "Selecciona fecha",
+      "suggested_scenario_applied": "Escenario Sugerido Aplicado",
+      "suggested_scenario_description": "Plazo de amortización establecido a 20 años, Cuota inicial al 10% y Cuotas a 1 por mes",
+      "select_date": "Seleccionar Fecha",
+      "calendar": {
+        "today": "Hoy",
+        "month": "Mes",
+        "year": "Año",
+        "previous_month": "Mes anterior",
+        "next_month": "Mes siguiente",
+        "previous_year": "Año anterior",
+        "next_year": "Año siguiente"
+      },
+      "payment_scenarios": {
+        "title": "Escenarios de Pago",
+        "regular": "Regular",
+        "accelerated": "Acelerado",
+        "lower_payment": "Pago Menor",
+        "new_rate": "Refinanciar",
+        "regular_description": "Hipoteca base con parámetros estándares.",
+        "accelerated_description": "Los amortizaciones extra reducen el plazo, la cuota se mantiene constante.",
+        "lower_description": "Los amortizaciones extra reducen la cuota mensual, el plazo se mantiene igual.",
+        "new_rate_description": "Simula un refinanciamiento con una nueva tasa de interés.",
+        "select": "Seleccionar",
+        "extra_installments": {
+          "title": "Cuotas Extra",
+          "description": "Agrega amortizaciones extra para reducir el plazo del préstamo o la cuota mensual."
+        },
+        "new_rate_details": {
+          "title": "Detalles de Nueva Tasa",
+          "description": "Simula cómo cambiarían tus pagos con una nueva tasa de interés.",
+          "new_interest_rate": "Nueva Tasa de Interés (%)",
+          "enter_new_rate": "Ingresa nueva tasa",
+          "new_term": "Nuevo Plazo (Años)",
+          "enter_new_term": "Ingresa nuevo plazo",
+          "start_date": "Fecha de Inicio",
+          "pick_date": "Selecciona fecha",
+          "save_refinancing": "Guardar Opción de Refinanciamiento",
+          "saving": "Guardando...",
+          "success_title": "Éxito",
+          "success_message": "Opción de refinanciamiento guardada exitosamente",
+          "error_title": "Error",
+          "error_message": "Error al guardar la opción de refinanciamiento. Por favor, intenta nuevamente."
+        },
+        "view_scenarios": "Ver Escenarios de Pago",
+        "back": "Volver",
+        "new_rate_form": {
+          "title": "Opciones de Refinanciamiento",
+          "new_interest_rate": "Nueva Tasa de Interés",
+          "new_term": "Nuevo Plazo",
+          "start_date": "Fecha de Inicio",
+          "remaining": "Restante",
+          "years": "{{value}} años",
+          "add_button": "Agregar",
+          "saving": "Guardando...",
+          "success_title": "Éxito",
+          "success_message": "Opción de refinanciamiento guardada exitosamente",
+          "error_title": "Error",
+          "error_message": "Error al guardar la opción de refinanciamiento. Por favor, intenta nuevamente.",
+          "no_options": "Aún no hay opciones de refinanciamiento",
+          "table": {
+            "number": "#",
+            "interest_rate": "Tasa de Interés",
+            "new_term": "Nuevo Plazo",
+            "start_date": "Fecha de Inicio",
+            "actions": "Acciones",
+            "delete_tooltip": "Eliminar opción de refinanciamiento"
+          }
+        }
+      },
+      "payment_summary": {
+        "total_interest_insurance": "Suma de Intereses y Seguros",
+        "months": "Meses",
+        "monthly_payment": "Cuota Mensual"
+      },
+      "payment_chart": {
+        "title": "Desglose de Pagos en el Tiempo",
+        "no_data": "No hay datos disponibles. Por favor, verifica los parámetros del préstamo.",
+        "monthly_payment": "Cuota Mensual",
+        "principal": "Principal",
+        "interest_insurance": "Intereses y Seguros",
+        "total_interest": "Interés Total",
+        "total_insurance": "Seguro Total",
+        "years_short": "{{value}}a"
+      },
+      "extra_installments_section": {
+        "title": "Amortizaciones Extra",
+        "success": {
+          "add": "Amortización extra agregada exitosamente",
+          "delete": "Amortización extra eliminada exitosamente"
+        },
+        "error": {
+          "title": "Error",
+          "invalid_amount": "Monto inválido",
+          "invalid_frequency": "Valor de frecuencia inválido. Debe ser 'mensual' o 'única vez'",
+          "add": "Hubo un error al agregar la cuota extra. Por favor, revisa la consola para más detalles.",
+          "delete": "Hubo un error al eliminar la cuota extra"
+        },
+        "form": {
+          "amount": "Monto",
+          "amount_placeholder": "0",
+          "frequency": "Frecuencia",
+          "frequency_placeholder": "Selecciona frecuencia",
+          "frequency_monthly": "Mensual",
+          "frequency_once": "Única vez",
+          "first_date": "Fecha Inicial",
+          "add_button": "Agregar",
+          "amount_required": "El monto es requerido",
+          "amount_positive": "El monto debe ser mayor a 0",
+          "start_date_required": "La fecha inicial es requerida"
+        },
+        "table": {
+          "number": "#",
+          "amount": "Monto",
+          "frequency": "Frecuencia",
+          "date": "Fecha",
+          "actions": "Acciones",
+          "delete_tooltip": "Eliminar amortización",
+          "no_installments": "No hay amortizaciones extra agregadas",
+          "frequency_once": "Única vez",
+          "frequency_monthly": "Mensual"
+        }
+      }
     }
   }
 };

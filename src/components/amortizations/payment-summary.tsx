@@ -1,4 +1,5 @@
 import { formatCurrency } from "@/lib/utils"
+import { useTranslation } from "react-i18next"
 
 type PaymentSummaryProps = {
   totalInterestAndInsurance: number
@@ -13,11 +14,13 @@ export function PaymentSummary({
   monthlyPayment,
   currency
 }: PaymentSummaryProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="grid grid-cols-10 gap-4">
       <div className="col-span-5 grid gap-1">
         <div className="text-sm font-medium text-muted-foreground">
-          Sum Interest & Insurances
+          {t("payment_summary.total_interest_insurance")}
         </div>
         <div className="text-2xl font-bold">
           {formatCurrency(totalInterestAndInsurance, currency)}
@@ -25,7 +28,7 @@ export function PaymentSummary({
       </div>
       <div className="col-span-2 grid gap-1">
         <div className="text-sm font-medium text-muted-foreground">
-          Months
+          {t("payment_summary.months")}
         </div>
         <div className="text-2xl font-bold">
           {totalMonths}
@@ -33,7 +36,7 @@ export function PaymentSummary({
       </div>
       <div className="col-span-3 grid gap-1">
         <div className="text-sm font-medium text-muted-foreground">
-          Monthly Payment
+          {t("payment_summary.monthly_payment")}
         </div>
         <div className="text-2xl font-bold">
           {formatCurrency(monthlyPayment, currency)}

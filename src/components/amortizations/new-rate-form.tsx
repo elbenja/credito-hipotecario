@@ -1,10 +1,11 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { CalendarIcon, Check, Trash2 } from "lucide-react"
+import { Check, Trash2 } from "lucide-react"
 import { format, addYears, subWeeks, startOfDay, isBefore, isAfter, isSameDay } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 
 import {
   Form,
@@ -24,11 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { refinancingOptionSchema, type RefinancingOptionFormValues } from "./refinancing-option-schema"
 
@@ -51,6 +47,7 @@ export function NewRateForm({
   className
 }: NewRateFormProps) {
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [refinancingOptions, setRefinancingOptions] = useState<RefinancingOption[]>([])
   
   useEffect(() => {
@@ -109,14 +106,14 @@ export function NewRateForm({
 
       setRefinancingOptions(prev => prev.filter(option => option.id !== id))
       toast({
-        title: "Success",
-        description: "Refinancing option deleted successfully",
+        title: t("payment_scenarios.new_rate_form.success_title"),
+        description: t("payment_scenarios.new_rate_form.success_message"),
       })
     } catch (error) {
       console.error("Error deleting refinancing option:", error)
       toast({
-        title: "Error",
-        description: "Failed to delete refinancing option. Please try again.",
+        title: t("payment_scenarios.new_rate_form.error_title"),
+        description: t("payment_scenarios.new_rate_form.error_message"),
         variant: "destructive",
       })
     }
@@ -175,8 +172,8 @@ export function NewRateForm({
       console.log("Successfully added refinancing option:", data)
       
       toast({
-        title: "Success",
-        description: "Refinancing option saved successfully",
+        title: t("payment_scenarios.new_rate_form.success_title"),
+        description: t("payment_scenarios.new_rate_form.success_message"),
       })
 
       // Fetch updated data
@@ -198,8 +195,8 @@ export function NewRateForm({
     } catch (error) {
       console.error("Error saving refinancing option:", error)
       toast({
-        title: "Error",
-        description: "Failed to save refinancing option. Please try again.",
+        title: t("payment_scenarios.new_rate_form.error_title"),
+        description: t("payment_scenarios.new_rate_form.error_message"),
         variant: "destructive",
       })
     } finally {
@@ -212,14 +209,14 @@ export function NewRateForm({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className={className}>
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Refinancing Options</h3>
+            <h3 className="text-lg font-semibold">{t("payment_scenarios.new_rate_form.title")}</h3>
             <div className="grid grid-cols-[1fr_1fr_1fr_88px] gap-4">
               <FormField
                 control={form.control}
                 name="new_interest_rate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New Interest Rate</FormLabel>
+                    <FormLabel>{t("payment_scenarios.new_rate_form.new_interest_rate")}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input 
@@ -247,7 +244,7 @@ export function NewRateForm({
                 name="new_term_years"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New Term</FormLabel>
+                    <FormLabel>{t("payment_scenarios.new_rate_form.new_term")}</FormLabel>
                     <Select 
                       onValueChange={(value) => field.onChange(value === "remaining" ? null : parseInt(value))}
                       value={field.value?.toString() || "remaining"}
@@ -258,13 +255,12 @@ export function NewRateForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="remaining">Remaining</SelectItem>
-                        <SelectItem value="5">5 years</SelectItem>
-                        <SelectItem value="10">10 years</SelectItem>
-                        <SelectItem value="15">15 years</SelectItem>
-                        <SelectItem value="20">20 years</SelectItem>
-                        <SelectItem value="25">25 years</SelectItem>
-                        <SelectItem value="30">30 years</SelectItem>
+                        <SelectItem value="remaining">{t("payment_scenarios.new_rate_form.remaining")}</SelectItem>
+                        {[5, 10, 15, 20, 25, 30].map((years) => (
+                          <SelectItem key={years} value={years.toString()}>
+                            {t("payment_scenarios.new_rate_form.years", { value: years })}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -277,7 +273,7 @@ export function NewRateForm({
                 name="effective_date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date</FormLabel>
+                    <FormLabel>{t("payment_scenarios.new_rate_form.start_date")}</FormLabel>
                     <FormControl>
                       <CalendarDatePicker
                         date={{ from: field.value || new Date(), to: field.value || new Date() }}
@@ -307,7 +303,7 @@ export function NewRateForm({
                   disabled={isSubmitting || !form.formState.isValid}
                 >
                   <Check className="h-4 w-4" />
-                  {isSubmitting ? "..." : "OK"}
+                  {isSubmitting ? t("payment_scenarios.new_rate_form.saving") : t("payment_scenarios.new_rate_form.add_button")}
                 </Button>
               </div>
             </div>
@@ -319,10 +315,10 @@ export function NewRateForm({
         <table className="w-full">
           <thead>
             <tr className="border-b bg-muted/50">
-              <th className="p-2 text-left font-medium text-xs text-muted-foreground">#</th>
-              <th className="p-2 text-left font-medium text-xs text-muted-foreground">Interest Rate</th>
-              <th className="p-2 text-left font-medium text-xs text-muted-foreground">New Term</th>
-              <th className="p-2 text-left font-medium text-xs text-muted-foreground">Start Date</th>
+              <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("payment_scenarios.new_rate_form.table.number")}</th>
+              <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("payment_scenarios.new_rate_form.table.interest_rate")}</th>
+              <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("payment_scenarios.new_rate_form.table.new_term")}</th>
+              <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("payment_scenarios.new_rate_form.table.start_date")}</th>
               <th className="p-2 text-left font-medium w-[50px] text-xs text-muted-foreground"></th>
             </tr>
           </thead>
@@ -330,7 +326,7 @@ export function NewRateForm({
             {refinancingOptions.length === 0 ? (
               <tr>
                 <td colSpan={5} className="p-2 text-center text-sm text-muted-foreground">
-                  No refinancing options yet
+                  {t("payment_scenarios.new_rate_form.no_options")}
                 </td>
               </tr>
             ) : (
@@ -338,7 +334,7 @@ export function NewRateForm({
                 <tr key={option.id} className="border-b last:border-0">
                   <td className="p-2 text-sm">{index + 1}</td>
                   <td className="p-2 text-sm">{option.new_interest_rate}%</td>
-                  <td className="p-2 text-sm">{option.new_term_years || '-'}</td>
+                  <td className="p-2 text-sm">{option.new_term_years ? t("payment_scenarios.new_rate_form.years", { value: option.new_term_years }) : t("payment_scenarios.new_rate_form.remaining")}</td>
                   <td className="p-2 text-sm">{format(new Date(option.effective_date), 'MMM dd, yyyy')}</td>
                   <td className="p-2">
                     <Button
@@ -346,6 +342,7 @@ export function NewRateForm({
                       size="icon"
                       onClick={() => handleDelete(option.id)}
                       className="h-8 w-8"
+                      title={t("payment_scenarios.new_rate_form.table.delete_tooltip")}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

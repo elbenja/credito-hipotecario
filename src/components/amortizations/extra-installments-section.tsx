@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { ExtraInstallmentForm } from "./extra-installment-form"
 import { ExtraInstallmentsTable } from "./extra-installments-table"
+import { useTranslation } from "react-i18next"
 
 interface ExtraInstallment {
   id: string
@@ -32,6 +33,7 @@ export function ExtraInstallmentsSection({
   onInstallmentsChange
 }: ExtraInstallmentsSectionProps) {
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [installments, setInstallments] = useState<ExtraInstallment[]>([])
 
@@ -75,12 +77,12 @@ export function ExtraInstallmentsSection({
       
       // Validate the amount
       if (isNaN(amount) || amount <= 0) {
-        throw new Error("Invalid amount")
+        throw new Error(t("extra_installments_section.error.invalid_amount"))
       }
 
       // Validate frequency value
       if (values.frequency !== "monthly" && values.frequency !== "one-time") {
-        throw new Error("Invalid frequency value. Must be 'monthly' or 'one-time'")
+        throw new Error(t("extra_installments_section.error.invalid_frequency"))
       }
 
       const installmentData: ExtraInstallmentData = {
@@ -115,17 +117,17 @@ export function ExtraInstallmentsSection({
       }
 
       toast({
-        title: "Success",
-        description: "Extra installment added successfully",
+        title: t("extra_installments_section.success.add"),
+        description: t("extra_installments_section.success.add"),
       })
     } catch (error) {
       console.error("Error details:", error)
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t("extra_installments_section.error.title"),
         description: error instanceof Error 
           ? error.message 
-          : "There was an error adding the extra installment. Please check the console for details.",
+          : t("extra_installments_section.error.add"),
       })
     } finally {
       setIsLoading(false)
@@ -145,15 +147,15 @@ export function ExtraInstallmentsSection({
       onInstallmentsChange()
 
       toast({
-        title: "Success",
-        description: "Extra installment deleted successfully",
+        title: t("extra_installments_section.success.delete"),
+        description: t("extra_installments_section.success.delete"),
       })
     } catch (error) {
       console.error("Error deleting extra installment:", error)
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "There was an error deleting the extra installment",
+        title: t("extra_installments_section.error.title"),
+        description: t("extra_installments_section.error.delete"),
       })
     }
   }
@@ -161,8 +163,7 @@ export function ExtraInstallmentsSection({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium">Extra Installments</h3>
- 
+        <h3 className="text-lg font-medium">{t("extra_installments_section.title")}</h3>
       </div>
 
       <ExtraInstallmentForm

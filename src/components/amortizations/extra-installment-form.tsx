@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Plus } from "lucide-react"
 import { addYears, subWeeks, startOfDay, isBefore, isAfter, isSameDay } from "date-fns"
+import { useTranslation } from "react-i18next"
 
 import {
   Form,
@@ -27,14 +28,14 @@ import { formatCurrency, cn, formatDate } from "@/lib/utils"
 
 const extraInstallmentSchema = z.object({
   amount: z.string()
-    .min(1, "Amount is required")
+    .min(1, "extra_installments_section.form.amount_required")
     .refine((val) => {
       const amount = parseFloat(val.replace(/[^0-9.]/g, ""))
       return !isNaN(amount) && amount > 0
-    }, "Amount must be greater than 0"),
+    }, "extra_installments_section.form.amount_positive"),
   frequency: z.enum(["monthly", "one-time"]),
   start_date: z.date({
-    required_error: "Start date is required",
+    required_error: "extra_installments_section.form.start_date_required",
   }),
 })
 
@@ -48,6 +49,7 @@ interface ExtraInstallmentFormProps {
 }
 
 export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency }: ExtraInstallmentFormProps) {
+  const { t } = useTranslation()
   const form = useForm<ExtraInstallmentFormValues>({
     resolver: zodResolver(extraInstallmentSchema),
     defaultValues: {
@@ -85,17 +87,17 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <div className="grid grid-cols-[1fr_1fr_1fr_88px] gap-4">
+        <div className="grid grid-cols-[1fr_1fr_1fr_100px] gap-4">
           <FormField
             control={form.control}
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Amount</FormLabel>
+                <FormLabel>{t("extra_installments_section.form.amount")}</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input 
-                      placeholder="0"
+                      placeholder={t("extra_installments_section.form.amount_placeholder")}
                       className="pl-8"
                       {...field}
                       onChange={(e) => {
@@ -124,19 +126,19 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
             name="frequency"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Frequency</FormLabel>
+                <FormLabel>{t("extra_installments_section.form.frequency")}</FormLabel>
                 <Select
                   value={field.value}
                   onValueChange={(value: "monthly" | "one-time") => field.onChange(value)}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
+                      <SelectValue placeholder={t("extra_installments_section.form.frequency_placeholder")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="one-time">Once</SelectItem>
+                    <SelectItem value="monthly">{t("extra_installments_section.form.frequency_monthly")}</SelectItem>
+                    <SelectItem value="one-time">{t("extra_installments_section.form.frequency_once")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -149,7 +151,7 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
             name="start_date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>First Date</FormLabel>
+                <FormLabel>{t("extra_installments_section.form.first_date")}</FormLabel>
                 <FormControl>
                   <CalendarDatePicker
                     date={{ from: field.value, to: field.value }}
@@ -175,10 +177,10 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
             type="submit" 
             disabled={isLoading}
             variant="outline"
-            className="self-end px-3 w-[88px]"
+            className="self-end px-3 w-[100px]"
           >
             <Plus className="h-4 w-4" />
-            Add
+            {t("extra_installments_section.form.add_button")}
           </Button>
         </div>
       </form>

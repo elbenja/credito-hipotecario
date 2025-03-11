@@ -3,6 +3,7 @@ import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "
 import { formatCurrency } from "@/lib/utils"
 import { amortizationDataService } from "@/services/amortization/calculations/amortizationData"
 import type { Property } from "@/services/amortization/types/common"
+import { useTranslation } from "react-i18next"
 
 interface PaymentChartProps {
   property: Property
@@ -49,15 +50,17 @@ export function PaymentChart({
   propertyInsurance,
   loanProtection
 }: PaymentChartProps) {
+  const { t } = useTranslation()
+
   // Validate inputs before calculation
   if (!property?.cost || !annualInterestRate || !termYears || 
       isNaN(property.cost) || isNaN(annualInterestRate) || isNaN(termYears)) {
     return (
       <div className="space-y-4">
         <div className="space-y-1">
-          <h3 className="text-sm font-medium">Payment Breakdown Over Time</h3>
+          <h3 className="text-sm font-medium">{t("payment_chart.title")}</h3>
           <p className="text-sm text-muted-foreground">
-            No data available. Please check the loan parameters.
+            {t("payment_chart.no_data")}
           </p>
         </div>
       </div>
@@ -105,7 +108,7 @@ export function PaymentChart({
               ticks={[0, 10, 20, 30, 40, 50, 60]}
               tick={{ fill: 'currentColor' }}
               className="text-sm text-gray-900 fill-gray-900"
-              tickFormatter={(value) => `${value / 2}y`}
+              tickFormatter={(value) => t("payment_chart.years_short", { value: value / 2 })}
             />
             <Tooltip
               content={({ active, payload }) => {
@@ -116,15 +119,15 @@ export function PaymentChart({
                   <div className="rounded-md border bg-background px-3 py-1 shadow-sm">
                     <div className="grid gap-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium">Monthly Payment</span>
+                        <span className="text-sm font-medium">{t("payment_chart.monthly_payment")}</span>
                         <span className="text-sm font-medium">{formatCurrency(data.monthlyPayment, property.currency)}</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-muted-foreground">Principal</span>
+                        <span className="text-sm font-medium text-muted-foreground">{t("payment_chart.principal")}</span>
                         <span className="text-sm font-medium">{formatCurrency(data.principal, property.currency)}</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-muted-foreground">Interest & Insurances</span>
+                        <span className="text-sm font-medium text-muted-foreground">{t("payment_chart.interest_insurance")}</span>
                         <span className="text-sm font-medium">{formatCurrency(data.interestAndInsurances, property.currency)}</span>
                       </div>
                     </div>
@@ -165,7 +168,7 @@ export function PaymentChart({
 
       <div className="flex items-start gap-4 text-sm">
         <div className="grid gap-1">
-          <div className="font-medium">Total Interest</div>
+          <div className="font-medium">{t("payment_chart.total_interest")}</div>
           <div className="text-muted-foreground">
             {formatCurrency(
               schedule.reduce((sum, data) => sum + data.interest, 0),
@@ -174,7 +177,7 @@ export function PaymentChart({
           </div>
         </div>
         <div className="grid gap-1">
-          <div className="font-medium">Total Insurance</div>
+          <div className="font-medium">{t("payment_chart.total_insurance")}</div>
           <div className="text-muted-foreground">
             {formatCurrency(
               (propertyInsurance + loanProtection) * schedule.length,

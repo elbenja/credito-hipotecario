@@ -12,7 +12,9 @@ import {
   endOfYear,
   startOfDay,
   endOfDay,
+  format,
 } from "date-fns";
+import { es } from 'date-fns/locale';
 import { toDate, formatInTimeZone } from "date-fns-tz";
 import { DateRange } from "react-day-picker";
 import { cva, VariantProps } from "class-variance-authority";
@@ -32,21 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const months = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+import { useTranslation } from "react-i18next";
 
 const multiSelectVariants = cva(
   "flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium text-foreground ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
@@ -82,6 +70,7 @@ interface CalendarDatePickerProps
   fromYear?: number;
   disabled?: ((date: Date) => boolean) | { before?: Date; after?: Date };
   onDateSelect: (range: { from: Date; to: Date }) => void;
+  locale?: Locale;
 }
 
 export const CalendarDatePicker = React.forwardRef<
@@ -100,10 +89,19 @@ export const CalendarDatePicker = React.forwardRef<
       disabled,
       onDateSelect,
       variant,
+      locale,
       ...props
     },
     ref
   ) => {
+    const { i18n } = useTranslation();
+    const currentLocale = locale || (i18n.language === 'es' ? es : undefined);
+
+    // Get month names based on locale
+    const months = Array.from({ length: 12 }, (_, i) => 
+      format(new Date(2024, i, 1), 'LLLL', { locale: currentLocale })
+    ).map(month => month.charAt(0).toUpperCase() + month.slice(1));
+
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
     const [selectedRange, setSelectedRange] = React.useState<string | null>(
       numberOfMonths === 2 ? "This Year" : "Today"
@@ -597,7 +595,7 @@ export const CalendarDatePicker = React.forwardRef<
                         }
                       >
                         <SelectTrigger className="hidden sm:flex w-[122px] focus:ring-0 focus:ring-offset-0 font-medium hover:bg-accent hover:text-accent-foreground">
-                          <SelectValue placeholder="Month" />
+                          <SelectValue placeholder={i18n.t("calendar.month")} />
                         </SelectTrigger>
                         <SelectContent>
                           {months.map((month, idx) => (
@@ -615,7 +613,7 @@ export const CalendarDatePicker = React.forwardRef<
                         value={yearFrom ? yearFrom.toString() : undefined}
                       >
                         <SelectTrigger className="hidden sm:flex w-[122px] focus:ring-0 focus:ring-offset-0 font-medium hover:bg-accent hover:text-accent-foreground">
-                          <SelectValue placeholder="Year" />
+                          <SelectValue placeholder={i18n.t("calendar.year")} />
                         </SelectTrigger>
                         <SelectContent>
                           {years.map((year, idx) => (
@@ -638,7 +636,7 @@ export const CalendarDatePicker = React.forwardRef<
                           }
                         >
                           <SelectTrigger className="hidden sm:flex w-[122px] focus:ring-0 focus:ring-offset-0 font-medium hover:bg-accent hover:text-accent-foreground">
-                            <SelectValue placeholder="Month" />
+                            <SelectValue placeholder={i18n.t("calendar.month")} />
                           </SelectTrigger>
                           <SelectContent>
                             {months.map((month, idx) => (
@@ -656,7 +654,7 @@ export const CalendarDatePicker = React.forwardRef<
                           value={yearTo ? yearTo.toString() : undefined}
                         >
                           <SelectTrigger className="hidden sm:flex w-[122px] focus:ring-0 focus:ring-offset-0 font-medium hover:bg-accent hover:text-accent-foreground">
-                            <SelectValue placeholder="Year" />
+                            <SelectValue placeholder={i18n.t("calendar.year")} />
                           </SelectTrigger>
                           <SelectContent>
                             {years.map((year, idx) => (
@@ -679,6 +677,7 @@ export const CalendarDatePicker = React.forwardRef<
                       onSelect={handleDateSelect}
                       numberOfMonths={numberOfMonths}
                       showOutsideDays={false}
+                      locale={currentLocale}
                       disabled={(date: Date) => {
                         if (typeof disabled === 'function') {
                           return disabled(date);

@@ -266,7 +266,7 @@ export function LoanDetails({
                 t("suggest_scenario")
               )}
             </Toggle>
-            <Button variant="secondary" size="sm" className="px-2">
+            <Button variant="secondary" className="px-3">
               <PlayCircle className="h-4 w-4" />
             </Button>
           </div>

@@ -20,6 +20,9 @@ import { CalendarIcon, Check } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { format } from "date-fns"
+import { useTranslation } from "react-i18next"
+import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
+import { cn } from "@/lib/utils"
 
 interface PaymentDetails {
   totalInterestAndInsurance: number
@@ -70,14 +73,8 @@ export function PaymentScenariosPanel({
   onExtraInstallmentDelete
 }: PaymentScenariosProps) {
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [chartKey, setChartKey] = useState(0)
-  const [selectedNewRate, setSelectedNewRate] = useState(false)
-  const [refinancingForm, setRefinancingForm] = useState({
-    newInterestRate: "",
-    newTerm: "",
-    startDate: undefined as Date | undefined
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
   
   const handleInstallmentsChange = () => {
     setChartKey(prev => prev + 1)
@@ -92,8 +89,6 @@ export function PaymentScenariosPanel({
     if (!amortizationId) return
 
     try {
-      setIsSubmitting(true)
-
       const { error } = await supabase
         .from("refinancing_options")
         .insert({
@@ -124,8 +119,6 @@ export function PaymentScenariosPanel({
         description: "Failed to save refinancing option. Please try again.",
         variant: "destructive",
       })
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
@@ -145,9 +138,9 @@ export function PaymentScenariosPanel({
       return (
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-medium">Extra Installments</h3>
+            <h3 className="text-lg font-medium">{t("payment_scenarios.extra_installments.title")}</h3>
             <p className="text-sm text-muted-foreground">
-              Add extra payments to reduce your loan term or monthly payment.
+              {t("payment_scenarios.extra_installments.description")}
             </p>
           </div>
 
@@ -184,7 +177,7 @@ export function PaymentScenariosPanel({
 
   const chartProperty = {
     id: "temp",
-    cost: loanAmount + (parseFloat(refinancingForm.newInterestRate) || 0),
+    cost: loanAmount,
     currency,
     property_insurance: propertyInsurance,
     property_insurance_type: "manual" as "auto" | "manual",
@@ -204,23 +197,23 @@ export function PaymentScenariosPanel({
 
   const content = (
     <>
-      <h2 className="text-sm font-medium mb-4">Payment Scenarios</h2>
+      <h2 className="text-sm font-medium mb-4">{t("payment_scenarios.title")}</h2>
       <Tabs defaultValue="regular" className="w-full">
         <TabsList className="grid w-full grid-cols-4 gap-1">
-          <TabsTrigger value="regular" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">Regular</TabsTrigger>
-          <TabsTrigger value="accelerated" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">Accelerated</TabsTrigger>
-          <TabsTrigger value="lower" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">Lower Payment</TabsTrigger>
-          <TabsTrigger value="new-rate" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">New Rate</TabsTrigger>
+          <TabsTrigger value="regular" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">{t("payment_scenarios.regular")}</TabsTrigger>
+          <TabsTrigger value="accelerated" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">{t("payment_scenarios.accelerated")}</TabsTrigger>
+          <TabsTrigger value="lower" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">{t("payment_scenarios.lower_payment")}</TabsTrigger>
+          <TabsTrigger value="new-rate" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">{t("payment_scenarios.new_rate")}</TabsTrigger>
         </TabsList>
         <TabsContent value="regular" className="mt-4">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                Base mortgage with standard parameters.
+                {t("payment_scenarios.regular_description")}
               </p>
               <div className="flex items-center space-x-2">
                 <Switch id="regular-select" />
-                <Label htmlFor="regular-select">Select</Label>
+                <Label htmlFor="regular-select">{t("payment_scenarios.select")}</Label>
               </div>
             </div>
             <PaymentSummary {...paymentDetails.regular} currency={currency} />
@@ -235,11 +228,11 @@ export function PaymentScenariosPanel({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                Extra payments reduce the term, installment remains constant.
+                {t("payment_scenarios.accelerated_description")}
               </p>
               <div className="flex items-center space-x-2">
                 <Switch id="accelerated-select" />
-                <Label htmlFor="accelerated-select">Select</Label>
+                <Label htmlFor="accelerated-select">{t("payment_scenarios.select")}</Label>
               </div>
             </div>
             <PaymentSummary {...paymentDetails.accelerated} currency={currency} />
@@ -255,11 +248,11 @@ export function PaymentScenariosPanel({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                Extra payments reduce the monthly payment, term remains the same.
+                {t("payment_scenarios.lower_description")}
               </p>
               <div className="flex items-center space-x-2">
                 <Switch id="lower-select" />
-                <Label htmlFor="lower-select">Select</Label>
+                <Label htmlFor="lower-select">{t("payment_scenarios.select")}</Label>
               </div>
             </div>
             <PaymentSummary {...paymentDetails.lower} currency={currency} />
@@ -275,11 +268,11 @@ export function PaymentScenariosPanel({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                Simulate a new interest rate.
+                {t("payment_scenarios.new_rate_description")}
               </p>
               <div className="flex items-center space-x-2">
                 <Switch id="new-rate-select" />
-                <Label htmlFor="new-rate-select">Select</Label>
+                <Label htmlFor="new-rate-select">{t("payment_scenarios.select")}</Label>
               </div>
             </div>
             <PaymentSummary {...paymentDetails.newRate} currency={currency} />
@@ -287,89 +280,13 @@ export function PaymentScenariosPanel({
             <PaymentChart 
               key={`new-rate-${chartKey}`}
               {...baseChartProps}
-              annualInterestRate={parseFloat(refinancingForm.newInterestRate) || annualInterestRate}
-              termYears={parseInt(refinancingForm.newTerm) || termYears}
             />
             
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-medium">New Rate Details</h3>
-                <p className="text-sm text-muted-foreground">
-                  Simulate how your payments would change with a new interest rate.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="new-interest-rate">New Interest Rate (%)</Label>
-                  <Input
-                    id="new-interest-rate"
-                    type="number"
-                    placeholder="Enter new rate"
-                    value={refinancingForm.newInterestRate}
-                    onChange={(e) => setRefinancingForm(prev => ({ ...prev, newInterestRate: e.target.value }))}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="new-term">New Term (Years)</Label>
-                  <Input
-                    id="new-term"
-                    type="number"
-                    placeholder="Enter new term"
-                    value={refinancingForm.newTerm}
-                    onChange={(e) => setRefinancingForm(prev => ({ ...prev, newTerm: e.target.value }))}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Start Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        {refinancingForm.startDate ? (
-                          format(refinancingForm.startDate, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={refinancingForm.startDate}
-                        onSelect={(date) => setRefinancingForm(prev => ({ ...prev, startDate: date || undefined }))}
-                        disabled={(date) =>
-                          date < new Date()
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {amortizationId && (
-                  <Button 
-                    className="w-full"
-                    onClick={handleRefinancingSubmit}
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Saving...
-                      </div>
-                    ) : (
-                      "Save Refinancing Option"
-                    )}
-                  </Button>
-                )}
-              </div>
-            </div>
+            <NewRateForm
+              amortizationId={amortizationId}
+              onSuccess={handleNewRateSuccess}
+              className="space-y-4"
+            />
           </div>
         </TabsContent>
       </Tabs>
@@ -389,7 +306,7 @@ export function PaymentScenariosPanel({
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {t("payment_scenarios.back")}
             </Button>
           </div>
           <div className="flex-1 p-6 overflow-y-auto">
@@ -404,7 +321,7 @@ export function PaymentScenariosPanel({
           className="w-full" 
           onClick={onOpenMobilePanel}
         >
-          View Payment Scenarios
+          {t("payment_scenarios.view_scenarios")}
         </Button>
       </div>
 
