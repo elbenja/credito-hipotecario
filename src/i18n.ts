@@ -111,7 +111,7 @@ const resources = {
       "property_section": "Property Details",
       "monthly_costs_section": "Monthly Costs",
       "bonus_section": "Bonus Details",
-      "amortizations_title": "Amortizations",
+      "amortizations_title": "Amortizations",      
       "amortizations_description": "Calculate and manage your mortgage amortization schedules. Track payments, interest rates, and explore different payment scenarios.",
       "add_amortization": "Add Amortization",
       "loading": "Loading...",
@@ -396,7 +396,7 @@ const resources = {
       "bonus_section": "Detalles del Bono",
       "amortizations_title": "Amortizaciones",
       "amortizations_description": "Calcula y gestiona tus calendarios de amortización hipotecaria. Realiza seguimiento de pagos, tasas de interés y explora diferentes escenarios de pago.",
-      "add_amortization": "Agregar Amortización",esce
+      "add_amortization": "Agregar Amortización",
       "loading": "Cargando...",
       "no_amortizations": "No se encontraron amortizaciones. Crea tu primera amortización haciendo clic en el botón de arriba.",
       "loan_name": "Nombre",
