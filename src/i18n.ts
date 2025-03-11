@@ -175,7 +175,7 @@ const resources = {
         "next_year": "Next year"
       },
       "payment_scenarios": {
-        "title": "Payment Scenarios",
+        "title": "Payment Scenarios and Amortizations",
         "regular": "Regular",
         "accelerated": "Accelerated",
         "lower_payment": "Lower Payment",
@@ -396,7 +396,7 @@ const resources = {
       "bonus_section": "Detalles del Bono",
       "amortizations_title": "Amortizaciones",
       "amortizations_description": "Calcula y gestiona tus calendarios de amortización hipotecaria. Realiza seguimiento de pagos, tasas de interés y explora diferentes escenarios de pago.",
-      "add_amortization": "Agregar Amortización",
+      "add_amortization": "Agregar Amortización",esce
       "loading": "Cargando...",
       "no_amortizations": "No se encontraron amortizaciones. Crea tu primera amortización haciendo clic en el botón de arriba.",
       "loan_name": "Nombre",
@@ -458,11 +458,11 @@ const resources = {
         "next_year": "Año siguiente"
       },
       "payment_scenarios": {
-        "title": "Escenarios de Pago",
+        "title": "Escenarios de Pago y Amortizaciones",
         "regular": "Regular",
         "accelerated": "Plazo",
         "lower_payment": "Cuotas",
-        "new_rate": "Refinanciar",
+        "new_rate": "Compra de Deuda",
         "regular_description": "Hipoteca base con parámetros estándares.",
         "accelerated_description": "Los amortizaciones extra reducen el plazo, la cuota se mantiene constante.",
         "lower_description": "Los amortizaciones extra reducen la cuota mensual, el plazo se mantiene igual.",
