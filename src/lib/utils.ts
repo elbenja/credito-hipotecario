@@ -15,7 +15,7 @@ export function formatCurrency(amount: number | string, currency: "USD" | "PEN" 
   const numericAmount = typeof amount === "string" ? parseFloat(amount) : amount
 
   // Handle invalid numbers
-  if (isNaN(numericAmount)) return currency === "USD" ? "$0.00" : "S/. 0.00"
+  if (isNaN(numericAmount)) return currency === "USD" ? "$0.00" : "S/ 0.00"
 
   const formatter = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
@@ -25,5 +25,5 @@ export function formatCurrency(amount: number | string, currency: "USD" | "PEN" 
   // Format with proper currency symbol and spacing
   return currency === "USD" 
     ? `$${formatter.format(numericAmount)}`
-    : `S/. ${formatter.format(numericAmount)}`
+    : `S/ ${formatter.format(numericAmount)}`
 }

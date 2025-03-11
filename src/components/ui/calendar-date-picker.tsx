@@ -70,7 +70,7 @@ interface CalendarDatePickerProps
   fromYear?: number;
   disabled?: ((date: Date) => boolean) | { before?: Date; after?: Date };
   onDateSelect: (range: { from: Date; to: Date }) => void;
-  locale?: Locale;
+  locale?: Intl.Locale;
 }
 
 export const CalendarDatePicker = React.forwardRef<

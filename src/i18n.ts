@@ -460,8 +460,8 @@ const resources = {
       "payment_scenarios": {
         "title": "Escenarios de Pago",
         "regular": "Regular",
-        "accelerated": "Acelerado",
-        "lower_payment": "Pago Menor",
+        "accelerated": "Plazo",
+        "lower_payment": "Cuotas",
         "new_rate": "Refinanciar",
         "regular_description": "Hipoteca base con parámetros estándares.",
         "accelerated_description": "Los amortizaciones extra reducen el plazo, la cuota se mantiene constante.",

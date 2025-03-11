@@ -291,7 +291,7 @@ For component-specific implementation details, refer to:
    - Standardized money representation across the application
    - Format: "[Symbol] [Amount with thousands separator and 2 decimal places]"
    - Examples:
-     - PEN: "S/. 1,234.56"
+     - PEN: "S/ 1,234.56"
      - USD: "$1,234.56"
    - Implementation details:
      - Centralized `formatCurrency` utility function
