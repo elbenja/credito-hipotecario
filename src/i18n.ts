@@ -430,7 +430,7 @@ const resources = {
       "suggest_scenario": "Sugerir Escenario",
       "suggested": "Sugerido",
       "enter_down_payment": "Ingresa la cuota inicial",
-      "property_percentage": "Porcentage",
+      "property_percentage": "Porcentaje",
       "loan_protection_insurance": "Seguro de Desgravamen",
       "individual_insurance": "Individual ({{rate}}%)",
       "joint_insurance": "Mancomunado ({{rate}}%)",
