@@ -12,7 +12,7 @@ import Auth from "./pages/Auth"
 import NotFound from "./pages/NotFound"
 import Dashboard from "./pages/Dashboard"
 import Properties from "./pages/Properties"
-import Amortizations from "./pages/Amortizations"
+import Mortgages from "./pages/Mortgages"
 import NewAmortization from "./pages/NewAmortization"
 import EditAmortization from "./pages/EditAmortization"
 import Settings from "./pages/Settings"
@@ -62,15 +62,15 @@ const App = () => (
                   }
                 />
                 <Route
-                  path="/amortizations"
+                  path="/mortgages"
                   element={
                     <ProtectedRoute>
-                      <Amortizations />
+                      <Mortgages />
                     </ProtectedRoute>
                   }
                 />
                 <Route
-                  path="/amortizations/new"
+                  path="/mortgages/new"
                   element={
                     <ProtectedRoute>
                       <NewAmortization />
@@ -78,7 +78,7 @@ const App = () => (
                   }
                 />
                 <Route
-                  path="/amortizations/:id"
+                  path="/mortgages/:id"
                   element={
                     <ProtectedRoute>
                       <EditAmortization />

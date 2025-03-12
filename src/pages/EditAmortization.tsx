@@ -169,7 +169,7 @@ export default function EditAmortization() {
 
   useEffect(() => {
     if (amortization && amortization.user_id !== user?.id) {
-      navigate("/amortizations")
+      navigate("/mortgages")
     }
   }, [amortization, user, navigate])
 
@@ -211,7 +211,7 @@ export default function EditAmortization() {
       // Only navigate if this was an explicit form submission
       const isExplicitSubmit = (event?.target as HTMLElement)?.tagName === 'FORM'
       if (isExplicitSubmit) {
-        navigate("/amortizations")
+        navigate("/mortgages")
       }
     } catch (error) {
       console.error("Error updating amortization:", error)
@@ -239,7 +239,7 @@ export default function EditAmortization() {
         description: t("success_delete"),
       })
 
-      navigate("/amortizations")
+      navigate("/mortgages")
     } catch (error) {
       console.error("Error deleting amortization:", error)
       toast({
@@ -346,8 +346,8 @@ export default function EditAmortization() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <Link to="/amortizations" className="transition-colors hover:text-foreground">
-                    {t("amortizations")}
+                  <Link to="/mortgages" className="transition-colors hover:text-foreground">
+                    {t("mortgages")}
                   </Link>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
@@ -364,8 +364,8 @@ export default function EditAmortization() {
           <p className="text-muted-foreground mb-4">
             {t("amortization_not_found_description")}
           </p>
-          <Button onClick={() => navigate("/amortizations")}>
-            {t("back_to_amortizations")}
+          <Button onClick={() => navigate("/mortgages")}>
+            {t("back_to_mortgages")}
           </Button>
         </div>
       </DashboardLayout>
@@ -378,7 +378,7 @@ export default function EditAmortization() {
       title: "Error",
       description: "Could not load property details. Please try again.",
     })
-    navigate("/amortizations")
+    navigate("/mortgages")
     return null
   }
 
@@ -389,8 +389,8 @@ export default function EditAmortization() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <Link to="/amortizations" className="transition-colors hover:text-foreground">
-                  {t("amortizations")}
+                <Link to="/mortgages" className="transition-colors hover:text-foreground">
+                  {t("mortgages")}
                 </Link>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -442,7 +442,7 @@ export default function EditAmortization() {
                     type="button" 
                     variant="secondary" 
                     className="w-full"
-                    onClick={() => navigate("/amortizations")}
+                    onClick={() => navigate("/mortgages")}
                   >
                     {t("cancel")}
                   </Button>

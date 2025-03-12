@@ -40,7 +40,7 @@ type Amortization = {
   property_id: string
 }
 
-export default function Amortizations() {
+export default function Mortgages() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { t } = useTranslation()
@@ -86,7 +86,7 @@ export default function Amortizations() {
   })
 
   const headerActions = (
-    <Button onClick={() => navigate("/amortizations/new")}>
+    <Button onClick={() => navigate("/mortgages/new")}>
       <Plus className="mr-2 h-4 w-4" />
       {t('add_amortization')}
     </Button>
@@ -142,7 +142,7 @@ export default function Amortizations() {
                     <TableRow 
                       key={amortization.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/amortizations/${amortization.id}`)}
+                      onClick={() => navigate(`/mortgages/${amortization.id}`)}
                     >
                       <TableCell className="w-[20%]">{amortization.name}</TableCell>
                       <TableCell className="w-[12%]">
@@ -179,4 +179,4 @@ export default function Amortizations() {
       </div>
     </DashboardLayout>
   )
-}
+} 

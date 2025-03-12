@@ -224,7 +224,10 @@ export default function NewAmortization() {
         if (installmentsError) throw installmentsError
       }
 
-      window.location.href = "/amortizations"
+      // Navigate to the amortizations page
+      setTimeout(() => {
+        window.location.href = "/mortgages"
+      }, 1500)
     } catch (error) {
       console.error("Error saving amortization:", error)
     }
@@ -237,8 +240,12 @@ export default function NewAmortization() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <Link to="/amortizations" className="transition-colors hover:text-foreground">
-                  {t("amortizations")}
+                <Link to="/dashboard">{t('dashboard')}</Link>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <Link to="/mortgages" className="transition-colors hover:text-foreground">
+                  {t('amortizations_title')}
                 </Link>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
