@@ -45,7 +45,12 @@ export function EarlyAccessForm() {
     try {
       setIsSubmitting(true)
       
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/early-access-signup`, {
+      // Get the base URL for the API
+      const baseUrl = import.meta.env.PROD 
+        ? '/.netlify/functions'  // Production URL
+        : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`; // Development URL
+
+      const response = await fetch(`${baseUrl}/early-access-signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
