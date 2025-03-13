@@ -36,7 +36,21 @@ export default function ComingSoonPage() {
               alt="Person working on laptop"
               className="relative z-10 mx-auto mt-12 max-w-md rounded-lg"
             />
-
+            <div className="mt-12 z-10">
+              <a 
+                href="https://www.instagram.com/creditohipotecar.io/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 text-black hover:text-white transition-colors duration-200"
+              >
+                <img
+                  src="/lovable-uploads/Instagram.svg"
+                  alt="Instagram"
+                  className="w-6 h-6"
+                />
+                <span>{t('follow_us_on_instagram')}</span>
+              </a>
+            </div>
           </div>
         </div>
         <div className="flex items-center justify-center p-6 lg:p-10">

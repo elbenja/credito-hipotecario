@@ -5,6 +5,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 const resources = {
   en: {
     translation: {
+      "follow_us_on_instagram": "Follow us on Instagram",
       "coming_soon": "COMING SOON",
       "analyze_scenarios": "Analyze different scenarios, and clearly understand your credit.",
       "get_early_access": "Get Early Access",
@@ -97,8 +98,7 @@ const resources = {
       "loading_properties": "Loading properties...",
       "select_property": "Select a property",
       "property_bonus": "Bonus",
-      "edit_property_title": "Edit Property",
-      "no_properties": "No properties found",
+      "edit_property_title": "Edit Property", 
       "error_loading_properties": "Error loading properties",
       "error_loading_bonus_rules": "Error loading bonus rules",
       "error_fetching_property": "Error fetching property details",
@@ -289,6 +289,7 @@ const resources = {
   },
   es: {
     translation: {
+      "follow_us_on_instagram": "Síguenos en Instagram",
       "coming_soon": "PRONTO",
       "analyze_scenarios": "Analiza diferentes escenarios y comprende claramente tu crédito.",
       "get_early_access": "Acceso Anticipado",
