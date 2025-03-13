@@ -41,14 +41,14 @@ export default function ComingSoonPage() {
                 href="https://www.instagram.com/creditohipotecar.io/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-4 text-black hover:text-white transition-colors duration-200"
+                className="flex items-center gap-2 text-black hover:text-white transition-colors duration-200"
               >
                 <img
                   src="/lovable-uploads/Instagram.svg"
                   alt="Instagram"
                   className="w-6 h-6"
                 />
-                <span>{t('follow_us_on_instagram')}</span>
+                <span className="font-bold">{t('follow_us_on_instagram')}</span>
               </a>
             </div>
           </div>
