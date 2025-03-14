@@ -4,6 +4,12 @@ import { useToast } from "@/hooks/use-toast"
 import { ExtraInstallmentForm } from "./extra-installment-form"
 import { ExtraInstallmentsTable } from "./extra-installments-table"
 import { useTranslation } from "react-i18next"
+import { useQueryClient } from "@tanstack/react-query"
+
+interface ExtraInstallmentFormValues {
+  paymentDate: Date
+  amount: number
+}
 
 interface ExtraInstallment {
   id: string
@@ -36,6 +42,7 @@ export function ExtraInstallmentsSection({
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [installments, setInstallments] = useState<ExtraInstallment[]>([])
+  const queryClient = useQueryClient()
 
   // Load existing installments when component mounts
   useEffect(() => {
@@ -68,69 +75,43 @@ export function ExtraInstallmentsSection({
     }
   }, [amortizationId])
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: ExtraInstallmentFormValues) => {
     try {
-      setIsLoading(true)
-      
-      // Parse the amount value, removing any non-numeric characters and converting to float
-      const amount = parseFloat(values.amount.replace(/[^0-9.]/g, ""))
-      
-      // Validate the amount
-      if (isNaN(amount) || amount <= 0) {
-        throw new Error(t("extra_installments_section.error.invalid_amount"))
-      }
-
-      // Validate frequency value
-      if (values.frequency !== "monthly" && values.frequency !== "one-time") {
-        throw new Error(t("extra_installments_section.error.invalid_frequency"))
-      }
-
-      const installmentData: ExtraInstallmentData = {
+      const installmentData = {
         amortization_id: amortizationId,
-        amount: amount,
-        frequency: values.frequency as "monthly" | "one-time",
-        start_date: values.start_date.toISOString()
+        payment_date: values.paymentDate,
+        amount: values.amount,
       }
 
-      console.log('Sending data to database:', installmentData)
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("extra_installments")
         .insert([installmentData])
-        .select("id, amount, frequency, start_date")
-        .single()
 
       if (error) {
         console.error('Supabase error:', error)
         throw error
       }
 
-      if (data) {
-        const newInstallment: ExtraInstallment = {
-          id: data.id,
-          amount: data.amount,
-          frequency: data.frequency as "monthly" | "one-time",
-          start_date: data.start_date
-        }
-        setInstallments([...installments, newInstallment])
-        onInstallmentsChange()
-      }
-
+      await queryClient.invalidateQueries({
+        queryKey: ["extra-installments", amortizationId]
+      })
+      await queryClient.invalidateQueries({
+        queryKey: ["scenarios", amortizationId]
+      })
+      
+      onInstallmentsChange()
       toast({
-        title: t("extra_installments_section.success.add"),
-        description: t("extra_installments_section.success.add"),
+        title: t("success"),
+        description: t("extra_installment_added"),
+        variant: "default"
       })
     } catch (error) {
       console.error("Error details:", error)
       toast({
-        variant: "destructive",
-        title: t("extra_installments_section.error.title"),
-        description: error instanceof Error 
-          ? error.message 
-          : t("extra_installments_section.error.add"),
+        title: t("error"),
+        description: t("error_adding_extra_installment"),
+        variant: "destructive"
       })
-    } finally {
-      setIsLoading(false)
     }
   }
 

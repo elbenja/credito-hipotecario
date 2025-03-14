@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from "react"
 import { User, Session } from "@supabase/supabase-js"
 import { supabase } from "@/integrations/supabase/client"
@@ -7,18 +6,43 @@ type AuthContextType = {
   user: User | null
   session: Session | null
   loading: boolean
+  signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({ 
   user: null, 
   session: null, 
-  loading: true 
+  loading: true,
+  signOut: async () => {} 
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        throw error
+      }
+      // Force clear the session and user state even if the API call fails
+      setSession(null)
+      setUser(null)
+      // Clear any stored auth data from localStorage
+      localStorage.removeItem('supabase.auth.token')
+      localStorage.removeItem('supabase.auth.expires')
+      // Reload the page to ensure clean state
+      window.location.href = '/'
+    } catch (error) {
+      console.error('Error during sign out:', error)
+      // Still clear the session and user state
+      setSession(null)
+      setUser(null)
+      window.location.href = '/'
+    }
+  }
 
   useEffect(() => {
     // Initialize the session from local storage
@@ -29,20 +53,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("Auth state changed:", _event, session?.user?.id)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
-      setLoading(false)
     })
 
-    return () => {
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, session, loading }}>
+    <AuthContext.Provider value={{ user, session, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   )

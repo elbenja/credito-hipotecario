@@ -52,35 +52,16 @@ export default function Mortgages() {
 
       const { data: properties, error: propertiesError } = await supabase
         .from("properties")
-        .select(`
-          id,
-          name,
-          currency,
-          price_cost,
-          amortizations (
-            id,
-            name,
-            loan_amount,
-            down_payment,
-            interest_rate,
-            term_years,
-            installments_per_year,
-            installment_amount,
-            total_interest,
-            total_payment
-          )
-        `)
+        .select("*")
         .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
 
       if (propertiesError) {
         console.error("Error fetching properties:", propertiesError)
         return []
       }
 
-      // Add logging to debug the data
-      console.log("Properties data:", properties)
-
-      return (properties || []) as Property[]
+      return properties as Property[]
     },
     enabled: !!user,
   })

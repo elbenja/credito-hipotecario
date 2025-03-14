@@ -8,4 +8,35 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: {
+    persistSession: true, // Enable session persistence
+    detectSessionInUrl: true, // Enable session detection in URL
+    autoRefreshToken: true, // Enable automatic token refresh
+    storageKey: 'supabase.auth.token', // Specify storage key
+    storage: {
+      getItem: (key) => {
+        try {
+          return localStorage.getItem(key)
+        } catch (error) {
+          console.error('Error accessing localStorage:', error)
+          return null
+        }
+      },
+      setItem: (key, value) => {
+        try {
+          localStorage.setItem(key, value)
+        } catch (error) {
+          console.error('Error setting localStorage:', error)
+        }
+      },
+      removeItem: (key) => {
+        try {
+          localStorage.removeItem(key)
+        } catch (error) {
+          console.error('Error removing from localStorage:', error)
+        }
+      },
+    },
+  },
+});

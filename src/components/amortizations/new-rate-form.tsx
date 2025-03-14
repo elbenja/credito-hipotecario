@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
+import { useQueryClient } from "@tanstack/react-query"
 
 import {
   Form,
@@ -49,6 +50,7 @@ export function NewRateForm({
   const { toast } = useToast()
   const { t } = useTranslation()
   const [refinancingOptions, setRefinancingOptions] = useState<RefinancingOption[]>([])
+  const queryClient = useQueryClient()
   
   useEffect(() => {
     if (!amortizationId) return
@@ -150,48 +152,35 @@ export function NewRateForm({
     );
   };
 
-  async function onSubmit(values: RefinancingOptionFormValues) {
-    if (!amortizationId) return
-
+  const handleSubmit = async (values: RefinancingOptionFormValues) => {
     try {
-      setIsSubmitting(true)
-      console.log("Submitting new refinancing option:", { ...values, amortization_id: amortizationId })
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("refinancing_options")
-        .insert({
+        .insert([{
           amortization_id: amortizationId,
           new_interest_rate: values.new_interest_rate,
           effective_date: format(values.effective_date, 'yyyy-MM-dd'),
           new_term_years: values.new_term_years,
-        })
-        .select()
+        }])
 
-      if (error) throw error
+      if (error) {
+        console.error("Error saving refinancing option:", error)
+        throw error
+      }
 
-      console.log("Successfully added refinancing option:", data)
+      await queryClient.invalidateQueries({
+        queryKey: ["refinancing-options", amortizationId]
+      })
+      await queryClient.invalidateQueries({
+        queryKey: ["scenarios", amortizationId]
+      })
       
+      form.reset()
+      onSuccess?.()
       toast({
         title: t("payment_scenarios.new_rate_form.success_title"),
         description: t("payment_scenarios.new_rate_form.success_message"),
       })
-
-      // Fetch updated data
-      const { data: updatedData, error: fetchError } = await supabase
-        .from("refinancing_options")
-        .select("*")
-        .eq("amortization_id", amortizationId)
-        .order("effective_date", { ascending: true })
-
-      if (fetchError) {
-        console.error("Error fetching updated data:", fetchError)
-      } else {
-        console.log("Updated refinancing options:", updatedData)
-        setRefinancingOptions(updatedData)
-      }
-
-      form.reset()
-      onSuccess?.()
     } catch (error) {
       console.error("Error saving refinancing option:", error)
       toast({
@@ -199,15 +188,13 @@ export function NewRateForm({
         description: t("payment_scenarios.new_rate_form.error_message"),
         variant: "destructive",
       })
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
   return (
     <div className="space-y-6">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className={className}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className={className}>
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">{t("payment_scenarios.new_rate_form.title")}</h3>
             <div className="grid grid-cols-[1fr_1fr_1fr_88px] gap-4">
