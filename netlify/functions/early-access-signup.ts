@@ -16,9 +16,41 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
   }
 })
 
+function getClientIp(headers: { [key: string]: string | undefined }): { ip: string; source: string } {
+  // Log all headers for debugging
+  console.log('Request headers:', headers)
+
+  // Check headers in priority order
+  const headerChecks = [
+    { name: 'x-nf-client-connection-ip', label: 'Netlify' },
+    { name: 'x-forwarded-for', label: 'Forward Chain' },
+    { name: 'cf-connecting-ip', label: 'Cloudflare' },
+    { name: 'x-real-ip', label: 'Nginx' },
+    { name: 'true-client-ip', label: 'Akamai' },
+    { name: 'x-client-ip', label: 'CDN' }
+  ]
+
+  for (const { name, label } of headerChecks) {
+    const value = headers[name]
+    if (value) {
+      // For x-forwarded-for, take the first IP in the chain
+      const ip = name === 'x-forwarded-for' ? value.split(',')[0].trim() : value
+      console.log(`Found IP ${ip} from ${label} header: ${name}`)
+      return { ip, source: `${label} (${name})` }
+    }
+  }
+
+  console.log('No IP address found in headers')
+  return { ip: 'unknown', source: 'none' }
+}
+
 const handler: Handler = async (event, context) => {
   // Log the incoming request
-  console.log('Function invoked with event:', JSON.stringify(event))
+  console.log('Function invoked with event:', {
+    method: event.httpMethod,
+    path: event.path,
+    headers: event.headers,
+  })
 
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
@@ -33,6 +65,15 @@ const handler: Handler = async (event, context) => {
     const body = JSON.parse(event.body || '{}')
     console.log('Parsed request body:', body)
 
+    // Check honeypot field
+    if (body.website) {
+      console.log('Honeypot field filled, likely spam')
+      return {
+        statusCode: 200, // Return 200 to not alert bots
+        body: JSON.stringify({ message: 'Thank you for your submission' })
+      }
+    }
+
     // Validate required fields
     if (!body.email) {
       return {
@@ -41,13 +82,19 @@ const handler: Handler = async (event, context) => {
       }
     }
 
+    // Get client IP
+    const { ip, source } = getClientIp(event.headers)
+
     // Insert data into Supabase
     const { data, error } = await supabase
       .from('early_access_signups')
       .insert([
         {
           email: body.email,
-          name: body.name || null,
+          language: body.language || 'en',
+          ip_address: ip,
+          ip_source: source,
+          headers: event.headers, // Store headers for debugging
           created_at: new Date().toISOString()
         }
       ])
