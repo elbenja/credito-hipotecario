@@ -481,13 +481,13 @@ export const resources = {
         "lower_payment": "Cuotas",
         "new_rate": "Compra de Deuda",
         "regular_description": "Hipoteca base con parámetros estándares.",
-        "accelerated_description": "Los hipotecas extra reducen el plazo, la cuota se mantiene constante.",
-        "lower_description": "Los hipotecas extra reducen la cuota mensual, el plazo se mantiene igual.",
-        "new_rate_description": "Simula un refinanciamiento con una nueva tasa de interés.",
+        "accelerated_description": "Los amortizaciones extra reducen el plazo, la cuota se mantiene constante.",
+        "lower_description": "Los amortizaciones extra reducen la cuota mensual, el plazo se mantiene igual.",
+        "new_rate_description": "Simula una compra de deuda con una nueva tasa de interés.",
         "select": "Seleccionar",
         "extra_installments": {
           "title": "Cuotas Extra",
-          "description": "Agrega hipotecas extra para reducir el plazo del préstamo o la cuota mensual."
+          "description": "Agrega amortizaciones extra para reducir el plazo del préstamo o la cuota mensual."
         },
         "new_rate_details": {
           "title": "Detalles de Nueva Tasa",
@@ -508,7 +508,7 @@ export const resources = {
         "view_scenarios": "Ver Escenarios de Pago",
         "back": "Volver",
         "new_rate_form": {
-          "title": "Opciones de Refinanciamiento",
+          "title": "Opciones de Compra de Deuda",
           "new_interest_rate": "Nueva Tasa de Interés",
           "new_term": "Nuevo Plazo",
           "start_date": "Fecha de Inicio",
