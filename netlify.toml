@@ -7,6 +7,8 @@
   command = "npm run dev"
   port = 8888
   targetPort = 5173
+  publish = "dist"
+  functions = "netlify/functions"
 
 [[redirects]]
   from = "/*"
@@ -15,6 +17,7 @@
 
 [functions]
   node_bundler = "esbuild"
+  external_node_modules = ["@supabase/supabase-js"]
 
 [build.environment]
   NODE_VERSION = "18" 
