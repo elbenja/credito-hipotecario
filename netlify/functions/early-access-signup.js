@@ -1,8 +1,17 @@
 const { createClient } = require('@supabase/supabase-js')
 
+// Log environment variables (temporarily for debugging)
+console.log('URL:', process.env.VITE_SUPABASE_URL)
+console.log('KEY exists:', !!process.env.VITE_SUPABASE_ANON_KEY)
+
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_ANON_KEY
+  process.env.VITE_SUPABASE_ANON_KEY,
+  {
+    auth: {
+      persistSession: false
+    }
+  }
 )
 
 exports.handler = async (event, context) => {
@@ -26,6 +35,9 @@ exports.handler = async (event, context) => {
   try {
     const { email, language, website } = JSON.parse(event.body)
 
+    // Log the received data (temporarily for debugging)
+    console.log('Received data:', { email, language, website })
+
     // Honeypot check
     if (website) {
       return {
@@ -46,7 +58,10 @@ exports.handler = async (event, context) => {
       ])
       .select()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error:', error)
+      throw error
+    }
 
     return {
       statusCode: 200,
