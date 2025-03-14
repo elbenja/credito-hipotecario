@@ -25,7 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/components/theme-provider"
 
 function PropertyIcon({ className }: { className?: string }) {
   return (

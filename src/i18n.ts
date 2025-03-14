@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-const resources = {
+export const resources = {
   en: {
     translation: {
       "follow_us_on_instagram": "Follow us on Instagram",
@@ -98,7 +98,7 @@ const resources = {
       "loading_properties": "Loading properties...",
       "select_property": "Select a property",
       "property_bonus": "Bonus",
-      "edit_property_title": "Edit Property", 
+      "edit_property_title": "Edit Property",
       "error_loading_properties": "Error loading properties",
       "error_loading_bonus_rules": "Error loading bonus rules",
       "error_fetching_property": "Error fetching property details",
@@ -284,7 +284,21 @@ const resources = {
           "frequency_once": "Once",
           "frequency_monthly": "Monthly"
         }
-      }
+      },
+      "early_access_signups": "Early Access Signups",
+      "export_to_csv": "Export to CSV",
+      "search_by_email": "Search by email...",
+      "filter_by_status": "Filter by status",
+      "all": "All",
+      "unverified": "Unverified",
+      "verified": "Verified",
+      "email": "Email",
+      "created_at": "Created At",
+      "verified_at": "Verified At",
+      "loading": "Loading",
+      "no_signups_found": "No signups found",
+      "not_verified": "Not verified",
+      "unauthorized": "Unauthorized Access"
     }
   },
   es: {
@@ -569,7 +583,21 @@ const resources = {
           "frequency_once": "Única vez",
           "frequency_monthly": "Mensual"
         }
-      }
+      },
+      "early_access_signups": "Registros al Acceso Anticipado",
+      "export_to_csv": "Exportar a CSV",
+      "search_by_email": "Buscar por correo...",
+      "filter_by_status": "Filtrar por estado",
+      "all": "Todos",
+      "unverified": "No verificado",
+      "verified": "Verificado",
+      "email": "Correo",
+      "created_at": "Fecha de Creación",
+      "verified_at": "Fecha de Verificación",
+      "loading": "Cargando",
+      "no_signups_found": "No se encontraron registros",
+      "not_verified": "No verificado",
+      "unauthorized": "Acceso No Autorizado"
     }
   }
 };

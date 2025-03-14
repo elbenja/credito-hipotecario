@@ -1,15 +1,15 @@
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/components/theme-provider"
 import { Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { LanguageSwitcher } from "@/components/ui/language-switcher"
 import { useTranslation } from "react-i18next"
 
 export default function Settings() {
-  const { theme, setTheme } = useTheme()
   const { t } = useTranslation()
+  const { theme, setTheme } = useTheme()
 
   return (
     <DashboardLayout

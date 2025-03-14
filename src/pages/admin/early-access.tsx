@@ -18,6 +18,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Download, Search } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 
 type Signup = {
   id: string
@@ -30,18 +33,58 @@ type Signup = {
 }
 
 export default function EarlyAccessAdmin() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
   const [signups, setSignups] = useState<Signup[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
 
   useEffect(() => {
-    fetchSignups()
+    checkAdminStatus()
   }, [])
+
+  const checkAdminStatus = async () => {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser()
+      
+      if (error || !user) {
+        toast.error(t('please_login'))
+        navigate('/auth')
+        return
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (profileError) {
+        toast.error(t('error_fetching_profile'))
+        navigate('/auth')
+        return
+      }
+
+      if (!profile.is_admin) {
+        toast.error(t('admin_only'))
+        navigate('/')
+        return
+      }
+
+      setIsAdmin(true)
+      fetchSignups()
+    } catch (error) {
+      toast.error(t('error_checking_admin'))
+      navigate('/auth')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   async function fetchSignups() {
     try {
-      setLoading(true)
       const { data, error } = await supabase
         .from("early_access_signups")
         .select("*")
@@ -51,9 +94,16 @@ export default function EarlyAccessAdmin() {
       setSignups(data || [])
     } catch (error) {
       console.error("Error fetching signups:", error)
-    } finally {
-      setLoading(false)
     }
+  }
+
+  // If still checking admin status or not an admin, show loading
+  if (isAdmin === null || !isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-lg">{t("loading")}...</p>
+      </div>
+    )
   }
 
   async function exportToCSV() {
@@ -92,12 +142,12 @@ export default function EarlyAccessAdmin() {
   })
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-4 px-2 sm:py-10 sm:px-10">
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Early Access Signups</h1>
+        <h1 className="text-3xl font-bold">{t("early_access_signups")}</h1>
         <Button onClick={exportToCSV}>
           <Download className="mr-2 h-4 w-4" />
-          Export to CSV
+          {t("export_to_csv")}
         </Button>
       </div>
 
@@ -105,7 +155,7 @@ export default function EarlyAccessAdmin() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by email..."
+            placeholder={t("search_by_email")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -116,12 +166,12 @@ export default function EarlyAccessAdmin() {
           onValueChange={(value) => setStatusFilter(value)}
         >
           <SelectTrigger className="w-40">
-            <SelectValue placeholder="Filter by status" />
+            <SelectValue placeholder={t("filter_by_status")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="unverified">Unverified</SelectItem>
-            <SelectItem value="verified">Verified</SelectItem>
+            <SelectItem value="all">{t("all")}</SelectItem>
+            <SelectItem value="unverified">{t("unverified")}</SelectItem>
+            <SelectItem value="verified">{t("verified")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -130,24 +180,24 @@ export default function EarlyAccessAdmin() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Email</TableHead>
-              <TableHead>Language</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead>Verified At</TableHead>
+              <TableHead>{t("email")}</TableHead>
+              <TableHead>{t("language")}</TableHead>
+              <TableHead className="hidden sm:table-cell">{t("status")}</TableHead>
+              <TableHead>{t("created_at")}</TableHead>
+              <TableHead className="hidden sm:table-cell">{t("verified_at")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center">
-                  Loading...
+                  {t("loading")}...
                 </TableCell>
               </TableRow>
             ) : filteredSignups.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center">
-                  No signups found
+                  {t("no_signups_found")}
                 </TableCell>
               </TableRow>
             ) : (
@@ -155,14 +205,14 @@ export default function EarlyAccessAdmin() {
                 <TableRow key={signup.id}>
                   <TableCell>{signup.email}</TableCell>
                   <TableCell className="capitalize">{signup.language}</TableCell>
-                  <TableCell className="capitalize">{signup.status}</TableCell>
+                  <TableCell className="hidden sm:table-cell capitalize">{signup.status}</TableCell>
                   <TableCell>
                     {new Date(signup.created_at).toLocaleString()}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     {signup.verified_at
                       ? new Date(signup.verified_at).toLocaleString()
-                      : "Not verified"}
+                      : t("not_verified")}
                   </TableCell>
                 </TableRow>
               ))
