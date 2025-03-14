@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Download, Search } from "lucide-react"
+import { Download, Search, Users } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -144,7 +144,11 @@ export default function EarlyAccessAdmin() {
   return (
     <div className="container mx-auto py-4 px-2 sm:py-10 sm:px-10">
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">{t("early_access_signups")}</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold">{t("early_access_signups")}  
+          <span className="text-sm"> {filteredSignups.length}</span></h1>
+      
+        </div>
         <Button onClick={exportToCSV}>
           <Download className="mr-2 h-4 w-4" />
           {t("export_to_csv")}
@@ -181,7 +185,7 @@ export default function EarlyAccessAdmin() {
           <TableHeader>
             <TableRow>
               <TableHead>{t("email")}</TableHead>
-              <TableHead>{t("language")}</TableHead>
+              <TableHead className="hidden sm:table-cell">{t("language")}</TableHead>
               <TableHead className="hidden sm:table-cell">{t("status")}</TableHead>
               <TableHead>{t("created_at")}</TableHead>
               <TableHead className="hidden sm:table-cell">{t("verified_at")}</TableHead>
@@ -204,7 +208,7 @@ export default function EarlyAccessAdmin() {
               filteredSignups.map((signup) => (
                 <TableRow key={signup.id}>
                   <TableCell>{signup.email}</TableCell>
-                  <TableCell className="capitalize">{signup.language}</TableCell>
+                  <TableCell className="capitalize hidden sm:table-cell">{signup.language}</TableCell>
                   <TableCell className="hidden sm:table-cell capitalize">{signup.status}</TableCell>
                   <TableCell>
                     {new Date(signup.created_at).toLocaleString()}
