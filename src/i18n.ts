@@ -517,17 +517,17 @@ export const resources = {
           "add_button": "Agregar",
           "saving": "Guardando...",
           "success_title": "Éxito",
-          "success_message": "Opción de refinanciamiento guardada exitosamente",
+          "success_message": "Opción de compra de deuda guardada exitosamente",
           "error_title": "Error",
-          "error_message": "Error al guardar la opción de refinanciamiento. Por favor, intenta nuevamente.",
-          "no_options": "Aún no hay opciones de refinanciamiento",
+          "error_message": "Error al guardar la opción de compra de deuda. Por favor, intenta nuevamente.",
+          "no_options": "Aún no hay opciones de compra de deuda",
           "table": {
             "number": "#",
             "interest_rate": "Tasa de Interés - TEA",
             "new_term": "Nuevo Plazo",
             "start_date": "Fecha de Inicio",
             "actions": "Acciones",
-            "delete_tooltip": "Eliminar opción de refinanciamiento"
+            "delete_tooltip": "Eliminar opción de compra de deuda"
           }
         }
       },
@@ -547,10 +547,10 @@ export const resources = {
         "years_short": "{{value}}a"
       },
       "extra_installments_section": {
-        "title": "Hipotecas Extra",
+        "title": "Amortizaciones Extra",
         "success": {
-          "add": "Hipoteca extra agregada exitosamente",
-          "delete": "Hipoteca extra eliminada exitosamente"
+          "add": "Amortización extra agregada exitosamente",
+          "delete": "Amortización extra eliminada exitosamente"
         },
         "error": {
           "title": "Error",
@@ -578,8 +578,8 @@ export const resources = {
           "frequency": "Frecuencia",
           "date": "Fecha",
           "actions": "Acciones",
-          "delete_tooltip": "Eliminar hipoteca",
-          "no_installments": "No hay hipotecas extra agregadas",
+          "delete_tooltip": "Eliminar Amortización",
+          "no_installments": "No hay amortizaciones extra agregadas",
           "frequency_once": "Única vez",
           "frequency_monthly": "Mensual"
         }
