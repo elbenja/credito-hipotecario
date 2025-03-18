@@ -92,7 +92,7 @@ export class AmortizationDataService {
         ? baseInstallment * 2
         : baseInstallment;
       
-      // Calculate monthly interest
+      // Calculate interest
       const interest = beginBalance * monthlyRate;
       
       // Calculate loan protection as a percentage of the beginning balance
@@ -103,9 +103,16 @@ export class AmortizationDataService {
       const currentLoanProtection = isDoublePaymentMonth ? monthlyLoanProtection * 2 : monthlyLoanProtection;
       
       // Calculate principal (part of payment that reduces loan)
-      // This is what remains after paying interest and both insurances
-      // For double payment months, the second payment goes fully to principal
-      const principal = monthlyPayment - interest - currentPropertyInsurance - currentLoanProtection;
+      // For the final payment, principal must exactly equal beginning balance
+      // For other payments, principal is payment minus interest and insurances
+      let principal = 0;
+      if (i === totalMonths - 1) {
+        // Final payment - principal equals remaining balance
+        principal = beginBalance;
+      } else {
+        // Regular payment - principal is payment minus interest and insurances
+        principal = monthlyPayment - interest - currentPropertyInsurance - currentLoanProtection;
+      }
       
       // Calculate ending balance
       const endBalance = i === totalMonths - 1 ? 0 : beginBalance - principal;
