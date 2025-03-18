@@ -4,7 +4,7 @@ export interface AmortizationRow {
   row: number;
   date: Date;
   monthlyPayment: number;
-  monthlyInstallment: number;
+  baseInstallment: number;
   interestAndPayments: number;
   principal: number;
   interest: number;
@@ -33,7 +33,14 @@ export interface AmortizationCalculationParams {
 
 export class AmortizationDataService {
   private calculateMonthlyRate(interestRate: number, installmentsPerYear: number): number {
-    return (interestRate / 100) / installmentsPerYear;
+    // Convert annual percentage rate to decimal
+    const annualRate = interestRate / 100;
+    
+    // For effective monthly rate: (1 + annual_rate)^(1/12) - 1
+    // This properly accounts for compounding
+    // Note: For 12 installments per year, this uses standard monthly compounding
+    //       For 14 installments, we still use monthly compounding (divide by 12) as per Peruvian system
+    return Math.pow(1 + annualRate, 1/12) - 1;
   }
 
   public calculateAmortizationSchedule(params: AmortizationCalculationParams): AmortizationRow[] {
@@ -52,12 +59,15 @@ export class AmortizationDataService {
     const monthlyRate = this.calculateMonthlyRate(interestRate, installmentsPerYear);
     const totalMonths = termYears * 12;
 
-    // Calculate base monthly installment using the same method as TestCalculator
-    const baseMonthlyInstallment = this.findCorrectMonthlyInstallment(
+    // Calculate the base monthly payment that will pay off the loan in the given term
+    // This is the fixed monthly payment amount (excluding interest and insurances)
+    const baseMonthlyPayment = this.findCorrectMonthlyInstallment(
       loanAmount,
       monthlyRate,
       totalMonths,
-      installmentsPerYear
+      installmentsPerYear,
+      propertyInsurance,
+      loanProtection
     );
 
     const rows: AmortizationRow[] = [];
@@ -66,28 +76,50 @@ export class AmortizationDataService {
 
     for (let i = 0; i < totalMonths; i++) {
       const currentMonth = currentDate.getMonth();
+      // July (6) and December (11) are double payment months for 14 installments
       const isDoublePaymentMonth = installmentsPerYear === 14 && (currentMonth === 6 || currentMonth === 11);
-      const monthlyInstallment = isDoublePaymentMonth ? baseMonthlyInstallment * 2 : baseMonthlyInstallment;
       
-      // Insurance amounts
+      // The base installment is the same for all months in both payment options
+      // This is the principal + interest component without insurances
+      const baseInstallment = baseMonthlyPayment;
+      
+      // For the monthly payment:
+      // - For 12-installment option: Always equal to baseInstallment
+      // - For 14-installment option: 
+      //   - Regular months: Equal to baseInstallment
+      //   - July & December: Equal to 2 * baseInstallment
+      const monthlyPayment = isDoublePaymentMonth 
+        ? baseInstallment * 2
+        : baseInstallment;
+      
+      // Calculate monthly interest
+      const interest = beginBalance * monthlyRate;
+      
+      // Calculate loan protection as a percentage of the beginning balance
+      const monthlyLoanProtection = beginBalance * (loanProtection / 100);
+      
+      // Insurance amounts (adjusted for double payment months)
       const currentPropertyInsurance = isDoublePaymentMonth ? propertyInsurance * 2 : propertyInsurance;
-      const currentLoanProtection = isDoublePaymentMonth ? loanProtection * 2 : loanProtection;
-      const monthlyPaymentAmount = monthlyInstallment + currentPropertyInsurance + currentLoanProtection;
+      const currentLoanProtection = isDoublePaymentMonth ? monthlyLoanProtection * 2 : monthlyLoanProtection;
       
-      const interest = Number((beginBalance * monthlyRate).toFixed(10));
-      const principal = Number((monthlyInstallment - interest).toFixed(10));
-      const endBalance = i === totalMonths - 1 ? 0 : Number((beginBalance - principal).toFixed(10));
+      // Calculate principal (part of payment that reduces loan)
+      // This is what remains after paying interest and both insurances
+      // For double payment months, the second payment goes fully to principal
+      const principal = monthlyPayment - interest - currentPropertyInsurance - currentLoanProtection;
+      
+      // Calculate ending balance
+      const endBalance = i === totalMonths - 1 ? 0 : beginBalance - principal;
       
       rows.push({
         row: i + 1,
         date: new Date(currentDate),
-        monthlyPayment: Number(monthlyPaymentAmount.toFixed(10)),
-        monthlyInstallment: Number(monthlyInstallment.toFixed(10)),
-        interestAndPayments: Number((interest + monthlyInstallment).toFixed(10)),
-        principal: Number(principal.toFixed(10)),
-        interest: Number(interest.toFixed(10)),
-        beginBalance: Number(beginBalance.toFixed(10)),
-        endBalance: endBalance
+        monthlyPayment: Number(monthlyPayment.toFixed(2)),
+        baseInstallment: Number(baseInstallment.toFixed(2)),
+        interestAndPayments: Number((interest + currentPropertyInsurance + currentLoanProtection).toFixed(2)),
+        principal: Number(principal.toFixed(2)),
+        interest: Number(interest.toFixed(2)),
+        beginBalance: Number(beginBalance.toFixed(2)),
+        endBalance: Number(endBalance.toFixed(2))
       });
 
       beginBalance = endBalance;
@@ -101,25 +133,53 @@ export class AmortizationDataService {
     loanAmount: number,
     monthlyRate: number,
     totalMonths: number,
-    installmentsPerYear: number
+    installmentsPerYear: number,
+    propertyInsurance: number = 0,
+    loanProtection: number = 0
   ): number {
-    // Binary search to find the correct monthly installment
-    const calculateFinalBalance = (monthlyInstallmentGuess: number): number => {
+    // For 0% interest rate, the calculation is simple
+    if (monthlyRate === 0) {
+      return loanAmount / totalMonths;
+    }
+
+    // Binary search to find the correct base installment amount (principal + interest only)
+    // This is a constant value throughout all months - it doesn't change
+    // The algorithm ensures this base installment will pay off the loan in the given term,
+    // accounting for double payments in July and December for the 14-installment option
+    const calculateFinalBalance = (baseInstallmentGuess: number): number => {
       let balance = loanAmount;
       
       for (let i = 0; i < totalMonths; i++) {
-        const isDoubleMonth = installmentsPerYear === 14 && (i % 12 === 6 || i % 12 === 11);
-        const interest = Number((balance * monthlyRate).toFixed(10));
-        const installment = isDoubleMonth ? monthlyInstallmentGuess * 2 : monthlyInstallmentGuess;
-        const principal = Number((installment - interest).toFixed(10));
-        balance = Number((balance - principal).toFixed(10));
+        // For month calculation, we need the actual month (0-11)
+        // i % 12 gives us 0-11 where 0 is January, 6 is July, 11 is December
+        const month = i % 12;
+        const isDoubleMonth = installmentsPerYear === 14 && (month === 6 || month === 11);
+        
+        // Calculate interest for this month
+        const monthlyInterest = balance * monthlyRate;
+        
+        // Calculate insurance costs
+        const monthlyLoanProtectionInsurance = balance * (loanProtection / 100);
+        const currentPropertyInsurance = isDoubleMonth ? propertyInsurance * 2 : propertyInsurance;
+        const currentLoanProtection = isDoubleMonth ? monthlyLoanProtectionInsurance * 2 : monthlyLoanProtectionInsurance;
+        
+        // Monthly payment is baseInstallmentGuess or 2x for double months
+        const payment = isDoubleMonth ? baseInstallmentGuess * 2 : baseInstallmentGuess;
+        
+        // The principal component that will reduce the balance:
+        // Principal is what remains after paying interest and insurances
+        const principalReduction = payment - monthlyInterest - currentPropertyInsurance - currentLoanProtection;
+        
+        // Update balance (principal reduction)
+        balance = balance - principalReduction;
       }
       
       return balance;
     };
 
+    // Start with reasonable bounds for the binary search
     let low = 0;
-    let high = loanAmount * 2;
+    let high = loanAmount / (totalMonths * 0.5); // Approximate upper bound
     let guess = (low + high) / 2;
     const tolerance = 0.0000001;
     let iterations = 0;
@@ -129,8 +189,10 @@ export class AmortizationDataService {
       const balance = calculateFinalBalance(guess);
       
       if (balance > 0) {
+        // If balance is positive, our guess is too low
         low = guess;
       } else {
+        // If balance is negative, our guess is too high
         high = guess;
       }
       

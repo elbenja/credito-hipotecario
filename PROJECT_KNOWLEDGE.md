@@ -84,12 +84,42 @@ src/
 │       ├── types/
 │       │   ├── common.ts       # Shared types and interfaces
 │       │   └── scenarios.ts    # Scenario-specific types
-│       └── hooks/
-│           └── useLiveCalculation.ts  # Live calculation hook
+│       ├── hooks/
+│       │   └── useLiveCalculation.ts  # Live calculation hook
+│       └── services/
+│           ├── goalSeek.ts     # GoalSeek service for payment calculation
+│           └── fixedPayments.ts # FixedPayments service for accelerated scenarios
 └── store/
     └── amortization/
         └── store.ts            # Zustand state management
 ```
+
+**Data Model and Relationships:**
+
+1. **Properties**
+   - Contain basic property details (price_cost, property_insurance, first_home_bonus)
+   - Each property can have multiple amortizations for different financing scenarios
+
+2. **Amortizations**
+   - Define the mortgage structure for a property
+   - Parameters include: loan_amount, down_payment, interest, term_years, installments_per_year, loan_protection_insurance, first_installment_date
+   - Formula: loan_amount = (price_cost – first_home_bonus – down_payment)
+   - Each amortization has four scenarios for comparison
+
+3. **Scenarios**
+   - Four types per amortization: Regular, Accelerated, Lower Payment, New Rate
+   - Each has a scenario_summary and multiple scenario_payments (monthly breakdown)
+
+4. **Scenario Summaries**
+   - total_interest_and_insurance: Sum of all interest and insurance payments
+   - total_months: Duration of the loan
+   - monthly_payment: Final monthly installment amount
+   - tipping_point: Month where principal paid exceeds interest paid
+
+5. **Scenario Payments**
+   - Monthly breakdown of: payment_date, beginning_balance, monthly_payment, monthly_interest, property_insurance, monthly_loan_insurance, principal, ending_balance
+   - Formula: principal = monthly_payment – (monthly_interest + property_insurance + monthly_loan_insurance)
+   - Formula: ending_balance = beginning_balance – principal
 
 **Core Features:**
 1. **Centralized Calculation Service**
@@ -99,10 +129,10 @@ src/
    - Double payments in July and December for 14-installment scheme
 
 2. **Scenario Management**
-   - Regular: Standard amortization schedule
-   - Accelerated: Extra payments reduce term
-   - Lower Payment: Extra payments reduce monthly payment
-   - New Rate: Interest rate changes with optional term adjustment
+   - Regular: Standard amortization schedule with fixed monthly payments
+   - Accelerated: Extra payments reduce term while keeping base payment constant
+   - Lower Payment: Extra payments reduce monthly payment while maintaining original term
+   - New Rate: Interest rate changes with optional term adjustment (refinancing)
 
 3. **State Management (Zustand)**
    - Property and loan details
@@ -121,10 +151,41 @@ src/
    - Automatic recalculation on value changes
    - Real-time UI updates
 
+**Core Services:**
+
+1. **GoalSeek Service**
+   - Purpose: Determines the exact monthly payment required to reach zero balance at loan end
+   - Used in: Regular scenario, Lower Payment scenario, New Rate scenario
+   - Inputs:
+     - amount (loan_amount or remaining balance)
+     - months (total or remaining months)
+     - interest (annual interest rate)
+     - property_insurance (fixed monthly amount)
+     - loan_protection_insurance (percentage of beginning balance)
+     - past_months (for partial usage in New Rate scenarios)
+   - Returns:
+     - base_installment: Monthly payment that zeros balance by end of term
+     - total_months: For New Rate scenario, past_months + new_term_years * 12
+
+2. **FixedPayments Service**
+   - Purpose: Calculates how additional payments affect loan duration with fixed payments
+   - Used in: Accelerated scenario
+   - Inputs:
+     - amount (remaining balance at extra installment time)
+     - base_installment (from Regular scenario)
+     - interest
+     - property_insurance
+     - loan_protection_insurance
+     - past_months (if extra installment starts mid-loan)
+   - Returns:
+     - new_remaining_months: Updated count of months to finish loan
+     - total_months: past_months + new_remaining_months
+
 **Fixed Values:**
 - Suggested term: 20 years
 - Suggested down payment: 10%
 - Default installments: 12 per year
+- Suggested installments: 12 per year
 
 **Calculation Rules:**
 1. **Loan Amount**
@@ -134,7 +195,12 @@ src/
 
 2. **Monthly Payment**
    ```typescript
-   monthlyRate = (annualRate / 100) / installmentsPerYear
+   // Convert annual interest rate to effective monthly rate
+   // This uses the Effective Annual Rate (EAR) conversion formula
+   // instead of the nominal rate division
+   annualRate = interestRate / 100  // Convert percentage to decimal
+   monthlyRate = Math.pow(1 + annualRate, 1/12) - 1
+   
    totalPayments = termYears * installmentsPerYear
    
    if (monthlyRate === 0) {
@@ -149,7 +215,7 @@ src/
    The Peruvian "Double" frequency payment scheme involves 12 monthly payments with double payments in July and December:
    - Regular months (10 months): Single payment amount
    - July and December: Double payment amount
-   - Interest rate remains monthly (annual rate / 12)
+   - Interest rate remains monthly 
    - Total yearly payments equivalent to 14 regular installments
    
    ```typescript
@@ -158,19 +224,47 @@ src/
    // July and December payment: $2,136.38032078742 (double)
    
    // The calculation ensures:
-   // 1. Interest is computed monthly (annual rate / 12)
+   // 1. Interest is computed monthly  
    // 2. Principal reduction accounts for double payments in July/December
    // 3. Loan balance reaches exactly $0 at the end of the term
    // 4. Total yearly payment equals 14 times the regular monthly amount
    ```
 
-4. **Extra Payments**
+   **Important Clarification on Payment Structure:**
+   - For the Simple option (12 installments per year):
+     - The base installment and monthly payment are identical for all months
+     - Same payment amount for January through December
+     - Insurance costs (property insurance and loan protection) reduce the principal portion
+   
+   - For the Double option (14 installments per year):
+     - The base installment is consistent throughout the year
+     - Monthly payment equals base installment for all months EXCEPT July and December
+     - In July and December: monthly payment = 2 × base installment
+     - Insurance costs reduce the principal portion in all months
+     - The `findCorrectMonthlyInstallment` method calculates the appropriate base installment that satisfies this relationship while ensuring the loan balance reaches zero by the end of the term
+
+4. **Monthly Payment Breakdown**
+   - beginning_balance: Debt at start of month
+   - monthly_interest = beginning_balance × (monthlyRate)
+   - monthly_loan_insurance = beginning_balance × (loan_protection_insurance_rate / 100)
+   - property_insurance: Fixed monthly amount from property
+   - For Simple option (12 installments):
+     - monthly_payment = base_installment (constant throughout loan term)
+     - principal = monthly_payment - monthly_interest - property_insurance - monthly_loan_insurance
+   - For Double option (14 installments):
+     - monthly_payment = base_installment (regular months)
+     - monthly_payment = 2 × base_installment (July and December only)
+     - principal = monthly_payment - monthly_interest - property_insurance - monthly_loan_insurance
+   - Note: Insurance costs reduce the principal portion rather than increase the monthly payment
+   - ending_balance = beginning_balance - principal
+
+5. **Extra Payments**
    - Can be one-time, monthly, or yearly
    - Reduce principal immediately
    - Recalculate remaining payments
    - Update total interest and term/payment based on scenario
 
-5. **Rate Changes**
+6. **Rate Changes (New Rate Refinancing)**
    - Can specify new interest rate and optional new term
    - Effective from specified date
    - Recalculate remaining payments with new rate
@@ -181,28 +275,35 @@ src/
 - State persisted in local storage
 - Cache in memory only
 
+**User Flow:**
+1. Create/select a Property (price_cost, property_insurance, first_home_bonus)
+2. Define an Amortization (down_payment, interest, term_years, etc.)
+3. System generates four Scenarios automatically
+4. User can add extra payments or refinancing options
+5. Compare results across scenarios (duration, total cost, monthly payment)
+6. View detailed monthly payment breakdowns
+
 #### 2.2 Loan Protection Insurance
 
 ##### Overview
-The Loan Protection Insurance is calculated and managed at the amortization level rather than the property level, as it depends on the loan amount after down payment.
+The Loan Protection Insurance is calculated and managed at the amortization level rather than the property level, as it depends on the loan amount after down payment. Unlike property insurance (which is fixed), loan protection insurance is calculated as a percentage of the beginning balance of each month.
 
 ##### Insurance Types
 Four options are available:
-1. **Individual** (0.028% of loan amount)
-2. **Joint** (0.052% of loan amount)
+1. **Individual** (0.028% of beginning balance)
+2. **Joint** (0.052% of beginning balance)
 3. **None** (0)
-4. **Custom** (user-defined amount)
-
-
-
+4. **Custom** (user-defined percentage of beginning balance)
 
 ##### Calculation Logic
 - **Base Loan Amount** = Property Cost – Down Payment (minus applicable bonuses)
 - **Monthly Insurance Cost:**
-  - Individual: loan_amount * (0.028 / 100)
-  - Joint: loan_amount * (0.052 / 100)
+  - Individual: beginning_balance * (0.028 / 100)
+  - Joint: beginning_balance * (0.052 / 100)
   - None: 0
-  - Custom: User-specified amount
+  - Custom: beginning_balance * (user_specified_percentage / 100)
+
+> Note: The loan protection insurance is recalculated each month based on the remaining loan balance, not a fixed amount based on the initial loan amount.
 
 ##### UI Implementation
 - Located under "Basics" section in Amortization interface
@@ -219,9 +320,31 @@ Four options are available:
 - Rates can be managed per year
 - Calculations use current year's rates by default
 - Monthly insurance cost included in:
-  - Payment schedule
+  - Payment schedule (recalculated each month)
   - Total cost calculations
   - Summary statistics
+
+#### 2.3 Special Scenario Features
+
+##### Extra Installments
+- Can be configured for Accelerated and Lower Payment scenarios
+- Options:
+  - One-time extra payment
+  - Monthly additional payment
+  - Yearly additional payment
+- Parameters:
+  - amount: The extra payment amount
+  - frequency: once, monthly, yearly
+  - start_date: When extra payments begin
+  - starting_balance: Current loan balance when applying
+
+##### Refinancing Options
+- Applied in the New Rate scenario
+- Parameters:
+  - new_interest_rate: Updated interest rate
+  - new_term_years: Optional new loan duration
+  - effective_date: When refinancing takes effect
+  - starting_balance: Remaining balance at refinancing date
 
 ### 3. Rental Management (Coming Soon)
 - **Income Tracking**
@@ -356,6 +479,28 @@ For component-specific implementation details, refer to:
   - AuthContext: User authentication state
   - Theme context: UI theme preferences
   - Exchange rate context: Currency conversion rates
+- Zustand is used for managing amortization state
+  - Provides lightweight state management with minimal boilerplate
+  - Handles complex amortization calculations and scenarios
+  - Manages property details, loan values, and scenario selection
+- Local storage persistence for user settings
+  - Preserves theme preferences, language choices, and recent calculations
+  - Implemented with Zustand persist middleware for amortization state
+  - Automatic state rehydration on page reload
+- Live Calculation Hook (`useScenarioCalculations`):
+  - External, reusable hook implemented in the project's hooks directory
+  - Provides real-time, debounced (500ms delay) amortization calculations
+  - Designed for use across multiple pages (EditAmortization.tsx, extra-installments-section.tsx, TestExtraInstallments.tsx, NewAmortization.tsx)
+  - Ensures consistent and efficient updates based on user input
+  - Uses React Query for caching and state synchronization
+  - Features automatic query invalidation when inputs change
+  - Transparent error handling for failed calculations
+  - **Real-time Scenario Recalculation**:
+    - All amortization-related pages automatically recalculate scenarios whenever any input parameter changes
+    - This includes changes to loan amount, interest rate, term years, installments per year, first installment date, insurance values, etc.
+    - Each change triggers immediate recalculation of all four scenarios (Regular, Accelerated, Lower Payment, New Rate)
+    - Both scenario summaries and detailed payment schedules update in real-time
+    - Consistent calculation method across the entire application ensures reliable results
 
 ## Styling Guidelines
 1. **Colors**
