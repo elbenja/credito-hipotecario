@@ -193,9 +193,9 @@ export class AmortizationDataService {
     let low = 0;
     let high = loanAmount / (totalMonths * 0.5); // Approximate upper bound
     let guess = (low + high) / 2;
-    const tolerance = 0.0000001;
+    const tolerance = 0.000000001; // Increased precision
     let iterations = 0;
-    const maxIterations = 1000;
+    const maxIterations = 2000; // Increased max iterations to find more precise value
 
     while (Math.abs(calculateFinalBalance(guess)) > tolerance && iterations < maxIterations) {
       const balance = calculateFinalBalance(guess);
@@ -208,8 +208,16 @@ export class AmortizationDataService {
         high = guess;
       }
       
-      guess = Number(((low + high) / 2).toFixed(10));
+      guess = Number(((low + high) / 2).toFixed(12)); // Increased decimal precision
       iterations++;
+    }
+
+    // If we're very close to zero but slightly negative, adjust up slightly
+    // This helps ensure we don't pay off the loan too early
+    const finalBalance = calculateFinalBalance(guess);
+    if (finalBalance < 0 && finalBalance > -tolerance) {
+      // If we're just barely negative, reduce the payment slightly
+      guess = guess - 0.01;
     }
 
     return guess;
