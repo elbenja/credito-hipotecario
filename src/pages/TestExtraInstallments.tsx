@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -17,11 +17,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn, formatCurrency, formatDate } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
 import { ExtraInstallmentsSection } from "@/components/amortizations/extra-installments-section"
-import { ScenariosComparison } from "@/components/amortizations/scenarios-comparison"
+import { ScenarioTable } from "@/components/amortizations/scenario-table"
 import { LoanCalculator } from "@/services/amortization/calculations/loan"
 import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
 import type { Database } from "@/types/supabase"
-import { ScenarioTable } from "@/components/amortizations/scenario-table"
 
 type Amortization = Database['public']['Tables']['amortizations']['Row']
 type ExtraInstallment = Database['public']['Tables']['extra_installments']['Row']
@@ -35,6 +34,8 @@ interface PaymentRow {
   loan_insurance: number
   monthly_payment: number
   is_different_from_base: boolean
+  beginning_balance?: number
+  ending_balance?: number
 }
 
 interface ScenarioSummary {
@@ -121,44 +122,96 @@ export default function TestExtraInstallments() {
 
   const onUpdateAmortization = async (values: AmortizationFormValues) => {
     try {
-      if (!selectedAmortization || !selectedProperty) return
+      if (!selectedAmortization || !selectedProperty) {
+        throw new Error("No amortization or property selected")
+      }
 
+      // Parse numeric values safely
       const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, ""))
+      const interestRate = parseFloat(values.interest_rate)
+      const termYears = parseInt(values.term_years)
+      const installmentsPerYear = parseInt(values.installments_per_year)
+      const loanProtectionInsurance = values.loan_protection_insurance 
+        ? parseFloat(values.loan_protection_insurance)
+        : null
+
+      // Validate numeric values
+      if (isNaN(downPayment) || downPayment < 0) {
+        throw new Error("Invalid down payment amount")
+      }
+      if (isNaN(interestRate) || interestRate < 0) {
+        throw new Error("Invalid interest rate")
+      }
+      if (isNaN(termYears) || termYears < 1) {
+        throw new Error("Invalid term years")
+      }
+      // Validate term years against allowed values
+      const allowedTermYears = [5, 10, 15, 20, 25, 30]
+      if (!allowedTermYears.includes(termYears)) {
+        throw new Error("Term years must be one of: 5, 10, 15, 20, 25, or 30 years")
+      }
+      if (![12, 14].includes(installmentsPerYear)) {
+        throw new Error("Invalid installments per year")
+      }
+      if (loanProtectionInsurance !== null && (isNaN(loanProtectionInsurance) || loanProtectionInsurance < 0)) {
+        throw new Error("Invalid loan protection insurance amount")
+      }
+
+      // Calculate loan amount
       const loanAmount = selectedProperty.price_cost - downPayment
 
+      // Validate loan amount
+      if (loanAmount <= 0) {
+        throw new Error("Down payment cannot be greater than property cost")
+      }
+
+      // Prepare amortization data
       const amortizationData = {
         name: values.name,
         down_payment: downPayment,
-        interest_rate: parseFloat(values.interest_rate),
-        term_years: parseInt(values.term_years),
-        installments_per_year: parseInt(values.installments_per_year),
+        interest_rate: interestRate,
+        term_years: termYears,
+        installments_per_year: installmentsPerYear,
         first_installment_date: values.first_installment_date.toISOString(),
         loan_amount: loanAmount,
         loan_protection_type: values.loan_protection_type,
-        loan_protection_insurance: values.loan_protection_insurance ? parseFloat(values.loan_protection_insurance) : undefined,
+        loan_protection_insurance: loanProtectionInsurance,
+        total_interest: 0, // Will be calculated by the service
+        total_payment: 0, // Will be calculated by the service
+        installment_amount: 0 // Will be calculated by the service
       }
 
-      const { error } = await supabase
+      // Update amortization in Supabase
+      const { error: updateError } = await supabase
         .from("amortizations")
         .update(amortizationData)
         .eq('id', selectedAmortization.id)
 
-      if (error) throw error
+      if (updateError) {
+        console.error("Supabase update error:", updateError)
+        throw new Error(updateError.message)
+      }
+
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({
+        queryKey: ["linked-amortizations", selectedProperty.id]
+      })
+      await queryClient.invalidateQueries({
+        queryKey: ["scenarios", selectedAmortization.id]
+      })
 
       toast({
         title: "Success",
         description: "Amortization updated successfully",
-      })
-
-      queryClient.invalidateQueries({
-        queryKey: ["linked-amortizations", selectedProperty.id]
       })
     } catch (error) {
       console.error("Error updating amortization:", error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "There was an error updating the amortization",
+        description: error instanceof Error 
+          ? error.message 
+          : "There was an error updating the amortization"
       })
     }
   }
@@ -261,7 +314,11 @@ export default function TestExtraInstallments() {
                                 <FormItem>
                                   <FormLabel>Down Payment</FormLabel>
                                   <FormControl>
-                                    <Input {...field} />
+                                    <Input {...field} onChange={(e) => {
+                                      field.onChange(e);
+                                      // Trigger form validation to ensure field values are up-to-date
+                                      amortizationForm.trigger("down_payment");
+                                    }} />
                                   </FormControl>
                                 </FormItem>
                               )}
@@ -295,7 +352,11 @@ export default function TestExtraInstallments() {
                               render={({ field }) => (
                                 <FormItem>
                                   <FormLabel>Loan Protection Insurance</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value}>
+                                  <Select onValueChange={(value) => {
+                                    field.onChange(value);
+                                    // Trigger form validation to ensure field values are up-to-date
+                                    amortizationForm.trigger("loan_protection_type");
+                                  }} value={field.value}>
                                     <FormControl>
                                       <SelectTrigger>
                                         <SelectValue placeholder="Select type" />
@@ -318,7 +379,11 @@ export default function TestExtraInstallments() {
                                 <FormItem>
                                   <FormLabel>Monthly Insurance Cost</FormLabel>
                                   <FormControl>
-                                    <Input {...field} />
+                                    <Input {...field} onChange={(e) => {
+                                      field.onChange(e);
+                                      // Trigger form validation to ensure field values are up-to-date
+                                      amortizationForm.trigger("loan_protection_insurance");
+                                    }} />
                                   </FormControl>
                                 </FormItem>
                               )}
@@ -333,7 +398,11 @@ export default function TestExtraInstallments() {
                                 <FormItem>
                                   <FormLabel>Interest rate</FormLabel>
                                   <FormControl>
-                                    <Input {...field} type="number" step="0.01" />
+                                    <Input {...field} type="number" step="0.01" onChange={(e) => {
+                                      field.onChange(e);
+                                      // Trigger form validation to ensure field values are up-to-date
+                                      amortizationForm.trigger("interest_rate");
+                                    }} />
                                   </FormControl>
                                 </FormItem>
                               )}
@@ -344,7 +413,11 @@ export default function TestExtraInstallments() {
                               render={({ field }) => (
                                 <FormItem>
                                   <FormLabel>Amortization Term</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value}>
+                                  <Select onValueChange={(value) => {
+                                    field.onChange(value);
+                                    // Trigger form validation to ensure field values are up-to-date
+                                    amortizationForm.trigger("term_years");
+                                  }} value={field.value}>
                                     <FormControl>
                                       <SelectTrigger>
                                         <SelectValue placeholder="Select term" />
@@ -370,7 +443,11 @@ export default function TestExtraInstallments() {
                               render={({ field }) => (
                                 <FormItem>
                                   <FormLabel>Installments per Year</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value}>
+                                  <Select onValueChange={(value) => {
+                                    field.onChange(value);
+                                    // Trigger form validation to ensure field values are up-to-date
+                                    amortizationForm.trigger("installments_per_year");
+                                  }} value={field.value}>
                                     <FormControl>
                                       <SelectTrigger>
                                         <SelectValue placeholder="Select installments" />
@@ -413,7 +490,11 @@ export default function TestExtraInstallments() {
                                       <Calendar
                                         mode="single"
                                         selected={field.value}
-                                        onSelect={field.onChange}
+                                        onSelect={(date) => {
+                                          field.onChange(date);
+                                          // Trigger form validation to ensure field values are up-to-date
+                                          amortizationForm.trigger("first_installment_date");
+                                        }}
                                         disabled={(date) =>
                                           date < new Date() || date < new Date("1900-01-01")
                                         }
@@ -461,6 +542,7 @@ export default function TestExtraInstallments() {
           <ScenarioCalculationsSection 
             amortization={selectedAmortization}
             property={selectedProperty}
+            form={amortizationForm}
           />
         </>
       )}
@@ -470,20 +552,64 @@ export default function TestExtraInstallments() {
 
 function ScenarioCalculationsSection({ 
   amortization,
-  property 
+  property,
+  form
 }: { 
   amortization: Amortization
   property: Property
+  form: ReturnType<typeof useForm<AmortizationFormValues>>
 }) {
-  const { scenarios, isLoading, error, extraInstallments, rateChanges } = useScenarioCalculations({
+  // Create a local state to track form values for live calculations
+  const [formValues, setFormValues] = useState({
+    loanAmount: amortization.loan_amount || 0,
+    interestRate: amortization.interest_rate,
+    termYears: amortization.term_years,
+    installmentsPerYear: amortization.installments_per_year,
+    firstInstallmentDate: new Date(amortization.first_installment_date),
+    propertyInsurance: property.property_insurance || 0,
+    loanInsurance: amortization.loan_protection_insurance || 0
+  });
+  
+  // Watch form values for changes
+  useEffect(() => {
+    const subscription = form.watch((values) => {
+      if (!values || !property) return;
+      
+      // Parse form values
+      const downPayment = parseFloat(values.down_payment?.replace(/[^0-9.]/g, "") || "0");
+      const loanAmount = property.price_cost - downPayment;
+      const interestRate = parseFloat(values.interest_rate || "0");
+      const termYears = parseInt(values.term_years || "0");
+      const installmentsPerYear = parseInt(values.installments_per_year || "12");
+      const firstInstallmentDate = values.first_installment_date || new Date();
+      const loanInsurance = parseFloat(values.loan_protection_insurance || "0");
+      
+      // Update the local state with new values
+      setFormValues({
+        loanAmount: loanAmount,
+        interestRate: interestRate,
+        termYears: termYears,
+        installmentsPerYear: installmentsPerYear,
+        firstInstallmentDate: firstInstallmentDate,
+        propertyInsurance: property.property_insurance || 0,
+        loanInsurance: loanInsurance
+      });
+    });
+    
+    // Cleanup subscription on unmount
+    return () => subscription.unsubscribe();
+  }, [form, property]);
+
+  // Use the useScenarioCalculations hook with the tracked form values
+  const { data: scenarios, isLoading, error } = useScenarioCalculations({
     amortizationId: amortization.id,
-    loan_amount: amortization.loan_amount || 0,
-    interest_rate: amortization.interest_rate,
-    term_years: amortization.term_years,
-    installments_per_year: amortization.installments_per_year,
-    first_installment_date: amortization.first_installment_date,
-    property_insurance: property.property_insurance || 0,
-    loan_insurance: amortization.loan_protection_insurance || 0
+    loanAmount: formValues.loanAmount,
+    interestRate: formValues.interestRate,
+    termYears: formValues.termYears,
+    installmentsPerYear: formValues.installmentsPerYear,
+    firstInstallmentDate: formValues.firstInstallmentDate,
+    propertyInsurance: formValues.propertyInsurance,
+    loanInsurance: formValues.loanInsurance
   })
 
   if (isLoading) {
@@ -512,120 +638,62 @@ function ScenarioCalculationsSection({
     )
   }
 
+  // Helper function to transform payment rows for ScenarioTable
+  const mapPaymentForTable = (payment: any) => ({
+    date: new Date(payment.payment_date),
+    capital: payment.principal || payment.capital || 0,
+    interest: payment.monthly_interest || payment.interest || 0,
+    property_insurance: payment.property_insurance || 0,
+    loan_insurance: payment.monthly_loan_insurance || payment.loan_insurance || 0,
+    monthly_payment: payment.monthly_payment || 0,
+    is_different_from_base: payment.is_different_from_base || false
+  })
+
   return (
     <div className="mt-8">
       <h2 className="text-2xl font-bold mb-6">Payment Scenarios</h2>
+      
+      <div className="mb-6 p-4 border-l-4 border-primary bg-muted rounded-md">
+        <h3 className="text-lg font-semibold mb-2">Scenario Timelines</h3>
+        <p className="mb-2">The four scenarios function as parallel timelines originating from the same starting point:</p>
+        <ul className="space-y-1 text-sm">
+          <li><span className="font-medium">Regular</span> – The main timeline and baseline scenario. Before any adjustments, all scenarios match this one.</li>
+          <li><span className="font-medium">Accelerated</span> – Forks from Regular when extra installments are applied. Reduces total months while monthly payment stays the same.</li>
+          <li><span className="font-medium">Lower Payment</span> – Forks from Regular when extra installments are applied. Reduces monthly payment while total months stays the same.</li>
+          <li><span className="font-medium">New Rate</span> – Forks from Regular when a new refinancing rate is introduced. Can change both months and payment amount.</li>
+        </ul>
+      </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="p-6 border rounded-lg">
-          <h3 className="text-xl font-semibold mb-4">Accelerated Scenario</h3>
+          <h3 className="text-xl font-semibold mb-4">
+            Regular Scenario
+            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-primary/20 text-primary">
+              Baseline
+            </span>
+          </h3>
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Sum Interest & Insurances</p>
                 <p className="text-lg font-medium">
-                  {formatCurrency(scenarios.accelerated?.summary.total_interest_and_insurance || 0, property.currency)}
+                  {formatCurrency(scenarios?.regular?.summary.total_interest_and_insurance || 0, property.currency)}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Months</p>
-                <p className="text-lg font-medium">{scenarios.accelerated?.summary.total_months || 0}</p>
+                <p className="text-lg font-medium">{scenarios?.regular?.summary.total_months || 0}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Monthly Payment</p>
                 <p className="text-lg font-medium">
-                  {formatCurrency(scenarios.accelerated?.summary.monthly_payment || 0, property.currency)}
+                  {formatCurrency(scenarios?.regular?.summary.monthly_payment || 0, property.currency)}
                 </p>
               </div>
             </div>
-            {scenarios.accelerated?.payments && (
+            {scenarios?.regular?.payments && (
               <ScenarioTable
-                rows={scenarios.accelerated.payments.map(payment => ({
-                  date: new Date(payment.payment_date),
-                  capital: payment.capital,
-                  interest: payment.interest,
-                  property_insurance: payment.property_insurance,
-                  loan_insurance: payment.loan_insurance,
-                  monthly_payment: payment.monthly_payment,
-                  is_different_from_base: payment.is_different_from_base
-                }))}
-                currency={property.currency}
-                compareWithBaseScenario={true}
-              />
-            )}
-          </div>
-        </div>
-
-        <div className="p-6 border rounded-lg">
-          <h3 className="text-xl font-semibold mb-4">Lower Payment Scenario</h3>
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Sum Interest & Insurances</p>
-                <p className="text-lg font-medium">
-                  {formatCurrency(scenarios.lower_payment?.summary.total_interest_and_insurance || 0, property.currency)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Months</p>
-                <p className="text-lg font-medium">{scenarios.lower_payment?.summary.total_months || 0}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Monthly Payment</p>
-                <p className="text-lg font-medium">
-                  {formatCurrency(scenarios.lower_payment?.summary.monthly_payment || 0, property.currency)}
-                </p>
-              </div>
-            </div>
-            {scenarios.lower_payment?.payments && (
-              <ScenarioTable
-                rows={scenarios.lower_payment.payments.map(payment => ({
-                  date: new Date(payment.payment_date),
-                  capital: payment.capital,
-                  interest: payment.interest,
-                  property_insurance: payment.property_insurance,
-                  loan_insurance: payment.loan_insurance,
-                  monthly_payment: payment.monthly_payment,
-                  is_different_from_base: payment.is_different_from_base
-                }))}
-                currency={property.currency}
-                compareWithBaseScenario={true}
-              />
-            )}
-          </div>
-        </div>
-
-        <div className="p-6 border rounded-lg">
-          <h3 className="text-xl font-semibold mb-4">Regular Scenario</h3>
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Sum Interest & Insurances</p>
-                <p className="text-lg font-medium">
-                  {formatCurrency(scenarios.regular?.summary.total_interest_and_insurance || 0, property.currency)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Months</p>
-                <p className="text-lg font-medium">{scenarios.regular?.summary.total_months || 0}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Monthly Payment</p>
-                <p className="text-lg font-medium">
-                  {formatCurrency(scenarios.regular?.summary.monthly_payment || 0, property.currency)}
-                </p>
-              </div>
-            </div>
-            {scenarios.regular?.payments && (
-              <ScenarioTable
-                rows={scenarios.regular.payments.map(payment => ({
-                  date: new Date(payment.payment_date),
-                  capital: payment.capital,
-                  interest: payment.interest,
-                  property_insurance: payment.property_insurance,
-                  loan_insurance: payment.loan_insurance,
-                  monthly_payment: payment.monthly_payment,
-                  is_different_from_base: payment.is_different_from_base
-                }))}
+                rows={scenarios.regular.payments.map(mapPaymentForTable)}
                 currency={property.currency}
                 compareWithBaseScenario={false}
               />
@@ -634,37 +702,136 @@ function ScenarioCalculationsSection({
         </div>
 
         <div className="p-6 border rounded-lg">
-          <h3 className="text-xl font-semibold mb-4">New Rate Scenario</h3>
+          <h3 className="text-xl font-semibold mb-4">
+            Accelerated Scenario
+            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-100 text-green-800">
+              Reduces Term
+            </span>
+          </h3>
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Sum Interest & Insurances</p>
                 <p className="text-lg font-medium">
-                  {formatCurrency(scenarios.new_rate?.summary.total_interest_and_insurance || 0, property.currency)}
+                  {formatCurrency(scenarios?.accelerated?.summary.total_interest_and_insurance || 0, property.currency)}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Months</p>
-                <p className="text-lg font-medium">{scenarios.new_rate?.summary.total_months || 0}</p>
+                <p className="text-lg font-medium">
+                  {scenarios?.accelerated?.summary.total_months || 0}
+                  {scenarios?.regular && scenarios?.accelerated && (
+                    <span className="text-sm text-green-600 ml-1">
+                      (-{scenarios.regular.summary.total_months - scenarios.accelerated.summary.total_months})
+                    </span>
+                  )}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Monthly Payment</p>
                 <p className="text-lg font-medium">
-                  {formatCurrency(scenarios.new_rate?.summary.monthly_payment || 0, property.currency)}
+                  {formatCurrency(scenarios?.accelerated?.summary.monthly_payment || 0, property.currency)}
+                  {/* Same as Regular */}
                 </p>
               </div>
             </div>
-            {scenarios.new_rate?.payments && (
+            {scenarios?.accelerated?.payments && (
               <ScenarioTable
-                rows={scenarios.new_rate.payments.map(payment => ({
-                  date: new Date(payment.payment_date),
-                  capital: payment.capital,
-                  interest: payment.interest,
-                  property_insurance: payment.property_insurance,
-                  loan_insurance: payment.loan_insurance,
-                  monthly_payment: payment.monthly_payment,
-                  is_different_from_base: payment.is_different_from_base
-                }))}
+                rows={scenarios.accelerated.payments.map(mapPaymentForTable)}
+                currency={property.currency}
+                compareWithBaseScenario={true}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="p-6 border rounded-lg">
+          <h3 className="text-xl font-semibold mb-4">
+            Lower Payment Scenario
+            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
+              Reduces Payment
+            </span>
+          </h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Sum Interest & Insurances</p>
+                <p className="text-lg font-medium">
+                  {formatCurrency(scenarios?.lower_payment?.summary.total_interest_and_insurance || 0, property.currency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Months</p>
+                <p className="text-lg font-medium">
+                  {scenarios?.lower_payment?.summary.total_months || 0}
+                  {/* Same as Regular */}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Monthly Payment</p>
+                <p className="text-lg font-medium">
+                  {formatCurrency(scenarios?.lower_payment?.summary.monthly_payment || 0, property.currency)}
+                  {scenarios?.regular && scenarios?.lower_payment && (
+                    <span className="text-sm text-blue-600 ml-1">
+                      (-{formatCurrency(scenarios.regular.summary.monthly_payment - scenarios.lower_payment.summary.monthly_payment, property.currency)})
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+            {scenarios?.lower_payment?.payments && (
+              <ScenarioTable
+                rows={scenarios.lower_payment.payments.map(mapPaymentForTable)}
+                currency={property.currency}
+                compareWithBaseScenario={true}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="p-6 border rounded-lg">
+          <h3 className="text-xl font-semibold mb-4">
+            New Rate Scenario
+            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-amber-100 text-amber-800">
+              Refinancing
+            </span>
+          </h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Sum Interest & Insurances</p>
+                <p className="text-lg font-medium">
+                  {formatCurrency(scenarios?.new_rate?.summary.total_interest_and_insurance || 0, property.currency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Months</p>
+                <p className="text-lg font-medium">
+                  {scenarios?.new_rate?.summary.total_months || 0}
+                  {scenarios?.regular && scenarios?.new_rate && (
+                    <span className={`text-sm ml-1 ${scenarios.new_rate.summary.total_months > scenarios.regular.summary.total_months ? 'text-red-600' : 'text-green-600'}`}>
+                      ({scenarios.new_rate.summary.total_months > scenarios.regular.summary.total_months ? '+' : '-'}
+                      {Math.abs(scenarios.regular.summary.total_months - scenarios.new_rate.summary.total_months)})
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Monthly Payment</p>
+                <p className="text-lg font-medium">
+                  {formatCurrency(scenarios?.new_rate?.summary.monthly_payment || 0, property.currency)}
+                  {scenarios?.regular && scenarios?.new_rate && (
+                    <span className={`text-sm ml-1 ${scenarios.new_rate.summary.monthly_payment > scenarios.regular.summary.monthly_payment ? 'text-red-600' : 'text-blue-600'}`}>
+                      ({scenarios.new_rate.summary.monthly_payment > scenarios.regular.summary.monthly_payment ? '+' : '-'}
+                      {formatCurrency(Math.abs(scenarios.regular.summary.monthly_payment - scenarios.new_rate.summary.monthly_payment), property.currency)})
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+            {scenarios?.new_rate?.payments && (
+              <ScenarioTable
+                rows={scenarios.new_rate.payments.map(mapPaymentForTable)}
                 currency={property.currency}
                 compareWithBaseScenario={true}
               />

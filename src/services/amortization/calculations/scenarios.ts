@@ -89,7 +89,8 @@ export class ScenarioCalculator {
       // Recalculate remaining payments with new rate
       for (let i = changeIndex; i < modifiedSchedule.length; i++) {
         const payment = modifiedSchedule[i];
-        const monthlyRate = (rateChange.new_interest_rate / 100) / baseValues.installments_per_year;
+        // Convert to effective monthly rate using EAR formula
+        const monthlyRate = Math.pow(1 + rateChange.new_interest_rate/100, 1/12) - 1;
         
         payment.scheduled_payment = newMonthlyPayment;
         payment.beginning_balance = i === changeIndex ? remainingBalance : modifiedSchedule[i - 1].ending_balance;

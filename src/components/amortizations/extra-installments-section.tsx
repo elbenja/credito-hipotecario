@@ -4,11 +4,12 @@ import { useToast } from "@/hooks/use-toast"
 import { ExtraInstallmentForm } from "./extra-installment-form"
 import { ExtraInstallmentsTable } from "./extra-installments-table"
 import { useTranslation } from "react-i18next"
-import { useQueryClient } from "@tanstack/react-query"
+import { useQueryClient, useQuery } from "@tanstack/react-query"
 
 interface ExtraInstallmentFormValues {
-  paymentDate: Date
-  amount: number
+  start_date: Date
+  amount: string
+  frequency: "monthly" | "one-time"
 }
 
 interface ExtraInstallment {
@@ -41,46 +42,38 @@ export function ExtraInstallmentsSection({
   const { toast } = useToast()
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
-  const [installments, setInstallments] = useState<ExtraInstallment[]>([])
   const queryClient = useQueryClient()
 
-  // Load existing installments when component mounts
-  useEffect(() => {
-    const loadInstallments = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("extra_installments")
-          .select("id, amount, frequency, start_date")
-          .eq("amortization_id", amortizationId)
-          .order("start_date", { ascending: true })
+  // Use React Query for installments
+  const { data: installments = [] } = useQuery({
+    queryKey: ["extra-installments", amortizationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("extra_installments")
+        .select("id, amount, frequency, start_date")
+        .eq("amortization_id", amortizationId)
+        .order("start_date", { ascending: true })
 
-        if (error) throw error
+      if (error) throw error
 
-        if (data) {
-          const typedInstallments: ExtraInstallment[] = data.map(item => ({
-            id: item.id,
-            amount: item.amount,
-            frequency: item.frequency as "monthly" | "one-time",
-            start_date: item.start_date
-          }))
-          setInstallments(typedInstallments)
-        }
-      } catch (error) {
-        console.error("Error loading installments:", error)
-      }
-    }
-
-    if (amortizationId) {
-      loadInstallments()
-    }
-  }, [amortizationId])
+      return data.map(item => ({
+        id: item.id,
+        amount: item.amount,
+        frequency: item.frequency as "monthly" | "one-time",
+        start_date: item.start_date
+      }))
+    },
+    staleTime: 0 // Always fetch fresh data
+  })
 
   const handleSubmit = async (values: ExtraInstallmentFormValues) => {
     try {
+      setIsLoading(true)
       const installmentData = {
         amortization_id: amortizationId,
-        payment_date: values.paymentDate,
-        amount: values.amount,
+        start_date: values.start_date,
+        amount: parseFloat(values.amount),
+        frequency: values.frequency
       }
 
       const { error } = await supabase
@@ -92,12 +85,15 @@ export function ExtraInstallmentsSection({
         throw error
       }
 
-      await queryClient.invalidateQueries({
-        queryKey: ["extra-installments", amortizationId]
-      })
-      await queryClient.invalidateQueries({
-        queryKey: ["scenarios", amortizationId]
-      })
+      // Invalidate both queries to trigger recalculation
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["extra-installments", amortizationId]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["scenarios", amortizationId]
+        })
+      ])
       
       onInstallmentsChange()
       toast({
@@ -112,11 +108,14 @@ export function ExtraInstallmentsSection({
         description: t("error_adding_extra_installment"),
         variant: "destructive"
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handleDelete = async (id: string) => {
     try {
+      setIsLoading(true)
       const { error } = await supabase
         .from("extra_installments")
         .delete()
@@ -124,9 +123,17 @@ export function ExtraInstallmentsSection({
 
       if (error) throw error
 
-      setInstallments(installments.filter(i => i.id !== id))
-      onInstallmentsChange()
+      // Invalidate both queries to trigger recalculation
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["extra-installments", amortizationId]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["scenarios", amortizationId]
+        })
+      ])
 
+      onInstallmentsChange()
       toast({
         title: t("extra_installments_section.success.delete"),
         description: t("extra_installments_section.success.delete"),
@@ -138,6 +145,8 @@ export function ExtraInstallmentsSection({
         title: t("extra_installments_section.error.title"),
         description: t("extra_installments_section.error.delete"),
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 

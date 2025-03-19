@@ -38,7 +38,10 @@ interface ScenarioSummaryResult {
 
 export class ScenarioCalculator {
   private calculateMonthlyRate(interestRate: number, installmentsPerYear: number): number {
-    return (interestRate / 100) / installmentsPerYear;
+    // Convert to effective monthly rate using EAR formula
+    // Formula: monthlyRate = (1 + annualRate/100)^(1/12) - 1
+    // This properly accounts for compounding instead of simple division
+    return Math.pow(1 + interestRate/100, 1/12) - 1;
   }
 
   private calculateMonthlyPayment(

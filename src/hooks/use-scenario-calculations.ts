@@ -1,24 +1,14 @@
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
-import { ScenarioCalculator, type ScenarioType } from "@/services/amortization/calculations/scenario-calculator"
+import { useDebounce } from "./use-debounce"
+import { ScenarioCalculator } from "@/services/amortization/services/scenarioCalculator"
 import type { Database } from "@/types/supabase"
+import { addMonths, startOfMonth } from "date-fns"
 
-type ExtraInstallment = Database['public']['Tables']['extra_installments']['Row']
-type RateChange = Database['public']['Tables']['rate_changes']['Row']
-
-interface UseScenarioCalculationsProps {
-  amortizationId: string
-  loan_amount: number
-  interest_rate: number
-  term_years: number
-  installments_per_year: number
-  first_installment_date: string
-  property_insurance: number
-  loan_insurance: number
-}
+type ScenarioType = Database["public"]["Enums"]["scenario_type"]
 
 interface PaymentRow {
-  payment_date: string | Date
+  payment_date: Date
   capital: number
   interest: number
   property_insurance: number
@@ -27,105 +17,135 @@ interface PaymentRow {
   is_different_from_base: boolean
 }
 
-interface ScenarioSummary {
+interface ExtraInstallment {
+  id: string
+  amount: number
+  frequency: "monthly" | "one-time"
+  start_date: string
+}
+
+interface RateChange {
+  id: string
+  new_interest_rate: number
+  new_term_years: number
+  effective_date: string
+}
+
+interface AmortizationInput {
+  loan_amount: number
+  interest_rate: number
+  term_years: number
+  installments_per_year: number
+  first_installment_date: Date
+  property_insurance: number
+  loan_insurance: number
+}
+
+interface ScenarioSummaryResult {
   total_interest_and_insurance: number
   total_months: number
   monthly_payment: number
 }
 
-interface Scenario {
-  summary: ScenarioSummary
+interface ScenarioResult {
+  summary: ScenarioSummaryResult
   payments: PaymentRow[]
 }
 
-interface Scenarios {
-  regular?: Scenario
-  accelerated?: Scenario
-  lower_payment?: Scenario
-  new_rate?: Scenario
+interface UseScenarioCalculationsProps {
+  amortizationId: string
+  loanAmount: number
+  interestRate: number
+  termYears: number
+  installmentsPerYear: number
+  firstInstallmentDate: Date
+  propertyInsurance: number
+  loanInsurance: number
 }
 
 export function useScenarioCalculations({
   amortizationId,
-  loan_amount,
-  interest_rate,
-  term_years,
-  installments_per_year,
-  first_installment_date,
-  property_insurance,
-  loan_insurance
+  loanAmount,
+  interestRate,
+  termYears,
+  installmentsPerYear,
+  firstInstallmentDate,
+  propertyInsurance,
+  loanInsurance
 }: UseScenarioCalculationsProps) {
-  const calculator = new ScenarioCalculator()
+  // Debounce all input values with a 500ms delay
+  const debouncedLoanAmount = useDebounce(loanAmount, 500)
+  const debouncedInterestRate = useDebounce(interestRate, 500)
+  const debouncedTermYears = useDebounce(termYears, 500)
+  const debouncedInstallmentsPerYear = useDebounce(installmentsPerYear, 500)
+  const debouncedFirstInstallmentDate = useDebounce(firstInstallmentDate, 500)
+  const debouncedPropertyInsurance = useDebounce(propertyInsurance, 500)
+  const debouncedLoanInsurance = useDebounce(loanInsurance, 500)
 
-  const { data: scenarios = {}, isLoading, error } = useQuery<Scenarios>({
-    queryKey: ["scenarios", amortizationId],
+  return useQuery({
+    queryKey: [
+      "scenarios",
+      amortizationId,
+      debouncedLoanAmount,
+      debouncedInterestRate,
+      debouncedTermYears,
+      debouncedInstallmentsPerYear,
+      debouncedFirstInstallmentDate.toISOString(),
+      debouncedPropertyInsurance,
+      debouncedLoanInsurance
+    ],
     queryFn: async () => {
-      // Fetch extra installments
-      const { data: extraInstallments, error: extraInstallmentsError } = await supabase
-        .from("extra_installments")
-        .select("*")
-        .eq("amortization_id", amortizationId)
-        .order("payment_date", { ascending: true })
+      // Fetch extra installments and rate changes from Supabase
+      const [extraInstallmentsResult, rateChangesResult] = await Promise.all([
+        supabase
+          .from("extra_installments")
+          .select("*")
+          .eq("amortization_id", amortizationId)
+          .order("start_date", { ascending: true }),
+        supabase
+          .from("rate_changes")
+          .select("*")
+          .eq("amortization_id", amortizationId)
+          .order("effective_date", { ascending: true })
+      ])
 
-      if (extraInstallmentsError) {
-        console.error("Error fetching extra installments:", extraInstallmentsError)
-        throw extraInstallmentsError
-      }
+      if (extraInstallmentsResult.error) throw extraInstallmentsResult.error
+      if (rateChangesResult.error) throw rateChangesResult.error
 
-      // Fetch rate changes
-      const { data: rateChanges, error: rateChangesError } = await supabase
-        .from("refinancing_options")
-        .select("*")
-        .eq("amortization_id", amortizationId)
-        .order("change_date", { ascending: true })
+      const extraInstallments = extraInstallmentsResult.data.map(ei => ({
+        amount: ei.amount,
+        frequency: ei.frequency === "one-time" ? "once" : "monthly",
+        start_date: new Date(ei.start_date)
+      }))
 
-      if (rateChangesError) {
-        console.error("Error fetching rate changes:", rateChangesError)
-        throw rateChangesError
-      }
+      const rateChanges = rateChangesResult.data.map(rc => ({
+        new_interest_rate: rc.new_interest_rate,
+        new_term_years: rc.new_term_years,
+        effective_date: new Date(rc.effective_date)
+      }))
 
-      const amortizationInput = {
-        id: amortizationId,
-        loan_amount,
-        interest_rate,
-        term_years,
-        installments_per_year,
-        first_installment_date,
-        property_insurance,
-        loan_insurance
-      }
+      // Calculate all scenarios using the static method
+      const scenarios = ScenarioCalculator.calculateScenarios({
+        loan_amount: debouncedLoanAmount,
+        interest_rate: debouncedInterestRate,
+        term_years: debouncedTermYears,
+        installments_per_year: debouncedInstallmentsPerYear,
+        first_installment_date: debouncedFirstInstallmentDate,
+        property_insurance: debouncedPropertyInsurance,
+        loan_insurance: debouncedLoanInsurance,
+        extra_installments: extraInstallments,
+        rate_changes: rateChanges
+      })
 
-      try {
-        // Calculate all scenarios
-        const [regularScenario, acceleratedScenario, lowerPaymentScenario, newRateScenario] = await Promise.all([
-          calculator.calculateScenario(amortizationInput, [], [], 'regular'),
-          calculator.calculateScenario(amortizationInput, extraInstallments || [], [], 'accelerated'),
-          calculator.calculateScenario(amortizationInput, extraInstallments || [], [], 'lower_payment'),
-          calculator.calculateScenario(amortizationInput, [], rateChanges || [], 'new_rate')
-        ])
-
-        const allScenarios = {
-          regular: regularScenario,
-          accelerated: acceleratedScenario,
-          lower_payment: lowerPaymentScenario,
-          new_rate: newRateScenario
-        }
-
-        // Store all scenarios in one transaction
-        await calculator.storeScenarios(amortizationInput, allScenarios)
-
-        return allScenarios
-      } catch (error) {
-        console.error("Error calculating scenarios:", error)
-        throw error
+      return {
+        regular: scenarios.regular,
+        accelerated: scenarios.accelerated,
+        lower_payment: scenarios.lower_payment,
+        new_rate: scenarios.new_rate
       }
     },
-    enabled: !!amortizationId
+    gcTime: 1000 * 60 * 30, // Cache for 30 minutes
+    staleTime: 0, // Always calculate fresh scenarios
+    refetchOnWindowFocus: false // Don't refetch when window regains focus
   })
-
-  return {
-    scenarios,
-    isLoading,
-    error
-  }
 } 

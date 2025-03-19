@@ -134,6 +134,12 @@ src/
    - Lower Payment: Extra payments reduce monthly payment while maintaining original term
    - New Rate: Interest rate changes with optional term adjustment (refinancing)
 
+   To illustrate how the four scenarios function like four parallel timelines originating from the same starting point:
+   1. **Regular** – This is the main timeline and baseline scenario. Before any adjustments, all four scenarios match the Regular scenario's payments and months.
+   2. **Accelerated** – Forks from the Regular timeline whenever extra installments are applied. Each extra payment reduces the total number of months needed to finish paying off the mortgage (while the base monthly payment remains the same).
+   3. **Lower Payment** – Forks from the Regular timeline whenever extra installments are applied. Each extra payment reduces the monthly payment amount for the remaining term (while the total number of months remains the same).
+   4. **New Rate** – Forks from the Regular timeline (or its current balance) when a new refinancing rate is introduced. This can change both the total months remaining and the monthly payment to accommodate the updated interest rate and (optionally) new term.
+
 3. **State Management (Zustand)**
    - Property and loan details
    - Scenario states and selections

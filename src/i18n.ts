@@ -120,7 +120,7 @@ export const resources = {
       "loan_name": "Name",
       "loan_amount": "Loan Amount",
       "down_payment": "Down Payment",
-      "interest_rate": "Interest Rate -  AER",
+      "interest_rate": "Interest Rate -  EAR",
       "term": "Term",
       "installments_per_year": "Installments/Year",
       "monthly_payment": "Monthly Payment",
@@ -224,7 +224,7 @@ export const resources = {
           "no_options": "No refinancing options yet",
           "table": {
             "number": "#",
-            "interest_rate": "Interest Rate - AER",
+            "interest_rate": "Interest Rate - EAR",
             "new_term": "New Term",
             "start_date": "Start Date",
             "actions": "Actions",

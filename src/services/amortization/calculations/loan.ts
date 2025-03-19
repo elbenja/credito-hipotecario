@@ -21,7 +21,9 @@ export class LoanCalculator {
     termYears: number,
     installmentsPerYear: number
   ): number {
-    const monthlyRate = (annualRate / 100) / installmentsPerYear;
+    // Convert to effective monthly rate using EAR formula
+    // Formula: monthlyRate = (1 + annualRate/100)^(1/12) - 1
+    const monthlyRate = Math.pow(1 + annualRate/100, 1/12) - 1;
     
     // Function to calculate final balance for a given monthly installment
     const calculateFinalBalance = (monthlyInstallmentGuess: number): number => {
@@ -81,7 +83,8 @@ export class LoanCalculator {
     }
 
     // Use the standard formula for 12 installments
-    const monthlyRate = (annualRate / 100) / installmentsPerYear;
+    // Convert to effective monthly rate using EAR formula
+    const monthlyRate = Math.pow(1 + annualRate/100, 1/12) - 1;
     const totalPayments = termYears * installmentsPerYear;
     
     if (monthlyRate === 0) {
@@ -100,7 +103,8 @@ export class LoanCalculator {
     property: Property
   ): PaymentDetail[] {
     const schedule: PaymentDetail[] = [];
-    const monthlyRate = (baseValues.interest_rate / 100) / baseValues.installments_per_year;
+    // Convert to effective monthly rate using EAR formula
+    const monthlyRate = Math.pow(1 + baseValues.interest_rate/100, 1/12) - 1;
     let remainingBalance = Number(loanAmount.toFixed(10));
     let paymentDate = new Date(baseValues.first_installment_date);
     
