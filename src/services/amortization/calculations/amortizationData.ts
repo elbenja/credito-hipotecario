@@ -104,7 +104,7 @@ export class AmortizationDataService {
       
       // Calculate principal (part of payment that reduces loan)
       // For the final payment, principal must exactly equal beginning balance
-      // For other payments, principal is payment minus interest and insurances
+      // For other payments, principal is what remains after interest and insurances
       let principal = 0;
       if (i === totalMonths - 1) {
         // Final payment - principal equals remaining balance
@@ -112,6 +112,11 @@ export class AmortizationDataService {
       } else {
         // Regular payment - principal is payment minus interest and insurances
         principal = monthlyPayment - interest - currentPropertyInsurance - currentLoanProtection;
+        
+        // Ensure principal doesn't cause negative balance
+        if (principal > beginBalance) {
+          principal = beginBalance;
+        }
       }
       
       // Calculate ending balance
