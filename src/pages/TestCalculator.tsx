@@ -77,11 +77,18 @@ export default function TestCalculator() {
       const firstRow = schedule[0];
       
       // Update output states
-      setInstallmentAmount(firstRow.monthlyInstallment)
+      setInstallmentAmount(firstRow.baseInstallment)
       setMonthlyPayment(firstRow.monthlyPayment)
       setTotalMonths(schedule.length)
-      setMonthlyRate((interestRateValue / 100) / parseInt(installmentsPerYear))
-      setTotalInterestAndPayments(schedule.reduce((sum, row) => sum + row.interest, 0))
+      // Use effective annual rate (EAR) formula instead of nominal rate
+      setMonthlyRate(Math.pow(1 + (interestRateValue / 100), 1/12) - 1)
+      // Calculate total interest and all insurance payments
+      setTotalInterestAndPayments(
+        schedule.reduce((sum, row) => {
+          // Each row's interestAndPayments already contains interest + property insurance + loan protection
+          return sum + row.interestAndPayments;
+        }, 0)
+      )
       setPaymentSchedule(schedule)
     }
   }, [cost, propertyInsurance, downPayment, loanProtection, interestRate, termYears, installmentsPerYear, loanProtectionType, firstInstallmentDate])
@@ -129,14 +136,60 @@ export default function TestCalculator() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="loanProtection">Loan Protection</Label>
+            <Label htmlFor="loanProtectionType">Loan Protection Type</Label>
+            <Select 
+              value={loanProtectionType} 
+              onValueChange={(value) => {
+                setLoanProtectionType(value);
+                // Set the corresponding percentage based on type
+                switch(value) {
+                  case "individual":
+                    setLoanProtection("0.028");
+                    break;
+                  case "joint":
+                    setLoanProtection("0.052");
+                    break;
+                  case "none":
+                    setLoanProtection("0");
+                    break;
+                  case "custom":
+                    // Keep current value if it's custom
+                    break;
+                }
+              }}
+            >
+              <SelectTrigger id="loanProtectionType">
+                <SelectValue placeholder="Select protection type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="individual">Individual (0.028%)</SelectItem>
+                <SelectItem value="joint">Joint (0.052%)</SelectItem>
+                <SelectItem value="none">None (0%)</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="loanProtection">Loan Protection Rate (%)</Label>
             <Input
               id="loanProtection"
               type="number"
               value={loanProtection}
-              onChange={(e) => setLoanProtection(e.target.value)}
-              placeholder="Enter loan protection amount"
+              onChange={(e) => {
+                setLoanProtection(e.target.value);
+                // Set to custom type if user manually changes the value
+                if (loanProtectionType !== "custom" && e.target.value !== "0.028" && e.target.value !== "0.052" && e.target.value !== "0") {
+                  setLoanProtectionType("custom");
+                }
+              }}
+              placeholder="Enter percentage rate (e.g. 0.028)"
+              step="0.001"
+              disabled={loanProtectionType !== "custom" && loanProtectionType !== ""}
             />
+            <p className="text-xs text-muted-foreground">
+              This percentage will be applied monthly to each month's beginning balance
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -172,8 +225,8 @@ export default function TestCalculator() {
                 <SelectValue placeholder="Select frequency" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="12">Simple (12)</SelectItem>
-                <SelectItem value="14">Double (14)</SelectItem>
+                <SelectItem value="12">Simple </SelectItem>
+                <SelectItem value="14">Double </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -223,7 +276,7 @@ export default function TestCalculator() {
             <div>
               <Label className="text-muted-foreground">Monthly Interest Rate (%)</Label>
               <div className="text-2xl font-bold">
-                {monthlyRate.toFixed(4)}%
+                {(monthlyRate * 100).toFixed(6)}%
               </div>
             </div>
 
@@ -232,6 +285,9 @@ export default function TestCalculator() {
               <div className="text-2xl font-bold">
                 {formatCurrency(installmentAmount, "PEN")}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Fixed principal + interest component (same amount every month)
+              </p>
             </div>
 
             <div>
@@ -250,9 +306,12 @@ export default function TestCalculator() {
 
             <div>
               <Label className="text-muted-foreground">Monthly Payment</Label>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold bg-blue-100 p-2">
                 {formatCurrency(monthlyPayment, "PEN")}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Total payment (2× in July/December for Double option)
+              </p>
             </div>
           </div>
         </div>
@@ -267,12 +326,12 @@ export default function TestCalculator() {
                 <th className="border p-2 text-left text-xs font-medium text-gray-600">Row</th>
                 <th className="border p-2 text-left text-xs font-medium text-gray-600">Date</th>
                 <th className="border p-2 text-left text-xs font-medium text-gray-600">Monthly Payment</th>
-                <th className="border p-2 text-left text-xs font-medium text-gray-600">Monthly Installment</th>
-                <th className="border p-2 text-left text-xs font-medium text-gray-600">Interest + Monthly Payments</th>
+                <th className="border p-2 text-left text-xs font-medium text-gray-600">Base Installment</th>
+                <th className="border p-2 text-left text-xs font-medium text-gray-600">Interest + Insurances</th>
                 <th className="border p-2 text-left text-xs font-medium text-gray-600">Principal</th>
                 <th className="border p-2 text-left text-xs font-medium text-gray-600">Interest</th>
-                <th className="border p-2 text-left text-xs font-medium text-gray-600">Begin Balance</th>
-                <th className="border p-2 text-left text-xs font-medium text-gray-600">End Balance</th>
+                <th className="border p-2 text-left text-xs font-medium text-gray-600">Beginning Balance</th>
+                <th className="border p-2 text-left text-xs font-medium text-gray-600">Ending Balance</th>
               </tr>
             </thead>
             <tbody>
@@ -288,7 +347,7 @@ export default function TestCalculator() {
                   <td className="border p-2">{row.row}</td>
                   <td className="border p-2">{formatDate(row.date)}</td>
                   <td className="border p-2">{formatCurrency(row.monthlyPayment, "PEN")}</td>
-                  <td className="border p-2">{formatCurrency(row.monthlyInstallment, "PEN")}</td>
+                  <td className="border p-2">{formatCurrency(row.baseInstallment, "PEN")}</td>
                   <td className="border p-2">{formatCurrency(row.interestAndPayments, "PEN")}</td>
                   <td className="border p-2">{formatCurrency(row.principal, "PEN")}</td>
                   <td className="border p-2">{formatCurrency(row.interest, "PEN")}</td>
