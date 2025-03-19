@@ -4,6 +4,7 @@ interface GoalSeekInput {
   amount: number
   months: number
   interest: number
+  installments_per_year: number
   property_insurance: number
   loan_protection_insurance: number
   past_months?: number
@@ -31,6 +32,7 @@ export class GoalSeekService {
       amount,
       months,
       interest,
+      installments_per_year = 12,
       property_insurance,
       loan_protection_insurance,
       past_months = 0
@@ -45,7 +47,15 @@ export class GoalSeekService {
       return {
         base_installment,
         total_months: past_months + months,
-        payments: this.generatePaymentSchedule(amount, base_installment, months, 0, property_insurance, loan_protection_insurance)
+        payments: this.generatePaymentSchedule(
+          amount, 
+          base_installment, 
+          months, 
+          0, 
+          installments_per_year,
+          property_insurance, 
+          loan_protection_insurance
+        )
       }
     }
 
@@ -56,7 +66,8 @@ export class GoalSeekService {
     // Add property insurance to base payment
     payment += property_insurance
 
-    // Binary search to find the correct payment amount
+    // Binary search to find the correct payment amount that results in zero balance
+    // accounting for double payments in July and December for 14 installments option
     let low = 0
     let high = payment * 2
     let iterations = 0
@@ -68,6 +79,7 @@ export class GoalSeekService {
         payment,
         months,
         monthlyInterestRate,
+        installments_per_year,
         property_insurance,
         loan_protection_insurance
       )
@@ -96,6 +108,7 @@ export class GoalSeekService {
         finalPayment,
         months,
         monthlyInterestRate,
+        installments_per_year,
         property_insurance,
         loan_protection_insurance
       )
@@ -110,19 +123,36 @@ export class GoalSeekService {
     payment: number,
     months: number,
     monthlyInterestRate: number,
+    installmentsPerYear: number,
     property_insurance: number,
     loan_protection_insurance: number
   ): number {
     let balance = principal
 
     for (let i = 0; i < months; i++) {
-      const monthlyInterest = balance * monthlyInterestRate
-      const monthlyLoanInsurance = balance * (loan_protection_insurance / 100)
-      const availableForPrincipal = payment - monthlyInterest - property_insurance - monthlyLoanInsurance
-      balance -= availableForPrincipal
+      // Determine if this is a double payment month (July or December for 14 installments)
+      const month = i % 12;
+      const isDoublePayment = installmentsPerYear === 14 && (month === 6 || month === 11);
+      
+      // Get payment for this month (could be double for July/December)
+      const currentPayment = isDoublePayment ? payment * 2 : payment;
+      
+      // Calculate interest and insurance
+      const monthlyInterest = balance * monthlyInterestRate;
+      const monthlyLoanInsurance = balance * (loan_protection_insurance / 100);
+      
+      // Adjust insurance for double payment months
+      const currentPropertyInsurance = isDoublePayment ? property_insurance * 2 : property_insurance;
+      const currentLoanInsurance = isDoublePayment ? monthlyLoanInsurance * 2 : monthlyLoanInsurance;
+      
+      // Calculate principal reduction
+      const availableForPrincipal = currentPayment - monthlyInterest - currentPropertyInsurance - currentLoanInsurance;
+      
+      // Update balance
+      balance -= availableForPrincipal;
     }
 
-    return balance
+    return balance;
   }
 
   /**
@@ -133,37 +163,52 @@ export class GoalSeekService {
     payment: number,
     months: number,
     monthlyInterestRate: number,
+    installmentsPerYear: number,
     property_insurance: number,
     loan_protection_insurance: number
   ): PaymentRow[] {
-    const schedule: PaymentRow[] = []
-    let balance = principal
-    const baseDate = new Date()
+    const schedule: PaymentRow[] = [];
+    let balance = principal;
+    const baseDate = new Date();
 
     for (let i = 0; i < months; i++) {
-      const paymentDate = new Date(baseDate)
-      paymentDate.setMonth(baseDate.getMonth() + i)
-
-      const monthlyInterest = balance * monthlyInterestRate
-      const monthlyLoanInsurance = balance * (loan_protection_insurance / 100)
-      const availableForPrincipal = payment - monthlyInterest - property_insurance - monthlyLoanInsurance
+      const paymentDate = new Date(baseDate);
+      paymentDate.setMonth(baseDate.getMonth() + i);
+      
+      // Determine if this is a double payment month (July or December for 14 installments)
+      const month = paymentDate.getMonth();
+      const isDoublePayment = installmentsPerYear === 14 && (month === 6 || month === 11);
+      
+      // Get payment for this month (could be double for July/December)
+      const currentPayment = isDoublePayment ? payment * 2 : payment;
+      
+      // Calculate interest and insurance
+      const monthlyInterest = balance * monthlyInterestRate;
+      const monthlyLoanInsurance = balance * (loan_protection_insurance / 100);
+      
+      // Adjust insurance for double payment months
+      const currentPropertyInsurance = isDoublePayment ? property_insurance * 2 : property_insurance;
+      const currentLoanInsurance = isDoublePayment ? monthlyLoanInsurance * 2 : monthlyLoanInsurance;
+      
+      // Calculate principal reduction
+      const availableForPrincipal = currentPayment - monthlyInterest - currentPropertyInsurance - currentLoanInsurance;
       
       const row: PaymentRow = {
         payment_date: paymentDate,
         beginning_balance: balance,
-        monthly_payment: payment,
+        monthly_payment: currentPayment,
         monthly_interest: monthlyInterest,
-        property_insurance: property_insurance,
-        monthly_loan_insurance: monthlyLoanInsurance,
+        property_insurance: currentPropertyInsurance,
+        monthly_loan_insurance: currentLoanInsurance,
         principal: availableForPrincipal,
         ending_balance: balance - availableForPrincipal,
         is_different_from_base: false
-      }
+      };
 
-      schedule.push(row)
-      balance = row.ending_balance
+      schedule.push(row);
+      balance = row.ending_balance;
     }
 
-    return schedule
+    return schedule;
   }
 } 

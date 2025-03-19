@@ -39,6 +39,7 @@ export class ScenarioCalculator {
       loan_amount,
       interest_rate,
       term_years,
+      installments_per_year,
       property_insurance,
       loan_insurance,
       extra_installments = [],
@@ -50,6 +51,7 @@ export class ScenarioCalculator {
       loan_amount,
       interest_rate,
       term_years,
+      installments_per_year,
       property_insurance,
       loan_insurance
     )
@@ -59,6 +61,7 @@ export class ScenarioCalculator {
       loan_amount,
       regularScenario.summary.monthly_payment,
       interest_rate,
+      installments_per_year,
       property_insurance,
       loan_insurance,
       extra_installments
@@ -68,6 +71,7 @@ export class ScenarioCalculator {
       loan_amount,
       interest_rate,
       term_years,
+      installments_per_year,
       property_insurance,
       loan_insurance,
       extra_installments
@@ -77,6 +81,7 @@ export class ScenarioCalculator {
       loan_amount,
       interest_rate,
       term_years,
+      installments_per_year,
       property_insurance,
       loan_insurance,
       rate_changes
@@ -97,6 +102,7 @@ export class ScenarioCalculator {
     amount: number,
     interest: number,
     termYears: number,
+    installmentsPerYear: number,
     propertyInsurance: number,
     loanInsurance: number
   ) {
@@ -104,6 +110,7 @@ export class ScenarioCalculator {
       amount,
       months: termYears * 12,
       interest,
+      installments_per_year: installmentsPerYear,
       property_insurance: propertyInsurance,
       loan_protection_insurance: loanInsurance
     })
@@ -121,6 +128,7 @@ export class ScenarioCalculator {
     amount: number,
     baseInstallment: number,
     interest: number,
+    installmentsPerYear: number,
     propertyInsurance: number,
     loanInsurance: number,
     extraInstallments: ExtraInstallment[]
@@ -129,6 +137,7 @@ export class ScenarioCalculator {
       amount,
       base_installment: baseInstallment,
       interest,
+      installments_per_year: installmentsPerYear,
       property_insurance: propertyInsurance,
       loan_protection_insurance: loanInsurance,
       extra_installments: extraInstallments
@@ -147,6 +156,7 @@ export class ScenarioCalculator {
     amount: number,
     interest: number,
     termYears: number,
+    installmentsPerYear: number,
     propertyInsurance: number,
     loanInsurance: number,
     extraInstallments: ExtraInstallment[]
@@ -180,6 +190,7 @@ export class ScenarioCalculator {
       amount: adjustedAmount,
       months: termYears * 12,
       interest,
+      installments_per_year: installmentsPerYear,
       property_insurance: propertyInsurance,
       loan_protection_insurance: loanInsurance
     })
@@ -197,6 +208,7 @@ export class ScenarioCalculator {
     amount: number,
     interest: number,
     termYears: number,
+    installmentsPerYear: number,
     propertyInsurance: number,
     loanInsurance: number,
     rateChanges: RateChange[]
@@ -225,6 +237,7 @@ export class ScenarioCalculator {
         amount: currentAmount,
         months: monthsUntilChange,
         interest: currentInterest,
+        installments_per_year: installmentsPerYear,
         property_insurance: propertyInsurance,
         loan_protection_insurance: loanInsurance,
         past_months: pastMonths
@@ -245,6 +258,7 @@ export class ScenarioCalculator {
         amount: currentAmount,
         months: remainingMonths,
         interest: currentInterest,
+        installments_per_year: installmentsPerYear,
         property_insurance: propertyInsurance,
         loan_protection_insurance: loanInsurance,
         past_months: pastMonths

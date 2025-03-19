@@ -455,9 +455,14 @@ export default function TestExtraInstallments() {
                                     </FormControl>
                                     <SelectContent>
                                       <SelectItem value="12">Regular (12)</SelectItem>
-                                      <SelectItem value="14">Double (14)</SelectItem>
+                                      <SelectItem value="14">Double (14) - 2x in July & December</SelectItem>
                                     </SelectContent>
                                   </Select>
+                                  {field.value === "14" && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Double payments in July and December. Monthly payment and insurances are doubled for these months.
+                                    </p>
+                                  )}
                                 </FormItem>
                               )}
                             />
@@ -612,6 +617,20 @@ function ScenarioCalculationsSection({
     loanInsurance: formValues.loanInsurance
   })
 
+  // For debugging: Log the payment data when it's available
+  useEffect(() => {
+    if (scenarios && formValues.installmentsPerYear === 14) {
+      // Filter for July and December payments only for debugging
+      const julyDecPayments = scenarios.regular?.payments.filter(payment => {
+        const date = new Date(payment.payment_date);
+        return date.getMonth() === 6 || date.getMonth() === 11;
+      });
+      
+      console.log('DEBUG 14 installments - July/Dec payments:', julyDecPayments);
+      console.log('DEBUG Regular payments sample:', scenarios.regular?.payments.slice(0, 3));
+    }
+  }, [scenarios, formValues.installmentsPerYear]);
+
   if (isLoading) {
     return (
       <div className="mt-8">
@@ -639,15 +658,25 @@ function ScenarioCalculationsSection({
   }
 
   // Helper function to transform payment rows for ScenarioTable
-  const mapPaymentForTable = (payment: any) => ({
-    date: new Date(payment.payment_date),
-    capital: payment.principal || payment.capital || 0,
-    interest: payment.monthly_interest || payment.interest || 0,
-    property_insurance: payment.property_insurance || 0,
-    loan_insurance: payment.monthly_loan_insurance || payment.loan_insurance || 0,
-    monthly_payment: payment.monthly_payment || 0,
-    is_different_from_base: payment.is_different_from_base || false
-  })
+  const mapPaymentForTable = (payment: any) => {
+    // Check if this is a double payment month (July or December)
+    const paymentDate = new Date(payment.payment_date);
+    const isDoublePaymentMonth = formValues.installmentsPerYear === 14 && 
+      (paymentDate.getMonth() === 6 || paymentDate.getMonth() === 11);
+    
+    // Use the monthly_payment directly from the backend
+    // The backend already doubles payments for July and December when installmentsPerYear is 14
+    return {
+      date: paymentDate,
+      capital: payment.principal || payment.capital || 0,
+      interest: payment.monthly_interest || payment.interest || 0,
+      property_insurance: payment.property_insurance || 0,
+      loan_insurance: payment.monthly_loan_insurance || payment.loan_insurance || 0,
+      monthly_payment: payment.monthly_payment || 0,
+      is_different_from_base: payment.is_different_from_base || false,
+      is_double_payment: isDoublePaymentMonth
+    };
+  }
 
   return (
     <div className="mt-8">
@@ -662,6 +691,21 @@ function ScenarioCalculationsSection({
           <li><span className="font-medium">Lower Payment</span> – Forks from Regular when extra installments are applied. Reduces monthly payment while total months stays the same.</li>
           <li><span className="font-medium">New Rate</span> – Forks from Regular when a new refinancing rate is introduced. Can change both months and payment amount.</li>
         </ul>
+        
+        {formValues.installmentsPerYear === 14 && (
+          <div className="mt-4 p-3 bg-amber-50 rounded-md border border-amber-200">
+            <h4 className="text-sm font-semibold text-amber-800">Double Payment Option Selected</h4>
+            <p className="text-sm text-amber-700">
+              You've selected the 14 installments per year option. This means:
+            </p>
+            <ul className="mt-1 space-y-1 text-xs text-amber-700 list-disc pl-4">
+              <li>Regular months: Standard monthly payment</li>
+              <li>July and December: <strong>Double payments</strong> (2× the monthly amount)</li>
+              <li>All insurance costs are also doubled in July and December</li>
+              <li>Double payment months are highlighted in the payment tables</li>
+            </ul>
+          </div>
+        )}
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -689,6 +733,11 @@ function ScenarioCalculationsSection({
                 <p className="text-lg font-medium">
                   {formatCurrency(scenarios?.regular?.summary.monthly_payment || 0, property.currency)}
                 </p>
+                {formValues.installmentsPerYear === 14 && (
+                  <p className="text-xs text-amber-700">
+                    (2× in July & December: {formatCurrency((scenarios?.regular?.summary.monthly_payment || 0) * 2, property.currency)})
+                  </p>
+                )}
               </div>
             </div>
             {scenarios?.regular?.payments && (
@@ -733,6 +782,11 @@ function ScenarioCalculationsSection({
                   {formatCurrency(scenarios?.accelerated?.summary.monthly_payment || 0, property.currency)}
                   {/* Same as Regular */}
                 </p>
+                {formValues.installmentsPerYear === 14 && (
+                  <p className="text-xs text-amber-700">
+                    (2× in July & December: {formatCurrency((scenarios?.accelerated?.summary.monthly_payment || 0) * 2, property.currency)})
+                  </p>
+                )}
               </div>
             </div>
             {scenarios?.accelerated?.payments && (
@@ -777,6 +831,11 @@ function ScenarioCalculationsSection({
                     </span>
                   )}
                 </p>
+                {formValues.installmentsPerYear === 14 && (
+                  <p className="text-xs text-amber-700">
+                    (2× in July & December: {formatCurrency((scenarios?.lower_payment?.summary.monthly_payment || 0) * 2, property.currency)})
+                  </p>
+                )}
               </div>
             </div>
             {scenarios?.lower_payment?.payments && (
@@ -827,6 +886,11 @@ function ScenarioCalculationsSection({
                     </span>
                   )}
                 </p>
+                {formValues.installmentsPerYear === 14 && (
+                  <p className="text-xs text-amber-700">
+                    (2× in July & December: {formatCurrency((scenarios?.new_rate?.summary.monthly_payment || 0) * 2, property.currency)})
+                  </p>
+                )}
               </div>
             </div>
             {scenarios?.new_rate?.payments && (

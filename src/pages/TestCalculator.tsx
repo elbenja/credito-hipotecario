@@ -327,9 +327,10 @@ export default function TestCalculator() {
                 <th className="border p-2 text-left text-xs font-medium text-gray-600">Date</th>
                 <th className="border p-2 text-left text-xs font-medium text-gray-600">Monthly Payment</th>
                 <th className="border p-2 text-left text-xs font-medium text-gray-600">Base Installment</th>
-                <th className="border p-2 text-left text-xs font-medium text-gray-600">Interest + Insurances</th>
                 <th className="border p-2 text-left text-xs font-medium text-gray-600">Principal</th>
                 <th className="border p-2 text-left text-xs font-medium text-gray-600">Interest</th>
+                <th className="border p-2 text-left text-xs font-medium text-gray-600">Property Insurance</th>
+                <th className="border p-2 text-left text-xs font-medium text-gray-600">Loan Insurance</th>
                 <th className="border p-2 text-left text-xs font-medium text-gray-600">Beginning Balance</th>
                 <th className="border p-2 text-left text-xs font-medium text-gray-600">Ending Balance</th>
               </tr>
@@ -348,9 +349,10 @@ export default function TestCalculator() {
                   <td className="border p-2">{formatDate(row.date)}</td>
                   <td className="border p-2">{formatCurrency(row.monthlyPayment, "PEN")}</td>
                   <td className="border p-2">{formatCurrency(row.baseInstallment, "PEN")}</td>
-                  <td className="border p-2">{formatCurrency(row.interestAndPayments, "PEN")}</td>
                   <td className="border p-2">{formatCurrency(row.principal, "PEN")}</td>
                   <td className="border p-2">{formatCurrency(row.interest, "PEN")}</td>
+                  <td className="border p-2">{formatCurrency(row.propertyInsurance, "PEN")}</td>
+                  <td className="border p-2">{formatCurrency(row.loanInsurance, "PEN")}</td>
                   <td className="border p-2">{formatCurrency(row.beginBalance, "PEN")}</td>
                   <td className="border p-2">{formatCurrency(row.endBalance, "PEN")}</td>
                 </tr>

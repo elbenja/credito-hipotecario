@@ -8,6 +8,8 @@ export interface AmortizationRow {
   interestAndPayments: number;
   principal: number;
   interest: number;
+  propertyInsurance: number;
+  loanInsurance: number;
   beginBalance: number;
   endBalance: number;
 }
@@ -130,6 +132,8 @@ export class AmortizationDataService {
         interestAndPayments: Number((interest + currentPropertyInsurance + currentLoanProtection).toFixed(2)),
         principal: Number(principal.toFixed(2)),
         interest: Number(interest.toFixed(2)),
+        propertyInsurance: Number(currentPropertyInsurance.toFixed(2)),
+        loanInsurance: Number(currentLoanProtection.toFixed(2)),
         beginBalance: Number(beginBalance.toFixed(2)),
         endBalance: Number(endBalance.toFixed(2))
       });
