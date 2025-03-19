@@ -46,7 +46,28 @@ export function ExtraInstallmentsTable({
                   ? t("extra_installments_section.table.frequency_once") 
                   : t("extra_installments_section.table.frequency_monthly")}
               </td>
-              <td className="p-2 text-sm">{formatDate(new Date(installment.start_date))}</td>
+              <td className="p-2 text-sm">
+                {(() => {
+                  // Handle date display in a timezone-safe way
+                  // If it's already a YYYY-MM-DD string, parse it correctly
+                  try {
+                    if (typeof installment.start_date === 'string') {
+                      // If it's a simple YYYY-MM-DD format, parse it directly
+                      if (/^\d{4}-\d{2}-\d{2}$/.test(installment.start_date)) {
+                        const [year, month, day] = installment.start_date.split('-').map(Number);
+                        // Create a date with local timezone (months are 0-indexed in JS)
+                        const localDate = new Date(year, month - 1, day);
+                        return formatDate(localDate);
+                      }
+                    }
+                    // Fallback to regular date parsing if needed
+                    return formatDate(new Date(installment.start_date));
+                  } catch (e) {
+                    console.error('Error formatting date:', e);
+                    return installment.start_date; // Fallback to raw string
+                  }
+                })()}
+              </td>
               <td className="p-2">
                 <Button
                   className="h-8 w-8"

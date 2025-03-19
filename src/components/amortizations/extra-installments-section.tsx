@@ -69,21 +69,39 @@ export function ExtraInstallmentsSection({
   const handleSubmit = async (values: ExtraInstallmentFormValues) => {
     try {
       setIsLoading(true)
+      
+      // REVISED APPROACH: Create a date that preserves the user's selected day
+      // 1. Get the selected year, month, and day components
+      const selectedDate = values.start_date;
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth();
+      const day = selectedDate.getDate();
+      
+      // 2. Create a simple ISO date string in YYYY-MM-DD format
+      // This bypasses timezone complications by only storing the date part
+      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      
+      console.log('Submitting extra installment with date (raw):', values.start_date);
+      console.log('Submitting with formatted date string:', dateString);
+      
       const installmentData = {
         amortization_id: amortizationId,
-        start_date: values.start_date,
+        start_date: dateString, // Use the date string format
         amount: parseFloat(values.amount),
         frequency: values.frequency
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("extra_installments")
         .insert([installmentData])
+        .select()
 
       if (error) {
         console.error('Supabase error:', error)
         throw error
       }
+
+      console.log('Extra installment created:', data);
 
       // Invalidate both queries to trigger recalculation
       await Promise.all([

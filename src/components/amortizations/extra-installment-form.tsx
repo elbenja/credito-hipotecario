@@ -80,8 +80,19 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
   };
 
   const handleSubmit = (values: ExtraInstallmentFormValues) => {
-    onSubmit(values)
-    form.reset()
+    // Clone and normalize the date to ensure consistent date handling
+    // First, convert to a date-only string (YYYY-MM-DD)
+    const normalizedDate = new Date(values.start_date);
+    // Set to noon UTC to avoid any timezone boundary issues
+    normalizedDate.setUTCHours(12, 0, 0, 0);
+    
+    // Pass the normalized date to parent
+    onSubmit({
+      ...values,
+      start_date: normalizedDate
+    });
+    
+    form.reset();
   }
 
   return (

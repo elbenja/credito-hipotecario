@@ -4,7 +4,7 @@ import type { Scenarios, ScenarioSummary, PaymentRow } from "../types/common"
 
 interface ExtraInstallment {
   amount: number
-  frequency: 'once' | 'monthly' | 'yearly'
+  frequency: 'once' | 'one-time' | 'monthly' | 'yearly'
   start_date: Date
 }
 
@@ -40,6 +40,7 @@ export class ScenarioCalculator {
       interest_rate,
       term_years,
       installments_per_year,
+      first_installment_date,
       property_insurance,
       loan_insurance,
       extra_installments = [],
@@ -64,7 +65,8 @@ export class ScenarioCalculator {
       installments_per_year,
       property_insurance,
       loan_insurance,
-      extra_installments
+      extra_installments,
+      first_installment_date
     )
 
     const lowerPaymentScenario = this.calculateLowerPaymentScenario(
@@ -131,8 +133,52 @@ export class ScenarioCalculator {
     installmentsPerYear: number,
     propertyInsurance: number,
     loanInsurance: number,
-    extraInstallments: ExtraInstallment[]
+    extraInstallments: ExtraInstallment[],
+    firstInstallmentDate: Date
   ) {
+    console.log('\n===== ACCELERATED SCENARIO CALCULATION =====');
+    console.log(`Loan amount: ${amount}`);
+    console.log(`Base installment: ${baseInstallment}`);
+    console.log(`Extra installments: ${extraInstallments.length}`);
+    
+    // Use the provided first installment date
+    console.log(`Using first installment date: ${firstInstallmentDate.toISOString()}`);
+    
+    // Log each extra installment for debugging
+    extraInstallments.forEach((installment, i) => {
+      const date = new Date(installment.start_date);
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      console.log(`Extra installment #${i+1}: ${installment.amount} (${installment.frequency}) on ${dateStr}`);
+      console.log(`Is first of month? ${date.getDate() === 1 ? 'YES' : 'NO'}`);
+    });
+    
+    // Make sure we're not modifying original dates
+    const processedInstallments = extraInstallments.map(inst => {
+      // Log original state
+      console.log(`Processing installment: Original frequency "${inst.frequency}", date ${new Date(inst.start_date).toISOString()}`);
+      
+      // Create processed version
+      const result = {
+        ...inst,
+        // Ensure we have actual Date objects
+        start_date: inst.start_date instanceof Date ? 
+          new Date(inst.start_date.getTime()) : 
+          new Date(inst.start_date),
+        // Map frequency names correctly
+        frequency: inst.frequency === 'one-time' ? 'once' : inst.frequency
+      };
+      
+      // Log mapped state
+      console.log(`  -> Mapped to: frequency "${result.frequency}", date ${result.start_date.toISOString()}`);
+      
+      return result;
+    });
+    
+    console.log(`Sending ${processedInstallments.length} installments to FixedPaymentsService`);
+    processedInstallments.forEach((inst, i) => {
+      console.log(`Installment #${i+1}: ${inst.amount} (${inst.frequency}) on ${inst.start_date.toISOString()}`);
+    });
+    
     const result = FixedPaymentsService.calculate({
       amount,
       base_installment: baseInstallment,
@@ -140,9 +186,12 @@ export class ScenarioCalculator {
       installments_per_year: installmentsPerYear,
       property_insurance: propertyInsurance,
       loan_protection_insurance: loanInsurance,
-      extra_installments: extraInstallments
-    })
-
+      extra_installments: processedInstallments,
+      first_installment_date: firstInstallmentDate // Pass the first installment date
+    });
+    
+    console.log(`Result: ${result.new_remaining_months} months (down from ${result.total_months})`);
+    
     return {
       summary: this.calculateSummary(result.payments),
       payments: result.payments
