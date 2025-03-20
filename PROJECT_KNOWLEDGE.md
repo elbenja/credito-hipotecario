@@ -105,6 +105,8 @@ src/
    - Parameters include: loan_amount, down_payment, interest, term_years, installments_per_year, loan_protection_insurance, first_installment_date
    - Formula: loan_amount = (price_cost – first_home_bonus – down_payment)
    - Each amortization has four scenarios for comparison
+   - First installment date can be set in the past, but no more than 15 years before the current date
+   - This allows for tracking historical amortization data and refinancing scenarios for existing loans
 
 3. **Scenarios**
    - Four types per amortization: Regular, Accelerated, Lower Payment, New Rate

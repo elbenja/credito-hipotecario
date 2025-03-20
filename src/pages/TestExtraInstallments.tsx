@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CalendarIcon } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn, formatCurrency, formatDate } from "@/lib/utils"
+import { cn, formatCurrency, formatDate, normalizeDate, createLocalDate } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
 import { ExtraInstallmentsSection } from "@/components/amortizations/extra-installments-section"
 import { ScenarioTable } from "@/components/amortizations/scenario-table"
@@ -114,7 +114,7 @@ export default function TestExtraInstallments() {
       interest_rate: amortization.interest_rate.toString(),
       term_years: amortization.term_years.toString(),
       installments_per_year: amortization.installments_per_year.toString(),
-      first_installment_date: new Date(amortization.first_installment_date),
+      first_installment_date: createLocalDate(amortization.first_installment_date),
       loan_protection_type: amortization.loan_protection_type as "none" | "custom" | "individual" | "joint",
       loan_protection_insurance: amortization.loan_protection_insurance?.toString(),
     })
@@ -287,7 +287,7 @@ export default function TestExtraInstallments() {
                       <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                         <p>Loan Amount: {formatCurrency(amortization.loan_amount || 0, selectedProperty.currency)}</p>
                         <p>Interest Rate: {amortization.interest_rate}%</p>
-                        <p>First Payment: {formatDate(new Date(amortization.first_installment_date))}</p>
+                        <p>First Payment: {formatDate(createLocalDate(amortization.first_installment_date))}</p>
                       </div>
                     </div>
                   ))
@@ -498,18 +498,25 @@ export default function TestExtraInstallments() {
                                         onSelect={(date) => {
                                           // Set the time to noon to avoid timezone issues
                                           if (date) {
-                                            const adjustedDate = new Date(date);
-                                            adjustedDate.setHours(12, 0, 0, 0);
-                                            field.onChange(adjustedDate);
+                                            field.onChange(normalizeDate(date));
                                           } else {
                                             field.onChange(date);
                                           }
                                           // Trigger form validation to ensure field values are up-to-date
                                           amortizationForm.trigger("first_installment_date");
                                         }}
-                                        disabled={(date) =>
-                                          date < new Date() || date < new Date("1900-01-01")
-                                        }
+                                        disabled={(date) => {
+                                          // Allow dates up to 15 years in the past
+                                          const fifteenYearsAgo = new Date();
+                                          fifteenYearsAgo.setFullYear(fifteenYearsAgo.getFullYear() - 15);
+                                          fifteenYearsAgo.setHours(0, 0, 0, 0); // Start of day
+                                          
+                                          // Disable if date is more than 15 years in the past or before 1900
+                                          return (
+                                            date < fifteenYearsAgo || 
+                                            date < new Date("1900-01-01")
+                                          );
+                                        }}
                                         initialFocus
                                       />
                                     </PopoverContent>
@@ -593,7 +600,7 @@ function ScenarioCalculationsSection({
       const interestRate = parseFloat(values.interest_rate || "0");
       const termYears = parseInt(values.term_years || "0");
       const installmentsPerYear = parseInt(values.installments_per_year || "12");
-      const firstInstallmentDate = values.first_installment_date || new Date();
+      const firstInstallmentDate = values.first_installment_date ? normalizeDate(values.first_installment_date) : normalizeDate(new Date());
       const loanInsurance = parseFloat(values.loan_protection_insurance || "0");
       
       // Update the local state with new values

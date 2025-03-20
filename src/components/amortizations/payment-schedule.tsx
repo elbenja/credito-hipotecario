@@ -1,6 +1,6 @@
 import { Calendar as CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency, formatDate, normalizeDate } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
 import {
   FormField,
@@ -24,7 +24,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { UseFormReturn } from "react-hook-form"
 import { AmortizationFormValues } from "./schema"
-import { formatDate } from "@/lib/utils"
 
 type PaymentScheduleProps = {
   form: UseFormReturn<AmortizationFormValues>
@@ -113,12 +112,19 @@ export function PaymentSchedule({ form }: PaymentScheduleProps) {
                   selected={field.value}
                   onSelect={(date) => {
                     if (date) {
-                      const adjustedDate = new Date(date);
-                      adjustedDate.setHours(12, 0, 0, 0);
-                      field.onChange(adjustedDate);
+                      field.onChange(normalizeDate(date));
                     } else {
                       field.onChange(date);
                     }
+                  }}
+                  disabled={(date) => {
+                    // Allow dates up to 15 years in the past
+                    const fifteenYearsAgo = new Date();
+                    fifteenYearsAgo.setFullYear(fifteenYearsAgo.getFullYear() - 15);
+                    fifteenYearsAgo.setHours(0, 0, 0, 0); // Start of day
+                    
+                    // Disable if date is more than 15 years in the past
+                    return date < fifteenYearsAgo;
                   }}
                   initialFocus
                   formatters={{

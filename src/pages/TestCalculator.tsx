@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { CalendarIcon } from "lucide-react"
-import { cn, formatDate, formatCurrency } from "@/lib/utils"
+import { cn, formatDate, formatCurrency, normalizeDate } from "@/lib/utils"
 import { amortizationDataService } from "@/services/amortization/calculations/amortizationData"
 import type { Property } from "@/services/amortization/types/common"
 import type { AmortizationRow } from "@/services/amortization/calculations/amortizationData"
@@ -257,14 +257,18 @@ export default function TestCalculator() {
                   selected={firstInstallmentDate}
                   onSelect={(date) => {
                     if (date) {
-                      const adjustedDate = new Date(date);
-                      adjustedDate.setHours(12, 0, 0, 0);
-                      setFirstInstallmentDate(adjustedDate);
+                      setFirstInstallmentDate(normalizeDate(date));
                     }
                   }}
-                  disabled={(date) =>
-                    date < new Date()
-                  }
+                  disabled={(date) => {
+                    // Allow dates up to 15 years in the past
+                    const fifteenYearsAgo = new Date();
+                    fifteenYearsAgo.setFullYear(fifteenYearsAgo.getFullYear() - 15);
+                    fifteenYearsAgo.setHours(0, 0, 0, 0); // Start of day
+                    
+                    // Disable if date is more than 15 years in the past
+                    return date < fifteenYearsAgo;
+                  }}
                   initialFocus
                 />
               </PopoverContent>

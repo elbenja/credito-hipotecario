@@ -1,6 +1,6 @@
 import * as z from "zod"
 import { startOfMonth, addMonths } from "date-fns"
-import { formatDate } from "@/lib/utils"
+import { formatDate, normalizeDate } from "@/lib/utils"
 
 export const amortizationFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -48,7 +48,7 @@ export const defaultValues: AmortizationFormValues = {
   interest_rate: "4",
   term_years: "20",
   installments_per_year: "12",
-  first_installment_date: startOfMonth(addMonths(new Date(), 1)),
+  first_installment_date: normalizeDate(startOfMonth(addMonths(new Date(), 1))),
   loan_protection_type: "none",
   loan_protection_insurance: "0",
 }

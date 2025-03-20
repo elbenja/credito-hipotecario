@@ -1,6 +1,7 @@
 import { GoalSeekService } from "./goalSeek"
 import { FixedPaymentsService } from "./fixedPayments"
 import type { Scenarios, ScenarioSummary, PaymentRow } from "../types/common"
+import { normalizeDate } from "@/lib/utils"
 
 interface ExtraInstallment {
   amount: number
@@ -47,14 +48,29 @@ export class ScenarioCalculator {
       rate_changes = []
     } = input
 
+    // Normalize the first installment date
+    const normalizedFirstInstallmentDate = first_installment_date ? normalizeDate(first_installment_date) : normalizeDate(new Date());
+
     console.log('\n===== SCENARIO CALCULATOR =====');
     console.log(`Loan amount: ${loan_amount}`);
     console.log(`Interest rate: ${interest_rate}`);
     console.log(`Term years: ${term_years}`);
     console.log(`Installments per year: ${installments_per_year}`);
-    console.log(`First installment date: ${first_installment_date.toISOString()}`);
+    console.log(`First installment date: ${normalizedFirstInstallmentDate.toISOString()}`);
     console.log(`Extra installments count: ${extra_installments.length}`);
     console.log(`Rate changes count: ${rate_changes.length}`);
+
+    // Normalize dates in extra installments
+    const normalizedExtraInstallments = extra_installments.map(installment => ({
+      ...installment,
+      start_date: normalizeDate(installment.start_date)
+    }));
+
+    // Normalize dates in rate changes
+    const normalizedRateChanges = rate_changes.map(change => ({
+      ...change,
+      effective_date: normalizeDate(change.effective_date)
+    }));
     
     // Calculate regular scenario first as other scenarios depend on it
     const regularScenario = this.calculateRegularScenario(
@@ -64,11 +80,11 @@ export class ScenarioCalculator {
       installments_per_year,
       property_insurance,
       loan_insurance,
-      first_installment_date
+      normalizedFirstInstallmentDate
     )
 
     // If no extra installments or rate changes, all scenarios should be identical to regular
-    if ((extra_installments.length === 0) && (rate_changes.length === 0)) {
+    if ((normalizedExtraInstallments.length === 0) && (normalizedRateChanges.length === 0)) {
       console.log('No extra installments or rate changes - all scenarios will be identical to regular');
       return {
         regular: regularScenario,
@@ -87,8 +103,8 @@ export class ScenarioCalculator {
       installments_per_year,
       property_insurance,
       loan_insurance,
-      extra_installments,
-      first_installment_date
+      normalizedExtraInstallments,
+      normalizedFirstInstallmentDate
     )
 
     const lowerPaymentScenario = this.calculateLowerPaymentScenario(
@@ -98,8 +114,8 @@ export class ScenarioCalculator {
       installments_per_year,
       property_insurance,
       loan_insurance,
-      extra_installments,
-      first_installment_date
+      normalizedExtraInstallments,
+      normalizedFirstInstallmentDate
     )
 
     const newRateScenario = this.calculateNewRateScenario(
@@ -109,8 +125,8 @@ export class ScenarioCalculator {
       installments_per_year,
       property_insurance,
       loan_insurance,
-      rate_changes,
-      first_installment_date
+      normalizedRateChanges,
+      normalizedFirstInstallmentDate
     )
 
     return {
@@ -163,7 +179,7 @@ export class ScenarioCalculator {
     propertyInsurance: number,
     loanInsurance: number,
     extraInstallments: ExtraInstallment[],
-    firstInstallmentDate: Date
+    firstInstallmentDate?: Date
   ) {
     console.log('\n===== ACCELERATED SCENARIO CALCULATION =====');
     console.log(`Loan amount: ${amount}`);
@@ -184,8 +200,9 @@ export class ScenarioCalculator {
       );
     }
     
-    // Use the provided first installment date
-    console.log(`Using first installment date: ${firstInstallmentDate.toISOString()}`);
+    // Use the provided first installment date or default to today
+    const actualFirstInstallmentDate = firstInstallmentDate ? normalizeDate(firstInstallmentDate) : normalizeDate(new Date());
+    console.log(`Using first installment date: ${actualFirstInstallmentDate.toISOString()}`);
     
     // Log each extra installment for debugging
     extraInstallments.forEach((installment, i) => {
@@ -228,7 +245,7 @@ export class ScenarioCalculator {
       property_insurance: propertyInsurance,
       loan_protection_insurance: loanInsurance,
       extra_installments: processedInstallments,
-      first_installment_date: firstInstallmentDate // Pass the first installment date
+      first_installment_date: actualFirstInstallmentDate // Pass the actual non-optional date
     });
     
     console.log(`Result: ${result.new_remaining_months} months (down from ${result.total_months})`);
@@ -269,13 +286,17 @@ export class ScenarioCalculator {
     }
 
     // First, ensure we have a valid first installment date
-    const loanStartDate = firstInstallmentDate || new Date();
+    const loanStartDate = firstInstallmentDate ? normalizeDate(firstInstallmentDate) : normalizeDate(new Date());
     console.log(`Loan start date: ${loanStartDate.toISOString()}`);
     
     // Sort extra installments by start date (chronological order)
-    const sortedInstallments = [...extraInstallments].sort((a, b) => 
-      new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
-    );
+    // Ensure all dates are normalized
+    const sortedInstallments = [...extraInstallments]
+      .map(installment => ({
+        ...installment,
+        start_date: normalizeDate(installment.start_date)
+      }))
+      .sort((a, b) => a.start_date.getTime() - b.start_date.getTime());
     
     console.log(`Sorted ${sortedInstallments.length} extra installments chronologically`);
     
@@ -366,7 +387,7 @@ export class ScenarioCalculator {
       const remainingMonths = termYears * 12 - breakpointIndex;
       
       // Get the date of the next payment after the breakpoint
-      const nextPaymentDate = new Date(currentPayments[breakpointIndex].payment_date);
+      const nextPaymentDate = normalizeDate(new Date(currentPayments[breakpointIndex].payment_date));
       
       // Recalculate payments for the remaining term with the new lower balance
       const recalculatedResult = GoalSeekService.calculate({
