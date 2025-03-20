@@ -3,7 +3,7 @@ import type { PaymentRow } from "../types/common"
 interface ExtraInstallment {
   amount: number
   frequency: 'one-time' | 'monthly' | 'yearly'
-  start_date: Date
+  start_date: string | Date | any // Accept both string and Date types
 }
 
 interface FixedPaymentsInput {
@@ -152,60 +152,100 @@ export class FixedPaymentsService {
     
     // Format date for better readability
     const dateYMD = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    console.log(`\n==== CHECKING EXTRA PAYMENTS FOR: ${dateYMD} [Month ${months}] ====`);
-
+    
     // No extra installments check
     if (!extraInstallments || extraInstallments.length === 0) {
-      console.log('No extra installments to process');
       return 0;
     }
 
-    console.log(`Processing ${extraInstallments.length} potential extra installment(s)`);
+    // Enhanced debugging for Jan 2nd
+    const isJan2 = date.getMonth() === 0 && date.getDate() === 2;
+    if (isJan2) {
+      console.log(`\n🔍 SPECIAL CASE: Checking Jan 2 (${date.getFullYear()}) [Month ${months}] for extra payments`);
+      console.log(`Looking for matches among ${extraInstallments.length} extra installment(s)`);
+    } else if (months < 5) {
+      // Only log for first few months to avoid console spam
+      console.log(`\nChecking payment date: ${dateYMD} [Month ${months}]`);
+    }
 
     for (const extra of extraInstallments) {
       try {
-        // Ensure we have a proper date object
-        const startDate = new Date(extra.start_date);
+        // Ensure we have a proper date object - extra careful with type handling
+        let startDate: Date;
+        
+        if (extra.start_date instanceof Date) {
+          startDate = new Date(extra.start_date.getTime()); // Clone to avoid mutations
+        } else if (typeof extra.start_date === 'string') {
+          // Handle YYYY-MM-DD format directly
+          const match = extra.start_date.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+          if (match) {
+            const year = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10) - 1; // Convert to 0-based month
+            const day = parseInt(match[3], 10);
+            startDate = new Date(year, month, day, 12, 0, 0, 0); // Noon to avoid timezone issues
+          } else {
+            // Regular date parsing
+            startDate = new Date(extra.start_date);
+          }
+        } else {
+          // Try to handle anything else as a string
+          startDate = new Date(String(extra.start_date));
+        }
+        
+        // Verify we have a valid date
+        if (isNaN(startDate.getTime())) {
+          console.error(`Invalid date for extra payment:`, extra.start_date);
+          continue;
+        }
         
         // Format for consistent date display
         const startYMD = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
         
-        // Debug info
-        console.log(`\n🔍 Extra payment: ${extra.amount} ${extra.frequency} on ${startYMD}`);
-        
-        // For direct comparison, precompute date components
-        const paymentDay = startDate.getDate();
-        const paymentMonth = startDate.getMonth();
-        const paymentYear = startDate.getFullYear();
-        
-        const currentDay = date.getDate();
-        const currentMonth = date.getMonth();
-        const currentYear = date.getFullYear();
-        
-        // Check if date is before start date (for all frequency types)
-        const isBefore = 
-          currentYear < paymentYear || 
-          (currentYear === paymentYear && currentMonth < paymentMonth) ||
-          (currentYear === paymentYear && currentMonth === paymentMonth && currentDay < paymentDay);
-        
-        if (isBefore) {
-          console.log(`Payment date ${dateYMD} is before extra payment start date ${startYMD}`);
-          continue; // Skip this extra payment
+        // Special case for Jan 2, 2030
+        const isJan2_2030 = startDate.getFullYear() === 2030 && 
+                            startDate.getMonth() === 0 && 
+                            startDate.getDate() === 2;
+                            
+        // Special case for checking Jan 2nd any year
+        if (isJan2) {
+          console.log(`Found extra payment with date: ${startYMD}`);
+          console.log(`Current payment date: ${dateYMD}`);
+          console.log(`Extra payment amount: ${extra.amount}, frequency: ${extra.frequency}`);
         }
         
-        // Add extra payment based on frequency
-        if (extra.frequency === 'one-time') {
-          // For one-time payments, just check if this is the exact month when it should be applied
-          if (currentYear === paymentYear && currentMonth === paymentMonth && currentDay === paymentDay) {
-            console.log(`Applying one-time extra payment of ${extra.amount} for date match`);
-            totalExtra += extra.amount;
-          } else {
-            console.log(`Skipping one-time payment - not matched with current date`);
+        // Direct exact comparison for one-time payments
+        // This is the most reliable approach for dates
+        const isExactMatch = date.getFullYear() === startDate.getFullYear() && 
+                            date.getMonth() === startDate.getMonth() && 
+                            date.getDate() === startDate.getDate();
+        
+        // Special logging for Jan 2, 2030 date
+        if (isJan2_2030) {
+          console.log(`\n⚠️ SPECIAL JAN 2, 2030 EXTRA PAYMENT CHECK:`);
+          console.log(`Current date: ${dateYMD} vs. Start date: ${startYMD}`);
+          console.log(`Exact match? ${isExactMatch}`);
+          
+          if (isExactMatch) {
+            console.log(`✅ MATCH FOUND - INCLUDING PAYMENT OF ${extra.amount}`);
           }
-        } else if (extra.frequency === 'monthly') {
-          // For monthly payments, apply if we're on or after the start date
-          console.log(`Applying monthly extra payment of ${extra.amount}`);
-          totalExtra += extra.amount;
+        }
+        
+        // For one-time payments, we need an exact date match
+        if (extra.frequency === 'one-time') {
+          if (isExactMatch) {
+            console.log(`✅ APPLYING one-time extra payment of ${extra.amount} for exact date match: ${startYMD} = ${dateYMD}`);
+            totalExtra += extra.amount;
+          }
+        } 
+        // For monthly payments, we apply if the payment date is on or after the start date
+        else if (extra.frequency === 'monthly') {
+          // Check if payment date is on or after start date
+          const isOnOrAfter = date.getTime() >= startDate.getTime();
+          
+          if (isOnOrAfter) {
+            console.log(`✅ APPLYING monthly extra payment of ${extra.amount} (start: ${startYMD}, current: ${dateYMD})`);
+            totalExtra += extra.amount;
+          }
         }
         
       } catch (error) {
@@ -213,7 +253,10 @@ export class FixedPaymentsService {
       }
     }
     
-    console.log(`Total extra payment for ${dateYMD}: ${totalExtra}`);
+    if (totalExtra > 0 || isJan2) {
+      console.log(`Total extra payment for ${dateYMD}: ${totalExtra}`);
+    }
+    
     return totalExtra;
   }
 }

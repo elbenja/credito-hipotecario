@@ -70,23 +70,25 @@ export function ExtraInstallmentsSection({
     try {
       setIsLoading(true)
       
-      // REVISED APPROACH: Create a date that preserves the user's selected day
-      // 1. Get the selected year, month, and day components
-      const selectedDate = values.start_date;
-      const year = selectedDate.getFullYear();
-      const month = selectedDate.getMonth();
-      const day = selectedDate.getDate();
+      // IMPROVED APPROACH: Create a date string in YYYY-MM-DD format
+      // 1. Extract components from the date object
+      const dateObj = values.start_date;
+      const year = dateObj.getFullYear();
+      const month = dateObj.getMonth() + 1; // Convert to 1-based month
+      const day = dateObj.getDate();
       
-      // 2. Create a simple ISO date string in YYYY-MM-DD format
-      // This bypasses timezone complications by only storing the date part
-      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      // 2. Create a properly formatted YYYY-MM-DD string
+      const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       
-      console.log('Submitting extra installment with date (raw):', values.start_date);
-      console.log('Submitting with formatted date string:', dateString);
+      // Log for debugging
+      console.log('Extra installment submission:');
+      console.log('- Original date object:', dateObj);
+      console.log('- Date components:', { year, month, day });
+      console.log('- Formatted date string:', dateString);
       
       const installmentData = {
         amortization_id: amortizationId,
-        start_date: dateString, // Use the date string format
+        start_date: dateString, // Use the YYYY-MM-DD string
         amount: parseFloat(values.amount),
         frequency: values.frequency
       }

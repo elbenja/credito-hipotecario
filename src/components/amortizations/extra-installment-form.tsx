@@ -80,11 +80,20 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
   };
 
   const handleSubmit = (values: ExtraInstallmentFormValues) => {
-    // Clone and normalize the date to ensure consistent date handling
-    // First, convert to a date-only string (YYYY-MM-DD)
-    const normalizedDate = new Date(values.start_date);
-    // Set to noon UTC to avoid any timezone boundary issues
-    normalizedDate.setUTCHours(12, 0, 0, 0);
+    // IMPROVED approach to preserve date without timezone issues
+    // Extract date components from the selected date
+    const selectedDate = values.start_date;
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth();
+    const day = selectedDate.getDate();
+    
+    // Create a new date with noon time to avoid timezone issues
+    const normalizedDate = new Date(year, month, day, 12, 0, 0, 0);
+    
+    // Log dates for debugging
+    console.log('Extra installment form - Original date:', selectedDate);
+    console.log('Extra installment form - Date components:', { year, month: month + 1, day });
+    console.log('Extra installment form - Normalized date:', normalizedDate);
     
     // Pass the normalized date to parent
     onSubmit({

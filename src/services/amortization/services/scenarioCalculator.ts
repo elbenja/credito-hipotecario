@@ -6,7 +6,7 @@ import { normalizeDate } from "@/lib/utils"
 interface ExtraInstallment {
   amount: number
   frequency: 'one-time' | 'monthly' | 'yearly'
-  start_date: Date
+  start_date: string | Date | any // Accept both string and Date types to match database format
 }
 
 interface RateChange {
@@ -61,10 +61,47 @@ export class ScenarioCalculator {
     console.log(`Rate changes count: ${rate_changes.length}`);
 
     // Normalize dates in extra installments
-    const normalizedExtraInstallments = extra_installments.map(installment => ({
-      ...installment,
-      start_date: normalizeDate(installment.start_date)
-    }));
+    const normalizedExtraInstallments = extra_installments.map(installment => {
+      console.log(`Normalizing extra installment date:`, installment.start_date);
+      
+      let normalizedDate: Date;
+      
+      // Handle different input formats
+      if (typeof installment.start_date === 'string') {
+        // Try direct YYYY-MM-DD parsing first
+        const match = installment.start_date.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (match) {
+          const year = parseInt(match[1]);
+          const month = parseInt(match[2]) - 1; // Convert to 0-based
+          const day = parseInt(match[3]);
+          normalizedDate = new Date(year, month, day, 12, 0, 0, 0);
+          console.log(`  Parsed YYYY-MM-DD string to:`, normalizedDate.toISOString());
+        } else {
+          // Standard date parsing
+          normalizedDate = normalizeDate(new Date(installment.start_date));
+          console.log(`  Parsed date string to:`, normalizedDate.toISOString());
+        }
+      } else if (installment.start_date instanceof Date) {
+        normalizedDate = normalizeDate(installment.start_date);
+        console.log(`  Normalized Date object to:`, normalizedDate.toISOString());
+      } else {
+        // Try to handle as generic value
+        normalizedDate = normalizeDate(new Date(String(installment.start_date)));
+        console.log(`  Normalized unknown type to:`, normalizedDate.toISOString());
+      }
+      
+      // Only if Jan 2, 2030
+      if (normalizedDate.getFullYear() === 2030 && 
+          normalizedDate.getMonth() === 0 && 
+          normalizedDate.getDate() === 2) {
+        console.log(`⚠️ SPECIAL CASE DETECTED: Jan 2, 2030 date`);
+      }
+      
+      return {
+        ...installment,
+        start_date: normalizedDate
+      };
+    });
 
     // Normalize dates in rate changes
     const normalizedRateChanges = rate_changes.map(change => ({
@@ -204,39 +241,69 @@ export class ScenarioCalculator {
     const actualFirstInstallmentDate = firstInstallmentDate ? normalizeDate(firstInstallmentDate) : normalizeDate(new Date());
     console.log(`Using first installment date: ${actualFirstInstallmentDate.toISOString()}`);
     
-    // Log each extra installment for debugging
-    extraInstallments.forEach((installment, i) => {
-      const date = new Date(installment.start_date);
-      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-      console.log(`Extra installment #${i+1}: ${installment.amount} (${installment.frequency}) on ${dateStr}`);
-      console.log(`Is first of month? ${date.getDate() === 1 ? 'YES' : 'NO'}`);
-    });
+    // Instead of trying to precalculate all extra payments at once, let FixedPaymentsService handle them
+    // more accurately through the actual payment schedule
+    console.log('Passing extra installments to FixedPaymentsService for accurate handling');
     
-    // Make sure we're not modifying original dates
+    // Make sure the dates are properly normalized
     const processedInstallments = extraInstallments.map(inst => {
-      // Log original state
-      console.log(`Processing installment: Original frequency "${inst.frequency}", date ${new Date(inst.start_date).toISOString()}`);
+      // Log original date
+      let dateDisplay = '';
+      try {
+        if (typeof inst.start_date === 'string') {
+          dateDisplay = inst.start_date;
+        } else if (inst.start_date instanceof Date) {
+          dateDisplay = inst.start_date.toISOString();
+        } else {
+          dateDisplay = String(inst.start_date);
+        }
+      } catch (e) {
+        dateDisplay = 'INVALID DATE';
+      }
       
-      // Create processed version
-      const result = {
-        ...inst,
-        // Ensure we have actual Date objects
-        start_date: inst.start_date instanceof Date ? 
-          new Date(inst.start_date.getTime()) : 
-          new Date(inst.start_date)
+      console.log(`Original extra installment: ${inst.amount} (${inst.frequency}) on ${dateDisplay}`);
+      
+      // Process the date for consistency
+      let normalizedDate: Date;
+      
+      if (typeof inst.start_date === 'string') {
+        // Handle YYYY-MM-DD format directly
+        const match = inst.start_date.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (match) {
+          const year = parseInt(match[1], 10);
+          const month = parseInt(match[2], 10) - 1; // Convert to 0-based
+          const day = parseInt(match[3], 10);
+          normalizedDate = new Date(year, month, day, 12, 0, 0, 0);
+        } else {
+          normalizedDate = new Date(inst.start_date);
+        }
+      } else if (inst.start_date instanceof Date) {
+        normalizedDate = new Date(inst.start_date);
+      } else {
+        normalizedDate = new Date(String(inst.start_date));
+      }
+      
+      // Special case logging for 2030-01-02
+      if (normalizedDate.getFullYear() === 2030 && 
+          normalizedDate.getMonth() === 0 && 
+          normalizedDate.getDate() === 2) {
+        console.log(`⚠️ DETECTED Jan 2, 2030 extra payment (Accelerated scenario)`);
+      }
+      
+      return {
+        amount: inst.amount,
+        frequency: inst.frequency,
+        start_date: normalizedDate
       };
-      
-      // Log mapped state
-      console.log(`  -> Mapped to: frequency "${result.frequency}", date ${result.start_date.toISOString()}`);
-      
-      return result;
     });
     
-    console.log(`Sending ${processedInstallments.length} installments to FixedPaymentsService`);
+    // Log each installment after normalization
     processedInstallments.forEach((inst, i) => {
       console.log(`Installment #${i+1}: ${inst.amount} (${inst.frequency}) on ${inst.start_date.toISOString()}`);
     });
     
+    // This follows PROJECT_KNOWLEDGE.md Accelerated scenario:
+    // "reduces the total number of months needed while keeping the same payment amount"
     const result = FixedPaymentsService.calculate({
       amount,
       base_installment: baseInstallment,
@@ -245,19 +312,27 @@ export class ScenarioCalculator {
       property_insurance: propertyInsurance,
       loan_protection_insurance: loanInsurance,
       extra_installments: processedInstallments,
-      first_installment_date: actualFirstInstallmentDate // Pass the actual non-optional date
+      first_installment_date: actualFirstInstallmentDate
     });
     
-    console.log(`Result: ${result.new_remaining_months} months (down from ${result.total_months})`);
+    console.log(`Accelerated Result: ${result.new_remaining_months} months (down from original ${termYears * 12})`);
+    
+    // Mark all payments as different from base to indicate accelerated scenario
+    const finalPayments = result.payments.map(payment => ({
+      ...payment,
+      is_different_from_base: true
+    }));
     
     return {
-      summary: this.calculateSummary(result.payments),
-      payments: result.payments
+      summary: this.calculateSummary(finalPayments),
+      payments: finalPayments
     }
   }
 
   /**
    * Calculate lower payment scenario with extra lump sum
+   * This follows PROJECT_KNOWLEDGE.md lower payment scenario:
+   * "reduces the monthly payment amount for the remaining term while maintaining original term"
    */
   private static calculateLowerPaymentScenario(
     amount: number,
@@ -290,20 +365,53 @@ export class ScenarioCalculator {
     console.log(`Loan start date: ${loanStartDate.toISOString()}`);
     
     // Sort extra installments by start date (chronological order)
-    // Ensure all dates are normalized
+    // Process and normalize dates for each installment
     const sortedInstallments = [...extraInstallments]
-      .map(installment => ({
-        ...installment,
-        start_date: normalizeDate(installment.start_date)
-      }))
+      .map(installment => {
+        let normalizedDate: Date;
+        
+        // Handle different date formats
+        if (typeof installment.start_date === 'string') {
+          // Try direct YYYY-MM-DD parsing first
+          const match = installment.start_date.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+          if (match) {
+            const year = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10) - 1; // 0-based month
+            const day = parseInt(match[3], 10);
+            normalizedDate = new Date(year, month, day, 12, 0, 0, 0);
+          } else {
+            normalizedDate = new Date(installment.start_date);
+          }
+        } else if (installment.start_date instanceof Date) {
+          normalizedDate = new Date(installment.start_date);
+        } else {
+          normalizedDate = new Date(String(installment.start_date));
+        }
+        
+        // Special case logging for 2030-01-02
+        if (normalizedDate.getFullYear() === 2030 && 
+            normalizedDate.getMonth() === 0 && 
+            normalizedDate.getDate() === 2) {
+          console.log(`⚠️ DETECTED Jan 2, 2030 extra payment (Lower payment scenario)`);
+        }
+        
+        return {
+          ...installment,
+          start_date: normalizedDate
+        };
+      })
       .sort((a, b) => a.start_date.getTime() - b.start_date.getTime());
     
     console.log(`Sorted ${sortedInstallments.length} extra installments chronologically`);
+    sortedInstallments.forEach((inst, i) => {
+      console.log(`Sorted Extra Payment #${i+1}: ${inst.amount} (${inst.frequency}) on ${inst.start_date.toISOString()}`);
+    });
     
     // Calculate initial amortization (before any extra installments)
+    const totalMonths = termYears * 12;
     const initialResult = GoalSeekService.calculate({
       amount,
-      months: termYears * 12,
+      months: totalMonths,
       yearly_interest_rate: interest,
       installments_per_year: installmentsPerYear,
       property_insurance: propertyInsurance,
@@ -314,82 +422,105 @@ export class ScenarioCalculator {
     const originalBaseInstallment = initialResult.base_installment;
     console.log(`Original base installment: ${originalBaseInstallment}`);
     
-    // Initialize payment array with the first payment
+    // Get all the payment dates from the original schedule
+    const paymentDates = initialResult.payments.map(p => p.payment_date);
+    
+    // Initialize payment array
     let finalPayments: PaymentRow[] = [];
     let currentBalance = amount;
-    let currentPayments: PaymentRow[] = [...initialResult.payments];
+    let currentPayments = [...initialResult.payments];
     
     // Process each breakpoint (extra installment) in chronological order
     for (let i = 0; i < sortedInstallments.length; i++) {
       const currentInstallment = sortedInstallments[i];
-      const installmentDate = new Date(currentInstallment.start_date);
-      console.log(`Processing breakpoint #${i+1}: ${currentInstallment.amount} (${currentInstallment.frequency}) on ${installmentDate.toISOString()}`);
+      const installmentDate = currentInstallment.start_date;
+      console.log(`\nProcessing breakpoint #${i+1}: ${currentInstallment.amount} (${currentInstallment.frequency}) on ${installmentDate.toISOString()}`);
       
       // Find index of payment corresponding to the extra installment date
       const breakpointIndex = currentPayments.findIndex(payment => {
-        const paymentDate = new Date(payment.payment_date);
+        const paymentDate = payment.payment_date;
         return paymentDate.getFullYear() === installmentDate.getFullYear() &&
                paymentDate.getMonth() === installmentDate.getMonth() &&
                paymentDate.getDate() === installmentDate.getDate();
       });
       
-      if (breakpointIndex === -1) {
-        console.log(`Warning: Could not find payment matching breakpoint date ${installmentDate.toISOString()}`);
-        continue; // Skip this breakpoint if date doesn't match any payment
+      // If we can't find an exact match, try to find the next payment after this date
+      let matchedIndex = breakpointIndex;
+      if (matchedIndex === -1) {
+        // Find the first payment after this extra installment
+        matchedIndex = currentPayments.findIndex(payment => 
+          payment.payment_date.getTime() > installmentDate.getTime()
+        );
+        
+        if (matchedIndex === -1) {
+          console.log(`Warning: Extra payment is after the last regular payment, can't apply`);
+          continue; // Skip this installment
+        }
+        
+        console.log(`No exact match found. Using next payment date: ${currentPayments[matchedIndex].payment_date.toISOString()}`);
+      } else {
+        console.log(`Found exact match at payment index ${matchedIndex} of ${currentPayments.length}`);
       }
-      
-      console.log(`Found breakpoint at payment index ${breakpointIndex} of ${currentPayments.length}`);
       
       // Add all payments up to the breakpoint to our final payments array
-      finalPayments = [...finalPayments, ...currentPayments.slice(0, breakpointIndex)];
+      finalPayments = [...finalPayments, ...currentPayments.slice(0, matchedIndex)];
       
-      // Calculate the current balance at the breakpoint
-      currentBalance = currentPayments[breakpointIndex].beginning_balance;
+      // Get the actual balance at the breakpoint
+      currentBalance = currentPayments[matchedIndex].beginning_balance;
       console.log(`Balance at breakpoint: ${currentBalance}`);
       
-      // Apply the extra installment based on frequency
+      // Apply the extra payment
       let extraAmount = 0;
       
-      switch (currentInstallment.frequency) {
-        case 'one-time':
-          extraAmount = currentInstallment.amount;
-          console.log(`Applying one-time payment of ${extraAmount}`);
-          break;
-          
-        case 'monthly':
-          // Calculate remaining months from breakpoint to end
-          const remainingMonths = termYears * 12 - breakpointIndex;
-          extraAmount = currentInstallment.amount * remainingMonths;
-          console.log(`Applying monthly payments of ${currentInstallment.amount} over ${remainingMonths} months = ${extraAmount}`);
-          break;
-          
-        case 'yearly':
-          // Calculate remaining years from breakpoint to end
-          const currentYear = installmentDate.getFullYear();
-          const endYear = loanStartDate.getFullYear() + termYears;
-          const remainingYears = endYear - currentYear + (installmentDate.getMonth() <= loanStartDate.getMonth() ? 1 : 0);
-          extraAmount = currentInstallment.amount * remainingYears;
-          console.log(`Applying yearly payments of ${currentInstallment.amount} over ${remainingYears} years = ${extraAmount}`);
-          break;
+      if (currentInstallment.frequency === 'one-time') {
+        extraAmount = currentInstallment.amount;
+        console.log(`Applying one-time payment of ${extraAmount}`);
+      } else if (currentInstallment.frequency === 'monthly') {
+        // For monthly, we only need to reduce by a single month's worth at this breakpoint
+        // as each subsequent month will have its own reduction
+        extraAmount = currentInstallment.amount;
+        console.log(`Applying monthly payment of ${extraAmount} at this breakpoint`);
       }
       
-      // Reduce the balance by the extra installment amount
+      // Reduce the balance by the extra payment
       currentBalance = Math.max(0, currentBalance - extraAmount);
-      console.log(`New balance after extra installment: ${currentBalance}`);
+      console.log(`New balance after extra payment: ${currentBalance}`);
       
-      // If balance is zero, no more payments are needed
+      // If balance is zero, loan is fully paid
       if (currentBalance === 0) {
         console.log(`Balance is now zero, loan is fully paid off`);
+        // Add a single final payment for the extra amount
+        finalPayments.push({
+          payment_date: installmentDate,
+          beginning_balance: extraAmount,
+          ending_balance: 0,
+          monthly_payment: extraAmount,
+          monthly_interest: 0,
+          principal: extraAmount,
+          property_insurance: 0,
+          monthly_loan_insurance: 0,
+          is_different_from_base: true
+        });
         break;
       }
       
-      // Calculate remaining months from breakpoint to end of original term
-      const remainingMonths = termYears * 12 - breakpointIndex;
+      // Get the remaining months from this breakpoint to the end of the original term
+      const remainingMonths = totalMonths - matchedIndex;
+      console.log(`Remaining months: ${remainingMonths}`);
       
-      // Get the date of the next payment after the breakpoint
-      const nextPaymentDate = normalizeDate(new Date(currentPayments[breakpointIndex].payment_date));
+      // Get the next payment date after the breakpoint
+      const nextPaymentDate = matchedIndex + 1 < currentPayments.length
+        ? currentPayments[matchedIndex].payment_date
+        : new Date(
+            loanStartDate.getFullYear(), 
+            loanStartDate.getMonth() + matchedIndex, 
+            loanStartDate.getDate(),
+            12, 0, 0, 0
+          );
       
-      // Recalculate payments for the remaining term with the new lower balance
+      console.log(`Next payment date: ${nextPaymentDate.toISOString()}`);
+      
+      // Recalculate payments with the new lower balance but same term length
       const recalculatedResult = GoalSeekService.calculate({
         amount: currentBalance,
         months: remainingMonths,
@@ -400,14 +531,21 @@ export class ScenarioCalculator {
         first_installment_date: nextPaymentDate
       });
       
-      console.log(`Recalculated base installment: ${recalculatedResult.base_installment} (was ${originalBaseInstallment})`);
-      console.log(`Reduction: ${originalBaseInstallment - recalculatedResult.base_installment} (${(((originalBaseInstallment - recalculatedResult.base_installment) / originalBaseInstallment) * 100).toFixed(2)}%)`);
+      const newBaseInstallment = recalculatedResult.base_installment;
+      console.log(`Recalculated base installment: ${newBaseInstallment} (was ${originalBaseInstallment})`);
+      console.log(`Payment reduction: ${(originalBaseInstallment - newBaseInstallment).toFixed(2)} (${((originalBaseInstallment - newBaseInstallment) / originalBaseInstallment * 100).toFixed(2)}%)`);
       
-      // Update current payments array for next iteration
+      // Set these recalculated payments as the current payments for next iteration
       currentPayments = recalculatedResult.payments;
+      
+      // Mark all recalculated payments as different from base
+      currentPayments = currentPayments.map(payment => ({
+        ...payment,
+        is_different_from_base: true
+      }));
     }
     
-    // Add any remaining payments after the last breakpoint
+    // Add remaining payments after the last breakpoint to our final payments
     finalPayments = [...finalPayments, ...currentPayments];
     
     console.log(`Final payment count: ${finalPayments.length}`);
