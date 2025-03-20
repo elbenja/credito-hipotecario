@@ -255,7 +255,13 @@ export default function TestCalculator() {
                 <Calendar
                   mode="single"
                   selected={firstInstallmentDate}
-                  onSelect={(date) => date && setFirstInstallmentDate(date)}
+                  onSelect={(date) => {
+                    if (date) {
+                      const adjustedDate = new Date(date);
+                      adjustedDate.setHours(12, 0, 0, 0);
+                      setFirstInstallmentDate(adjustedDate);
+                    }
+                  }}
                   disabled={(date) =>
                     date < new Date()
                   }

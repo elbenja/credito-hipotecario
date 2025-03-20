@@ -340,7 +340,7 @@ Four options are available:
   - Yearly additional payment
 - Parameters:
   - amount: The extra payment amount
-  - frequency: once, monthly, yearly
+  - frequency: one-time, monthly, yearly
   - start_date: When extra payments begin
   - starting_balance: Current loan balance when applying
 

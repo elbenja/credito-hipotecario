@@ -149,7 +149,7 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="monthly">{t("extra_installments_section.form.frequency_monthly")}</SelectItem>
-                    <SelectItem value="one-time">{t("extra_installments_section.form.frequency_once")}</SelectItem>
+                    <SelectItem value="one-time">{t("extra_installments_section.form.frequency_one_time")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

@@ -114,7 +114,7 @@ export function useScenarioCalculations({
 
       const extraInstallments = extraInstallmentsResult.data.map(ei => ({
         amount: ei.amount,
-        frequency: ei.frequency === "one-time" ? "once" : "monthly",
+        frequency: ei.frequency,
         start_date: new Date(ei.start_date)
       }))
 

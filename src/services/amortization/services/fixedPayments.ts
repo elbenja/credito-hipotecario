@@ -2,7 +2,7 @@ import type { PaymentRow } from "../types/common"
 
 interface ExtraInstallment {
   amount: number
-  frequency: 'once' | 'one-time' | 'monthly' | 'yearly'
+  frequency: 'one-time' | 'monthly' | 'yearly'
   start_date: Date
 }
 
@@ -46,6 +46,12 @@ export class FixedPaymentsService {
       past_months = 0,
       first_installment_date
     } = input
+
+    // Early return for empty extra installments - should behave like regular payment
+    if (!extra_installments || extra_installments.length === 0) {
+      console.log(`\n📅 FIXED PAYMENTS - NO EXTRA INSTALLMENTS`);
+      console.log(`Using base payment only. This should match the regular scenario.`);
+    }
 
     // Convert annual interest rate to monthly
     const monthlyInterestRate = Math.pow(1 + interest/100, 1/12) - 1
@@ -181,8 +187,7 @@ export class FixedPaymentsService {
         
         // Process based on frequency
         switch (extra.frequency) {
-          case 'once':
-          case 'one-time': // Handle both variations
+          case 'one-time': // Only handle 'one-time' variation
             // For one-time payments, need same month and year
             const sameMonth = currentMonth === paymentMonth;
             const sameYear = currentYear === paymentYear;

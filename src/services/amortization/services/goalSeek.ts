@@ -3,11 +3,12 @@ import type { PaymentRow } from "../types/common"
 interface GoalSeekInput {
   amount: number
   months: number
-  interest: number
-  installments_per_year: number
-  property_insurance: number
-  loan_protection_insurance: number
+  yearly_interest_rate: number
   past_months?: number
+  installments_per_year?: number
+  property_insurance?: number
+  loan_protection_insurance?: number
+  first_installment_date?: Date
 }
 
 interface GoalSeekResult {
@@ -31,22 +32,27 @@ export class GoalSeekService {
     const {
       amount,
       months,
-      interest,
+      yearly_interest_rate,
+      past_months,
       installments_per_year = 12,
-      property_insurance,
-      loan_protection_insurance,
-      past_months = 0
+      property_insurance = 0,
+      loan_protection_insurance = 0,
+      first_installment_date
     } = input
 
-    // Convert annual interest rate to monthly using Effective Annual Rate formula
-    const monthlyInterestRate = Math.pow(1 + interest/100, 1/12) - 1
+    console.log(`[GoalSeek] Calculating with first_installment_date: ${first_installment_date?.toISOString() || 'not provided'}`)
+    
+    // Convert yearly interest rate to monthly using Effective Annual Rate formula
+    const annualRate = yearly_interest_rate / 100
+    const monthlyInterestRate = Math.pow(1 + annualRate, 1/12) - 1
+    console.log(`[GoalSeek] Using effective monthly rate: ${monthlyInterestRate} (from annual rate: ${yearly_interest_rate}%)`)
 
     // If interest rate is 0, simple division
     if (monthlyInterestRate === 0) {
       const base_installment = amount / months + property_insurance
       return {
         base_installment,
-        total_months: past_months + months,
+        total_months: (past_months || 0) + months,
         payments: this.generatePaymentSchedule(
           amount, 
           base_installment, 
@@ -54,7 +60,8 @@ export class GoalSeekService {
           0, 
           installments_per_year,
           property_insurance, 
-          loan_protection_insurance
+          loan_protection_insurance,
+          first_installment_date
         )
       }
     }
@@ -81,7 +88,8 @@ export class GoalSeekService {
         monthlyInterestRate,
         installments_per_year,
         property_insurance,
-        loan_protection_insurance
+        loan_protection_insurance,
+        first_installment_date
       )
 
       if (Math.abs(balance) < this.PRECISION) {
@@ -102,7 +110,7 @@ export class GoalSeekService {
 
     return {
       base_installment: finalPayment,
-      total_months: past_months + months,
+      total_months: (past_months || 0) + months,
       payments: this.generatePaymentSchedule(
         amount,
         finalPayment,
@@ -110,7 +118,8 @@ export class GoalSeekService {
         monthlyInterestRate,
         installments_per_year,
         property_insurance,
-        loan_protection_insurance
+        loan_protection_insurance,
+        first_installment_date
       )
     }
   }
@@ -125,13 +134,20 @@ export class GoalSeekService {
     monthlyInterestRate: number,
     installmentsPerYear: number,
     property_insurance: number,
-    loan_protection_insurance: number
+    loan_protection_insurance: number,
+    first_installment_date?: Date
   ): number {
     let balance = principal
+    
+    // Use the provided first installment date or default to current date
+    const baseDate = first_installment_date || new Date();
 
     for (let i = 0; i < months; i++) {
+      const paymentDate = new Date(baseDate);
+      paymentDate.setMonth(baseDate.getMonth() + i);
+      
       // Determine if this is a double payment month (July or December for 14 installments)
-      const month = i % 12;
+      const month = paymentDate.getMonth();
       const isDoublePayment = installmentsPerYear === 14 && (month === 6 || month === 11);
       
       // Get payment for this month (could be double for July/December)
@@ -156,20 +172,23 @@ export class GoalSeekService {
   }
 
   /**
-   * Generate a complete payment schedule
+   * Generate the payment schedule with all breakdown details
    */
   private static generatePaymentSchedule(
     principal: number,
-    payment: number,
+    payment: number, 
     months: number,
     monthlyInterestRate: number,
     installmentsPerYear: number,
     property_insurance: number,
-    loan_protection_insurance: number
+    loan_protection_insurance: number,
+    first_installment_date?: Date
   ): PaymentRow[] {
-    const schedule: PaymentRow[] = [];
-    let balance = principal;
-    const baseDate = new Date();
+    const payments: PaymentRow[] = []
+    let balance = principal
+    
+    // Use the provided first installment date or default to current date
+    const baseDate = first_installment_date || new Date();
 
     for (let i = 0; i < months; i++) {
       const paymentDate = new Date(baseDate);
@@ -205,10 +224,10 @@ export class GoalSeekService {
         is_different_from_base: false
       };
 
-      schedule.push(row);
+      payments.push(row);
       balance = row.ending_balance;
     }
 
-    return schedule;
+    return payments;
   }
 } 

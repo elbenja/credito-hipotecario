@@ -42,9 +42,11 @@ export function ExtraInstallmentsTable({
               <td className="p-2 text-sm">{index + 1}</td>
               <td className="p-2 text-sm">{formatCurrency(installment.amount, currency)}</td>
               <td className="p-2 capitalize text-sm">
-                {installment.frequency === "one-time" 
-                  ? t("extra_installments_section.table.frequency_once") 
+                <span className="text-sm">
+                  {installment.frequency === "one-time" 
+                  ? t("extra_installments_section.table.frequency_one_time")
                   : t("extra_installments_section.table.frequency_monthly")}
+                </span>
               </td>
               <td className="p-2 text-sm">
                 {(() => {

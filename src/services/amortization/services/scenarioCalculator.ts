@@ -4,7 +4,7 @@ import type { Scenarios, ScenarioSummary, PaymentRow } from "../types/common"
 
 interface ExtraInstallment {
   amount: number
-  frequency: 'once' | 'one-time' | 'monthly' | 'yearly'
+  frequency: 'one-time' | 'monthly' | 'yearly'
   start_date: Date
 }
 
@@ -47,6 +47,15 @@ export class ScenarioCalculator {
       rate_changes = []
     } = input
 
+    console.log('\n===== SCENARIO CALCULATOR =====');
+    console.log(`Loan amount: ${loan_amount}`);
+    console.log(`Interest rate: ${interest_rate}`);
+    console.log(`Term years: ${term_years}`);
+    console.log(`Installments per year: ${installments_per_year}`);
+    console.log(`First installment date: ${first_installment_date.toISOString()}`);
+    console.log(`Extra installments count: ${extra_installments.length}`);
+    console.log(`Rate changes count: ${rate_changes.length}`);
+    
     // Calculate regular scenario first as other scenarios depend on it
     const regularScenario = this.calculateRegularScenario(
       loan_amount,
@@ -54,14 +63,27 @@ export class ScenarioCalculator {
       term_years,
       installments_per_year,
       property_insurance,
-      loan_insurance
+      loan_insurance,
+      first_installment_date
     )
+
+    // If no extra installments or rate changes, all scenarios should be identical to regular
+    if ((extra_installments.length === 0) && (rate_changes.length === 0)) {
+      console.log('No extra installments or rate changes - all scenarios will be identical to regular');
+      return {
+        regular: regularScenario,
+        accelerated: regularScenario, // Use identical data
+        lower_payment: regularScenario, // Use identical data
+        new_rate: regularScenario // Use identical data
+      };
+    }
 
     // Calculate other scenarios
     const acceleratedScenario = this.calculateAcceleratedScenario(
       loan_amount,
       regularScenario.summary.monthly_payment,
       interest_rate,
+      term_years,
       installments_per_year,
       property_insurance,
       loan_insurance,
@@ -76,7 +98,8 @@ export class ScenarioCalculator {
       installments_per_year,
       property_insurance,
       loan_insurance,
-      extra_installments
+      extra_installments,
+      first_installment_date
     )
 
     const newRateScenario = this.calculateNewRateScenario(
@@ -86,7 +109,8 @@ export class ScenarioCalculator {
       installments_per_year,
       property_insurance,
       loan_insurance,
-      rate_changes
+      rate_changes,
+      first_installment_date
     )
 
     return {
@@ -106,15 +130,19 @@ export class ScenarioCalculator {
     termYears: number,
     installmentsPerYear: number,
     propertyInsurance: number,
-    loanInsurance: number
+    loanInsurance: number,
+    firstInstallmentDate?: Date
   ) {
+    console.log(`[ScenarioCalculator] calculateRegularScenario with first_installment_date: ${firstInstallmentDate?.toISOString() || 'not provided'}`);
+    
     const result = GoalSeekService.calculate({
       amount,
       months: termYears * 12,
-      interest,
+      yearly_interest_rate: interest,
       installments_per_year: installmentsPerYear,
       property_insurance: propertyInsurance,
-      loan_protection_insurance: loanInsurance
+      loan_protection_insurance: loanInsurance,
+      first_installment_date: firstInstallmentDate
     })
 
     return {
@@ -130,6 +158,7 @@ export class ScenarioCalculator {
     amount: number,
     baseInstallment: number,
     interest: number,
+    termYears: number,
     installmentsPerYear: number,
     propertyInsurance: number,
     loanInsurance: number,
@@ -140,6 +169,20 @@ export class ScenarioCalculator {
     console.log(`Loan amount: ${amount}`);
     console.log(`Base installment: ${baseInstallment}`);
     console.log(`Extra installments: ${extraInstallments.length}`);
+    
+    // If no extra installments, return same as regular scenario
+    if (!extraInstallments || extraInstallments.length === 0) {
+      console.log('[ScenarioCalculator] No extra installments for accelerated scenario, using regular calculation');
+      return this.calculateRegularScenario(
+        amount,
+        interest,
+        termYears,
+        installmentsPerYear,
+        propertyInsurance,
+        loanInsurance,
+        firstInstallmentDate
+      );
+    }
     
     // Use the provided first installment date
     console.log(`Using first installment date: ${firstInstallmentDate.toISOString()}`);
@@ -163,9 +206,7 @@ export class ScenarioCalculator {
         // Ensure we have actual Date objects
         start_date: inst.start_date instanceof Date ? 
           new Date(inst.start_date.getTime()) : 
-          new Date(inst.start_date),
-        // Map frequency names correctly
-        frequency: inst.frequency === 'one-time' ? 'once' : inst.frequency
+          new Date(inst.start_date)
       };
       
       // Log mapped state
@@ -199,7 +240,7 @@ export class ScenarioCalculator {
   }
 
   /**
-   * Calculate lower payment scenario with extra payments
+   * Calculate lower payment scenario with extra lump sum
    */
   private static calculateLowerPaymentScenario(
     amount: number,
@@ -208,8 +249,23 @@ export class ScenarioCalculator {
     installmentsPerYear: number,
     propertyInsurance: number,
     loanInsurance: number,
-    extraInstallments: ExtraInstallment[]
+    extraInstallments: ExtraInstallment[],
+    firstInstallmentDate?: Date
   ) {
+    // If no extra installments, return same as regular scenario
+    if (!extraInstallments || extraInstallments.length === 0) {
+      console.log('[ScenarioCalculator] No extra installments for lower payment scenario, using regular calculation');
+      return this.calculateRegularScenario(
+        amount,
+        interest,
+        termYears,
+        installmentsPerYear,
+        propertyInsurance,
+        loanInsurance,
+        firstInstallmentDate
+      );
+    }
+
     // First, calculate total extra payments
     let totalExtra = 0
     for (const extra of extraInstallments) {
@@ -238,10 +294,11 @@ export class ScenarioCalculator {
     const result = GoalSeekService.calculate({
       amount: adjustedAmount,
       months: termYears * 12,
-      interest,
+      yearly_interest_rate: interest,
       installments_per_year: installmentsPerYear,
       property_insurance: propertyInsurance,
-      loan_protection_insurance: loanInsurance
+      loan_protection_insurance: loanInsurance,
+      first_installment_date: firstInstallmentDate
     })
 
     return {
@@ -260,7 +317,8 @@ export class ScenarioCalculator {
     installmentsPerYear: number,
     propertyInsurance: number,
     loanInsurance: number,
-    rateChanges: RateChange[]
+    rateChanges: RateChange[],
+    firstInstallmentDate?: Date
   ) {
     if (rateChanges.length === 0) {
       return undefined
@@ -285,11 +343,12 @@ export class ScenarioCalculator {
       const result = GoalSeekService.calculate({
         amount: currentAmount,
         months: monthsUntilChange,
-        interest: currentInterest,
+        yearly_interest_rate: currentInterest,
         installments_per_year: installmentsPerYear,
         property_insurance: propertyInsurance,
         loan_protection_insurance: loanInsurance,
-        past_months: pastMonths
+        past_months: pastMonths,
+        first_installment_date: firstInstallmentDate
       })
 
       payments = [...payments, ...result.payments]
@@ -306,11 +365,12 @@ export class ScenarioCalculator {
       const finalResult = GoalSeekService.calculate({
         amount: currentAmount,
         months: remainingMonths,
-        interest: currentInterest,
+        yearly_interest_rate: currentInterest,
         installments_per_year: installmentsPerYear,
         property_insurance: propertyInsurance,
         loan_protection_insurance: loanInsurance,
-        past_months: pastMonths
+        past_months: pastMonths,
+        first_installment_date: firstInstallmentDate
       })
 
       payments = [...payments, ...finalResult.payments]

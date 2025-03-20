@@ -111,7 +111,15 @@ export function PaymentSchedule({ form }: PaymentScheduleProps) {
                 <Calendar
                   mode="single"
                   selected={field.value}
-                  onSelect={field.onChange}
+                  onSelect={(date) => {
+                    if (date) {
+                      const adjustedDate = new Date(date);
+                      adjustedDate.setHours(12, 0, 0, 0);
+                      field.onChange(adjustedDate);
+                    } else {
+                      field.onChange(date);
+                    }
+                  }}
                   initialFocus
                   formatters={{
                     formatDay: (date) => date.getDate().toString(),

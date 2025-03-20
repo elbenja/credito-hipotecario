@@ -6,11 +6,12 @@ import type { ExtraInstallment, PaymentRow } from "../types/common"
 interface FinancingParams {
   amount: number
   term_years: number
-  interest: number
-  installments_per_year: number  // Add installmentsPerYear parameter
+  yearly_interest_rate: number
+  installments_per_year: number
   property_insurance: number
   loan_protection_insurance: number
   extra_installments?: ExtraInstallment[]
+  first_installment_date?: Date
 }
 
 export interface FinancingOptions {
@@ -38,11 +39,12 @@ export class FinancingService {
     const {
       amount,
       term_years,
-      interest,
+      yearly_interest_rate,
       installments_per_year = 12,  // Default to 12 if not provided
       property_insurance,
       loan_protection_insurance,
-      extra_installments = []
+      extra_installments = [],
+      first_installment_date
     } = params
 
     const { interest_only = false, balloon_payment = 0 } = options
@@ -56,25 +58,27 @@ export class FinancingService {
     // Calculate the correct monthly installment amount
     if (interest_only) {
       // Interest-only: monthly payment is just the interest
-      const monthlyRate = Math.pow(1 + interest/100, 1/12) - 1
+      const monthlyRate = Math.pow(1 + yearly_interest_rate/100, 1/12) - 1
       baseInstallment = amount * monthlyRate
     } else {
       // Calculate base installment using goal seek
       const result = GoalSeekService.calculate({
         amount,
         months: term_years * 12,
-        interest,
-        installments_per_year,  // Pass installmentsPerYear
-        target_balance: balloon_payment,
+        yearly_interest_rate,
+        installments_per_year,
         property_insurance,
-        loan_protection_insurance
+        loan_protection_insurance,
+        first_installment_date
       })
 
       baseInstallment = result.base_installment
       payments = result.payments
-      totalMonths = term_years * 12
-      totalInterest = result.total_interest
-      totalToPay = result.total_to_pay
+      totalMonths = result.total_months
+      
+      // Calculate totals from the payment schedule since GoalSeekService no longer provides these
+      totalInterest = payments.reduce((sum, payment) => sum + (payment.monthly_interest || 0), 0)
+      totalToPay = payments.reduce((sum, payment) => sum + (payment.monthly_payment || 0), 0)
     }
 
     // If there are extra payments, recalculate the schedule
@@ -82,11 +86,12 @@ export class FinancingService {
       const fixedResult = FixedPaymentsService.calculate({
         amount,
         base_installment: baseInstallment,
-        interest,
-        installments_per_year,  // Pass installmentsPerYear
+        interest: yearly_interest_rate,
+        installments_per_year,
         property_insurance,
         loan_protection_insurance,
-        extra_installments
+        extra_installments,
+        first_installment_date
       })
 
       totalMonths = fixedResult.total_months
@@ -100,11 +105,12 @@ export class FinancingService {
       const amortizationResult = AmortizationService.calculate({
         amount,
         base_installment: baseInstallment,
-        interest,
-        installments_per_year,  // Pass installmentsPerYear
+        interest: yearly_interest_rate,
+        installments_per_year,
         property_insurance,
         loan_protection_insurance,
-        months: term_years * 12
+        months: term_years * 12,
+        first_installment_date
       })
 
       payments = amortizationResult.payments

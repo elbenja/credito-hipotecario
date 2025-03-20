@@ -265,8 +265,8 @@ export const resources = {
           "amount_placeholder": "0",
           "frequency": "Frequency",
           "frequency_placeholder": "Select frequency",
+          "frequency_one_time": "One Time",
           "frequency_monthly": "Monthly",
-          "frequency_once": "Once",
           "first_date": "First Date",
           "add_button": "Add",
           "amount_required": "Amount is required",
@@ -281,7 +281,7 @@ export const resources = {
           "actions": "Actions",
           "delete_tooltip": "Delete installment",
           "no_installments": "No extra installments added",
-          "frequency_once": "Once",
+          "frequency_one_time": "One Time",
           "frequency_monthly": "Monthly"
         }
       },
@@ -564,8 +564,8 @@ export const resources = {
           "amount_placeholder": "0",
           "frequency": "Frecuencia",
           "frequency_placeholder": "Selecciona frecuencia",
+          "frequency_one_time": "Única vez",
           "frequency_monthly": "Mensual",
-          "frequency_once": "Única vez",
           "first_date": "Fecha Inicial",
           "add_button": "Agregar",
           "amount_required": "El monto es requerido",
@@ -580,7 +580,7 @@ export const resources = {
           "actions": "Acciones",
           "delete_tooltip": "Eliminar Amortización",
           "no_installments": "No hay amortizaciones extra agregadas",
-          "frequency_once": "Única vez",
+          "frequency_one_time": "Única vez",
           "frequency_monthly": "Mensual"
         }
       },

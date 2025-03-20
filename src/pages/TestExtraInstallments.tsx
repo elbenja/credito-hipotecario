@@ -496,7 +496,14 @@ export default function TestExtraInstallments() {
                                         mode="single"
                                         selected={field.value}
                                         onSelect={(date) => {
-                                          field.onChange(date);
+                                          // Set the time to noon to avoid timezone issues
+                                          if (date) {
+                                            const adjustedDate = new Date(date);
+                                            adjustedDate.setHours(12, 0, 0, 0);
+                                            field.onChange(adjustedDate);
+                                          } else {
+                                            field.onChange(date);
+                                          }
                                           // Trigger form validation to ensure field values are up-to-date
                                           amortizationForm.trigger("first_installment_date");
                                         }}
@@ -668,6 +675,7 @@ function ScenarioCalculationsSection({
     // The backend already doubles payments for July and December when installmentsPerYear is 14
     return {
       date: paymentDate,
+      beginning_balance: payment.beginning_balance || 0,
       capital: payment.principal || payment.capital || 0,
       interest: payment.monthly_interest || payment.interest || 0,
       property_insurance: payment.property_insurance || 0,
