@@ -252,6 +252,8 @@ export class ScenarioCalculator {
     extraInstallments: ExtraInstallment[],
     firstInstallmentDate?: Date
   ) {
+    console.log('[ScenarioCalculator] calculateLowerPaymentScenario');
+    
     // If no extra installments, return same as regular scenario
     if (!extraInstallments || extraInstallments.length === 0) {
       console.log('[ScenarioCalculator] No extra installments for lower payment scenario, using regular calculation');
@@ -266,44 +268,132 @@ export class ScenarioCalculator {
       );
     }
 
-    // First, calculate total extra payments
-    let totalExtra = 0
-    for (const extra of extraInstallments) {
-      switch (extra.frequency) {
-        case 'once':
-          totalExtra += extra.amount
-          break
-        case 'monthly':
-          // Calculate months from start date until end of term
-          const startDate = new Date(extra.start_date)
-          const monthsRemaining = termYears * 12 - startDate.getMonth()
-          totalExtra += extra.amount * monthsRemaining
-          break
-        case 'yearly':
-          // Calculate years from start date until end of term
-          const yearsRemaining = termYears - new Date(extra.start_date).getFullYear() + 1
-          totalExtra += extra.amount * yearsRemaining
-          break
-      }
-    }
-
-    // Reduce loan amount by total extra payments
-    const adjustedAmount = amount - totalExtra
-
-    // Calculate new payment based on adjusted amount
-    const result = GoalSeekService.calculate({
-      amount: adjustedAmount,
+    // First, ensure we have a valid first installment date
+    const loanStartDate = firstInstallmentDate || new Date();
+    console.log(`Loan start date: ${loanStartDate.toISOString()}`);
+    
+    // Sort extra installments by start date (chronological order)
+    const sortedInstallments = [...extraInstallments].sort((a, b) => 
+      new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+    );
+    
+    console.log(`Sorted ${sortedInstallments.length} extra installments chronologically`);
+    
+    // Calculate initial amortization (before any extra installments)
+    const initialResult = GoalSeekService.calculate({
+      amount,
       months: termYears * 12,
       yearly_interest_rate: interest,
       installments_per_year: installmentsPerYear,
       property_insurance: propertyInsurance,
       loan_protection_insurance: loanInsurance,
-      first_installment_date: firstInstallmentDate
-    })
-
+      first_installment_date: loanStartDate
+    });
+    
+    const originalBaseInstallment = initialResult.base_installment;
+    console.log(`Original base installment: ${originalBaseInstallment}`);
+    
+    // Initialize payment array with the first payment
+    let finalPayments: PaymentRow[] = [];
+    let currentBalance = amount;
+    let currentPayments: PaymentRow[] = [...initialResult.payments];
+    
+    // Process each breakpoint (extra installment) in chronological order
+    for (let i = 0; i < sortedInstallments.length; i++) {
+      const currentInstallment = sortedInstallments[i];
+      const installmentDate = new Date(currentInstallment.start_date);
+      console.log(`Processing breakpoint #${i+1}: ${currentInstallment.amount} (${currentInstallment.frequency}) on ${installmentDate.toISOString()}`);
+      
+      // Find index of payment corresponding to the extra installment date
+      const breakpointIndex = currentPayments.findIndex(payment => {
+        const paymentDate = new Date(payment.payment_date);
+        return paymentDate.getFullYear() === installmentDate.getFullYear() &&
+               paymentDate.getMonth() === installmentDate.getMonth() &&
+               paymentDate.getDate() === installmentDate.getDate();
+      });
+      
+      if (breakpointIndex === -1) {
+        console.log(`Warning: Could not find payment matching breakpoint date ${installmentDate.toISOString()}`);
+        continue; // Skip this breakpoint if date doesn't match any payment
+      }
+      
+      console.log(`Found breakpoint at payment index ${breakpointIndex} of ${currentPayments.length}`);
+      
+      // Add all payments up to the breakpoint to our final payments array
+      finalPayments = [...finalPayments, ...currentPayments.slice(0, breakpointIndex)];
+      
+      // Calculate the current balance at the breakpoint
+      currentBalance = currentPayments[breakpointIndex].beginning_balance;
+      console.log(`Balance at breakpoint: ${currentBalance}`);
+      
+      // Apply the extra installment based on frequency
+      let extraAmount = 0;
+      
+      switch (currentInstallment.frequency) {
+        case 'one-time':
+          extraAmount = currentInstallment.amount;
+          console.log(`Applying one-time payment of ${extraAmount}`);
+          break;
+          
+        case 'monthly':
+          // Calculate remaining months from breakpoint to end
+          const remainingMonths = termYears * 12 - breakpointIndex;
+          extraAmount = currentInstallment.amount * remainingMonths;
+          console.log(`Applying monthly payments of ${currentInstallment.amount} over ${remainingMonths} months = ${extraAmount}`);
+          break;
+          
+        case 'yearly':
+          // Calculate remaining years from breakpoint to end
+          const currentYear = installmentDate.getFullYear();
+          const endYear = loanStartDate.getFullYear() + termYears;
+          const remainingYears = endYear - currentYear + (installmentDate.getMonth() <= loanStartDate.getMonth() ? 1 : 0);
+          extraAmount = currentInstallment.amount * remainingYears;
+          console.log(`Applying yearly payments of ${currentInstallment.amount} over ${remainingYears} years = ${extraAmount}`);
+          break;
+      }
+      
+      // Reduce the balance by the extra installment amount
+      currentBalance = Math.max(0, currentBalance - extraAmount);
+      console.log(`New balance after extra installment: ${currentBalance}`);
+      
+      // If balance is zero, no more payments are needed
+      if (currentBalance === 0) {
+        console.log(`Balance is now zero, loan is fully paid off`);
+        break;
+      }
+      
+      // Calculate remaining months from breakpoint to end of original term
+      const remainingMonths = termYears * 12 - breakpointIndex;
+      
+      // Get the date of the next payment after the breakpoint
+      const nextPaymentDate = new Date(currentPayments[breakpointIndex].payment_date);
+      
+      // Recalculate payments for the remaining term with the new lower balance
+      const recalculatedResult = GoalSeekService.calculate({
+        amount: currentBalance,
+        months: remainingMonths,
+        yearly_interest_rate: interest,
+        installments_per_year: installmentsPerYear,
+        property_insurance: propertyInsurance,
+        loan_protection_insurance: loanInsurance,
+        first_installment_date: nextPaymentDate
+      });
+      
+      console.log(`Recalculated base installment: ${recalculatedResult.base_installment} (was ${originalBaseInstallment})`);
+      console.log(`Reduction: ${originalBaseInstallment - recalculatedResult.base_installment} (${(((originalBaseInstallment - recalculatedResult.base_installment) / originalBaseInstallment) * 100).toFixed(2)}%)`);
+      
+      // Update current payments array for next iteration
+      currentPayments = recalculatedResult.payments;
+    }
+    
+    // Add any remaining payments after the last breakpoint
+    finalPayments = [...finalPayments, ...currentPayments];
+    
+    console.log(`Final payment count: ${finalPayments.length}`);
+    
     return {
-      summary: this.calculateSummary(result.payments),
-      payments: result.payments
+      summary: this.calculateSummary(finalPayments),
+      payments: finalPayments
     }
   }
 

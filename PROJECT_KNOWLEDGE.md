@@ -344,6 +344,38 @@ Four options are available:
   - start_date: When extra payments begin
   - starting_balance: Current loan balance when applying
 
+##### Lower Payment Scenario: Dynamic Breakpoints and Recalculation
+In the Lower Payment Scenario, extra installments are used to reduce the monthly payment—but only after the extra installment takes effect. Each extra installment creates a breakpoint, where the system recalculates a new base installment for the remaining months (up to the original loan end date) based on the new, lower remaining balance.
+
+**How It Works:**
+- **Breakpoints:**
+  - When an extra installment is made, the amortization schedule is "broken" at that point.
+  - **Before the Breakpoint:** All payments are made at the original base installment.
+  - **At the Breakpoint:** The system recalculates the remaining balance.
+  - **After the Breakpoint:** A new, lower base installment is computed for the remaining months using the GoalSeek service, ensuring that the loan is paid off exactly at the end of the original term.
+- **Chronological Application:**
+  - Each new breakpoint is applied in order. If a new extra installment is added later, it recalculates based on the current remaining balance.
+  - If extra installments are added in an order that affects previous breakpoints, the entire sequence is re-computed chronologically.
+
+**Example:**
+1. **Initial Setup:**
+   - Loan Amount: $390,360.00
+   - Initial Monthly Payment: $3,028.02
+   - Term: 240 months (from April 1, 2025, to March 1, 2045)
+2. **Before the Breakpoint:**
+   - From April 1, 2025, through December 2029, you consistently pay $3,028.02 monthly.
+3. **Breakpoint Occurs:**
+   - On January 1, 2030, you make an extra installment of $100,000.
+   - Up to December 2029, all payments were $3,028.02.
+   - On January 1, 2030, the remaining balance is recalculated, and the GoalSeek service is invoked.
+4. **Recalculation:**
+   - The GoalSeek service computes a new base installment for the remaining months (from January 2030 to March 2045) that will exactly pay off the new remaining balance.
+   - In this example, the new base installment is recalculated to be $2,171.78.
+5. **Multiple Breakpoints:**
+   - You can add further extra installments later. Each extra installment acts as a new breakpoint.
+   - Each breakpoint recalculates the new base installment based on the remaining balance at that time.
+   - If an extra installment is applied before a previously set breakpoint, the calculations are adjusted so that all breakpoints accumulate in chronological order.
+
 ##### Refinancing Options
 - Applied in the New Rate scenario
 - Parameters:
