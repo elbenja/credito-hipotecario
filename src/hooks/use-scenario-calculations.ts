@@ -95,6 +95,16 @@ export function useScenarioCalculations({
       debouncedLoanInsurance
     ],
     queryFn: async () => {
+      // Log first installment date for debugging
+      console.log('---------------------------------------');
+      console.log('useScenarioCalculations - Input first installment date:', debouncedFirstInstallmentDate);
+      console.log('Date components:', {
+        year: debouncedFirstInstallmentDate.getFullYear(),
+        month: debouncedFirstInstallmentDate.getMonth() + 1,
+        day: debouncedFirstInstallmentDate.getDate()
+      });
+      console.log('---------------------------------------');
+      
       // Fetch extra installments and rate changes from Supabase
       const [extraInstallmentsResult, rateChangesResult] = await Promise.all([
         supabase
@@ -112,17 +122,69 @@ export function useScenarioCalculations({
       if (extraInstallmentsResult.error) throw extraInstallmentsResult.error
       if (rateChangesResult.error) throw rateChangesResult.error
 
-      const extraInstallments = extraInstallmentsResult.data.map(ei => ({
-        amount: ei.amount,
-        frequency: ei.frequency,
-        start_date: new Date(ei.start_date)
-      }))
+      // Improved handling of extra installments to preserve exact dates
+      const extraInstallments = extraInstallmentsResult.data.map(ei => {
+        // Log the original date string for debugging
+        console.log(`Processing extra installment - Original date from DB: ${ei.start_date}`);
+        
+        // Keep the original string format for YYYY-MM-DD dates
+        if (typeof ei.start_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ei.start_date)) {
+          console.log(`Extra installment uses YYYY-MM-DD format: ${ei.start_date}`);
+          // Return the date in its original string format to avoid any conversion issues
+          return {
+            amount: ei.amount,
+            frequency: ei.frequency,
+            start_date: ei.start_date // Keep as string
+          };
+        } else {
+          // For non-standard formats, create a normalized date string
+          const tempDate = new Date(ei.start_date);
+          const year = tempDate.getFullYear();
+          const month = tempDate.getMonth() + 1; // Convert to 1-based
+          const day = tempDate.getDate();
+          const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          
+          console.log(`Normalized extra installment date to: ${dateString}`);
+          
+          return {
+            amount: ei.amount,
+            frequency: ei.frequency,
+            start_date: dateString
+          };
+        }
+      });
 
-      const rateChanges = rateChangesResult.data.map(rc => ({
-        new_interest_rate: rc.new_interest_rate,
-        new_term_years: rc.new_term_years,
-        effective_date: new Date(rc.effective_date)
-      }))
+      // Improved handling of rate changes to preserve exact dates
+      const rateChanges = rateChangesResult.data.map(rc => {
+        // Log the original date string for debugging
+        console.log(`Processing rate change - Original date from DB: ${rc.effective_date}`);
+        
+        // Keep the original string format for YYYY-MM-DD dates
+        if (typeof rc.effective_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rc.effective_date)) {
+          console.log(`Rate change uses YYYY-MM-DD format: ${rc.effective_date}`);
+          // Return the date in its original string format
+          return {
+            new_interest_rate: rc.new_interest_rate,
+            new_term_years: rc.new_term_years,
+            effective_date: rc.effective_date
+          };
+        } else {
+          // For non-standard formats, create a normalized date string
+          const tempDate = new Date(rc.effective_date);
+          const year = tempDate.getFullYear();
+          const month = tempDate.getMonth() + 1; // Convert to 1-based
+          const day = tempDate.getDate();
+          const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          
+          console.log(`Normalized rate change date to: ${dateString}`);
+          
+          return {
+            new_interest_rate: rc.new_interest_rate,
+            new_term_years: rc.new_term_years,
+            effective_date: dateString
+          };
+        }
+      });
 
       // Calculate all scenarios using the static method
       const scenarios = ScenarioCalculator.calculateScenarios({

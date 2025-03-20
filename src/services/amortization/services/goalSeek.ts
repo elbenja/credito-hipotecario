@@ -143,8 +143,14 @@ export class GoalSeekService {
     const baseDate = first_installment_date || new Date();
 
     for (let i = 0; i < months; i++) {
+      // Create a new date object for each payment, preserving the day of month from base date
       const paymentDate = new Date(baseDate);
-      paymentDate.setMonth(baseDate.getMonth() + i);
+      // Use full date copying to ensure the exact day is preserved
+      paymentDate.setFullYear(
+        baseDate.getFullYear(),
+        baseDate.getMonth() + i,
+        baseDate.getDate()
+      );
       
       // Determine if this is a double payment month (July or December for 14 installments)
       const month = paymentDate.getMonth();
@@ -191,8 +197,19 @@ export class GoalSeekService {
     const baseDate = first_installment_date || new Date();
 
     for (let i = 0; i < months; i++) {
+      // Create a new date object for each payment, preserving the day of month from base date
       const paymentDate = new Date(baseDate);
-      paymentDate.setMonth(baseDate.getMonth() + i);
+      // Use full date copying to ensure the exact day is preserved
+      paymentDate.setFullYear(
+        baseDate.getFullYear(),
+        baseDate.getMonth() + i,
+        baseDate.getDate()
+      );
+      
+      // Log the first few payment dates for debugging
+      if (i < 3) {
+        console.log(`GoalSeek payment ${i+1} scheduled for: ${paymentDate.toISOString()}`);
+      }
       
       // Determine if this is a double payment month (July or December for 14 installments)
       const month = paymentDate.getMonth();

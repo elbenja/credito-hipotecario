@@ -70,8 +70,19 @@ export class FixedPaymentsService {
 
     // Continue until balance is effectively zero
     while (balance > this.BALANCE_THRESHOLD && months < 600) { // 50 years max
-      const currentDate = new Date(baseDate)
-      currentDate.setMonth(baseDate.getMonth() + months)
+      // Create a new date that preserves the exact day of month
+      const currentDate = new Date(baseDate);
+      // Use full date copying to ensure the exact day is preserved
+      currentDate.setFullYear(
+        baseDate.getFullYear(),
+        baseDate.getMonth() + months,
+        baseDate.getDate()
+      );
+      
+      // Log first few payment dates for debugging
+      if (months < 3) {
+        console.log(`FixedPayments payment ${months+1} scheduled for: ${currentDate.toISOString()}`);
+      }
       
       // Check if this is a double payment month (July or December for 14 installments)
       const currentMonth = currentDate.getMonth();
@@ -83,7 +94,7 @@ export class FixedPaymentsService {
       const monthlyLoanInsurance = balance * (loan_protection_insurance / 100)
       
       // Apply double payment if needed
-      let basePayment = isDoublePayment ? base_installment * 2 : base_installment;
+      const basePayment = isDoublePayment ? base_installment * 2 : base_installment;
       
       // Apply double insurance if needed
       const currentPropertyInsurance = isDoublePayment ? property_insurance * 2 : property_insurance;
@@ -178,68 +189,31 @@ export class FixedPaymentsService {
           (currentYear === paymentYear && currentMonth === paymentMonth && currentDay < paymentDay);
         
         if (isBefore) {
-          console.log(`❌ SKIP: Current date ${dateYMD} is BEFORE start date ${startYMD}`);
-          continue;
+          console.log(`Payment date ${dateYMD} is before extra payment start date ${startYMD}`);
+          continue; // Skip this extra payment
         }
-
-        // Flag for first of month special case
-        const isFirstOfMonth = paymentDay === 1;
         
-        // Process based on frequency
-        switch (extra.frequency) {
-          case 'one-time': // Only handle 'one-time' variation
-            // For one-time payments, need same month and year
-            const sameMonth = currentMonth === paymentMonth;
-            const sameYear = currentYear === paymentYear;
-            
-            // Special case for 1st of month
-            if (isFirstOfMonth) {
-              if (sameYear && sameMonth) {
-                console.log(`✅ APPLYING: First-of-month one-time payment of ${extra.amount}`);
-                totalExtra += extra.amount;
-              } else {
-                console.log(`❌ SKIP: Not in payment month/year (need ${paymentMonth+1}/${paymentYear})`);
-              }
-            }
-            // Normal case - needs exact day match
-            else if (sameYear && sameMonth && currentDay === paymentDay) {
-              console.log(`✅ APPLYING: Exact date match one-time payment of ${extra.amount}`);
-              totalExtra += extra.amount;
-            } else {
-              console.log(`❌ SKIP: Date mismatch (needs ${paymentMonth+1}/${paymentDay}/${paymentYear})`);
-            }
-            break;
-            
-          case 'monthly':
-            // Monthly payments for all months after start date
-            console.log(`✅ APPLYING: Monthly payment of ${extra.amount}`);
+        // Add extra payment based on frequency
+        if (extra.frequency === 'one-time') {
+          // For one-time payments, just check if this is the exact month when it should be applied
+          if (currentYear === paymentYear && currentMonth === paymentMonth && currentDay === paymentDay) {
+            console.log(`Applying one-time extra payment of ${extra.amount} for date match`);
             totalExtra += extra.amount;
-            break;
-            
-          case 'yearly':
-            // Yearly payments when month matches
-            if (currentMonth === paymentMonth) {
-              console.log(`✅ APPLYING: Yearly payment of ${extra.amount}`);
-              totalExtra += extra.amount;
-            } else {
-              console.log(`❌ SKIP: Month mismatch for yearly payment (needs month ${paymentMonth+1})`);
-            }
-            break;
-            
-          default:
-            console.log(`❌ SKIP: Unknown frequency type: ${extra.frequency}`);
+          } else {
+            console.log(`Skipping one-time payment - not matched with current date`);
+          }
+        } else if (extra.frequency === 'monthly') {
+          // For monthly payments, apply if we're on or after the start date
+          console.log(`Applying monthly extra payment of ${extra.amount}`);
+          totalExtra += extra.amount;
         }
-      } catch (err) {
-        console.error(`Error processing extra payment: ${err}`);
+        
+      } catch (error) {
+        console.error(`Error processing extra payment:`, error);
       }
     }
-
-    if (totalExtra > 0) {
-      console.log(`\n💰 TOTAL EXTRA FOR ${dateYMD}: ${totalExtra}`);
-    } else {
-      console.log(`\n🚫 No extra payments for ${dateYMD}`);
-    }
     
+    console.log(`Total extra payment for ${dateYMD}: ${totalExtra}`);
     return totalExtra;
   }
-} 
+}

@@ -142,132 +142,101 @@ export class ScenarioCalculator {
       console.log(`- Start date (from DB): ${installment.start_date}`);
       
       // Parse and normalize the extra installment date safely
-      let startDateStr: string;
-      let startDay: number;
-      let startMonth: number;
       let startYear: number;
+      let startMonth: number; // 0-indexed
+      let startDay: number;
       
       try {
-        // Check if we already have a YYYY-MM-DD format string
-        if (typeof installment.start_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(installment.start_date)) {
-          startDateStr = installment.start_date;
-          // Parse the components for later use
-          [startYear, startMonth, startDay] = startDateStr.split('-').map(Number);
-          // Adjust month to be 0-based for consistent comparison
-          startMonth = startMonth - 1;
+        // Direct parsing for YYYY-MM-DD format
+        if (typeof installment.start_date === 'string') {
+          const dateMatch = installment.start_date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+          if (dateMatch) {
+            // Parse directly from the string components
+            startYear = parseInt(dateMatch[1]);
+            startMonth = parseInt(dateMatch[2]) - 1; // Convert to 0-based
+            startDay = parseInt(dateMatch[3]);
+          } else {
+            // Fallback to Date object if not in YYYY-MM-DD format
+            const tempDate = new Date(installment.start_date);
+            startYear = tempDate.getFullYear();
+            startMonth = tempDate.getMonth();
+            startDay = tempDate.getDate();
+          }
         } else {
-          // Create a new date object and extract components to create YYYY-MM-DD
+          // Handle if it's already a Date object
           const tempDate = new Date(installment.start_date);
           startYear = tempDate.getFullYear();
-          startMonth = tempDate.getMonth(); // Already 0-based
+          startMonth = tempDate.getMonth();
           startDay = tempDate.getDate();
-          startDateStr = `${startYear}-${String(startMonth + 1).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`;
         }
+        
+        // For debugging
+        const startDateStr = `${startYear}-${String(startMonth + 1).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`;
+        console.log(`- Parsed date components: Year=${startYear}, Month=${startMonth + 1}, Day=${startDay}`);
+        console.log(`- Normalized start date: ${startDateStr}`);
       } catch (e) {
         console.error('Error parsing date:', e);
         // Skip this installment if date parsing fails
         return;
       }
       
-      console.log(`- Normalized start date: ${startDateStr}`);
-      console.log(`- Date components: year=${startYear}, month=${startMonth + 1}, day=${startDay}`);
+      // CRITICAL: Create proper date objects with noon time to avoid timezone issues
+      const startDateObj = new Date(startYear, startMonth, startDay, 12, 0, 0, 0);
+      const firstDateObj = new Date(firstYear, firstMonth, firstDay, 12, 0, 0, 0);
+      
+      // Simple boolean to determine if start date is on or after first date
+      const isOnOrAfterFirstDate = startDateObj >= firstDateObj;
+      
+      console.log(`- Is on or after first installment date? ${isOnOrAfterFirstDate}`);
       
       if (installment.frequency === 'one-time') {
-        // Compare actual date components for more accurate comparison
-        // First compare years
-        const yearComparison = startYear - firstYear;
-        
-        // If years are different, that determines the result
-        if (yearComparison > 0) {
-          // Start year is after first year
+        if (isOnOrAfterFirstDate) {
           totalExtraPayments += installment.amount;
-          console.log(`- INCLUDED: Adding ${installment.amount} to total (year comparison)`);
-        } else if (yearComparison < 0) {
-          // Start year is before first year
-          console.log('- EXCLUDED: Before first installment date (year comparison)');
+          console.log(`- INCLUDED: Adding ${installment.amount} to total (one-time payment)`);
         } else {
-          // Years are the same, compare months
-          const monthComparison = startMonth - firstMonth;
-          
-          if (monthComparison > 0) {
-            // Start month is after first month
-            totalExtraPayments += installment.amount;
-            console.log(`- INCLUDED: Adding ${installment.amount} to total (month comparison)`);
-          } else if (monthComparison < 0) {
-            // Start month is before first month
-            console.log('- EXCLUDED: Before first installment date (month comparison)');
-          } else {
-            // Months are the same, compare days
-            const dayComparison = startDay - firstDay;
-            
-            // Handle the special case for the 1st of the month
-            if (startDay === 1) {
-              console.log(`- SPECIAL CASE: 1st of month date`);
-              console.log(`- First day: ${firstDay}, Start day: ${startDay}`);
-              console.log(`- First month/year: ${firstMonth + 1}/${firstYear}, Start month/year: ${startMonth + 1}/${startYear}`);
-              
-              // Check if the date is on or after the first installment date
-              const isAfterFirstDate = 
-                startYear > firstYear || 
-                (startYear === firstYear && startMonth > firstMonth) || 
-                (startYear === firstYear && startMonth === firstMonth && startDay >= firstDay);
-                
-              console.log(`- Is after first installment date? ${isAfterFirstDate}`);
-              
-              if (isAfterFirstDate) {
-                // Always include if it's the first of the month and date is on or after first installment
-                totalExtraPayments += installment.amount;
-                console.log(`- INCLUDED: Adding ${installment.amount} to total (1st of month date on or after first installment)`);
-              } else {
-                console.log(`- EXCLUDED: 1st of month date before first installment date`);
-              }
-            } else if (dayComparison >= 0) {
-              // Start day is on or after first day
-              totalExtraPayments += installment.amount;
-              console.log(`- INCLUDED: Adding ${installment.amount} to total (day comparison)`);
-            } else {
-              // Start day is before first day
-              console.log('- EXCLUDED: Before first installment date (day comparison)');
-            }
-          }
+          console.log('- EXCLUDED: Before first installment date');
         }
       } else { // monthly
-        // Calculate month difference for remaining payments
-        // Create date objects from the strings for comparison
-        
-        // Calculate years and months difference
-        const yearsDiff = startYear - firstYear;
-        const monthsDiff = startMonth - firstMonth; // Both are 0-based now
-        
-        // Calculate months since start
-        let monthsSinceStart = yearsDiff * 12 + monthsDiff;
-        
-        // Adjust for day of month if needed, but handle the 1st of month special case
-        if (startDay !== 1 && startDay < firstDay) {
-          // If start day is earlier in the month than first day (and not the 1st),
-          // we need one fewer month
-          monthsSinceStart--;
-        }
-        
-        // Calculate remaining months
-        const remainingMonths = totalMonths - Math.max(0, monthsSinceStart);
-        
-        console.log(`- Years difference: ${yearsDiff}`);
-        console.log(`- Months difference: ${monthsDiff}`);
-        console.log(`- Total months since start: ${monthsSinceStart}`);
-        console.log(`- Remaining months: ${remainingMonths}`);
-        
-        if (remainingMonths > 0) {
-          const monthlyCumulative = installment.amount * remainingMonths;
-          totalExtraPayments += monthlyCumulative;
-          console.log(`- INCLUDED: Adding ${installment.amount} × ${remainingMonths} = ${monthlyCumulative}`);
+        if (isOnOrAfterFirstDate) {
+          // Calculate months difference accurately
+          // First get the difference in months from date components
+          const yearsDiff = startYear - firstYear;
+          const monthsDiff = startMonth - firstMonth;
+          const totalMonthsDiff = yearsDiff * 12 + monthsDiff;
+          
+          // Adjust for day comparison if needed
+          const adjustedMonthsDiff = 
+            (totalMonthsDiff === 0 && startDay < firstDay) ? -1 : // same month, but earlier day
+            totalMonthsDiff;
+          
+          // Calculate remaining months
+          const remainingMonths = totalMonths - Math.max(0, adjustedMonthsDiff);
+          
+          console.log(`- Years difference: ${yearsDiff}`);
+          console.log(`- Months difference: ${monthsDiff}`);
+          console.log(`- Adjusted months difference: ${adjustedMonthsDiff}`);
+          console.log(`- Remaining months: ${remainingMonths}`);
+          
+          if (remainingMonths > 0) {
+            const monthlyCumulative = installment.amount * remainingMonths;
+            totalExtraPayments += monthlyCumulative;
+            console.log(`- INCLUDED: Adding ${installment.amount} × ${remainingMonths} = ${monthlyCumulative}`);
+          } else {
+            console.log('- EXCLUDED: No remaining months after start date');
+          }
         } else {
-          console.log('- EXCLUDED: No remaining months after start date');
+          console.log('- EXCLUDED: Monthly payment starts before first installment date');
         }
       }
     });
     
     console.log(`\nTotal extra payments calculated: ${totalExtraPayments}`);
+    
+    // If no effective extra payments, log a warning
+    if (totalExtraPayments <= 0) {
+      console.log('WARNING: No effective extra payments calculated');
+    }
+    
     return totalExtraPayments;
   }
 
@@ -276,8 +245,23 @@ export class ScenarioCalculator {
     firstInstallmentDate: Date
   ): PaymentRow[] {
     try {
-      // Log the actual first payment date for debugging
-      console.log('calculateRegularPayments - First installment date:', firstInstallmentDate);
+      // Enhanced logging for date debugging
+      console.log('++++++++++++++++++++++++++++++++++++++++++++++++++++++');
+      console.log('calculateRegularPayments - First installment date received:', firstInstallmentDate);
+      console.log('Original date components:', {
+        year: firstInstallmentDate.getFullYear(),
+        month: firstInstallmentDate.getMonth() + 1,
+        day: firstInstallmentDate.getDate(),
+        hours: firstInstallmentDate.getHours()
+      });
+      
+      // Store the original day of month to ensure we preserve it
+      const originalDay = firstInstallmentDate.getDate();
+      const originalMonth = firstInstallmentDate.getMonth();
+      const originalYear = firstInstallmentDate.getFullYear();
+      
+      console.log('Day of month to preserve:', originalDay);
+      console.log('++++++++++++++++++++++++++++++++++++++++++++++++++++++');
       
       const totalMonths = amortization.term_years * 12
       const monthlyRate = this.calculateMonthlyRate(amortization.interest_rate, amortization.installments_per_year)
@@ -292,7 +276,26 @@ export class ScenarioCalculator {
       let remainingBalance = amortization.loan_amount
 
       for (let month = 0; month < totalMonths; month++) {
-        const currentDate = addMonths(firstInstallmentDate, month)
+        // Create payment date that properly preserves the day of month
+        // Instead of using addMonths which can shift days, create a new date
+        // and set the year/month explicitly
+        const currentDate = new Date(
+          originalYear, 
+          originalMonth + month, 
+          originalDay, 
+          12, 0, 0, 0
+        );
+        
+        // Log detailed info for first few payments
+        if (month < 5) {
+          console.log(`Payment ${month+1} scheduled for: ${currentDate.toISOString()}`);
+          console.log(`Payment ${month+1} components:`, {
+            year: currentDate.getFullYear(),
+            month: currentDate.getMonth() + 1,
+            day: currentDate.getDate()
+          });
+        }
+
         const isDoublePayment = amortization.installments_per_year === 14 && 
           (currentDate.getMonth() === 6 || currentDate.getMonth() === 11)
         
@@ -338,8 +341,50 @@ export class ScenarioCalculator {
     payments: PaymentRow[]
   }> {
     const totalMonths = amortization.term_years * 12
-    const firstInstallmentDate = new Date(amortization.first_installment_date)
-    console.log('ACTUAL first installment date:', firstInstallmentDate);
+    
+    // Ensure correct date handling for first installment date
+    console.log('-----------------------------------------------------------');
+    console.log(`ScenarioCalculator [${scenarioType}] - First installment date from input:`, amortization.first_installment_date);
+    
+    // CRITICAL FIX: Properly parse YYYY-MM-DD date string to preserve the exact date
+    // Check if we have a YYYY-MM-DD format string
+    let year, month, day;
+    
+    if (typeof amortization.first_installment_date === 'string') {
+      // Try to parse as YYYY-MM-DD first
+      const dateMatch = amortization.first_installment_date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (dateMatch) {
+        // We have a YYYY-MM-DD format, extract components directly
+        year = parseInt(dateMatch[1]);
+        month = parseInt(dateMatch[2]) - 1; // Convert to 0-based month
+        day = parseInt(dateMatch[3]);
+      } else {
+        // Parse as regular date
+        const tempDate = new Date(amortization.first_installment_date);
+        year = tempDate.getFullYear();
+        month = tempDate.getMonth();
+        day = tempDate.getDate();
+      }
+    } else {
+      // Handle if it's already a Date object
+      const tempDate = new Date(amortization.first_installment_date);
+      year = tempDate.getFullYear();
+      month = tempDate.getMonth();
+      day = tempDate.getDate();
+    }
+    
+    // Create a new Date at noon to avoid timezone issues
+    const firstInstallmentDate = new Date(year, month, day, 12, 0, 0, 0);
+    
+    // Log detailed information about the date
+    console.log(`ScenarioCalculator [${scenarioType}] - Parsed date:`, firstInstallmentDate.toISOString());
+    console.log(`ScenarioCalculator [${scenarioType}] - Date components:`, {
+      year: year,
+      month: month + 1, // Display 1-based month for logging 
+      day: day,
+      hours: firstInstallmentDate.getHours()
+    });
+    console.log('-----------------------------------------------------------');
     
     const monthlyRate = this.calculateMonthlyRate(amortization.interest_rate, amortization.installments_per_year)
     
@@ -351,56 +396,14 @@ export class ScenarioCalculator {
         break
       }
       case 'accelerated': {
-        // First, let's log each installment to check what's happening
-        console.log('\n===== ACCELERATED SCENARIO =====');
-        console.log(`Original loan amount: ${amortization.loan_amount}`);
-        console.log(`Extra installments:`, extraInstallments.map(i => ({
-          amount: i.amount,
-          frequency: i.frequency,
-          date: i.start_date,
-          isFirstOfMonth: new Date(i.start_date).getDate() === 1
-        })));
+        console.log('Calculating accelerated scenario with extra payments');
         
-        // FOR DEBUGGING: Test if we're handling 1st of month correctly
-        console.log("First of month installments:", extraInstallments.filter(i => 
-          new Date(i.start_date).getDate() === 1
-        ).map(i => ({
-          amount: i.amount,
-          date: i.start_date
-        })));
-        
-        // REVISED APPROACH: Calculate total extra payments directly
-        // Explicitly handle first-of-month dates
-        let totalExtraPayments = 0;
-        extraInstallments.forEach(installment => {
-          const installmentDate = new Date(installment.start_date);
-          const isAfterFirstDate = installmentDate >= firstInstallmentDate;
-          
-          console.log(`Processing installment: ${installmentDate.toISOString()}, amount: ${installment.amount}`);
-          console.log(`Is after first installment date (${firstInstallmentDate.toISOString()})? ${isAfterFirstDate}`);
-          
-          if (isAfterFirstDate) {
-            if (installment.frequency === 'one-time') {
-              totalExtraPayments += installment.amount;
-              console.log(`Added one-time payment: ${installment.amount}`);
-            } else {
-              // Calculate months for monthly payment
-              const monthsLeft = totalMonths - Math.floor(
-                (installmentDate.getTime() - firstInstallmentDate.getTime()) / 
-                (30.44 * 24 * 60 * 60 * 1000)
-              );
-              if (monthsLeft > 0) {
-                const amount = installment.amount * monthsLeft;
-                totalExtraPayments += amount;
-                console.log(`Added monthly payment: ${installment.amount} × ${monthsLeft} = ${amount}`);
-              }
-            }
-          } else {
-            console.log(`Skipped: Installment date is before first installment date`);
-          }
-        });
-        
-        console.log(`Total extra payments calculated: ${totalExtraPayments}`);
+        // Use the improved, common method to calculate total extra payments
+        const totalExtraPayments = this.calculateExtraPaymentsImpact(
+          extraInstallments,
+          firstInstallmentDate,
+          totalMonths
+        );
         
         // Check if we actually have any extra payments to apply
         if (totalExtraPayments <= 0) {
@@ -444,7 +447,14 @@ export class ScenarioCalculator {
 
         // Generate the accelerated scenario payment schedule
         for (let month = 0; month < finalMonths; month++) {
-          const currentDate = addMonths(firstInstallmentDate, month);
+          // Create payment date that properly preserves the day of month
+          const currentDate = new Date(
+            firstInstallmentDate.getFullYear(),
+            firstInstallmentDate.getMonth() + month,
+            firstInstallmentDate.getDate(),
+            12, 0, 0, 0
+          );
+          
           const isDoublePayment = amortization.installments_per_year === 14 && 
             (currentDate.getMonth() === 6 || currentDate.getMonth() === 11);
           
@@ -491,21 +501,28 @@ export class ScenarioCalculator {
         let remainingBalance = adjustedLoanAmount
 
         for (let month = 0; month < totalMonths; month++) {
-          const currentDate = addMonths(firstInstallmentDate, month)
-          const isDoublePayment = amortization.installments_per_year === 14 && 
-            (currentDate.getMonth() === 6 || currentDate.getMonth() === 11)
+          // Create payment date that properly preserves the day of month
+          const currentDate = new Date(
+            firstInstallmentDate.getFullYear(),
+            firstInstallmentDate.getMonth() + month,
+            firstInstallmentDate.getDate(),
+            12, 0, 0, 0
+          );
           
-          const currentMonthlyPayment = isDoublePayment ? adjustedMonthlyPayment * 2 : adjustedMonthlyPayment
-          const monthlyInterest = remainingBalance * monthlyRate
-          const monthlyPrincipal = currentMonthlyPayment - monthlyInterest
+          const isDoublePayment = amortization.installments_per_year === 14 && 
+            (currentDate.getMonth() === 6 || currentDate.getMonth() === 11);
+          
+          const currentMonthlyPayment = isDoublePayment ? adjustedMonthlyPayment * 2 : adjustedMonthlyPayment;
+          const monthlyInterest = remainingBalance * monthlyRate;
+          const monthlyPrincipal = currentMonthlyPayment - monthlyInterest;
           
           const currentPropertyInsurance = isDoublePayment ? 
             amortization.property_insurance * 2 : 
-            amortization.property_insurance
+            amortization.property_insurance;
           
           const currentLoanInsurance = isDoublePayment ? 
             amortization.loan_insurance * 2 : 
-            amortization.loan_insurance
+            amortization.loan_insurance;
 
           payments.push({
             payment_date: currentDate,
@@ -515,9 +532,9 @@ export class ScenarioCalculator {
             loan_insurance: currentLoanInsurance,
             monthly_payment: currentMonthlyPayment + currentPropertyInsurance + currentLoanInsurance,
             is_different_from_base: true
-          })
+          });
 
-          remainingBalance -= monthlyPrincipal
+          remainingBalance -= monthlyPrincipal;
         }
         break
       }
@@ -532,25 +549,37 @@ export class ScenarioCalculator {
         )
 
         for (let month = 0; month < totalMonths; month++) {
-          const currentDate = addMonths(firstInstallmentDate, month)
+          // Create payment date that properly preserves the day of month
+          const currentDate = new Date(
+            firstInstallmentDate.getFullYear(),
+            firstInstallmentDate.getMonth() + month,
+            firstInstallmentDate.getDate(),
+            12, 0, 0, 0
+          );
+          
           const isDoublePayment = amortization.installments_per_year === 14 && 
-            (currentDate.getMonth() === 6 || currentDate.getMonth() === 11)
+            (currentDate.getMonth() === 6 || currentDate.getMonth() === 11);
           
           // Check if there's a rate change for this month
-          const rateChange = rateChanges.find(change => 
-            new Date(change.effective_date).getTime() === currentDate.getTime()
-          )
+          const rateChange = rateChanges.find(change => {
+            const changeDate = new Date(change.effective_date);
+            return (
+              changeDate.getFullYear() === currentDate.getFullYear() &&
+              changeDate.getMonth() === currentDate.getMonth() &&
+              changeDate.getDate() === currentDate.getDate()
+            );
+          });
 
           if (rateChange) {
-            currentRate = rateChange.new_interest_rate
-            const remainingPayments = totalMonths - month
-            const newMonthlyRate = this.calculateMonthlyRate(currentRate, amortization.installments_per_year)
+            currentRate = rateChange.new_interest_rate;
+            const remainingPayments = totalMonths - month;
+            const newMonthlyRate = this.calculateMonthlyRate(currentRate, amortization.installments_per_year);
             currentMonthlyPayment = this.findCorrectMonthlyInstallment(
               remainingBalance,
               newMonthlyRate,
               remainingPayments,
               amortization.installments_per_year
-            )
+            );
           }
 
           const currentMonthlyRate = this.calculateMonthlyRate(currentRate, amortization.installments_per_year)

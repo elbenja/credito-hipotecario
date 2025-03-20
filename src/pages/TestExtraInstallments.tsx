@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -165,6 +165,25 @@ export default function TestExtraInstallments() {
         throw new Error("Down payment cannot be greater than property cost")
       }
 
+      // CRITICAL FIX: Ensure we preserve the exact date by using YYYY-MM-DD format
+      // First create a Date from the input for component extraction
+      const inputDate = new Date(values.first_installment_date);
+      // Extract date components
+      const year = inputDate.getFullYear();
+      const month = inputDate.getMonth(); // 0-based
+      const day = inputDate.getDate();
+      
+      // Create a proper ISO date string preserving the exact date in YYYY-MM-DD format
+      // This avoids all timezone issues by omitting the time portion
+      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      
+      console.log('Updating amortization with date string:', dateString);
+      console.log('Original date components:', {
+        year: year,
+        month: month + 1, // Display 1-based for logging
+        day: day
+      });
+      
       // Prepare amortization data
       const amortizationData = {
         name: values.name,
@@ -172,7 +191,7 @@ export default function TestExtraInstallments() {
         interest_rate: interestRate,
         term_years: termYears,
         installments_per_year: installmentsPerYear,
-        first_installment_date: values.first_installment_date.toISOString(),
+        first_installment_date: dateString, // Use YYYY-MM-DD string format instead of ISO string with time
         loan_amount: loanAmount,
         loan_protection_type: values.loan_protection_type,
         loan_protection_insurance: loanProtectionInsurance,
@@ -578,15 +597,90 @@ function ScenarioCalculationsSection({
   property: Property
   form: ReturnType<typeof useForm<AmortizationFormValues>>
 }) {
+  // Debug information for first installment date
+  const firstInstallmentDebug = useMemo(() => {
+    if (!amortization?.first_installment_date) return null;
+    
+    // Direct parsing of YYYY-MM-DD format to correctly preserve the day/month
+    // This is the critical fix: we need to parse the date string directly rather than through the Date constructor
+    let year, month, day;
+    
+    // If it's in YYYY-MM-DD format, extract components directly from the string
+    const dateMatch = amortization.first_installment_date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateMatch) {
+      year = parseInt(dateMatch[1]);
+      month = parseInt(dateMatch[2]); // 1-indexed for display
+      day = parseInt(dateMatch[3]);
+      
+      // Create date at noon to avoid any timezone issues
+      const normalizedDate = new Date(year, month-1, day, 12, 0, 0, 0);
+      
+      return {
+        originalValue: amortization.first_installment_date,
+        parsedDate: normalizedDate.toISOString(),
+        components: {
+          year: year,
+          month: month, // Already 1-indexed from string extraction
+          day: day
+        }
+      };
+    } else {
+      // Fallback path for non-YYYY-MM-DD format (should not normally occur)
+      const rawDate = new Date(amortization.first_installment_date);
+      year = rawDate.getFullYear();
+      month = rawDate.getMonth() + 1; // Convert 0-indexed month to 1-indexed
+      day = rawDate.getDate();
+      
+      // Create a fresh date object at noon local time to avoid timezone shifts
+      const normalizedDate = new Date(year, month-1, day, 12, 0, 0, 0);
+      
+      return {
+        originalValue: amortization.first_installment_date,
+        parsedDate: normalizedDate.toISOString(),
+        components: {
+          year,
+          month,
+          day
+        }
+      };
+    }
+  }, [amortization?.first_installment_date]);
+
   // Create a local state to track form values for live calculations
-  const [formValues, setFormValues] = useState({
-    loanAmount: amortization.loan_amount || 0,
-    interestRate: amortization.interest_rate,
-    termYears: amortization.term_years,
-    installmentsPerYear: amortization.installments_per_year,
-    firstInstallmentDate: new Date(amortization.first_installment_date),
-    propertyInsurance: property.property_insurance || 0,
-    loanInsurance: amortization.loan_protection_insurance || 0
+  const [formValues, setFormValues] = useState(() => {
+    // Parse the first installment date properly to avoid timezone shifts
+    let firstInstallmentDate;
+    
+    if (amortization.first_installment_date) {
+      // Check if the date is in YYYY-MM-DD format
+      const dateMatch = amortization.first_installment_date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (dateMatch) {
+        // Create a date from parts to avoid timezone issues
+        const year = parseInt(dateMatch[1]);
+        const month = parseInt(dateMatch[2]) - 1; // Convert to 0-indexed month for Date constructor
+        const day = parseInt(dateMatch[3]);
+        firstInstallmentDate = new Date(year, month, day, 12, 0, 0, 0);
+      } else {
+        // Fallback to regular date parsing
+        firstInstallmentDate = new Date(amortization.first_installment_date);
+        // Ensure noon time to avoid timezone shifts
+        firstInstallmentDate.setHours(12, 0, 0, 0);
+      }
+    } else {
+      firstInstallmentDate = new Date();
+      firstInstallmentDate.setHours(12, 0, 0, 0);
+    }
+    
+    // Return properly initialized state
+    return {
+      loanAmount: amortization.loan_amount || 0,
+      interestRate: amortization.interest_rate,
+      termYears: amortization.term_years,
+      installmentsPerYear: amortization.installments_per_year,
+      firstInstallmentDate: firstInstallmentDate,
+      propertyInsurance: property.property_insurance || 0,
+      loanInsurance: amortization.loan_protection_insurance || 0
+    };
   });
   
   // Watch form values for changes
@@ -600,7 +694,31 @@ function ScenarioCalculationsSection({
       const interestRate = parseFloat(values.interest_rate || "0");
       const termYears = parseInt(values.term_years || "0");
       const installmentsPerYear = parseInt(values.installments_per_year || "12");
-      const firstInstallmentDate = values.first_installment_date ? normalizeDate(values.first_installment_date) : normalizeDate(new Date());
+      
+      // Handle date properly to preserve the day of month regardless of timezone
+      let firstInstallmentDate;
+      
+      if (values.first_installment_date) {
+        // First create a date to get the components
+        const tempDate = new Date(values.first_installment_date);
+        // Then create a new date at noon to avoid timezone issues
+        firstInstallmentDate = new Date(
+          tempDate.getFullYear(),
+          tempDate.getMonth(),
+          tempDate.getDate(),
+          12, 0, 0, 0
+        );
+      } else {
+        // Default to today at noon
+        const today = new Date();
+        firstInstallmentDate = new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate(),
+          12, 0, 0, 0
+        );
+      }
+      
       const loanInsurance = parseFloat(values.loan_protection_insurance || "0");
       
       // Update the local state with new values
@@ -697,6 +815,17 @@ function ScenarioCalculationsSection({
     <div className="mt-8">
       <h2 className="text-2xl font-bold mb-6">Payment Scenarios</h2>
       
+      {firstInstallmentDebug && (
+        <div className="bg-yellow-100 p-4 rounded mb-4 border border-yellow-400">
+          <h3 className="font-semibold text-yellow-800">Debug: First Installment Date</h3>
+          <div className="grid grid-cols-1 gap-2 mt-2">
+            <div><strong>Original value from DB:</strong> {firstInstallmentDebug.originalValue}</div>
+            <div><strong>Parsed date:</strong> {firstInstallmentDebug.parsedDate}</div>
+            <div><strong>Date components:</strong> Year: {firstInstallmentDebug.components.year}, Month: {firstInstallmentDebug.components.month}, Day: {firstInstallmentDebug.components.day}</div>
+          </div>
+        </div>
+      )}
+      
       <div className="mb-6 p-4 border-l-4 border-primary bg-muted rounded-md">
         <h3 className="text-lg font-semibold mb-2">Scenario Timelines</h3>
         <p className="mb-2">The four scenarios function as parallel timelines originating from the same starting point:</p>
@@ -731,6 +860,12 @@ function ScenarioCalculationsSection({
               Baseline
             </span>
           </h3>
+          {scenarios?.regular?.payments && scenarios.regular.payments.length > 0 && (
+            <div className="p-2 bg-muted rounded text-xs mb-2">
+              <p><b>Debug:</b> First payment date: {new Date(scenarios.regular.payments[0].payment_date).toLocaleDateString()} 
+              ({new Date(scenarios.regular.payments[0].payment_date).toISOString()})</p>
+            </div>
+          )}
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -772,6 +907,12 @@ function ScenarioCalculationsSection({
               Reduces Term
             </span>
           </h3>
+          {scenarios?.accelerated?.payments && scenarios.accelerated.payments.length > 0 && (
+            <div className="p-2 bg-muted rounded text-xs mb-2">
+              <p><b>Debug:</b> First payment date: {new Date(scenarios.accelerated.payments[0].payment_date).toLocaleDateString()}
+              ({new Date(scenarios.accelerated.payments[0].payment_date).toISOString()})</p>
+            </div>
+          )}
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -821,6 +962,12 @@ function ScenarioCalculationsSection({
               Reduces Payment
             </span>
           </h3>
+          {scenarios?.lower_payment?.payments && scenarios.lower_payment.payments.length > 0 && (
+            <div className="p-2 bg-muted rounded text-xs mb-2">
+              <p><b>Debug:</b> First payment date: {new Date(scenarios.lower_payment.payments[0].payment_date).toLocaleDateString()}
+              ({new Date(scenarios.lower_payment.payments[0].payment_date).toISOString()})</p>
+            </div>
+          )}
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -870,6 +1017,12 @@ function ScenarioCalculationsSection({
               Refinancing
             </span>
           </h3>
+          {scenarios?.new_rate?.payments && scenarios.new_rate.payments.length > 0 && (
+            <div className="p-2 bg-muted rounded text-xs mb-2">
+              <p><b>Debug:</b> First payment date: {new Date(scenarios.new_rate.payments[0].payment_date).toLocaleDateString()}
+              ({new Date(scenarios.new_rate.payments[0].payment_date).toISOString()})</p>
+            </div>
+          )}
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
