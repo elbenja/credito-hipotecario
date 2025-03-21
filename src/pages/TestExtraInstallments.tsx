@@ -22,6 +22,7 @@ import { LoanCalculator } from "@/services/amortization/calculations/loan"
 import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
 import type { Database } from "@/types/supabase"
 import { CollapsibleScenarioPanel } from "@/components/amortizations/collapsible-scenario-panel"
+import { NewRateForm } from "@/components/amortizations/new-rate-form"
 
 type Amortization = Database['public']['Tables']['amortizations']['Row']
 type ExtraInstallment = Database['public']['Tables']['extra_installments']['Row']
@@ -568,6 +569,20 @@ export default function TestExtraInstallments() {
               currency={selectedProperty.currency}
               loanAmount={selectedAmortization.loan_amount}
               onInstallmentsChange={() => {
+                queryClient.invalidateQueries({
+                  queryKey: ["linked-amortizations", selectedProperty.id]
+                })
+                queryClient.invalidateQueries({
+                  queryKey: ["scenarios", selectedAmortization.id]
+                })
+              }}
+            />
+          </div>
+
+          <div className="mt-8">
+            <NewRateForm
+              amortizationId={selectedAmortization.id}
+              onSuccess={() => {
                 queryClient.invalidateQueries({
                   queryKey: ["linked-amortizations", selectedProperty.id]
                 })

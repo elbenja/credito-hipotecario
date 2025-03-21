@@ -96,21 +96,24 @@ export function useScenarioCalculations({
     ],
     queryFn: async () => {
       // Fetch extra installments and rate changes from Supabase
-      const [extraInstallmentsResult, rateChangesResult] = await Promise.all([
+      const [extraInstallmentsResult, newRatesResult] = await Promise.all([
         supabase
           .from("extra_installments")
           .select("*")
           .eq("amortization_id", amortizationId)
           .order("start_date", { ascending: true }),
         supabase
-          .from("rate_changes")
+          .from("new_rates")
           .select("*")
           .eq("amortization_id", amortizationId)
           .order("effective_date", { ascending: true })
       ])
 
       if (extraInstallmentsResult.error) throw extraInstallmentsResult.error
-      if (rateChangesResult.error) throw rateChangesResult.error
+      if (newRatesResult.error) throw newRatesResult.error
+
+      console.log("Scenario calculations - New rates found:", newRatesResult.data)
+      console.log("Scenario calculations - New rates count:", newRatesResult.data.length)
 
       // Improved handling of extra installments to preserve exact dates
       const extraInstallments = extraInstallmentsResult.data.map(ei => {
@@ -139,7 +142,7 @@ export function useScenarioCalculations({
       });
 
       // Improved handling of rate changes to preserve exact dates
-      const rateChanges = rateChangesResult.data.map(rc => {
+      const rateChanges = newRatesResult.data.map(rc => {
         // Keep the original string format for YYYY-MM-DD dates
         if (typeof rc.effective_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rc.effective_date)) {
           // Return the date in its original string format
@@ -177,11 +180,19 @@ export function useScenarioCalculations({
         rate_changes: rateChanges
       })
 
+      // If there are no rate changes, the new_rate scenario should be the same as regular
+      const hasNewRates = rateChanges && rateChanges.length > 0
+      const newRateScenario = hasNewRates && scenarios.new_rate?.summary && 
+        typeof scenarios.new_rate.summary.total_months === 'number' && 
+        scenarios.new_rate.summary.total_months > 0
+          ? scenarios.new_rate
+          : scenarios.regular
+
       return {
         regular: scenarios.regular,
         accelerated: scenarios.accelerated,
         lower_payment: scenarios.lower_payment,
-        new_rate: scenarios.new_rate
+        new_rate: newRateScenario
       }
     },
     gcTime: 1000 * 60 * 30, // Cache for 30 minutes

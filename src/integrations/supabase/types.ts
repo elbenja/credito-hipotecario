@@ -354,7 +354,7 @@ export type Database = {
           },
         ]
       }
-      refinancing_options: {
+      new_rates: {
         Row: {
           amortization_id: string
           created_at: string
@@ -384,7 +384,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "refinancing_options_amortization_id_fkey"
+            foreignKeyName: "new_rates_amortization_id_fkey"
             columns: ["amortization_id"]
             isOneToOne: false
             referencedRelation: "amortizations"

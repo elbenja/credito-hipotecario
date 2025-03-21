@@ -54,7 +54,7 @@ export function ScenarioTable({
                 key={index}
                 className={rowClassName}
               >
-                <TableCell className="text-sm p-2 ">
+                <TableCell className="text-sm p-1 ">
                   {formatDate(row.date)}
                   {row.is_double_payment && (
                     <span className="ml-1 inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">
@@ -62,22 +62,22 @@ export function ScenarioTable({
                     </span>
                   )}
                 </TableCell>
-                <TableCell className="p-2 text-sm text-right">
+                <TableCell className="p-1 text-sm text-right">
                   {formatCurrency(row.beginning_balance || 0, currency)}
                 </TableCell>
-                <TableCell className="p-2 text-sm text-right">
+                <TableCell className="p-1 text-sm text-right">
                   {formatCurrency(row.capital, currency)}
                 </TableCell>
-                <TableCell className="p-2 text-sm text-right">
+                <TableCell className="p-  1 text-sm text-right">
                   {formatCurrency(row.interest, currency)}
                 </TableCell>
-                <TableCell className="p-2 text-sm text-right">
+                <TableCell className="p-1 text-sm text-right">
                   {formatCurrency(row.property_insurance, currency)}
                 </TableCell>
-                <TableCell className="p-2 text-sm text-right">
+                <TableCell className="p-1 text-sm text-right">
                   {formatCurrency(row.loan_insurance, currency)}
                 </TableCell>
-                <TableCell className={`p-2 text-sm text-right font-medium ${row.is_double_payment ? "text-amber-900" : ""}`}>
+                <TableCell className={`p-1 text-sm text-right font-medium ${row.is_double_payment ? "text-amber-900" : ""}`}>
                   {formatCurrency(row.monthly_payment, currency)}
                 </TableCell>
               </TableRow>

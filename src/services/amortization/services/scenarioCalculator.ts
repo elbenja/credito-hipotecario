@@ -299,9 +299,6 @@ export class ScenarioCalculator {
     const originalEndDate = new Date(loanStartDate);
     originalEndDate.setFullYear(originalEndDate.getFullYear() + termYears);
     
-    console.log(`[LOWER PAYMENT] Loan start date: ${loanStartDate.toISOString()}`);
-    console.log(`[LOWER PAYMENT] Original end date: ${originalEndDate.toISOString()}`);
-    
     // Sort extra installments by start date (chronological order)
     // Process and normalize dates for each installment
     const sortedInstallments = [...extraInstallments]
@@ -336,7 +333,6 @@ export class ScenarioCalculator {
     // Calculate initial amortization (before any extra installments)
     const totalMonths = termYears * 12;
     
-    console.log("[LOWER PAYMENT] Initial GoalSeek for original schedule");
     const initialResult = GoalSeekService.calculate({
       amount,
       months: totalMonths,
@@ -438,9 +434,6 @@ export class ScenarioCalculator {
       const remainingMonths = (originalEndYear - breakpointYear) * 12 + 
                              (originalEndMonth - breakpointMonth);
       
-      console.log(`[LOWER PAYMENT] GoalSeek for breakpoint #${i+1}, balance: ${currentBalance}, remaining months: ${remainingMonths}`);
-      console.log(`[LOWER PAYMENT] Breakpoint date: ${breakpointDate.toISOString()}, original end: ${originalEndDate.toISOString()}`);
-      
       // Get the next payment date after the breakpoint
       const nextPaymentDate = matchedIndex + 1 < currentPayments.length
         ? currentPayments[matchedIndex].payment_date
@@ -469,7 +462,6 @@ export class ScenarioCalculator {
       // Verify the payments end at the original end date
       const lastRecalculatedPayment = recalculatedResult.payments[recalculatedResult.payments.length - 1];
       const lastPaymentDate = lastRecalculatedPayment.payment_date;
-      console.log(`[LOWER PAYMENT] Last payment date: ${lastPaymentDate.toISOString()}, should be close to: ${originalEndDate.toISOString()}`);
       
       // Set these recalculated payments as the current payments for next iteration
       currentPayments = recalculatedResult.payments;
@@ -513,6 +505,9 @@ export class ScenarioCalculator {
 
     const totalMonths = termYears * 12;
     
+    // Add minimal debug info
+    console.log(`[NEW RATE] Processing ${rateChanges.length} rate changes`);
+    
     // Sort rate changes by effective date
     const sortedChanges = [...rateChanges].sort((a, b) => 
       new Date(a.effective_date).getTime() - new Date(b.effective_date).getTime()
@@ -527,7 +522,10 @@ export class ScenarioCalculator {
     for (const change of sortedChanges) {
       const effectiveDate = new Date(change.effective_date)
       const monthsUntilChange = this.monthsDifference(new Date(), effectiveDate)
-
+      
+      // Add minimal debug info for each rate change
+      console.log(`[NEW RATE] Change effective ${change.effective_date}: ${currentInterest}% → ${change.new_interest_rate}%`);
+      
       // Calculate payments until rate change
       const result = GoalSeekService.calculate({
         amount: currentAmount,

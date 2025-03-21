@@ -90,7 +90,7 @@ export function PaymentScenariosPanel({
 
     try {
       const { error } = await supabase
-        .from("refinancing_options")
+        .from("new_rates")
         .insert({
           amortization_id: amortizationId,
           new_interest_rate: parseFloat(refinancingForm.newInterestRate),
@@ -102,7 +102,7 @@ export function PaymentScenariosPanel({
 
       toast({
         title: "Success",
-        description: "Refinancing option saved successfully",
+        description: "New rate saved successfully",
       })
 
       // Reset form and refresh calculations
@@ -113,10 +113,10 @@ export function PaymentScenariosPanel({
       })
       handleNewRateSuccess()
     } catch (error) {
-      console.error("Error saving refinancing option:", error)
+      console.error("Error saving new rate:", error)
       toast({
         title: "Error",
-        description: "Failed to save refinancing option. Please try again.",
+        description: "Failed to save new rate. Please try again.",
         variant: "destructive",
       })
     }

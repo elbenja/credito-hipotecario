@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Check, Trash2 } from "lucide-react"
+import { Plus, Trash2 } from "lucide-react"
 import { format, addYears, subWeeks, startOfDay, isBefore, isAfter, isSameDay } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { refinancingOptionSchema, type RefinancingOptionFormValues } from "./refinancing-option-schema"
+import { newRateSchema, type NewRateFormValues } from "./new-rate-schema"
 
 interface NewRateFormProps {
   amortizationId: string
@@ -56,33 +56,34 @@ export function NewRateForm({
     if (!amortizationId) return
     
     const fetchRefinancingOptions = async () => {
-      console.log("Fetching refinancing options for amortization:", amortizationId)
+      console.log("Fetching new rates for amortization:", amortizationId)
       const { data, error } = await supabase
-        .from("refinancing_options")
+        .from("new_rates")
         .select("*")
         .eq("amortization_id", amortizationId)
         .order("effective_date", { ascending: true })
       
       if (error) {
-        console.error("Error fetching refinancing options:", error)
+        console.error("Error fetching new rates:", error)
         return
       }
       
-      console.log("Fetched refinancing options:", data)
-      setRefinancingOptions(data)
+      console.log("Fetched new rates:", data)
+      console.log("Number of options found:", data ? data.length : 0)
+      setRefinancingOptions(data || [])
     }
     
     fetchRefinancingOptions()
 
     // Subscribe to changes
     const channel = supabase
-      .channel('refinancing_options_changes')
+      .channel('new_rates_changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'refinancing_options',
+          table: 'new_rates',
           filter: `amortization_id=eq.${amortizationId}`
         },
         (payload) => {
@@ -92,7 +93,10 @@ export function NewRateForm({
       )
       .subscribe()
 
+    console.log("Subscription to new_rates setup for amortization:", amortizationId)
+
     return () => {
+      console.log("Unsubscribing from new_rates channel")
       channel.unsubscribe()
     }
   }, [amortizationId])
@@ -100,7 +104,7 @@ export function NewRateForm({
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
-        .from("refinancing_options")
+        .from("new_rates")
         .delete()
         .eq("id", id)
 
@@ -112,7 +116,7 @@ export function NewRateForm({
         description: t("payment_scenarios.new_rate_form.success_message"),
       })
     } catch (error) {
-      console.error("Error deleting refinancing option:", error)
+      console.error("Error deleting new rate:", error)
       toast({
         title: t("payment_scenarios.new_rate_form.error_title"),
         description: t("payment_scenarios.new_rate_form.error_message"),
@@ -121,8 +125,8 @@ export function NewRateForm({
     }
   }
 
-  const form = useForm<RefinancingOptionFormValues>({
-    resolver: zodResolver(refinancingOptionSchema),
+  const form = useForm<NewRateFormValues>({
+    resolver: zodResolver(newRateSchema),
     defaultValues: {
       new_interest_rate: undefined,
       effective_date: undefined,
@@ -152,24 +156,45 @@ export function NewRateForm({
     );
   };
 
-  const handleSubmit = async (values: RefinancingOptionFormValues) => {
+  const handleSubmit = async (values: NewRateFormValues) => {
     try {
-      const { error } = await supabase
-        .from("refinancing_options")
+      setIsSubmitting(true);
+      
+      // Format the date in YYYY-MM-DD format
+      const formattedDate = format(values.effective_date, 'yyyy-MM-dd');
+      
+      // Log what we're about to submit
+      console.log("Submitting new rate:", {
+        amortization_id: amortizationId,
+        new_interest_rate: values.new_interest_rate,
+        effective_date: formattedDate,
+        new_term_years: values.new_term_years,
+      });
+      
+      const { data, error } = await supabase
+        .from("new_rates")
         .insert([{
           amortization_id: amortizationId,
           new_interest_rate: values.new_interest_rate,
-          effective_date: format(values.effective_date, 'yyyy-MM-dd'),
+          effective_date: formattedDate,
           new_term_years: values.new_term_years,
         }])
+        .select();
 
       if (error) {
-        console.error("Error saving refinancing option:", error)
+        console.error("Error saving new rate:", error)
         throw error
+      }
+      
+      console.log("Successfully added new rate, returned data:", data);
+
+      // Immediately update the local state with the new option
+      if (data && data.length > 0) {
+        setRefinancingOptions(prev => [...prev, data[0]]);
       }
 
       await queryClient.invalidateQueries({
-        queryKey: ["refinancing-options", amortizationId]
+        queryKey: ["new-rates", amortizationId]
       })
       await queryClient.invalidateQueries({
         queryKey: ["scenarios", amortizationId]
@@ -182,28 +207,40 @@ export function NewRateForm({
         description: t("payment_scenarios.new_rate_form.success_message"),
       })
     } catch (error) {
-      console.error("Error saving refinancing option:", error)
+      console.error("Error saving new rate:", error)
       toast({
         title: t("payment_scenarios.new_rate_form.error_title"),
         description: t("payment_scenarios.new_rate_form.error_message"),
         variant: "destructive",
       })
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   return (
     <div className="space-y-6">
+      <h3 className="text-2xl font-bold">Refinancing Options</h3>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className={className}>
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">{t("payment_scenarios.new_rate_form.title")}</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <FormLabel>{t("payment_scenarios.new_rate_form.new_interest_rate")}</FormLabel>
+              </div>
+              <div>
+                <FormLabel>{t("payment_scenarios.new_rate_form.new_term")}</FormLabel>
+              </div>
+              <div>
+                <FormLabel>{t("payment_scenarios.new_rate_form.start_date")}</FormLabel>
+              </div>
+            </div>
             <div className="grid grid-cols-[1fr_1fr_1fr_88px] gap-4">
               <FormField
                 control={form.control}
                 name="new_interest_rate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("payment_scenarios.new_rate_form.new_interest_rate")}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input 
@@ -231,25 +268,24 @@ export function NewRateForm({
                 name="new_term_years"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("payment_scenarios.new_rate_form.new_term")}</FormLabel>
-                    <Select 
-                      onValueChange={(value) => field.onChange(value === "remaining" ? null : parseInt(value))}
-                      value={field.value?.toString() || "remaining"}
-                    >
-                      <FormControl>
+                    <FormControl>
+                      <Select 
+                        onValueChange={(value) => field.onChange(value === "remaining" ? null : parseInt(value))}
+                        value={field.value?.toString() || "remaining"}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="10" />
                         </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="remaining">{t("payment_scenarios.new_rate_form.remaining")}</SelectItem>
-                        {[5, 10, 15, 20, 25, 30].map((years) => (
-                          <SelectItem key={years} value={years.toString()}>
-                            {t("payment_scenarios.new_rate_form.years", { value: years })}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                        <SelectContent>
+                          <SelectItem value="remaining">{t("payment_scenarios.new_rate_form.remaining")}</SelectItem>
+                          {[5, 10, 15, 20, 25, 30].map((years) => (
+                            <SelectItem key={years} value={years.toString()}>
+                              {t("payment_scenarios.new_rate_form.years", { value: years })}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -260,7 +296,6 @@ export function NewRateForm({
                 name="effective_date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("payment_scenarios.new_rate_form.start_date")}</FormLabel>
                     <FormControl>
                       <CalendarDatePicker
                         date={{ from: field.value || new Date(), to: field.value || new Date() }}
@@ -286,11 +321,11 @@ export function NewRateForm({
                 <Button 
                   type="submit"
                   variant="outline"
-                  className="px-3 w-[88px]"
+                  className="h-10 w-full"
                   disabled={isSubmitting || !form.formState.isValid}
                 >
-                  <Check className="h-4 w-4" />
-                  {isSubmitting ? t("payment_scenarios.new_rate_form.saving") : t("payment_scenarios.new_rate_form.add_button")}
+                  <Plus className="h-4 w-4" />
+                  <span className="sr-only">{t("payment_scenarios.new_rate_form.add_button")}</span>
                 </Button>
               </div>
             </div>
@@ -328,7 +363,7 @@ export function NewRateForm({
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(option.id)}
-                      className="h-8 w-8"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
                       title={t("payment_scenarios.new_rate_form.table.delete_tooltip")}
                     >
                       <Trash2 className="h-4 w-4" />
