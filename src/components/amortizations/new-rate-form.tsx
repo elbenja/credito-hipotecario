@@ -220,27 +220,17 @@ export function NewRateForm({
 
   return (
     <div className="space-y-6">
-      <h3 className="text-2xl font-bold">Refinancing Options</h3>
+      <h3 className="text-lg font-medium">Refinancing Options</h3>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className={className}>
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <FormLabel>{t("payment_scenarios.new_rate_form.new_interest_rate")}</FormLabel>
-              </div>
-              <div>
-                <FormLabel>{t("payment_scenarios.new_rate_form.new_term")}</FormLabel>
-              </div>
-              <div>
-                <FormLabel>{t("payment_scenarios.new_rate_form.start_date")}</FormLabel>
-              </div>
-            </div>
-            <div className="grid grid-cols-[1fr_1fr_1fr_88px] gap-4">
+            <div className="grid grid-cols-[1fr_1fr_1fr_100px] gap-4">
               <FormField
                 control={form.control}
                 name="new_interest_rate"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel>{t("payment_scenarios.new_rate_form.new_interest_rate")}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input 
@@ -268,6 +258,7 @@ export function NewRateForm({
                 name="new_term_years"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel>{t("payment_scenarios.new_rate_form.new_term")}</FormLabel>
                     <FormControl>
                       <Select 
                         onValueChange={(value) => field.onChange(value === "remaining" ? null : parseInt(value))}
@@ -296,9 +287,10 @@ export function NewRateForm({
                 name="effective_date"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel>{t("payment_scenarios.new_rate_form.start_date")}</FormLabel>
                     <FormControl>
                       <CalendarDatePicker
-                        date={{ from: field.value || new Date(), to: field.value || new Date() }}
+                        date={{ from: field.value || null, to: field.value || null }}
                         onDateSelect={({ from }) => field.onChange(from)}
                         numberOfMonths={1}
                         closeOnSelect={true}
@@ -317,17 +309,15 @@ export function NewRateForm({
                 )}
               />
 
-              <div className="self-end">
-                <Button 
-                  type="submit"
-                  variant="outline"
-                  className="h-10 w-full"
-                  disabled={isSubmitting || !form.formState.isValid}
-                >
-                  <Plus className="h-4 w-4" />
-                  <span className="sr-only">{t("payment_scenarios.new_rate_form.add_button")}</span>
-                </Button>
-              </div>
+              <Button 
+                type="submit"
+                variant="outline"
+                className="self-end px-3 w-[100px]"
+                disabled={isSubmitting}
+              >
+                <Plus className="h-4 w-4 opacity-50" />
+                <span>{t("payment_scenarios.new_rate_form.add_button")}</span>
+              </Button>
             </div>
           </div>
         </form>

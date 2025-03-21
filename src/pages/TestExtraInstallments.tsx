@@ -590,6 +590,7 @@ export default function TestExtraInstallments() {
                   queryKey: ["scenarios", selectedAmortization.id]
                 })
               }}
+              className="space-y-4"
             />
           </div>
 

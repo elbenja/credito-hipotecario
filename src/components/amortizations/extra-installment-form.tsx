@@ -55,7 +55,7 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
     defaultValues: {
       amount: "",
       frequency: "one-time",
-      start_date: new Date(),
+      start_date: undefined,
     },
   })
 
@@ -174,7 +174,7 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
                 <FormLabel>{t("extra_installments_section.form.first_date")}</FormLabel>
                 <FormControl>
                   <CalendarDatePicker
-                    date={{ from: field.value, to: field.value }}
+                    date={{ from: field.value || null, to: field.value || null }}
                     onDateSelect={({ from }) => field.onChange(from)}
                     numberOfMonths={1}
                     closeOnSelect={true}
@@ -199,8 +199,8 @@ export function ExtraInstallmentForm({ onSubmit, isLoading, loanAmount, currency
             variant="outline"
             className="self-end px-3 w-[100px]"
           >
-            <Plus className="h-4 w-4" />
-            {t("extra_installments_section.form.add_button")}
+            <Plus className="h-4 w-4 opacity-50" />
+            <span>{t("extra_installments_section.form.add_button")}</span>
           </Button>
         </div>
       </form>

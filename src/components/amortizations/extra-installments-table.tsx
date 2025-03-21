@@ -33,7 +33,7 @@ export function ExtraInstallmentsTable({
             <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("extra_installments_section.table.amount")}</th>
             <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("extra_installments_section.table.frequency")}</th>
             <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("extra_installments_section.table.date")}</th>
-            <th className="p-2 text-left font-medium w-[50px] text-xs text-muted-foreground">{t("extra_installments_section.table.actions")}</th>
+            <th className="p-2 text-left font-medium w-[50px] text-xs text-muted-foreground"></th>
           </tr>
         </thead>
         <tbody>
