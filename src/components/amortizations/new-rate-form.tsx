@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { newRateSchema, type NewRateFormValues } from "./new-rate-schema"
+import { createLocalDate } from "@/lib/utils"
 
 interface NewRateFormProps {
   amortizationId: string
@@ -160,8 +161,14 @@ export function NewRateForm({
     try {
       setIsSubmitting(true);
       
-      // Format the date in YYYY-MM-DD format
-      const formattedDate = format(values.effective_date, 'yyyy-MM-dd');
+      // Extract date components to create YYYY-MM-DD format without timezone issues
+      const date = values.effective_date;
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0'); // months are 0-indexed
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      // Format as YYYY-MM-DD
+      const formattedDate = `${year}-${month}-${day}`;
       
       // Log what we're about to submit
       console.log("Submitting new rate:", {
@@ -347,7 +354,7 @@ export function NewRateForm({
                   <td className="p-2 text-sm">{index + 1}</td>
                   <td className="p-2 text-sm">{option.new_interest_rate}%</td>
                   <td className="p-2 text-sm">{option.new_term_years ? t("payment_scenarios.new_rate_form.years", { value: option.new_term_years }) : t("payment_scenarios.new_rate_form.remaining")}</td>
-                  <td className="p-2 text-sm">{format(new Date(option.effective_date), 'MMM dd, yyyy')}</td>
+                  <td className="p-2 text-sm">{format(createLocalDate(option.effective_date), 'MMM dd, yyyy')}</td>
                   <td className="p-2">
                     <Button
                       variant="ghost"
