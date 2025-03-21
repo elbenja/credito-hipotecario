@@ -21,6 +21,7 @@ import { ScenarioTable } from "@/components/amortizations/scenario-table"
 import { LoanCalculator } from "@/services/amortization/calculations/loan"
 import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
 import type { Database } from "@/types/supabase"
+import { CollapsibleScenarioPanel } from "@/components/amortizations/collapsible-scenario-panel"
 
 type Amortization = Database['public']['Tables']['amortizations']['Row']
 type ExtraInstallment = Database['public']['Tables']['extra_installments']['Row']
@@ -763,40 +764,18 @@ function ScenarioCalculationsSection({
     <div className="mt-8">
       <h2 className="text-2xl font-bold mb-6">Payment Scenarios</h2>
       
-      <div className="mb-6 p-4 border-l-4 border-primary bg-muted rounded-md">
-        <h3 className="text-lg font-semibold mb-2">Scenario Timelines</h3>
-        <p className="mb-2">The four scenarios function as parallel timelines originating from the same starting point:</p>
-        <ul className="space-y-1 text-sm">
-          <li><span className="font-medium">Regular</span> – The main timeline and baseline scenario. Before any adjustments, all scenarios match this one.</li>
-          <li><span className="font-medium">Accelerated</span> – Forks from Regular when extra installments are applied. Reduces total months while monthly payment stays the same.</li>
-          <li><span className="font-medium">Lower Payment</span> – Forks from Regular when extra installments are applied. Reduces monthly payment while total months stays the same.</li>
-          <li><span className="font-medium">New Rate</span> – Forks from Regular when a new refinancing rate is introduced. Can change both months and payment amount.</li>
-        </ul>
-        
-        {formValues.installmentsPerYear === 14 && (
-          <div className="mt-4 p-3 bg-amber-50 rounded-md border border-amber-200">
-            <h4 className="text-sm font-semibold text-amber-800">Double Payment Option Selected</h4>
-            <p className="text-sm text-amber-700">
-              You've selected the 14 installments per year option. This means:
-            </p>
-            <ul className="mt-1 space-y-1 text-xs text-amber-700 list-disc pl-4">
-              <li>Regular months: Standard monthly payment</li>
-              <li>July and December: <strong>Double payments</strong> (2× the monthly amount)</li>
-              <li>All insurance costs are also doubled in July and December</li>
-              <li>Double payment months are highlighted in the payment tables</li>
-            </ul>
-          </div>
-        )}
-      </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="p-6 border rounded-lg">
-          <h3 className="text-xl font-semibold mb-4">
-            Regular Scenario
-            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-primary/20 text-primary">
-              Baseline
-            </span>
-          </h3>
+        <CollapsibleScenarioPanel 
+          title="Regular Scenario"
+          tag="Baseline"
+          tagColor="primary"
+          defaultOpen={false}
+          summary={{
+            months: scenarios?.regular?.summary.total_months || 0,
+            payment: formatCurrency(scenarios?.regular?.summary.monthly_payment || 0, property.currency)
+          }}
+        >
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -829,15 +808,22 @@ function ScenarioCalculationsSection({
               />
             )}
           </div>
-        </div>
+        </CollapsibleScenarioPanel>
 
-        <div className="p-6 border rounded-lg">
-          <h3 className="text-xl font-semibold mb-4">
-            Accelerated Scenario
-            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-100 text-green-800">
-              Reduces Term
-            </span>
-          </h3>
+        <CollapsibleScenarioPanel 
+          title="Accelerated Scenario"
+          tag="Reduces Term"
+          tagColor="green"
+          defaultOpen={false}
+          summary={{
+            months: scenarios?.accelerated?.summary.total_months || 0,
+            payment: formatCurrency(scenarios?.accelerated?.summary.monthly_payment || 0, property.currency),
+            difference: scenarios?.regular && scenarios?.accelerated 
+              ? `${scenarios.regular.summary.total_months - scenarios.accelerated.summary.total_months} mo` 
+              : undefined,
+            isPaymentReduction: false
+          }}
+        >
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -861,7 +847,6 @@ function ScenarioCalculationsSection({
                 <p className="text-sm text-muted-foreground">Monthly Payment</p>
                 <p className="text-lg font-medium">
                   {formatCurrency(scenarios?.accelerated?.summary.monthly_payment || 0, property.currency)}
-                  {/* Same as Regular */}
                 </p>
                 {formValues.installmentsPerYear === 14 && (
                   <p className="text-xs text-amber-700">
@@ -878,15 +863,22 @@ function ScenarioCalculationsSection({
               />
             )}
           </div>
-        </div>
+        </CollapsibleScenarioPanel>
 
-        <div className="p-6 border rounded-lg">
-          <h3 className="text-xl font-semibold mb-4">
-            Lower Payment Scenario
-            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
-              Reduces Payment
-            </span>
-          </h3>
+        <CollapsibleScenarioPanel 
+          title="Lower Payment Scenario"
+          tag="Reduces Payment"
+          tagColor="blue"
+          defaultOpen={false}
+          summary={{
+            months: scenarios?.lower_payment?.summary.total_months || 0,
+            payment: formatCurrency(scenarios?.lower_payment?.summary.monthly_payment || 0, property.currency),
+            difference: scenarios?.regular && scenarios?.lower_payment 
+              ? formatCurrency(scenarios.regular.summary.monthly_payment - scenarios.lower_payment.summary.monthly_payment, property.currency) 
+              : undefined,
+            isPaymentReduction: true
+          }}
+        >
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -899,7 +891,6 @@ function ScenarioCalculationsSection({
                 <p className="text-sm text-muted-foreground">Months</p>
                 <p className="text-lg font-medium">
                   {scenarios?.lower_payment?.summary.total_months || 0}
-                  {/* Same as Regular */}
                 </p>
               </div>
               <div>
@@ -927,15 +918,24 @@ function ScenarioCalculationsSection({
               />
             )}
           </div>
-        </div>
+        </CollapsibleScenarioPanel>
 
-        <div className="p-6 border rounded-lg">
-          <h3 className="text-xl font-semibold mb-4">
-            New Rate Scenario
-            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-amber-100 text-amber-800">
-              Refinancing
-            </span>
-          </h3>
+        <CollapsibleScenarioPanel 
+          title="New Rate Scenario"
+          tag="Refinancing"
+          tagColor="amber"
+          defaultOpen={false}
+          summary={{
+            months: scenarios?.new_rate?.summary.total_months || 0,
+            payment: formatCurrency(scenarios?.new_rate?.summary.monthly_payment || 0, property.currency),
+            difference: scenarios?.regular && scenarios?.new_rate 
+              ? formatCurrency(Math.abs(scenarios.regular.summary.monthly_payment - scenarios.new_rate.summary.monthly_payment), property.currency) 
+              : undefined,
+            isPaymentReduction: scenarios?.regular && scenarios?.new_rate 
+              ? scenarios.new_rate.summary.monthly_payment < scenarios.regular.summary.monthly_payment 
+              : true
+          }}
+        >
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -982,7 +982,7 @@ function ScenarioCalculationsSection({
               />
             )}
           </div>
-        </div>
+        </CollapsibleScenarioPanel>
       </div>
     </div>
   )

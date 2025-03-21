@@ -32,6 +32,8 @@ type PaymentScheduleProps = {
 export function PaymentSchedule({ form }: PaymentScheduleProps) {
   return (
     <div className="grid grid-cols-2 gap-4">
+      <p className="text-">are we using this</p> 
+   
       <FormField
         control={form.control}
         name="term_years"
