@@ -599,51 +599,8 @@ function ScenarioCalculationsSection({
 }) {
   // Debug information for first installment date
   const firstInstallmentDebug = useMemo(() => {
-    if (!amortization?.first_installment_date) return null;
-    
-    // Direct parsing of YYYY-MM-DD format to correctly preserve the day/month
-    // This is the critical fix: we need to parse the date string directly rather than through the Date constructor
-    let year, month, day;
-    
-    // If it's in YYYY-MM-DD format, extract components directly from the string
-    const dateMatch = amortization.first_installment_date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (dateMatch) {
-      year = parseInt(dateMatch[1]);
-      month = parseInt(dateMatch[2]); // 1-indexed for display
-      day = parseInt(dateMatch[3]);
-      
-      // Create date at noon to avoid any timezone issues
-      const normalizedDate = new Date(year, month-1, day, 12, 0, 0, 0);
-      
-      return {
-        originalValue: amortization.first_installment_date,
-        parsedDate: normalizedDate.toISOString(),
-        components: {
-          year: year,
-          month: month, // Already 1-indexed from string extraction
-          day: day
-        }
-      };
-    } else {
-      // Fallback path for non-YYYY-MM-DD format (should not normally occur)
-      const rawDate = new Date(amortization.first_installment_date);
-      year = rawDate.getFullYear();
-      month = rawDate.getMonth() + 1; // Convert 0-indexed month to 1-indexed
-      day = rawDate.getDate();
-      
-      // Create a fresh date object at noon local time to avoid timezone shifts
-      const normalizedDate = new Date(year, month-1, day, 12, 0, 0, 0);
-      
-      return {
-        originalValue: amortization.first_installment_date,
-        parsedDate: normalizedDate.toISOString(),
-        components: {
-          year,
-          month,
-          day
-        }
-      };
-    }
+    // We no longer need this debug information
+    return null;
   }, [amortization?.first_installment_date]);
 
   // Create a local state to track form values for live calculations
@@ -751,16 +708,7 @@ function ScenarioCalculationsSection({
 
   // For debugging: Log the payment data when it's available
   useEffect(() => {
-    if (scenarios && formValues.installmentsPerYear === 14) {
-      // Filter for July and December payments only for debugging
-      const julyDecPayments = scenarios.regular?.payments.filter(payment => {
-        const date = new Date(payment.payment_date);
-        return date.getMonth() === 6 || date.getMonth() === 11;
-      });
-      
-      console.log('DEBUG 14 installments - July/Dec payments:', julyDecPayments);
-      console.log('DEBUG Regular payments sample:', scenarios.regular?.payments.slice(0, 3));
-    }
+    // No longer needed
   }, [scenarios, formValues.installmentsPerYear]);
 
   if (isLoading) {
@@ -815,17 +763,6 @@ function ScenarioCalculationsSection({
     <div className="mt-8">
       <h2 className="text-2xl font-bold mb-6">Payment Scenarios</h2>
       
-      {firstInstallmentDebug && (
-        <div className="bg-yellow-100 p-4 rounded mb-4 border border-yellow-400">
-          <h3 className="font-semibold text-yellow-800">Debug: First Installment Date</h3>
-          <div className="grid grid-cols-1 gap-2 mt-2">
-            <div><strong>Original value from DB:</strong> {firstInstallmentDebug.originalValue}</div>
-            <div><strong>Parsed date:</strong> {firstInstallmentDebug.parsedDate}</div>
-            <div><strong>Date components:</strong> Year: {firstInstallmentDebug.components.year}, Month: {firstInstallmentDebug.components.month}, Day: {firstInstallmentDebug.components.day}</div>
-          </div>
-        </div>
-      )}
-      
       <div className="mb-6 p-4 border-l-4 border-primary bg-muted rounded-md">
         <h3 className="text-lg font-semibold mb-2">Scenario Timelines</h3>
         <p className="mb-2">The four scenarios function as parallel timelines originating from the same starting point:</p>
@@ -860,12 +797,6 @@ function ScenarioCalculationsSection({
               Baseline
             </span>
           </h3>
-          {scenarios?.regular?.payments && scenarios.regular.payments.length > 0 && (
-            <div className="p-2 bg-muted rounded text-xs mb-2">
-              <p><b>Debug:</b> First payment date: {new Date(scenarios.regular.payments[0].payment_date).toLocaleDateString()} 
-              ({new Date(scenarios.regular.payments[0].payment_date).toISOString()})</p>
-            </div>
-          )}
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -907,12 +838,6 @@ function ScenarioCalculationsSection({
               Reduces Term
             </span>
           </h3>
-          {scenarios?.accelerated?.payments && scenarios.accelerated.payments.length > 0 && (
-            <div className="p-2 bg-muted rounded text-xs mb-2">
-              <p><b>Debug:</b> First payment date: {new Date(scenarios.accelerated.payments[0].payment_date).toLocaleDateString()}
-              ({new Date(scenarios.accelerated.payments[0].payment_date).toISOString()})</p>
-            </div>
-          )}
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -962,12 +887,6 @@ function ScenarioCalculationsSection({
               Reduces Payment
             </span>
           </h3>
-          {scenarios?.lower_payment?.payments && scenarios.lower_payment.payments.length > 0 && (
-            <div className="p-2 bg-muted rounded text-xs mb-2">
-              <p><b>Debug:</b> First payment date: {new Date(scenarios.lower_payment.payments[0].payment_date).toLocaleDateString()}
-              ({new Date(scenarios.lower_payment.payments[0].payment_date).toISOString()})</p>
-            </div>
-          )}
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -1017,12 +936,6 @@ function ScenarioCalculationsSection({
               Refinancing
             </span>
           </h3>
-          {scenarios?.new_rate?.payments && scenarios.new_rate.payments.length > 0 && (
-            <div className="p-2 bg-muted rounded text-xs mb-2">
-              <p><b>Debug:</b> First payment date: {new Date(scenarios.new_rate.payments[0].payment_date).toLocaleDateString()}
-              ({new Date(scenarios.new_rate.payments[0].payment_date).toISOString()})</p>
-            </div>
-          )}
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>

@@ -21,100 +21,43 @@ export function formatDate(date: Date) {
 
 /**
  * Normalize a date to noon to avoid timezone issues
- * This ensures that the date won't shift to the previous day regardless of timezone
  */
-export function normalizeDate(date: Date | string): Date {
-  // Special handling for string input in YYYY-MM-DD format
-  if (typeof date === 'string') {
-    const dateMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (dateMatch) {
-      // We have a YYYY-MM-DD format, extract components directly to avoid timezone issues
-      const year = parseInt(dateMatch[1]);
-      const month = parseInt(dateMatch[2]) - 1; // Convert to 0-based month for Date constructor
-      const day = parseInt(dateMatch[3]);
-      
-      // Log original string for debugging
-      console.log(`normalizeDate - Original date string: "${date}" -> Y:${year} M:${month+1} D:${day}`);
-      
-      // Create new Date at noon local time
-      const normalized = new Date(year, month, day, 12, 0, 0, 0);
-      
-      // Log the result
-      console.log(`normalizeDate - Result from string: ${normalized.toISOString()}`);
-      
-      return normalized;
-    }
-  }
-
-  // For non-YYYY-MM-DD strings or Date objects
-  // Extract components from the Date object to ensure we don't lose the day of month
-  const inputDate = typeof date === 'string' ? new Date(date) : date;
-  
-  // Extract components directly from the original date
-  const year = inputDate.getFullYear();
-  const month = inputDate.getMonth();
-  const day = inputDate.getDate();
-  
-  // Log original date components for debugging
-  console.log(`normalizeDate - Original: ${inputDate.toISOString()} -> Y:${year} M:${month+1} D:${day}`);
-  
-  // Create a new local date with noon to avoid timezone issues
-  const normalized = new Date(year, month, day, 12, 0, 0, 0);
-  
-  // Log the result
-  console.log(`normalizeDate - Result: ${normalized.toISOString()}`);
-  
-  return normalized;
+export function normalizeDate(date: Date): Date {
+  // Set the time to noon to avoid any timezone issues
+  const normalizedDate = new Date(date);
+  normalizedDate.setHours(12, 0, 0, 0);
+  return normalizedDate;
 }
 
 /**
- * Create a date object from a string or Date that preserves the exact calendar date
- * regardless of timezone differences
+ * Create a local date from a date string or ISO string
+ * This is used to ensure we have a consistent date representation
  */
-export function createLocalDate(date: string | Date): Date {
-  // Special handling for string input in YYYY-MM-DD format
-  if (typeof date === 'string') {
-    const dateMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (dateMatch) {
-      // We have a YYYY-MM-DD format, extract components directly to avoid timezone issues
-      const year = parseInt(dateMatch[1]);
-      const month = parseInt(dateMatch[2]) - 1; // Convert to 0-based month for Date constructor
-      const day = parseInt(dateMatch[3]);
-      
-      // Log original string for debugging
-      console.log(`createLocalDate - Original date string: "${date}" -> Y:${year} M:${month+1} D:${day}`);
-      
-      // Create new Date at noon local time
-      const localDate = new Date(year, month, day, 12, 0, 0, 0);
-      
-      // Log the result
-      console.log(`createLocalDate - Result from string: ${localDate.toISOString()}`);
-      
-      return localDate;
-    }
+export function createLocalDate(dateString: string | Date): Date {
+  if (!dateString) return new Date();
+  
+  let date: Date;
+  
+  // If it's already a Date object, just normalize it
+  if (dateString instanceof Date) {
+    return normalizeDate(dateString);
   }
   
-  // For non-YYYY-MM-DD strings or Date objects
-  const inputDate = typeof date === 'string' ? new Date(date) : date;
+  // Try to parse YYYY-MM-DD format directly to avoid timezone issues
+  const match = dateString.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (match) {
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1; // Convert to 0-based month for Date constructor
+    const day = parseInt(match[3], 10);
+    date = new Date(year, month, day, 12, 0, 0, 0); // noon local time
+  } else {
+    // Fall back to regular date parsing
+    date = new Date(dateString);
+    // Normalize to noon
+    date = normalizeDate(date);
+  }
   
-  // Log input date for debugging
-  console.log(`createLocalDate - Input: ${typeof date === 'string' ? date : date.toISOString()}`);
-  console.log(`createLocalDate - Parsed: ${inputDate.toISOString()}`);
-  
-  // Extract components from the input date
-  // For string inputs, use the local date components since they're already parsed correctly
-  const year = inputDate.getFullYear();
-  const month = inputDate.getMonth();
-  const day = inputDate.getDate();
-  
-  console.log(`createLocalDate - Components: Y:${year} M:${month+1} D:${day}`);
-  
-  // Create a new date with these components in the local timezone at noon
-  const localDate = new Date(year, month, day, 12, 0, 0, 0);
-  
-  console.log(`createLocalDate - Result: ${localDate.toISOString()}`);
-  
-  return localDate;
+  return date;
 }
 
 export function formatCurrency(amount: number | string, currency: "USD" | "PEN" = "PEN") {

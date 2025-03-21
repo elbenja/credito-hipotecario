@@ -39,13 +39,10 @@ export class GoalSeekService {
       loan_protection_insurance = 0,
       first_installment_date
     } = input
-
-    console.log(`[GoalSeek] Calculating with first_installment_date: ${first_installment_date?.toISOString() || 'not provided'}`)
     
     // Convert yearly interest rate to monthly using Effective Annual Rate formula
     const annualRate = yearly_interest_rate / 100
     const monthlyInterestRate = Math.pow(1 + annualRate, 1/12) - 1
-    console.log(`[GoalSeek] Using effective monthly rate: ${monthlyInterestRate} (from annual rate: ${yearly_interest_rate}%)`)
 
     // If interest rate is 0, simple division
     if (monthlyInterestRate === 0) {
@@ -205,11 +202,6 @@ export class GoalSeekService {
         baseDate.getMonth() + i,
         baseDate.getDate()
       );
-      
-      // Log the first few payment dates for debugging
-      if (i < 3) {
-        console.log(`GoalSeek payment ${i+1} scheduled for: ${paymentDate.toISOString()}`);
-      }
       
       // Determine if this is a double payment month (July or December for 14 installments)
       const month = paymentDate.getMonth();
