@@ -512,20 +512,10 @@ export class ScenarioCalculator {
         // 1. Keep original payments until the rate change date
         // 2. Only recalculate payments starting from the rate change date
 
-        console.log("=== NEW RATE SCENARIO CALCULATION DETAILED DEBUG ===");
-        console.log("Initial loan parameters:");
-        console.log(`- Initial loan amount: $${amortization.loan_amount.toFixed(2)}`);
-        console.log(`- Initial interest rate: ${amortization.interest_rate}%`);
-        console.log(`- Initial term years: ${amortization.term_years} (${totalMonths} months)`);
-        console.log(`- First installment date: ${firstInstallmentDate?.toISOString().split('T')[0] || 'Not specified'}`);
-
         if (!rateChanges || rateChanges.length === 0) {
-          console.log("No rate changes found. Using regular payment schedule.");
           // If no rate changes, just return regular payments
           break;
         }
-
-        console.log(`Rate changes detected: ${rateChanges.length}`);
         
         // Sort rate changes by effective date
         const sortedRateChanges = [...rateChanges].sort((a, b) => {
@@ -533,20 +523,12 @@ export class ScenarioCalculator {
           const dateB = new Date(b.effective_date).getTime();
           return dateA - dateB;
         });
-
-        console.log("Sorted rate changes:", sortedRateChanges.map(rc => ({
-          effective_date: new Date(rc.effective_date).toISOString().split('T')[0],
-          new_interest_rate: rc.new_interest_rate, 
-          new_term_years: rc.new_term_years || 'remaining'
-        })));
         
         // First calculate regular payments (for baseline)
         const regularPayments = this.calculateRegularPayments(
           amortization,
           firstInstallmentDate
         );
-        
-        console.log(`Regular payment schedule calculated with ${regularPayments.length} payments`);
         
         // Initialize our final payments array with regular payments
         // We'll replace sections of this array as we process rate changes
@@ -563,10 +545,6 @@ export class ScenarioCalculator {
           const changeMonth = parseInt(changeDateStr.substring(5, 7)) - 1; // Adjust for 0-based months
           const changeDay = parseInt(changeDateStr.substring(8, 10));
           const changeDate = new Date(changeYear, changeMonth, changeDay);
-          
-          console.log(`\n=== Processing rate change #${changeIdx + 1} effective ${changeDateStr} ===`);
-          console.log(`- New interest rate: ${rateChange.new_interest_rate}%`);
-          console.log(`- New term years: ${rateChange.new_term_years || 'remaining'}`);
           
           // Find the payment index for this change date (on or after the rate change date)
           const changeIndex = payments.findIndex(payment => {
@@ -585,51 +563,25 @@ export class ScenarioCalculator {
           });
           
           if (changeIndex === -1) {
-            console.log(`WARNING: Could not find payment matching or after change date ${changeDateStr}. Skipping this rate change.`);
-            console.log(`Payments available:`, payments.map(p => new Date(p.payment_date).toISOString().split('T')[0]).slice(0, 5));
             continue; // Skip this rate change
           }
-
-          console.log(`- Found matching payment at index ${changeIndex}`);
-          console.log(`- Change payment date: ${new Date(payments[changeIndex].payment_date).toISOString().split('T')[0]}`);
           
           // Get the remaining balance at the change date (from the previous payment)
           const remainingBalance = changeIndex > 0 
             ? payments[changeIndex - 1].remainingBalance 
             : amortization.loan_amount;
           
-          if (remainingBalance === undefined) {
-            console.log(`WARNING: Could not determine remaining balance at rate change point. Using original loan amount.`);
-          }
-          
           const balanceAtChange = remainingBalance !== undefined ? remainingBalance : amortization.loan_amount;
-          
-          console.log(`\n=== Rate change breakpoint analysis ===`);
-          console.log(`- Remaining balance at rate change date: $${balanceAtChange.toFixed(2)}`);
           
           // Calculate new rate and new monthly payment
           const newRate = rateChange.new_interest_rate;
           const remainingMonths = totalMonths - changeIndex;
           const newMonthlyRate = this.calculateMonthlyRate(newRate, amortization.installments_per_year);
           
-          console.log(`- New interest rate: ${newRate}%`);
-          console.log(`- New monthly rate: ${(newMonthlyRate * 100).toFixed(6)}%`);
-          
           // If rate change specifies new term, use it, otherwise continue with remaining months
           const termMonths = rateChange.new_term_years 
             ? rateChange.new_term_years * 12 
             : remainingMonths;
-          
-          console.log(`- Remaining months in original term: ${remainingMonths}`);
-          console.log(`- Term months to use for goalseek: ${termMonths}`);
-          
-          console.log(`- Calling goalseek via findCorrectMonthlyInstallment with params:`);
-          console.log({
-            loanAmount: balanceAtChange,
-            monthlyRate: newMonthlyRate,
-            months: termMonths,
-            installmentsPerYear: amortization.installments_per_year
-          });
           
           const newMonthlyPayment = this.findCorrectMonthlyInstallment(
             balanceAtChange,
@@ -638,13 +590,9 @@ export class ScenarioCalculator {
             amortization.installments_per_year
           );
           
-          console.log(`- New monthly payment calculated: $${newMonthlyPayment.toFixed(2)}`);
-          
           // Recalculate all payments after the rate change
           const newPayments: PaymentRow[] = [];
           let currentBalance = balanceAtChange;
-          
-          console.log(`\n=== Beginning recalculation of payments after rate change ===`);
           
           // Use the original payment dates and just recalculate the amounts
           for (let i = changeIndex; i < regularPayments.length; i++) {
@@ -662,7 +610,6 @@ export class ScenarioCalculator {
                  currentDate.getMonth() === nextChangeDate.getMonth() &&
                  currentDate.getDate() >= nextChangeDate.getDate())
               ) {
-                console.log(`- Reached next rate change date, stopping recalculation`);
                 break;
               }
             }
@@ -674,7 +621,6 @@ export class ScenarioCalculator {
               termEndDate.setMonth(termEndDate.getMonth() + (rateChange.new_term_years * 12) % 12);
               
               if (currentDate > termEndDate) {
-                console.log(`- Reached end of new term, stopping recalculation`);
                 break;
               }
             }
@@ -709,12 +655,9 @@ export class ScenarioCalculator {
             
             // If balance is nearly zero, we're done
             if (currentBalance! < 0.01) {
-              console.log(`- Loan paid off, stopping recalculation`);
               break;
             }
           }
-          
-          console.log(`- Recalculated ${newPayments.length} payments after rate change`);
           
           // Replace the section of payments after the change date with our new calculations
           payments = [
@@ -725,12 +668,6 @@ export class ScenarioCalculator {
         
         // Make sure we have correct payment sorting
         payments.sort((a, b) => a.payment_date.getTime() - b.payment_date.getTime());
-        
-        console.log(`\n=== NEW RATE SCENARIO SUMMARY ===`);
-        console.log(`- Total payments in final schedule: ${payments.length}`);
-        console.log(`- First payment: ${payments[0]?.payment_date.toISOString().split('T')[0]} - $${payments[0]?.monthly_payment.toFixed(2)}`);
-        console.log(`- Last payment: ${payments[payments.length-1]?.payment_date.toISOString().split('T')[0]} - $${payments[payments.length-1]?.monthly_payment.toFixed(2)}`);
-        console.log(`=== END NEW RATE SCENARIO DEBUG ===\n`);
         
         break;
       }
@@ -896,8 +833,6 @@ export class ScenarioCalculator {
           }
         }
       }
-      
-      console.log(`Found representative payment after rate change: $${representativePayment?.monthly_payment.toFixed(2)}`);
     }
 
     return {

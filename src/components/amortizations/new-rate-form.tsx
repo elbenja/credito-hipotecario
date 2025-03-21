@@ -57,7 +57,6 @@ export function NewRateForm({
     if (!amortizationId) return
     
     const fetchRefinancingOptions = async () => {
-      console.log("Fetching new rates for amortization:", amortizationId)
       const { data, error } = await supabase
         .from("new_rates")
         .select("*")
@@ -69,8 +68,6 @@ export function NewRateForm({
         return
       }
       
-      console.log("Fetched new rates:", data)
-      console.log("Number of options found:", data ? data.length : 0)
       setRefinancingOptions(data || [])
     }
     
@@ -88,16 +85,12 @@ export function NewRateForm({
           filter: `amortization_id=eq.${amortizationId}`
         },
         (payload) => {
-          console.log('Change received:', payload)
           fetchRefinancingOptions()
         }
       )
       .subscribe()
 
-    console.log("Subscription to new_rates setup for amortization:", amortizationId)
-
     return () => {
-      console.log("Unsubscribing from new_rates channel")
       channel.unsubscribe()
     }
   }, [amortizationId])
@@ -183,14 +176,6 @@ export function NewRateForm({
       // Format as YYYY-MM-DD
       const formattedDate = `${year}-${month}-${day}`;
       
-      // Log what we're about to submit
-      console.log("Submitting new rate:", {
-        amortization_id: amortizationId,
-        new_interest_rate: values.new_interest_rate,
-        effective_date: formattedDate,
-        new_term_years: values.new_term_years,
-      });
-      
       const { data, error } = await supabase
         .from("new_rates")
         .insert([{
@@ -205,8 +190,6 @@ export function NewRateForm({
         console.error("Error saving new rate:", error)
         throw error
       }
-      
-      console.log("Successfully added new rate, returned data:", data);
 
       // Immediately update the local state with the new option
       if (data && data.length > 0) {

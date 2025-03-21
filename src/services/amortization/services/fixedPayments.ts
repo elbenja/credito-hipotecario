@@ -4,6 +4,7 @@ interface ExtraInstallment {
   amount: number
   frequency: 'one-time' | 'monthly' | 'yearly'
   start_date: string | Date | any // Accept both string and Date types
+  applied?: boolean // Track if a one-time payment has been applied
 }
 
 interface FixedPaymentsInput {
@@ -58,6 +59,43 @@ export class FixedPaymentsService {
     // Use the provided first installment date or default to current date
     const baseDate = first_installment_date || new Date()
 
+    // Pre-process extra installments to normalize dates
+    const processedExtraInstallments = extra_installments.map(inst => {
+      let normalizedDate: Date;
+      
+      if (typeof inst.start_date === 'string') {
+        // Handle YYYY-MM-DD format directly
+        const match = inst.start_date.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (match) {
+          const year = parseInt(match[1], 10);
+          const month = parseInt(match[2], 10) - 1; // Convert to 0-based
+          const day = parseInt(match[3], 10);
+          normalizedDate = new Date(year, month, day, 12, 0, 0, 0);
+        } else {
+          normalizedDate = new Date(inst.start_date);
+        }
+      } else if (inst.start_date instanceof Date) {
+        normalizedDate = new Date(inst.start_date);
+      } else {
+        normalizedDate = new Date(String(inst.start_date));
+      }
+      
+      return {
+        ...inst,
+        start_date: normalizedDate,
+        applied: false // Track if this one-time payment has been applied
+      };
+    });
+    
+    // Sort one-time payments by date (earliest first)
+    const sortedOneTimePayments = processedExtraInstallments
+      .filter(inst => inst.frequency === 'one-time')
+      .sort((a, b) => a.start_date.getTime() - b.start_date.getTime());
+    
+    // Other types of payments
+    const monthlyPayments = processedExtraInstallments
+      .filter(inst => inst.frequency === 'monthly');
+
     // Continue until balance is effectively zero
     while (balance > this.BALANCE_THRESHOLD && months < 600) { // 50 years max
       // Create a new date that preserves the exact day of month
@@ -87,19 +125,43 @@ export class FixedPaymentsService {
       
       // Set total payment (base + extra)
       let totalPayment = basePayment;
-
-      // Add any applicable extra payments
-      const extraAmount = this.calculateExtraPaymentForDate(
-        currentDate,
-        extra_installments,
-        months
-      )
+      let extraAmount = 0;
+      
+      // Add monthly extra payments (if any)
+      for (const monthlyExtra of monthlyPayments) {
+        if (currentDate.getTime() >= monthlyExtra.start_date.getTime()) {
+          extraAmount += monthlyExtra.amount;
+        }
+      }
+      
+      // Check for one-time payments that need to be applied
+      for (let i = 0; i < sortedOneTimePayments.length; i++) {
+        const oneTimeExtra = sortedOneTimePayments[i];
+        
+        if (oneTimeExtra.applied) continue; // Skip if already applied
+        
+        const extraDate = oneTimeExtra.start_date;
+        
+        // Case 1: Exact date match
+        const isExactMatch = currentDate.getFullYear() === extraDate.getFullYear() && 
+                            currentDate.getMonth() === extraDate.getMonth() && 
+                            currentDate.getDate() === extraDate.getDate();
+                            
+        // Case 2: This payment is after the extra date
+        const isPastExtraDate = currentDate.getTime() > extraDate.getTime();
+        
+        if (isExactMatch || isPastExtraDate) {
+          extraAmount += oneTimeExtra.amount;
+          oneTimeExtra.applied = true; // Mark as applied so we don't use it again
+          break; // Apply only one one-time payment per regular payment
+        }
+      }
       
       if (extraAmount > 0) {
-        totalPayment += extraAmount
+        totalPayment += extraAmount;
       }
 
-      const availableForPrincipal = totalPayment - monthlyInterest - currentPropertyInsurance - currentLoanInsurance
+      const availableForPrincipal = totalPayment - monthlyInterest - currentPropertyInsurance - currentLoanInsurance;
       
       const row: PaymentRow = {
         payment_date: currentDate,
@@ -111,11 +173,11 @@ export class FixedPaymentsService {
         principal: availableForPrincipal,
         ending_balance: balance - availableForPrincipal,
         is_different_from_base: extraAmount > 0 || isDoublePayment
-      }
+      };
 
-      schedule.push(row)
-      balance = row.ending_balance
-      months++
+      schedule.push(row);
+      balance = row.ending_balance;
+      months++;
     }
 
     return {

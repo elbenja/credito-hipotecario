@@ -145,9 +145,6 @@ export function useScenarioCalculations({
       if (extraInstallmentsResult.error) throw extraInstallmentsResult.error
       if (newRatesResult.error) throw newRatesResult.error
 
-      console.log("Scenario calculations - New rates found:", newRatesResult.data)
-      console.log("Scenario calculations - New rates count:", newRatesResult.data.length)
-
       // Improved handling of extra installments to preserve exact dates
       const extraInstallments = extraInstallmentsResult.data.map(ei => {
         // Keep the original string format for YYYY-MM-DD dates
@@ -202,8 +199,6 @@ export function useScenarioCalculations({
           const today = new Date();
           effectiveDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         }
-        
-        console.log(`Normalized rate change date: ${effectiveDate} (original: ${rc.effective_date})`);
         
         return {
           id: rc.id,
