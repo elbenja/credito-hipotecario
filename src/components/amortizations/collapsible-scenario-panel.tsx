@@ -6,7 +6,7 @@ import {
   CollapsibleTrigger 
 } from "@/components/ui/collapsible";
 
-type TagColor = "primary" | "green" | "blue" | "amber" | "red";
+type TagColor = "primary" | "green" | "blue" | "amber" | "red" | "orange" | "gray";
 
 interface CollapsibleScenarioPanelProps {
   title: string;
@@ -18,6 +18,9 @@ interface CollapsibleScenarioPanelProps {
     payment: string;
     difference?: string;
     isPaymentReduction?: boolean;
+    totalInterest?: string;
+    totalInterestDifference?: string;
+    isInterestReduction?: boolean;
   };
   children: React.ReactNode;
 }
@@ -32,8 +35,12 @@ const getTagStyles = (color: TagColor) => {
       return "bg-blue-100 text-blue-800";
     case "amber":
       return "bg-amber-100 text-amber-800";
+    case "orange":
+      return "bg-orange-100 text-orange-800";
     case "red":
       return "bg-red-100 text-red-800";
+    case "gray":
+      return "bg-gray-100 text-gray-800";
     default:
       return "bg-primary/20 text-primary";
   }
@@ -66,19 +73,33 @@ export function CollapsibleScenarioPanel({
           </h3>
           
           {summary && (
-            <div className="mt-2 flex items-center text-sm">
-              <div className="mr-4">
-                <span className="text-muted-foreground">Months:</span>{" "}
-                <span className="font-medium">{summary.months}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Monthly Payment:</span>{" "}
-                <span className="font-medium">{summary.payment}</span>
-                {summary.difference && (
-                  <span className={`ml-1 ${summary.isPaymentReduction ? 'text-blue-600' : 'text-red-600'}`}>
-                    ({summary.isPaymentReduction ? '-' : '+'}{summary.difference})
-                  </span>
-                )}
+            <div className="mt-2 flex flex-col space-y-1">
+              {summary.totalInterest && (
+                <div className="flex items-center text-sm">
+                  <span className="text-muted-foreground">Sum Interest & Insurances:</span>{" "}
+                  <span className="font-medium ml-1">{summary.totalInterest}</span>
+                  {summary.totalInterestDifference && (
+                    <span className={`ml-1 ${summary.isInterestReduction ? 'text-green-600' : 'text-red-600'}`}>
+                      ({summary.isInterestReduction ? '-' : '+'}{summary.totalInterestDifference})
+                    </span>
+                  )}
+                </div>
+              )}
+              
+              <div className="flex items-center text-sm">
+                <div className="mr-4">
+                  <span className="text-muted-foreground">Months:</span>{" "}
+                  <span className="font-medium">{summary.months}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Monthly Payment:</span>{" "}
+                  <span className="font-medium">{summary.payment}</span>
+                  {summary.difference && (
+                    <span className={`ml-1 ${summary.isPaymentReduction ? 'text-blue-600' : 'text-red-600'}`}>
+                      ({summary.isPaymentReduction ? '-' : '+'}{summary.difference})
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           )}

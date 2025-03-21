@@ -111,11 +111,24 @@ export function NewRateForm({
 
       if (error) throw error
 
+      // Update local state
       setRefinancingOptions(prev => prev.filter(option => option.id !== id))
+      
+      // Invalidate queries to ensure UI updates
+      await queryClient.invalidateQueries({
+        queryKey: ["new-rates", amortizationId]
+      })
+      await queryClient.invalidateQueries({
+        queryKey: ["scenarios", amortizationId]
+      })
+      
       toast({
         title: t("payment_scenarios.new_rate_form.success_title"),
         description: t("payment_scenarios.new_rate_form.success_message"),
       })
+      
+      // Call onSuccess callback to notify parent components
+      onSuccess?.()
     } catch (error) {
       console.error("Error deleting new rate:", error)
       toast({
@@ -200,6 +213,7 @@ export function NewRateForm({
         setRefinancingOptions(prev => [...prev, data[0]]);
       }
 
+      // Invalidate queries to ensure UI updates
       await queryClient.invalidateQueries({
         queryKey: ["new-rates", amortizationId]
       })
@@ -208,7 +222,10 @@ export function NewRateForm({
       })
       
       form.reset()
+      
+      // Call onSuccess callback to notify parent components
       onSuccess?.()
+      
       toast({
         title: t("payment_scenarios.new_rate_form.success_title"),
         description: t("payment_scenarios.new_rate_form.success_message"),

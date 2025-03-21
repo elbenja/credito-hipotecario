@@ -10,9 +10,14 @@ interface ExtraInstallment {
 }
 
 interface RateChange {
+  id?: string
+  amortization_id?: string
   new_interest_rate: number
   new_term_years?: number
-  effective_date: Date
+  effective_date: Date | string
+  created_at?: string
+  updated_at?: string
+  new_balance?: number
 }
 
 interface CalculateInput {
@@ -505,66 +510,150 @@ export class ScenarioCalculator {
 
     const totalMonths = termYears * 12;
     
-    // Add minimal debug info
-    console.log(`[NEW RATE] Processing ${rateChanges.length} rate changes`);
-    
     // Sort rate changes by effective date
     const sortedChanges = [...rateChanges].sort((a, b) => 
       new Date(a.effective_date).getTime() - new Date(b.effective_date).getTime()
     )
 
-    let currentAmount = amount
-    let currentInterest = interest
-    let payments: PaymentRow[] = []
-    let pastMonths = 0
+    console.log("=== NEW RATE SCENARIO DEBUG ===");
+    console.log("Initial loan parameters:");
+    console.log(`- Initial loan amount: $${amount.toFixed(2)}`);
+    console.log(`- Initial interest rate: ${interest}%`);
+    console.log(`- Initial term years: ${termYears} (${totalMonths} months)`);
+    console.log(`- Number of installments per year: ${installmentsPerYear}`);
+    console.log(`- First installment date: ${firstInstallmentDate?.toISOString().split('T')[0] || 'Not specified'}`);
+    console.log("Rate changes to apply:", sortedChanges.map(c => ({
+      date: typeof c.effective_date === 'string' ? c.effective_date : c.effective_date.toISOString().split('T')[0],
+      new_rate: c.new_interest_rate,
+      new_term_years: c.new_term_years
+    })));
 
+    // Calculate regular payments for the entire term first
+    // This will serve as our base, and we'll only replace payments after rate change dates
+    const regularResult = GoalSeekService.calculate({
+      amount,
+      months: totalMonths,
+      yearly_interest_rate: interest,
+      installments_per_year: installmentsPerYear,
+      property_insurance: propertyInsurance,
+      loan_protection_insurance: loanInsurance,
+      first_installment_date: firstInstallmentDate
+    });
+    
+    // Start with all regular payments
+    let payments = [...regularResult.payments];
+    
     // Process each rate change
     for (const change of sortedChanges) {
-      const effectiveDate = new Date(change.effective_date)
-      const monthsUntilChange = this.monthsDifference(new Date(), effectiveDate)
+      // Normalize the date to avoid timezone issues
+      const effectiveDateStr = typeof change.effective_date === 'string' 
+        ? change.effective_date 
+        : change.effective_date.toISOString().split('T')[0];
+        
+      // Parse the date components to create a clean date object
+      const [year, month, day] = effectiveDateStr.split('-').map(Number);
+      const effectiveDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
       
-      // Add minimal debug info for each rate change
-      console.log(`[NEW RATE] Change effective ${change.effective_date}: ${currentInterest}% → ${change.new_interest_rate}%`);
+      console.log(`\n=== Processing rate change effective ${effectiveDateStr} ===`);
       
-      // Calculate payments until rate change
-      const result = GoalSeekService.calculate({
-        amount: currentAmount,
-        months: monthsUntilChange,
-        yearly_interest_rate: currentInterest,
-        installments_per_year: installmentsPerYear,
-        property_insurance: propertyInsurance,
-        loan_protection_insurance: loanInsurance,
-        past_months: pastMonths,
-        first_installment_date: firstInstallmentDate
-      })
-
-      payments = [...payments, ...result.payments]
-      currentAmount = result.payments[result.payments.length - 1].ending_balance
-      currentInterest = change.new_interest_rate
-      pastMonths += monthsUntilChange
-
+      // Find the index of the payment that corresponds to the rate change date using normalized dates
+      const rateChangeIndex = payments.findIndex(payment => {
+        const paymentDate = payment.payment_date;
+        const paymentYear = paymentDate.getFullYear();
+        const paymentMonth = paymentDate.getMonth();
+        const paymentDay = paymentDate.getDate();
+        
+        // Compare by year, month, day directly to avoid timezone issues
+        return (paymentYear > year) || 
+               (paymentYear === year && paymentMonth > month - 1) || 
+               (paymentYear === year && paymentMonth === month - 1 && paymentDay >= day);
+      });
+      
+      // If we can't find a matching payment date, skip this rate change
+      if (rateChangeIndex === -1) {
+        console.log(`- No payment found on or after rate change date ${effectiveDateStr}. Skipping this rate change.`);
+        console.log(`- First 3 payment dates available:`, payments.slice(0, 3).map(p => p.payment_date.toISOString().split('T')[0]));
+        continue;
+      }
+      
+      console.log(`- Found payment at index ${rateChangeIndex} that corresponds to rate change`);
+      console.log(`- Payment date: ${payments[rateChangeIndex].payment_date.toISOString().split('T')[0]}`);
+      
+      // Get the remaining balance at the rate change date
+      // We use the ending balance of the previous payment, or the original amount if this is the first payment
+      const remainingBalance = rateChangeIndex > 0 
+        ? payments[rateChangeIndex - 1].ending_balance 
+        : amount;
+      
+      console.log(`- Remaining balance at rate change: $${remainingBalance.toFixed(2)}`);
+      console.log(`- New interest rate: ${change.new_interest_rate}%`);
+      
+      // Calculate how many months remain from this point until the end of the original term
+      const remainingMonths = totalMonths - rateChangeIndex;
+      
       // If new term is specified, use it, otherwise continue with remaining months
-      const remainingMonths = change.new_term_years 
+      const newTermMonths = change.new_term_years 
         ? change.new_term_years * 12
-        : termYears * 12 - pastMonths
-
-      // Calculate payments after rate change
-      const finalResult = GoalSeekService.calculate({
-        amount: currentAmount,
-        months: remainingMonths,
-        yearly_interest_rate: currentInterest,
+        : remainingMonths;
+        
+      console.log(`- Remaining months in original term: ${remainingMonths}`);
+      console.log(`- New term months to use: ${newTermMonths}`);
+      
+      // Get the payment date that corresponds to the rate change
+      const newStartDate = payments[rateChangeIndex].payment_date;
+      
+      // Calculate payments after rate change with the new interest rate
+      console.log("Calling GoalSeek to calculate payments AFTER rate change with parameters:");
+      console.log({
+        amount: remainingBalance,
+        months: newTermMonths,
+        yearly_interest_rate: change.new_interest_rate,
         installments_per_year: installmentsPerYear,
         property_insurance: propertyInsurance,
         loan_protection_insurance: loanInsurance,
-        past_months: pastMonths,
-        first_installment_date: firstInstallmentDate
-      })
+        first_installment_date: newStartDate.toISOString().split('T')[0]
+      });
+      
+      const recalculatedResult = GoalSeekService.calculate({
+        amount: remainingBalance,
+        months: newTermMonths,
+        yearly_interest_rate: change.new_interest_rate,
+        installments_per_year: installmentsPerYear,
+        property_insurance: propertyInsurance,
+        loan_protection_insurance: loanInsurance,
+        first_installment_date: newStartDate
+      });
 
-      payments = [...payments, ...finalResult.payments]
+      console.log(`- GoalSeek result - new base installment: $${recalculatedResult.base_installment.toFixed(2)}`);
+      console.log(`- GoalSeek result - total calculated months: ${recalculatedResult.total_months}`);
+      console.log(`- GoalSeek result - payments calculated: ${recalculatedResult.payments.length}`);
+      
+      // Get first payment after rate change
+      if (recalculatedResult.payments.length > 0) {
+        const firstPayment = recalculatedResult.payments[0];
+        console.log(`- First payment date after rate change: ${firstPayment.payment_date.toISOString().split('T')[0]}`);
+        console.log(`- First payment amount after rate change: $${firstPayment.monthly_payment.toFixed(2)}`);
+      }
+
+      // Replace the payments after the rate change date with the recalculated payments
+      payments = [
+        ...payments.slice(0, rateChangeIndex), // Keep payments before rate change
+        ...recalculatedResult.payments.map(payment => ({
+          ...payment,
+          is_different_from_base: true // Mark recalculated payments
+        }))
+      ];
     }
 
+    console.log(`\n=== SCENARIO SUMMARY ===`);
+    console.log(`- Total payments in final schedule: ${payments.length}`);
+    console.log(`- First payment: ${payments[0]?.payment_date.toISOString().split('T')[0]} - $${payments[0]?.monthly_payment.toFixed(2)}`);
+    console.log(`- Last payment: ${payments[payments.length-1]?.payment_date.toISOString().split('T')[0]} - $${payments[payments.length-1]?.monthly_payment.toFixed(2)}`);
+    console.log("=== END NEW RATE SCENARIO DEBUG ===\n");
+
     return {
-      summary: this.calculateSummary(payments, totalMonths),
+      // For new rate scenario, always use actual payment count instead of original months
+      summary: this.calculateSummary(payments, payments.length),
       payments
     }
   }
@@ -579,24 +668,49 @@ export class ScenarioCalculator {
       0
     )
 
-    // Find the last normal payment (not a double payment)
-    let latestNormalPayment = payments[0]; // Default to first payment
-    for (let i = payments.length - 1; i >= 0; i--) {
-      const payment = payments[i];
-      // Skip July/December double payments
-      const month = payment.payment_date.getMonth();
-      const isDoublePayment = month === 6 || month === 11; // July or December
+    // Find the first non-double payment after rate change (marked as different from base)
+    // This ensures we report the payment amount after the rate change
+    let representativePayment = payments[0]; // Default to first payment
+    
+    // First look for payments marked as different from base (indicating rate change)
+    const hasRateChange = payments.some(p => p.is_different_from_base);
+    
+    if (hasRateChange) {
+      // Find the first payment marked as different that's not a double payment
+      for (let i = 0; i < payments.length; i++) {
+        const payment = payments[i];
+        if (payment.is_different_from_base) {
+          // Skip double payments (July or December)
+          const month = payment.payment_date.getMonth();
+          const isDoublePayment = month === 6 || month === 11;
+          
+          if (!isDoublePayment) {
+            representativePayment = payment;
+            break;
+          }
+        }
+      }
       
-      if (!isDoublePayment) {
-        latestNormalPayment = payment;
-        break;
+      console.log(`Found representative payment after rate change: $${representativePayment.monthly_payment.toFixed(2)}`);
+    } else {
+      // If no rate change, find the last normal payment (not a double payment)
+      for (let i = payments.length - 1; i >= 0; i--) {
+        const payment = payments[i];
+        // Skip double payments (July or December)
+        const month = payment.payment_date.getMonth();
+        const isDoublePayment = month === 6 || month === 11;
+        
+        if (!isDoublePayment) {
+          representativePayment = payment;
+          break;
+        }
       }
     }
 
     return {
       total_interest_and_insurance: totalInterestAndInsurance,
       total_months: originalTotalMonths || payments.length,
-      monthly_payment: payments.length > 0 ? latestNormalPayment.monthly_payment : 0
+      monthly_payment: payments.length > 0 ? representativePayment.monthly_payment : 0
     }
   }
 
