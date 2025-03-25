@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { useAuth } from "@/context/auth-context"
+import { Logo } from "@/components/ui/logo"
 
 const features = [
   {
@@ -60,7 +61,7 @@ export function Navigation() {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2 font-bold text-xl text-slate-900">
-            <img src="/lovable-uploads/17eb0714-2b3e-4b08-a1d6-a92337781e6d.png" alt="Logo" className="h-6 w-6" />
+            <Logo className="h-6 w-6" />
             CreditoHipotecar.io
           </Link>
           

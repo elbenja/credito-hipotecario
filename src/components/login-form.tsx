@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -9,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
+import { useTranslation } from "react-i18next"
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
@@ -16,6 +16,7 @@ export function LoginForm() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const { user } = useAuth()
+  const { t } = useTranslation()
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -77,8 +78,8 @@ export function LoginForm() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: error.message || "An error occurred during authentication",
+        title: t("error"),
+        description: error.message || t("error_message"),
       })
       console.error("Auth error:", error)
     } finally {
@@ -89,27 +90,27 @@ export function LoginForm() {
   return (
     <div className="grid gap-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold">{isSignUp ? "Create an account" : "Welcome back"}</h1>
-        <p className="text-gray-500">
-          {isSignUp
-            ? "Enter your email below to create your account"
-            : "Enter your credentials to access your account"}
+        <h1 className="text-3xl font-bold">
+          {t("auth.login.early_access")}
+        </h1>
+        <p className="text-md">
+          {t("auth.login.credentials_prompt")}
         </p>
       </div>
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4 mt-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("auth.login.email")}</Label>
           <Input
             id="email"
             name="email"
-            placeholder="m@example.com"
+            placeholder={t("auth.login.email_placeholder")}
             required
             type="email"
             disabled={isLoading}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t("auth.login.password")}</Label>
           <Input
             id="password"
             name="password"
@@ -120,22 +121,16 @@ export function LoginForm() {
         </div>
         <Button className="w-full" type="submit" disabled={isLoading}>
           {isLoading ? (
-            "Loading..."
+            t("auth.login.loading")
           ) : isSignUp ? (
-            "Create account"
+            t("auth.login.create_account")
           ) : (
-            "Sign in"
+            t("auth.login.sign_in")
           )}
         </Button>
       </form>
       <div className="text-center text-sm">
-        <Button
-          variant="link"
-          className="text-sm"
-          onClick={() => setIsSignUp(!isSignUp)}
-        >
-          {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
-        </Button>
+        {t("auth.login.reset_password_prompt")}
       </div>
     </div>
   )

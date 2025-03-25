@@ -55,6 +55,9 @@ export default {
           light: "hsl(var(--brand) / 0.8)",
           dark: "hsl(var(--brand) / 1.2)",
         },
+        // benjamin: {
+          rock800: "hsl(var(--rock-800))",
+
       },
       borderRadius: {
         lg: "var(--radius)",

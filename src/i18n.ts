@@ -298,7 +298,25 @@ export const resources = {
       "loading": "Loading",
       "no_signups_found": "No signups found",
       "not_verified": "Not verified",
-      "unauthorized": "Unauthorized Access"
+      "unauthorized": "Unauthorized Access",
+      "auth": {
+        "title": "Sign In - CreditoHipotecar.io",
+        "description": "Sign in to CreditoHipotecar.io to manage your mortgage credits, property listings, and rental properties.",
+        "register_prompt": "Don't have your credentials? Register your email to be among the first to access the beta version.",
+        "clear_and_simple": "Clear and simple.",
+        "brand_name": "CreditoHipotecar.io",
+        "login": {
+          "early_access": "Early Access",
+          "credentials_prompt": "Enter your credentials to access your account. if it's the first time create your password con request to reset",
+          "email": "Email",
+          "email_placeholder": "m@example.com",
+          "password": "Password",
+          "loading": "Loading...",
+          "sign_in": "Sign in",
+          "create_account": "Create account",
+          "reset_password_prompt": "Can't remember your password? Reset your password"
+        }
+      }
     }
   },
   es: {
@@ -597,7 +615,25 @@ export const resources = {
       "loading": "Cargando",
       "no_signups_found": "No se encontraron registros",
       "not_verified": "No verificado",
-      "unauthorized": "Acceso No Autorizado"
+      "unauthorized": "Acceso No Autorizado",
+      "auth": {
+        "title": "Ingreso - CreditoHipotecar.io",
+        "description": "Ingreso a CreditoHipotecar.io. Simula tus amortizaciones, compara escenarios, toma la mejor decisión y ahorra. Claro y Simple.",
+        "register_prompt": "¿No tienes tus credendiales? Registra tu correo electrónico ser de los primeros en acceder a la versión beta.",
+        "clear_and_simple": "Claro y simple.",
+        "brand_name": "CreditoHipotecar.io",
+        "login": {
+          "early_access": "Acceso Anticipado",
+          "credentials_prompt": "Ingresa tus credenciales para acceder a tu cuenta. Si es la primera vez, crea tu contraseña o solicita Restablecer contraseña",
+          "email": "Correo electrónico",
+          "email_placeholder": "m@ejemplo.com",
+          "password": "Contraseña",
+          "loading": "Cargando...",
+          "sign_in": "Iniciar sesión",
+          "create_account": "Crear cuenta",
+          "reset_password_prompt": "¿No recuerdas tu contraseña? Restablece tu contraseña"
+        }
+      }
     }
   }
 };

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { Logo } from "@/components/ui/logo"
 
 const navigation = {
   main: [
@@ -39,10 +40,10 @@ export function Footer() {
       <div className="container py-12 md:py-16">
         <div className="xl:grid xl:grid-cols-3 xl:gap-8">
           <div className="space-y-8 xl:col-span-1">
-            <Link to="/" className="flex items-center gap-2">
-              <img src="/lovable-uploads/17eb0714-2b3e-4b08-a1d6-a92337781e6d.png" alt="Logo" className="h-8 w-8" />
+            <div className="flex items-center">
+              <Logo className="h-8 w-8" />
               <span className="text-xl font-bold text-slate-900">CreditoHipotecar.io</span>
-            </Link>
+            </div>
             <p className="text-base text-slate-600">
               Making mortgage management smarter and easier with powerful tools and insights.
             </p>
