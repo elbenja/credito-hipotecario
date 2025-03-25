@@ -33,7 +33,7 @@ export default function Auth() {
         title={t("auth.title")}
         description={t("auth.description")}
       />
-      <div className="flex flex-col gap-4 p-6 md:p-10">
+      <div className="flex flex-col gap-4 p-6 md:p-10 min-h-[900px]">
         <div className="flex justify-center gap-2 md:justify-start">
           <a href="/" className="flex items-center gap-2 font-medium">
             <Logo className="h-6 w-6" />
@@ -53,7 +53,7 @@ export default function Auth() {
       </div>
       
       </div>
-      <div className="flex items-center justify-center p-6 lg:p-10 bg-slate-800">
+      <div className="flex items-center justify-center p-6 lg:p-10 bg-slate-800 min-h-[900px]">
         <div className="w-full max-w-md space-y-6 text-center flex flex-col gap-2 mt-4 mb-4">
               <h2 className="text-5xl font-black">
                     <span className="text-brand leading-[70%]">crédito</span>
