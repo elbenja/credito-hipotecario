@@ -46,15 +46,15 @@ export default function Auth() {
           </div>
         </div>
 
-        <div className="text-center mt-32">
-         <p className="mb-8">
+        <div className="text-center mt-8">
+         <p className="mb-4">
           {t("auth.register_prompt")}
         </p>
       </div>
       
       </div>
       <div className="flex items-center justify-center p-6 lg:p-10 bg-slate-800">
-        <div className="w-full max-w-sm space-y-6 text-center flex flex-col gap-2">
+        <div className="w-full max-w-md space-y-6 text-center flex flex-col gap-2 mt-4 mb-4">
               <h2 className="text-5xl font-black">
                     <span className="text-brand leading-[70%]">crédito</span>
                     <br />
