@@ -51,7 +51,7 @@ export default function EarlyAccessAdmin() {
       
       if (error || !user) {
         toast.error(t('please_login'))
-        navigate('/auth')
+        navigate('/')
         return
       }
 
@@ -63,7 +63,7 @@ export default function EarlyAccessAdmin() {
 
       if (profileError) {
         toast.error(t('error_fetching_profile'))
-        navigate('/auth')
+        navigate('/')
         return
       }
 
@@ -77,7 +77,7 @@ export default function EarlyAccessAdmin() {
       fetchSignups()
     } catch (error) {
       toast.error(t('error_checking_admin'))
-      navigate('/auth')
+      navigate('/')
     } finally {
       setLoading(false)
     }

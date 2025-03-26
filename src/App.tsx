@@ -21,6 +21,8 @@ import TestCalculator from "./pages/TestCalculator"
 import TestExtraInstallments from "./pages/TestExtraInstallments"
 import ComingSoon from "./pages/coming-soon"
 import EarlyAccessAdmin from "./pages/admin/early-access"
+import UserManagement from "./pages/admin/user-management"
+import UpdatePassword from "./pages/update-password"
 
 const queryClient = new QueryClient()
 
@@ -34,14 +36,24 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<ComingSoon />} />
+                <Route path="/" element={<Auth />} />
+                <Route path="/coming-soon" element={<ComingSoon />} />
                 <Route path="/app" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
+                <Route path="/update-password" element={<UpdatePassword />} />
+                <Route path="/reset-password" element={<Navigate to="/update-password" replace />} />
                 <Route
                   path="/admin/early-access"
                   element={
                     <ProtectedRoute>
                       <EarlyAccessAdmin />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/users"
+                  element={
+                    <ProtectedRoute>
+                      <UserManagement />
                     </ProtectedRoute>
                   }
                 />

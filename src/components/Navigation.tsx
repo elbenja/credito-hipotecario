@@ -42,7 +42,7 @@ export function Navigation() {
     if (user) {
       navigate('/dashboard')
     } else {
-      navigate('/auth')
+      navigate('/')
     }
   }
 

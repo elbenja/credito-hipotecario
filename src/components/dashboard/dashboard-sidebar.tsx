@@ -1,4 +1,4 @@
-import { Building, Calculator, LayoutDashboard, MessageSquare, User, CreditCard, Bell, Settings, LogOut, ChevronsUpDown } from "lucide-react"
+import { Building, Calculator, LayoutDashboard, MessageSquare, User, CreditCard, Bell, Settings, LogOut, ChevronsUpDown, UserCog, UsersRound } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
 import { useTheme } from "@/components/theme-provider"
+import { useState, useEffect } from "react"
 
 function PropertyIcon({ className }: { className?: string }) {
   return (
@@ -181,6 +182,11 @@ const mainNavItems = [
   },
 ]
 
+const adminNavItems = [
+  { title: "user_management", icon: UsersRound, href: "/admin/users" },
+  { title: "early_access", icon: UserCog, href: "/admin/early-access" },
+]
+
 const footerNavItems = [
   { title: "ai_chat", icon: MessageSquare, href: "/chat" },
 ]
@@ -190,6 +196,26 @@ export function DashboardSidebar() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { theme } = useTheme()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    if (user) {
+      // Check if user is admin
+      const checkAdminStatus = async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single()
+        
+        if (data && !error) {
+          setIsAdmin(!!data.is_admin)
+        }
+      }
+      
+      checkAdminStatus()
+    }
+  }, [user])
 
   const { data: propertiesWithAmortizations } = useQuery({
     queryKey: ["properties-with-amortizations", user?.id],
@@ -236,7 +262,7 @@ export function DashboardSidebar() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    navigate("/auth")
+    navigate("/")
   }
 
   return (
@@ -282,6 +308,26 @@ export function DashboardSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t('admin')}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminNavItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <Link to={item.href} className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4" />
+                        <span>{t(item.title)}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter className="border-t">
         <SidebarGroup>
