@@ -27,6 +27,7 @@ import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
 import { useTheme } from "@/components/theme-provider"
 import { useState, useEffect } from "react"
+import { Logo } from "@/components/ui/logo"
 
 function PropertyIcon({ className }: { className?: string }) {
   return (
@@ -269,17 +270,9 @@ export function DashboardSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="border-b">
-        <Link to="/dashboard" className="flex items-center gap-2 px-4 py-4">
-          <svg 
-            width="24" 
-            height="24" 
-            viewBox="0 0 37 41" 
-            xmlns="http://www.w3.org/2000/svg" 
-            className={`h-6 w-6 ${theme === 'dark' ? 'fill-white' : 'fill-black'} transition-colors`}
-          >
-            <path fillRule="evenodd" clipRule="evenodd" d="M19.7051 1.02024C19.0175 0.460054 18.0289 0.46005 17.3413 1.02023L1.13491 14.2236C-0.223223 15.3301 0.562253 17.5225 2.31682 17.5225H3.98161V31.4973C3.98161 32.5243 4.81742 33.3568 5.84844 33.3568H8.78323V38.7373C8.78323 40.2604 10.5209 41.1375 11.754 40.2368L21.1728 33.3568H31.198C32.229 33.3568 33.0648 32.5243 33.0648 31.4973V17.5225H34.7296C36.4842 17.5225 37.2697 15.3301 35.9115 14.2236L19.7051 1.02024ZM8.98275 28.3753V14.2655L18.5232 6.49289L28.0637 14.2655V28.3753H19.5356L13.7844 32.5763V28.3753H8.98275Z" />
-          </svg>
-          <span className="font-bold text-lg">CreditoHipotecar.io</span>
+        <Link to="/dashboard" className="flex items-center gap-2 px-3 py-3">
+          <Logo />
+          <span className="font-bold text-md">CreditoHipotecar.io</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>
