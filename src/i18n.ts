@@ -676,7 +676,7 @@ export const resources = {
         "title": "Ingreso - CreditoHipotecar.io",
         "description": "Ingreso a CreditoHipotecar.io. Simula tus amortizaciones, compara escenarios, toma la mejor decisión y ahorra. Claro y Simple.",
         "no_credentials_prompt": "¿No tienes tus credendiales? ",
-        "register_prompt": "Registra tu correo electrónico ser de los primeros en acceder a la versión beta.",
+        "register_prompt": "Registra tu correo electrónico para ser de los primeros en acceder a la versión beta.",
         "clear_and_simple": "Claro y simple.",
         "brand_name": "CreditoHipotecar.io",
         "login": {
