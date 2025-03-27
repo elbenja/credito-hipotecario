@@ -624,16 +624,15 @@ export class ScenarioCalculator {
       0
     )
 
-    // Find the first non-double payment after rate change (marked as different from base)
-    // This ensures we report the payment amount after the rate change
+    // Find the last non-double payment after rate change (marked as different from base)
     let representativePayment = payments[0]; // Default to first payment
     
     // First look for payments marked as different from base (indicating rate change)
     const hasRateChange = payments.some(p => p.is_different_from_base);
     
     if (hasRateChange) {
-      // Find the first payment marked as different that's not a double payment
-      for (let i = 0; i < payments.length; i++) {
+      // Find the last payment marked as different that's not a double payment
+      for (let i = payments.length - 1; i >= 0; i--) {
         const payment = payments[i];
         if (payment.is_different_from_base) {
           // Skip double payments (July or December)
