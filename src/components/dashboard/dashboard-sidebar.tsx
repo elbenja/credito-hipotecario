@@ -185,6 +185,7 @@ const mainNavItems = [
 const adminNavItems = [
   { title: "user_management", icon: UsersRound, href: "/admin/users" },
   { title: "early_access", icon: UserCog, href: "/admin/early-access" },
+  { title: "test_extra_installments", icon: Calculator, href: "/test-extra-installments" },
 ]
 
 const footerNavItems = [

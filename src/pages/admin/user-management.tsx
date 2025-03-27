@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import {
   Table,
   TableBody,
@@ -242,141 +243,147 @@ export default function UserManagement() {
   })
 
   return (
-    <div className="container mx-auto py-4 px-2 sm:py-10 sm:px-10">
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">{t("user_management")}  
-          <span className="text-sm"> {filteredUsers.length}</span></h1>
-        </div>
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="mr-2 h-4 w-4" />
-              {t("create_user")}
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t("create_new_user")}</DialogTitle>
-              <DialogDescription>
-                {t("create_user_description")}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">{t("email")}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
-                  placeholder="user@example.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">{t("role")}</Label>
-                <Select value={newUserRole} onValueChange={setNewUserRole}>
-                  <SelectTrigger id="role">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">{t("user")}</SelectItem>
-                    <SelectItem value="admin">{t("admin")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                {t("cancel")}
+    <DashboardLayout
+      header={{
+        title: <h1 className="text-3xl font-bold">{t("user_management")}</h1>,
+      }}
+    >
+      <div className="container mx-auto py-4 px-2 sm:py-10 sm:px-10">
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold">{t("user_management")}  
+            <span className="text-sm"> {filteredUsers.length}</span></h1>
+          </div>
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="mr-2 h-4 w-4" />
+                {t("create_user")}
               </Button>
-              <Button onClick={createUser} disabled={creatingUser || !newUserEmail}>
-                {creatingUser ? t("creating") : t("create")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="mb-6 flex gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={t("search_by_email")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t("create_new_user")}</DialogTitle>
+                <DialogDescription>
+                  {t("create_user_description")}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">{t("email")}</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    placeholder="user@example.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">{t("role")}</Label>
+                  <Select value={newUserRole} onValueChange={setNewUserRole}>
+                    <SelectTrigger id="role">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">{t("user")}</SelectItem>
+                      <SelectItem value="admin">{t("admin")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+                  {t("cancel")}
+                </Button>
+                <Button onClick={createUser} disabled={creatingUser || !newUserEmail}>
+                  {creatingUser ? t("creating") : t("create")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
-        <Select
-          value={roleFilter}
-          onValueChange={(value) => setRoleFilter(value)}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder={t("filter_by_role")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("all")}</SelectItem>
-            <SelectItem value="user">{t("user")}</SelectItem>
-            <SelectItem value="admin">{t("admin")}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("email")}</TableHead>
-              <TableHead className="hidden sm:table-cell">{t("role")}</TableHead>
-              <TableHead>{t("created_at")}</TableHead>
-              <TableHead className="hidden sm:table-cell">{t("last_sign_in")}</TableHead>
-              <TableHead>{t("actions")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
+        <div className="mb-6 flex gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t("search_by_email")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select
+            value={roleFilter}
+            onValueChange={(value) => setRoleFilter(value)}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder={t("filter_by_role")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("all")}</SelectItem>
+              <SelectItem value="user">{t("user")}</SelectItem>
+              <SelectItem value="admin">{t("admin")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
-                  {t("loading")}...
-                </TableCell>
+                <TableHead>{t("email")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("role")}</TableHead>
+                <TableHead>{t("created_at")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("last_sign_in")}</TableHead>
+                <TableHead>{t("actions")}</TableHead>
               </TableRow>
-            ) : filteredUsers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center">
-                  {t("no_users_found")}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell className="capitalize hidden sm:table-cell">{user.role}</TableCell>
-                  <TableCell>
-                    {new Date(user.created_at).toLocaleString()}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {user.last_sign_in_at
-                      ? new Date(user.last_sign_in_at).toLocaleString()
-                      : t("never")}
-                  </TableCell>
-                  <TableCell>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => sendPasswordResetEmail(user.email)}
-                      disabled={sendingResetEmail[user.id]}
-                    >
-                      <Mail className="mr-2 h-4 w-4" />
-                      {sendingResetEmail[user.id] ? t("sending") : t("send_reset_email")}
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    {t("loading")}...
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : filteredUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    {t("no_users_found")}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell className="capitalize hidden sm:table-cell">{user.role}</TableCell>
+                    <TableCell>
+                      {new Date(user.created_at).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {user.last_sign_in_at
+                        ? new Date(user.last_sign_in_at).toLocaleString()
+                        : t("never")}
+                    </TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => sendPasswordResetEmail(user.email)}
+                        disabled={sendingResetEmail[user.id]}
+                      >
+                        <Mail className="mr-2 h-4 w-4" />
+                        {sendingResetEmail[user.id] ? t("sending") : t("send_reset_email")}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 } 

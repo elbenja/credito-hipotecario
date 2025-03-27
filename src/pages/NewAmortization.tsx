@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -41,6 +41,7 @@ import { LoanCalculator } from "@/services/amortization/calculations/loan"
 export default function NewAmortization() {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [temporaryInstallments, setTemporaryInstallments] = useState<ExtraInstallment[]>([])
   const [interestRateLimits, setInterestRateLimits] = useState({
@@ -224,9 +225,9 @@ export default function NewAmortization() {
         if (installmentsError) throw installmentsError
       }
 
-      // Navigate to the amortizations page
+      // Navigate to the amortizations page using React Router
       setTimeout(() => {
-        window.location.href = "/mortgages"
+        navigate("/mortgages")
       }, 1500)
     } catch (error) {
       console.error("Error saving amortization:", error)
