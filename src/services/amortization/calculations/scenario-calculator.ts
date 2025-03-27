@@ -3,7 +3,7 @@ import { addMonths, startOfMonth } from "date-fns"
 import type { Database } from "@/types/supabase"
 import { normalizeDate } from "@/lib/utils"
 
-// Other imports for GoalSeekService
+// Other imports for GoalSeekService x
 import { GoalSeekService } from "../services/goalSeek"
 
 export type ScenarioType = Database['public']['Enums']['scenario_type']
@@ -58,7 +58,12 @@ interface ScenarioSummaryResult {
 }
 
 export class ScenarioCalculator {
+  constructor() {
+    console.warn('⚠️ Deprecated ScenarioCalculator (calculations/scenario-calculator.ts) was instantiated');
+  }
+
   private calculateMonthlyRate(interestRate: number, installmentsPerYear: number): number {
+    console.warn('⚠️ Deprecated calculateMonthlyRate called from calculations/scenario-calculator.ts');
     // Convert to effective monthly rate using EAR formula
     // Formula: monthlyRate = (1 + annualRate/100)^(1/12) - 1
     // This properly accounts for compounding instead of simple division
@@ -330,6 +335,7 @@ export class ScenarioCalculator {
     summary: ScenarioSummaryResult
     payments: PaymentRow[]
   }> {
+    console.warn('⚠️ Deprecated calculateScenario called from calculations/scenario-calculator.ts');
     const totalMonths = amortization.term_years * 12
     
     // Ensure correct date handling for first installment date
@@ -857,6 +863,7 @@ export class ScenarioCalculator {
     extraInstallments: ExtraInstallment[],
     firstInstallmentDate?: Date
   ) {
+    console.warn('⚠️ Deprecated calculateLowerPaymentScenario called from calculations/scenario-calculator.ts');
     // If no extra installments, return same as regular scenario
     if (!extraInstallments || extraInstallments.length === 0) {
       return this.calculateRegularScenario(
@@ -1053,6 +1060,7 @@ export class ScenarioCalculator {
     loanInsurance: number,
     firstInstallmentDate?: Date
   ) {
+    console.warn('⚠️ Deprecated calculateRegularScenario called from calculations/scenario-calculator.ts');
     const originalTotalMonths = termYears * 12;
     
     const result = GoalSeekService.calculate({
