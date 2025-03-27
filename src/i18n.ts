@@ -308,7 +308,7 @@ export const resources = {
         "brand_name": "CreditoHipotecar.io",
         "login": {
           "early_access": "Early Access",
-          "credentials_prompt": "Enter your credentials to access your account. if it's the first time create your password con request to reset",
+          "credentials_prompt": "Enter your credentials to access your account. Alpha version for testers",
           "email": "Email",
           "email_placeholder": "m@example.com",
           "password": "Password",
@@ -681,7 +681,7 @@ export const resources = {
         "brand_name": "CreditoHipotecar.io",
         "login": {
           "early_access": "Acceso Anticipado",
-          "credentials_prompt": "Ingresa tus credenciales para acceder a tu cuenta. Si es la primera vez, crea tu contraseña o solicita Restablecer contraseña",
+          "credentials_prompt": "Ingresa tus credenciales para acceder a tu cuenta. Versión Alpha para testers",
           "email": "Correo electrónico",
           "email_placeholder": "m@ejemplo.com",
           "password": "Contraseña",
