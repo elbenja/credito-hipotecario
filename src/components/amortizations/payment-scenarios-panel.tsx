@@ -75,7 +75,13 @@ export function PaymentScenariosPanel({
   const { toast } = useToast()
   const { t } = useTranslation()
   const [chartKey, setChartKey] = useState(0)
+  const [selectedScenario, setSelectedScenario] = useState("regular")
   
+  const handleScenarioChange = (value: string) => {
+    setSelectedScenario(value)
+    setChartKey(prev => prev + 1)
+  }
+
   const handleInstallmentsChange = () => {
     setChartKey(prev => prev + 1)
   }
@@ -198,8 +204,8 @@ export function PaymentScenariosPanel({
   const content = (
     <>
       <h2 className="text-sm font-medium mb-4">{t("payment_scenarios.title")}</h2>
-      <Tabs defaultValue="regular" className="w-full" >
-        <TabsList className="grid w-full grid-cols-4 gap-1 ">
+      <Tabs defaultValue="regular" className="w-full" onValueChange={handleScenarioChange}>
+        <TabsList className="grid w-full grid-cols-4 gap-1">
           <TabsTrigger value="regular" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">{t("payment_scenarios.regular")}</TabsTrigger>
           <TabsTrigger value="accelerated" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">{t("payment_scenarios.accelerated")}</TabsTrigger>
           <TabsTrigger value="lower" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">{t("payment_scenarios.lower_payment")}</TabsTrigger>
@@ -216,12 +222,21 @@ export function PaymentScenariosPanel({
                 <Label htmlFor="regular-select">{t("payment_scenarios.select")}</Label>
               </div>
             </div>
-            <PaymentSummary {...paymentDetails.regular} currency={currency} />
-            <Separator className="my-4" />
-            <PaymentChart 
-              key={`regular-${chartKey}`}
-              {...baseChartProps}
+            <PaymentSummary 
+              {...paymentDetails.regular} 
+              currency={currency}
+              scenarioType="regular"
+              loanAmount={loanAmount}
+              interestRate={annualInterestRate}
+              termYears={termYears}
+              installmentsPerYear={installmentsPerYear}
+              propertyInsurance={propertyInsurance}
+              loanInsurance={loanProtection}
+              firstInstallmentDate={firstInstallmentDate}
+              extraInstallments={extraInstallments}
             />
+            <Separator className="my-4" />
+            {/* Temporarily comment out chart while we fix scenario calculations */}
           </div>
         </TabsContent>
         <TabsContent value="accelerated" className="mt-4">
@@ -235,12 +250,21 @@ export function PaymentScenariosPanel({
                 <Label htmlFor="accelerated-select">{t("payment_scenarios.select")}</Label>
               </div>
             </div>
-            <PaymentSummary {...paymentDetails.accelerated} currency={currency} />
-            <Separator className="my-4" />
-            <PaymentChart 
-              key={`accelerated-${chartKey}`}
-              {...baseChartProps}
+            <PaymentSummary 
+              {...paymentDetails.accelerated} 
+              currency={currency}
+              scenarioType="accelerated"
+              loanAmount={loanAmount}
+              interestRate={annualInterestRate}
+              termYears={termYears}
+              installmentsPerYear={14}
+              propertyInsurance={propertyInsurance}
+              loanInsurance={loanProtection}
+              firstInstallmentDate={firstInstallmentDate}
+              extraInstallments={extraInstallments}
             />
+            <Separator className="my-4" />
+            {/* Temporarily comment out chart while we fix scenario calculations */}
             {renderExtraInstallmentsSection()}
           </div>
         </TabsContent>
@@ -255,12 +279,21 @@ export function PaymentScenariosPanel({
                 <Label htmlFor="lower-select">{t("payment_scenarios.select")}</Label>
               </div>
             </div>
-            <PaymentSummary {...paymentDetails.lower} currency={currency} />
-            <Separator className="my-4" />
-            <PaymentChart 
-              key={`lower-${chartKey}`}
-              {...baseChartProps}
+            <PaymentSummary 
+              {...paymentDetails.lower} 
+              currency={currency}
+              scenarioType="lower_payment"
+              loanAmount={loanAmount}
+              interestRate={annualInterestRate}
+              termYears={termYears + 5}
+              installmentsPerYear={installmentsPerYear}
+              propertyInsurance={propertyInsurance}
+              loanInsurance={loanProtection}
+              firstInstallmentDate={firstInstallmentDate}
+              extraInstallments={extraInstallments}
             />
+            <Separator className="my-4" />
+            {/* Temporarily comment out chart while we fix scenario calculations */}
             {renderExtraInstallmentsSection()}
           </div>
         </TabsContent>
@@ -275,13 +308,22 @@ export function PaymentScenariosPanel({
                 <Label htmlFor="new-rate-select">{t("payment_scenarios.select")}</Label>
               </div>
             </div>
-            <PaymentSummary {...paymentDetails.newRate} currency={currency} />
-            <Separator className="my-4" />
-            <PaymentChart 
-              key={`new-rate-${chartKey}`}
-              {...baseChartProps}
+            <PaymentSummary 
+              {...paymentDetails.newRate} 
+              currency={currency}
+              scenarioType="new_rate"
+              loanAmount={loanAmount}
+              interestRate={annualInterestRate}
+              termYears={termYears}
+              installmentsPerYear={installmentsPerYear}
+              propertyInsurance={propertyInsurance}
+              loanInsurance={loanProtection}
+              firstInstallmentDate={firstInstallmentDate}
+              extraInstallments={extraInstallments}
+              rateChanges={[]}
             />
-            
+            <Separator className="my-4" />
+            {/* Temporarily comment out chart while we fix scenario calculations */}
             <NewRateForm
               amortizationId={amortizationId}
               onSuccess={handleNewRateSuccess}

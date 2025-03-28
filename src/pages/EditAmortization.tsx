@@ -39,6 +39,7 @@ import { PaymentSummary } from "@/components/amortizations/payment-summary"
 import { PaymentScenariosPanel } from "@/components/amortizations/payment-scenarios-panel"
 import { LoanCalculator } from "@/services/amortization/calculations/loan"
 import { useTranslation } from "react-i18next"
+import { ScenarioCalculator } from "@/services/amortization/services/scenarioCalculator"
 
 export default function EditAmortization() {
   const { id } = useParams()
@@ -48,6 +49,149 @@ export default function EditAmortization() {
   const { t } = useTranslation()
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [showMobileDetails, setShowMobileDetails] = useState(false)
+  
+  const form = useForm<AmortizationFormValues>({
+    resolver: zodResolver(amortizationFormSchema),
+    defaultValues: {
+      name: "",
+      property_id: "",
+      down_payment: "0",
+      interest_rate: "4",
+      term_years: "20",
+      installments_per_year: "12",
+      first_installment_date: new Date(),
+    }
+  })
+
+  // Replace direct form.watch() with memoized form values
+  const [formValues, setFormValues] = useState(() => ({
+    loanAmount: selectedProperty?.price_cost || 0,
+    interestRate: parseFloat(form.getValues().interest_rate || "4"),
+    termYears: parseInt(form.getValues().term_years || "20"),
+    installmentsPerYear: parseInt(form.getValues().installments_per_year || "12"),
+    firstInstallmentDate: form.getValues().first_installment_date || new Date(),
+    propertyInsurance: selectedProperty?.property_insurance || 0,
+    loanInsurance: parseFloat(form.getValues().loan_protection_insurance || "0"),
+    downPayment: parseFloat(form.getValues().down_payment || "0")
+  }));
+
+  // Watch form values for changes with proper memoization
+  useEffect(() => {
+    const subscription = form.watch((values) => {
+      if (!values || !selectedProperty) return;
+      
+      // Parse form values safely
+      const downPayment = parseFloat(values.down_payment?.replace(/[^0-9.]/g, "") || "0");
+      const loanAmount = selectedProperty.price_cost - downPayment;
+      const interestRate = parseFloat(values.interest_rate || "6.3"); // Default to 6.3%
+      const termYears = parseInt(values.term_years || "20");
+      const installmentsPerYear = parseInt(values.installments_per_year || "12");
+      
+      // Handle date properly to preserve the day of month
+      let firstInstallmentDate;
+      if (values.first_installment_date) {
+        const tempDate = new Date(values.first_installment_date);
+        firstInstallmentDate = new Date(
+          tempDate.getFullYear(),
+          tempDate.getMonth(),
+          tempDate.getDate(),
+          12, 0, 0, 0
+        );
+      } else {
+        const today = new Date();
+        firstInstallmentDate = new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate(),
+          12, 0, 0, 0
+        );
+      }
+      
+      const loanInsurance = parseFloat(values.loan_protection_insurance || "0");
+      
+      setFormValues({
+        loanAmount,
+        interestRate,
+        termYears,
+        installmentsPerYear,
+        firstInstallmentDate,
+        propertyInsurance: selectedProperty.property_insurance || 0,
+        loanInsurance,
+        downPayment
+      });
+
+      console.log('Updated Form Values:', {
+        loanAmount,
+        interestRate,
+        termYears,
+        installmentsPerYear,
+        firstInstallmentDate: firstInstallmentDate.toISOString(),
+        propertyInsurance: selectedProperty.property_insurance || 0,
+        loanInsurance,
+        downPayment
+      });
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form, selectedProperty]);
+
+  // Also update the initial form values when property is selected
+  useEffect(() => {
+    if (selectedProperty) {
+      form.setValue('interest_rate', '6.3'); // Set default interest rate
+      form.setValue('down_payment', '0'); // Set default down payment
+      
+      // Trigger form validation to ensure field values are up-to-date
+      form.trigger(['interest_rate', 'down_payment']);
+    }
+  }, [selectedProperty, form]);
+
+  // Update payment details using memoized formValues
+  useEffect(() => {
+    if (!selectedProperty) return;
+
+    // Calculate scenarios using the ScenarioCalculator
+    const scenarios = ScenarioCalculator.calculateScenarios({
+      loan_amount: formValues.loanAmount,
+      interest_rate: formValues.interestRate,
+      term_years: formValues.termYears,
+      installments_per_year: formValues.installmentsPerYear,
+      first_installment_date: formValues.firstInstallmentDate,
+      property_insurance: formValues.propertyInsurance,
+      loan_insurance: formValues.loanInsurance,
+      extra_installments: [], // This will be handled by the ExtraInstallmentsSection
+      rate_changes: [] // This will be handled by the NewRateForm
+    });
+
+    if (!scenarios.regular || !scenarios.accelerated || !scenarios.lower_payment || !scenarios.new_rate) {
+      console.error('Some scenarios are missing:', scenarios);
+      return;
+    }
+
+    setPaymentDetails({
+      regular: {
+        totalInterestAndInsurance: scenarios.regular.summary.total_interest_and_insurance,
+        totalMonths: scenarios.regular.summary.total_months,
+        monthlyPayment: scenarios.regular.summary.monthly_payment
+      },
+      accelerated: {
+        totalInterestAndInsurance: scenarios.accelerated.summary.total_interest_and_insurance,
+        totalMonths: scenarios.accelerated.summary.total_months,
+        monthlyPayment: scenarios.accelerated.summary.monthly_payment
+      },
+      lower: {
+        totalInterestAndInsurance: scenarios.lower_payment.summary.total_interest_and_insurance,
+        totalMonths: scenarios.lower_payment.summary.total_months,
+        monthlyPayment: scenarios.lower_payment.summary.monthly_payment
+      },
+      newRate: {
+        totalInterestAndInsurance: scenarios.new_rate.summary.total_interest_and_insurance,
+        totalMonths: scenarios.new_rate.summary.total_months,
+        monthlyPayment: scenarios.new_rate.summary.monthly_payment
+      }
+    });
+  }, [formValues, selectedProperty]);
+
   const [paymentDetails, setPaymentDetails] = useState({
     regular: {
       totalInterestAndInsurance: 182017.59,
@@ -68,19 +212,6 @@ export default function EditAmortization() {
       totalInterestAndInsurance: 0,
       totalMonths: 0,
       monthlyPayment: 0
-    }
-  })
-
-  const form = useForm<AmortizationFormValues>({
-    resolver: zodResolver(amortizationFormSchema),
-    defaultValues: {
-      name: "",
-      property_id: "",
-      down_payment: "0",
-      interest_rate: "4",
-      term_years: "20",
-      installments_per_year: "12",
-      first_installment_date: new Date(),
     }
   })
 
@@ -140,6 +271,12 @@ export default function EditAmortization() {
       }
     },
     enabled: !!user && !!id,
+    staleTime: 1000 * 60 * 5, // Data stays fresh for 5 minutes
+    gcTime: 1000 * 60 * 30, // Cache garbage collection after 30 minutes
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   })
 
   const loanCalculator = new LoanCalculator()
@@ -277,49 +414,6 @@ export default function EditAmortization() {
     }
   }
 
-  // Calculate payment details when form values change
-  useEffect(() => {
-    if (!amortization?.property) return
-
-    const mockProperty = {
-      id: amortization.property.id,
-      cost: amortization.property.price_cost,
-      currency: amortization.property.currency,
-      property_insurance: amortization.property.property_insurance || 0,
-      property_insurance_type: amortization.property.property_insurance_type,
-      bonus: 0
-    }
-
-    const baseValues = {
-      property_id: amortization.property.id,
-      down_payment: parseFloat(form.getValues("down_payment")),
-      down_payment_percentage: (parseFloat(form.getValues("down_payment")) / amortization.property.price_cost) * 100,
-      interest_rate: parseFloat(form.getValues("interest_rate")),
-      term_years: parseInt(form.getValues("term_years")),
-      installments_per_year: parseInt(form.getValues("installments_per_year")) as 12 | 14,
-      first_installment_date: form.getValues("first_installment_date"),
-      loan_protection_type: form.getValues("loan_protection_type") as "individual" | "joint" | "none" | "custom",
-      loan_protection_insurance: parseFloat(form.getValues("loan_protection_insurance"))
-    }
-
-    // Calculate results using the loan calculator service
-    const results = loanCalculator.calculateResults(mockProperty, baseValues)
-
-    // Set the same base calculation for all scenarios initially
-    const baseCalculation = {
-      totalInterestAndInsurance: results.total_interest_and_insurance,
-      totalMonths: results.total_months,
-      monthlyPayment: results.monthly_payment
-    }
-
-    setPaymentDetails({
-      regular: baseCalculation,
-      accelerated: baseCalculation,
-      lower: baseCalculation,
-      newRate: baseCalculation
-    })
-  }, [amortization?.property, form.watch()])
-
   const handlePropertyUpdate = (updatedProperty: Property) => {
     setSelectedProperty(updatedProperty)
     refetch() // Refresh the amortization data to get the latest property info
@@ -456,14 +550,14 @@ export default function EditAmortization() {
             showMobileDetails={showMobileDetails}
             onCloseMobilePanel={() => setShowMobileDetails(false)}
             onOpenMobilePanel={() => setShowMobileDetails(true)}
-            currency={amortization.property.currency}
-            loanAmount={amortization.property.price_cost - parseFloat(form.getValues("down_payment"))}
-            annualInterestRate={parseFloat(form.getValues("interest_rate"))}
-            termYears={parseInt(form.getValues("term_years"))}
-            installmentsPerYear={parseInt(form.getValues("installments_per_year")) as 12 | 14}
-            firstInstallmentDate={form.getValues("first_installment_date")}
-            propertyInsurance={amortization.property.property_insurance || 0}
-            loanProtection={parseFloat(form.getValues("loan_protection_insurance") || "0")}
+            currency={selectedProperty?.currency || "USD"}
+            loanAmount={formValues.loanAmount}
+            annualInterestRate={formValues.interestRate}
+            termYears={formValues.termYears}
+            installmentsPerYear={formValues.installmentsPerYear as 12 | 14}
+            firstInstallmentDate={formValues.firstInstallmentDate}
+            propertyInsurance={formValues.propertyInsurance}
+            loanProtection={formValues.loanInsurance}
             amortizationId={id || ""}
           />
         </div>

@@ -24,7 +24,18 @@ import EarlyAccessAdmin from "./pages/admin/early-access"
 import UserManagement from "./pages/admin/user-management"
 import UpdatePassword from "./pages/update-password"
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // Data stays fresh for 5 minutes
+      cacheTime: 1000 * 60 * 30, // Cache persists for 30 minutes
+      refetchOnWindowFocus: true, // Refetch data when window regains focus
+      refetchOnReconnect: true, // Refetch when reconnecting
+      retry: 3, // Retry failed requests 3 times
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    },
+  },
+})
 
 const App = () => (
   <HelmetProvider>

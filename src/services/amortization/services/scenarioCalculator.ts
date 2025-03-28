@@ -6,7 +6,7 @@ import { normalizeDate } from "@/lib/utils"
 interface ExtraInstallment {
   amount: number
   frequency: 'one-time' | 'monthly' | 'yearly'
-  start_date: string | Date | any // Accept both string and Date types to match database format
+  start_date: string | Date | any // Accept both string and Date types to match database format x
 }
 
 interface RateChange {
@@ -53,6 +53,16 @@ export class ScenarioCalculator {
       rate_changes = []
     } = input
 
+    console.log('🔍 ScenarioCalculator Input Values:', {
+      loan_amount,
+      interest_rate,
+      term_years,
+      installments_per_year,
+      property_insurance,
+      loan_insurance,
+      first_installment_date: first_installment_date.toISOString()
+    });
+
     // Normalize the first installment date
     const normalizedFirstInstallmentDate = first_installment_date ? normalizeDate(first_installment_date) : normalizeDate(new Date());
 
@@ -92,7 +102,8 @@ export class ScenarioCalculator {
       effective_date: normalizeDate(change.effective_date)
     }));
     
-    // Calculate regular scenario first as other scenarios depend on it
+    // Calculate each scenario independently
+    console.log('📊 Calculating Regular Scenario...');
     const regularScenario = this.calculateRegularScenario(
       loan_amount,
       interest_rate,
@@ -102,58 +113,84 @@ export class ScenarioCalculator {
       loan_insurance,
       normalizedFirstInstallmentDate
     )
+    console.log('Regular Scenario Results:', {
+      monthlyPayment: regularScenario.summary.monthly_payment,
+      totalMonths: regularScenario.summary.total_months,
+      totalInterestAndInsurance: regularScenario.summary.total_interest_and_insurance
+    });
 
-    // If no extra installments or rate changes, all scenarios should be identical to regular
-    if ((normalizedExtraInstallments.length === 0) && (normalizedRateChanges.length === 0)) {
-      return {
-        regular: regularScenario,
-        accelerated: regularScenario, // Use identical data
-        lower_payment: regularScenario, // Use identical data
-        new_rate: regularScenario // Use identical data
-      };
-    }
-
-    // Calculate other scenarios
+    // Calculate accelerated scenario (bi-weekly payments)
+    console.log('📊 Calculating Accelerated Scenario...');
     const acceleratedScenario = this.calculateAcceleratedScenario(
       loan_amount,
       regularScenario.summary.monthly_payment,
       interest_rate,
       term_years,
-      installments_per_year,
+      14, // Force bi-weekly payments
       property_insurance,
       loan_insurance,
       normalizedExtraInstallments,
       normalizedFirstInstallmentDate
     )
+    console.log('Accelerated Scenario Results:', {
+      monthlyPayment: acceleratedScenario.summary.monthly_payment,
+      totalMonths: acceleratedScenario.summary.total_months,
+      totalInterestAndInsurance: acceleratedScenario.summary.total_interest_and_insurance
+    });
 
+    // Calculate lower payment scenario (extended term)
+    console.log('📊 Calculating Lower Payment Scenario...');
     const lowerPaymentScenario = this.calculateLowerPaymentScenario(
       loan_amount,
       interest_rate,
-      term_years,
+      term_years + 5, // Extended term by 5 years
       installments_per_year,
       property_insurance,
       loan_insurance,
       normalizedExtraInstallments,
       normalizedFirstInstallmentDate
     )
+    console.log('Lower Payment Scenario Results:', {
+      monthlyPayment: lowerPaymentScenario.summary.monthly_payment,
+      totalMonths: lowerPaymentScenario.summary.total_months,
+      totalInterestAndInsurance: lowerPaymentScenario.summary.total_interest_and_insurance
+    });
 
-    const newRateScenario = this.calculateNewRateScenario(
-      loan_amount,
-      interest_rate,
-      term_years,
-      installments_per_year,
-      property_insurance,
-      loan_insurance,
-      normalizedRateChanges,
-      normalizedFirstInstallmentDate
-    )
+    // Calculate new rate scenario
+    console.log('📊 Calculating New Rate Scenario...');
+    const newRateScenario = normalizedRateChanges.length > 0 
+      ? this.calculateNewRateScenario(
+          loan_amount,
+          interest_rate,
+          term_years,
+          installments_per_year,
+          property_insurance,
+          loan_insurance,
+          normalizedRateChanges,
+          normalizedFirstInstallmentDate
+        )
+      : this.calculateRegularScenario( // If no rate changes, use regular scenario
+          loan_amount,
+          interest_rate,
+          term_years,
+          installments_per_year,
+          property_insurance,
+          loan_insurance,
+          normalizedFirstInstallmentDate
+        );
+    console.log('New Rate Scenario Results:', {
+      monthlyPayment: newRateScenario.summary.monthly_payment,
+      totalMonths: newRateScenario.summary.total_months,
+      totalInterestAndInsurance: newRateScenario.summary.total_interest_and_insurance,
+      hasRateChanges: normalizedRateChanges.length > 0
+    });
 
     return {
       regular: regularScenario,
       accelerated: acceleratedScenario,
       lower_payment: lowerPaymentScenario,
       new_rate: newRateScenario
-    }
+    };
   }
 
   /**
@@ -168,6 +205,16 @@ export class ScenarioCalculator {
     loanInsurance: number,
     firstInstallmentDate?: Date
   ) {    
+    console.log('🔄 Regular Scenario Inputs:', {
+      amount,
+      interest,
+      termYears,
+      installmentsPerYear,
+      propertyInsurance,
+      loanInsurance,
+      firstInstallmentDate: firstInstallmentDate?.toISOString()
+    });
+
     const totalMonths = termYears * 12;
     
     const result = GoalSeekService.calculate({
@@ -179,6 +226,14 @@ export class ScenarioCalculator {
       loan_protection_insurance: loanInsurance,
       first_installment_date: firstInstallmentDate
     })
+
+    console.log('💰 Regular Scenario First Payment:', {
+      date: result.payments[0].payment_date,
+      beginning_balance: result.payments[0].beginning_balance,
+      ending_balance: result.payments[0].ending_balance,
+      monthly_payment: result.payments[0].monthly_payment,
+      monthly_interest: result.payments[0].monthly_interest
+    });
 
     return {
       summary: this.calculateSummary(result.payments, totalMonths),
