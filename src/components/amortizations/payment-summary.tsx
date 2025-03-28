@@ -1,8 +1,8 @@
 import { formatCurrency } from "@/lib/utils"
 import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
-import { ScenarioCalculator } from "@/services/amortization/services/scenarioCalculator"
-import { useEffect, useState, useMemo, useCallback } from "react"
+import { type ExtraInstallment } from "./types"
+import { type RateChange } from "@/services/amortization/types/common"
 
 type ScenarioType = 'regular' | 'accelerated' | 'lower_payment' | 'new_rate'
 
@@ -12,23 +12,15 @@ type PaymentSummaryProps = {
   monthlyPayment: number
   currency: "USD" | "PEN"
   scenarioType?: ScenarioType
-  loanAmount?: number
-  interestRate?: number
-  termYears?: number
-  installmentsPerYear?: number
-  propertyInsurance?: number
-  loanInsurance?: number
-  firstInstallmentDate?: Date
-  extraInstallments?: Array<{
-    amount: number
-    frequency: 'one-time' | 'monthly'
-    start_date: Date | string
-  }>
-  rateChanges?: Array<{
-    new_interest_rate: number
-    new_term_years?: number
-    effective_date: Date | string
-  }>
+  loanAmount: number
+  interestRate: number
+  termYears: number
+  installmentsPerYear: number
+  propertyInsurance: number
+  loanInsurance: number
+  firstInstallmentDate: Date
+  extraInstallments?: ExtraInstallment[]
+  rateChanges?: RateChange[]
   rateChangeInfo?: {
     effectiveDate: string
     newInterestRate: number
@@ -42,118 +34,18 @@ export function PaymentSummary({
   monthlyPayment,
   currency,
   scenarioType = 'regular',
+  rateChangeInfo,
   loanAmount,
   interestRate,
   termYears,
-  installmentsPerYear = 12,
-  propertyInsurance = 0,
-  loanInsurance = 0,
-  firstInstallmentDate = new Date(),
-  extraInstallments = [],
-  rateChanges = [],
-  rateChangeInfo
+  installmentsPerYear,
+  propertyInsurance,
+  loanInsurance,
+  firstInstallmentDate,
+  extraInstallments,
+  rateChanges
 }: PaymentSummaryProps) {
   const { t } = useTranslation()
-  
-  // Memoize the initial summary
-  const initialSummary = useMemo(() => ({
-    totalInterestAndInsurance,
-    totalMonths,
-    monthlyPayment
-  }), [totalInterestAndInsurance, totalMonths, monthlyPayment]);
-
-  const [calculatedSummary, setCalculatedSummary] = useState(initialSummary);
-
-  // Memoize the arrays and complex objects
-  const memoizedExtraInstallments = useMemo(() => extraInstallments, [JSON.stringify(extraInstallments)]);
-  const memoizedRateChanges = useMemo(() => rateChanges, [JSON.stringify(rateChanges)]);
-  const memoizedFirstInstallmentDate = useMemo(() => {
-    const date = new Date(firstInstallmentDate);
-    return new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-      12, 0, 0, 0
-    );
-  }, [firstInstallmentDate]);
-
-  // Memoize the calculation function
-  const calculateScenario = useCallback(() => {
-    // Log received values for debugging
-    console.log('PaymentSummary Calculation Input:', {
-      loanAmount,
-      interestRate,
-      termYears,
-      installmentsPerYear,
-      propertyInsurance,
-      loanInsurance,
-      firstInstallmentDate: memoizedFirstInstallmentDate.toISOString()
-    });
-
-    if (!loanAmount || !interestRate || !termYears || 
-        isNaN(loanAmount) || isNaN(interestRate) || isNaN(termYears) ||
-        loanAmount === 0) { // Add explicit check for zero loan amount
-      console.log('Using initial summary due to invalid inputs');
-      return initialSummary;
-    }
-
-    const scenarios = ScenarioCalculator.calculateScenarios({
-      loan_amount: loanAmount,
-      interest_rate: interestRate,
-      term_years: termYears,
-      installments_per_year: installmentsPerYear,
-      first_installment_date: memoizedFirstInstallmentDate,
-      property_insurance: propertyInsurance || 0,
-      loan_insurance: loanInsurance || 0,
-      extra_installments: memoizedExtraInstallments,
-      rate_changes: memoizedRateChanges
-    });
-
-    console.log('Scenario Calculation Result:', {
-      scenarioType,
-      scenarios
-    });
-
-    const scenarioMap: Record<ScenarioType, keyof typeof scenarios> = {
-      'regular': 'regular',
-      'accelerated': 'accelerated',
-      'lower_payment': 'lower_payment',
-      'new_rate': 'new_rate'
-    };
-
-    const scenario = scenarios[scenarioMap[scenarioType]];
-    if (!scenario) {
-      console.log('No scenario found, using initial summary');
-      return initialSummary;
-    }
-
-    const result = {
-      totalInterestAndInsurance: scenario.summary.total_interest_and_insurance,
-      totalMonths: scenario.summary.total_months,
-      monthlyPayment: scenario.summary.monthly_payment
-    };
-
-    console.log('Calculation Result:', result);
-    return result;
-  }, [
-    loanAmount,
-    interestRate,
-    termYears,
-    installmentsPerYear,
-    memoizedFirstInstallmentDate,
-    propertyInsurance,
-    loanInsurance,
-    memoizedExtraInstallments,
-    memoizedRateChanges,
-    scenarioType,
-    initialSummary
-  ]);
-
-  // Update summary when inputs change
-  useEffect(() => {
-    const newSummary = calculateScenario();
-    setCalculatedSummary(newSummary);
-  }, [calculateScenario]);
 
   return (
     <div className="space-y-4">
@@ -163,7 +55,7 @@ export function PaymentSummary({
             {t("payment_summary.total_interest_insurance")}
           </div>
           <div className="text-2xl font-bold">
-            {formatCurrency(calculatedSummary.totalInterestAndInsurance, currency)}
+            {formatCurrency(totalInterestAndInsurance, currency)}
           </div>
         </div>
         <div className="col-span-2 grid gap-1">
@@ -171,7 +63,7 @@ export function PaymentSummary({
             {t("payment_summary.months")}
           </div>
           <div className="text-2xl font-bold">
-            {calculatedSummary.totalMonths}
+            {totalMonths}
           </div>
         </div>
         <div className="col-span-3 grid gap-1">
@@ -179,7 +71,7 @@ export function PaymentSummary({
             {t("payment_summary.monthly_payment")}
           </div>
           <div className="text-2xl font-bold">
-            {formatCurrency(calculatedSummary.monthlyPayment, currency)}
+            {formatCurrency(monthlyPayment, currency)}
           </div>
         </div>
       </div>

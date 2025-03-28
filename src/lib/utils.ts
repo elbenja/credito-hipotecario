@@ -60,20 +60,57 @@ export function createLocalDate(dateString: string | Date): Date {
   return date;
 }
 
-export function formatCurrency(amount: number | string, currency: "USD" | "PEN" = "PEN") {
+export function formatCurrency(
+  amount: number | string, 
+  currency: "USD" | "PEN" = "PEN", 
+  isInput: boolean = false
+) {
   // Convert string to number if needed
   const numericAmount = typeof amount === "string" ? parseFloat(amount) : amount
 
   // Handle invalid numbers
-  if (isNaN(numericAmount)) return currency === "USD" ? "$0.00" : "S/ 0.00"
+  if (isNaN(numericAmount)) return currency === "USD" ? "$0" : "S/ 0"
 
   const formatter = new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: isInput ? 2 : 0,
+    maximumFractionDigits: isInput ? 2 : 0,
+    useGrouping: true, // Use comma as thousands separator
   })
 
   // Format with proper currency symbol and spacing
   return currency === "USD" 
     ? `$${formatter.format(numericAmount)}`
     : `S/ ${formatter.format(numericAmount)}`
+}
+
+export function formatInsurance(value: number | string, isPercentage: boolean = false) {
+  // Convert string to number if needed
+  const numericValue = typeof value === "string" ? parseFloat(value) : value
+
+  // Handle invalid numbers
+  if (isNaN(numericValue)) return isPercentage ? "0.0000%" : "0.00"
+
+  const formatter = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: isPercentage ? 4 : 2,
+    maximumFractionDigits: isPercentage ? 4 : 2,
+    useGrouping: true,
+  })
+
+  return isPercentage ? `${formatter.format(numericValue)}%` : formatter.format(numericValue)
+}
+
+export function formatInterest(value: number | string, isInput: boolean = false) {
+  // Convert string to number if needed
+  const numericValue = typeof value === "string" ? parseFloat(value) : value
+
+  // Handle invalid numbers
+  if (isNaN(numericValue)) return "0.00%"
+
+  const formatter = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: isInput ? 4 : 2,
+    maximumFractionDigits: isInput ? 4 : 2,
+    useGrouping: false,
+  })
+
+  return `${formatter.format(numericValue)}%`
 }

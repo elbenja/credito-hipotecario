@@ -103,7 +103,7 @@ export class ScenarioCalculator {
     }));
     
     // Calculate each scenario independently
-    console.log('📊 Calculating Regular Scenario...');
+    // console.log('📊 Calculating Regular Scenario...');
     const regularScenario = this.calculateRegularScenario(
       loan_amount,
       interest_rate,
@@ -113,33 +113,33 @@ export class ScenarioCalculator {
       loan_insurance,
       normalizedFirstInstallmentDate
     )
-    console.log('Regular Scenario Results:', {
-      monthlyPayment: regularScenario.summary.monthly_payment,
-      totalMonths: regularScenario.summary.total_months,
-      totalInterestAndInsurance: regularScenario.summary.total_interest_and_insurance
-    });
+    // console.log('Regular Scenario Results:', {
+    //   monthlyPayment: regularScenario.summary.monthly_payment,
+    //   totalMonths: regularScenario.summary.total_months,
+    //   totalInterestAndInsurance: regularScenario.summary.total_interest_and_insurance
+    // });
 
     // Calculate accelerated scenario (bi-weekly payments)
-    console.log('📊 Calculating Accelerated Scenario...');
+    // console.log('📊 Calculating Accelerated Scenario...');
     const acceleratedScenario = this.calculateAcceleratedScenario(
       loan_amount,
       regularScenario.summary.monthly_payment,
       interest_rate,
       term_years,
-      14, // Force bi-weekly payments
+      installments_per_year,
       property_insurance,
       loan_insurance,
       normalizedExtraInstallments,
       normalizedFirstInstallmentDate
     )
-    console.log('Accelerated Scenario Results:', {
-      monthlyPayment: acceleratedScenario.summary.monthly_payment,
-      totalMonths: acceleratedScenario.summary.total_months,
-      totalInterestAndInsurance: acceleratedScenario.summary.total_interest_and_insurance
-    });
+    // console.log('Accelerated Scenario Results:', {
+    //   monthlyPayment: acceleratedScenario.summary.monthly_payment,
+    //   totalMonths: acceleratedScenario.summary.total_months,
+    //   totalInterestAndInsurance: acceleratedScenario.summary.total_interest_and_insurance
+    // });
 
     // Calculate lower payment scenario (extended term)
-    console.log('📊 Calculating Lower Payment Scenario...');
+    // console.log('📊 Calculating Lower Payment Scenario...');
     const lowerPaymentScenario = this.calculateLowerPaymentScenario(
       loan_amount,
       interest_rate,
@@ -150,14 +150,15 @@ export class ScenarioCalculator {
       normalizedExtraInstallments,
       normalizedFirstInstallmentDate
     )
-    console.log('Lower Payment Scenario Results:', {
-      monthlyPayment: lowerPaymentScenario.summary.monthly_payment,
-      totalMonths: lowerPaymentScenario.summary.total_months,
-      totalInterestAndInsurance: lowerPaymentScenario.summary.total_interest_and_insurance
-    });
+    // console.log('Lower Payment Scenario Results:', {
+    //   monthlyPayment: lowerPaymentScenario.summary.monthly_payment,
+    //   totalMonths: lowerPaymentScenario.summary.total_months,
+    //   totalInterestAndInsurance: lowerPaymentScenario.summary.total_interest_and_insurance
+    // });
 
     // Calculate new rate scenario
-    console.log('📊 Calculating New Rate Scenario...');
+    // console.log('📊 Calculating New Rate Scenario...');
+
     const newRateScenario = normalizedRateChanges.length > 0 
       ? this.calculateNewRateScenario(
           loan_amount,
@@ -178,12 +179,12 @@ export class ScenarioCalculator {
           loan_insurance,
           normalizedFirstInstallmentDate
         );
-    console.log('New Rate Scenario Results:', {
-      monthlyPayment: newRateScenario.summary.monthly_payment,
-      totalMonths: newRateScenario.summary.total_months,
-      totalInterestAndInsurance: newRateScenario.summary.total_interest_and_insurance,
-      hasRateChanges: normalizedRateChanges.length > 0
-    });
+    // console.log('New Rate Scenario Results:', {
+    //   monthlyPayment: newRateScenario.summary.monthly_payment,
+    //   totalMonths: newRateScenario.summary.total_months,
+    //   totalInterestAndInsurance: newRateScenario.summary.total_interest_and_insurance,
+    //   hasRateChanges: normalizedRateChanges.length > 0
+    // });
 
     return {
       regular: regularScenario,
@@ -205,15 +206,15 @@ export class ScenarioCalculator {
     loanInsurance: number,
     firstInstallmentDate?: Date
   ) {    
-    console.log('🔄 Regular Scenario Inputs:', {
-      amount,
-      interest,
-      termYears,
-      installmentsPerYear,
-      propertyInsurance,
-      loanInsurance,
-      firstInstallmentDate: firstInstallmentDate?.toISOString()
-    });
+    // console.log('🔄 Regular Scenario Inputs:', {
+    //   amount,
+    //   interest,
+    //   termYears,
+    //   installmentsPerYear,
+    //   propertyInsurance,
+    //   loanInsurance,
+    //   firstInstallmentDate: firstInstallmentDate?.toISOString()
+    // });
 
     const totalMonths = termYears * 12;
     
@@ -227,13 +228,13 @@ export class ScenarioCalculator {
       first_installment_date: firstInstallmentDate
     })
 
-    console.log('💰 Regular Scenario First Payment:', {
-      date: result.payments[0].payment_date,
-      beginning_balance: result.payments[0].beginning_balance,
-      ending_balance: result.payments[0].ending_balance,
-      monthly_payment: result.payments[0].monthly_payment,
-      monthly_interest: result.payments[0].monthly_interest
-    });
+    // console.log('💰 Regular Scenario First Payment:', {
+    //   date: result.payments[0].payment_date,
+    //   beginning_balance: result.payments[0].beginning_balance,
+    //   ending_balance: result.payments[0].ending_balance,
+    //   monthly_payment: result.payments[0].monthly_payment,
+    //   monthly_interest: result.payments[0].monthly_interest
+    // });
 
     return {
       summary: this.calculateSummary(result.payments, totalMonths),

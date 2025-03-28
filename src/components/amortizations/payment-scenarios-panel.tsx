@@ -1,28 +1,10 @@
-import { ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { PaymentSummary } from "@/components/amortizations/payment-summary"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { PaymentChart } from "./payment-chart"
-import { Separator } from "@/components/ui/separator"
-import { ExtraInstallmentsSection } from "./extra-installments-section"
-import { ExtraInstallmentForm } from "./extra-installment-form"
-import { ExtraInstallmentsTable } from "./extra-installments-table"
-import { NewRateForm } from "./new-rate-form"
-import { useState } from "react"
-import { Input } from "@/components/ui/input"
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { type ExtraInstallment } from "./types"
-import { CalendarIcon, Check } from "lucide-react"
+import { formatCurrency, normalizeDate } from "@/lib/utils"
+import { ScenarioCalculator } from "@/services/amortization/services/scenarioCalculator"
+import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
-import { useToast } from "@/hooks/use-toast"
-import { format } from "date-fns"
-import { useTranslation } from "react-i18next"
-import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
-import { cn } from "@/lib/utils"
 
 interface PaymentDetails {
   totalInterestAndInsurance: number
@@ -49,13 +31,9 @@ interface PaymentScenariosProps {
   propertyInsurance?: number
   loanProtection?: number
   amortizationId: string
-  extraInstallments?: ExtraInstallment[]
-  onExtraInstallmentAdd?: (installment: Omit<ExtraInstallment, "id">) => void
-  onExtraInstallmentDelete?: (id: string) => void
 }
 
 export function PaymentScenariosPanel({
-  paymentDetails,
   showMobileDetails,
   onCloseMobilePanel,
   onOpenMobilePanel,
@@ -67,310 +45,196 @@ export function PaymentScenariosPanel({
   firstInstallmentDate = new Date(),
   propertyInsurance = 0,
   loanProtection = 0,
-  amortizationId,
-  extraInstallments = [],
-  onExtraInstallmentAdd,
-  onExtraInstallmentDelete
+  amortizationId
 }: PaymentScenariosProps) {
-  const { toast } = useToast()
   const { t } = useTranslation()
-  const [chartKey, setChartKey] = useState(0)
   const [selectedScenario, setSelectedScenario] = useState("regular")
-  
-  const handleScenarioChange = (value: string) => {
-    setSelectedScenario(value)
-    setChartKey(prev => prev + 1)
-  }
 
-  const handleInstallmentsChange = () => {
-    setChartKey(prev => prev + 1)
-  }
+  // Fetch extra installments
+  const { data: extraInstallments = [] } = useQuery({
+    queryKey: ["extra-installments", amortizationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("extra_installments")
+        .select("*")
+        .eq("amortization_id", amortizationId)
+        .order("start_date", { ascending: true })
 
-  const handleNewRateSuccess = () => {
-    setChartKey(prev => prev + 1)
-    // TODO: Recalculate payment details with new rate
-  }
+      if (error) {
+        console.error("Error fetching extra installments:", error)
+        return []
+      }
 
-  const handleRefinancingSubmit = async () => {
-    if (!amortizationId) return
+      return data
+    },
+    enabled: !!amortizationId,
+  })
 
-    try {
-      const { error } = await supabase
+  // Fetch rate changes
+  const { data: rateChanges = [] } = useQuery({
+    queryKey: ["rate-changes", amortizationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("new_rates")
-        .insert({
-          amortization_id: amortizationId,
-          new_interest_rate: parseFloat(refinancingForm.newInterestRate),
-          new_term_years: refinancingForm.newTerm ? parseInt(refinancingForm.newTerm) : null,
-          effective_date: refinancingForm.startDate ? format(refinancingForm.startDate, 'yyyy-MM-dd') : null,
-        })
+        .select("*")
+        .eq("amortization_id", amortizationId)
+        .order("effective_date", { ascending: true })
 
-      if (error) throw error
+      if (error) {
+        console.error("Error fetching rate changes:", error)
+        return []
+      }
 
-      toast({
-        title: "Success",
-        description: "New rate saved successfully",
-      })
+      return data
+    },
+    enabled: !!amortizationId,
+  })
 
-      // Reset form and refresh calculations
-      setRefinancingForm({
-        newInterestRate: "",
-        newTerm: "",
-        startDate: undefined
-      })
-      handleNewRateSuccess()
-    } catch (error) {
-      console.error("Error saving new rate:", error)
-      toast({
-        title: "Error",
-        description: "Failed to save new rate. Please try again.",
-        variant: "destructive",
-      })
+  // Memoize scenario calculations to prevent unnecessary recalculations
+  const paymentDetails = useMemo(() => {
+    const normalizedDate = normalizeDate(firstInstallmentDate)
+
+    const scenarios = ScenarioCalculator.calculateScenarios({
+      loan_amount: loanAmount,
+      interest_rate: annualInterestRate,
+      term_years: termYears,
+      installments_per_year: installmentsPerYear,
+      first_installment_date: normalizedDate,
+      property_insurance: propertyInsurance,
+      loan_insurance: loanProtection,
+      extra_installments: extraInstallments,
+      rate_changes: rateChanges
+    })
+
+    return {
+      regular: {
+        totalInterestAndInsurance: scenarios.regular.summary.total_interest_and_insurance,
+        totalMonths: scenarios.regular.summary.total_months,
+        monthlyPayment: scenarios.regular.summary.monthly_payment
+      },
+      accelerated: {
+        totalInterestAndInsurance: scenarios.accelerated.summary.total_interest_and_insurance,
+        totalMonths: scenarios.accelerated.summary.total_months,
+        monthlyPayment: scenarios.accelerated.summary.monthly_payment
+      },
+      lower: {
+        totalInterestAndInsurance: scenarios.lower_payment.summary.total_interest_and_insurance,
+        totalMonths: scenarios.lower_payment.summary.total_months,
+        monthlyPayment: scenarios.lower_payment.summary.monthly_payment
+      },
+      newRate: {
+        totalInterestAndInsurance: scenarios.new_rate.summary.total_interest_and_insurance,
+        totalMonths: scenarios.new_rate.summary.total_months,
+        monthlyPayment: scenarios.new_rate.summary.monthly_payment
+      }
     }
-  }
-
-  const renderExtraInstallmentsSection = () => {
-    if (amortizationId) {
-      return (
-        <ExtraInstallmentsSection
-          amortizationId={amortizationId}
-          currency={currency}
-          loanAmount={loanAmount}
-          onInstallmentsChange={handleInstallmentsChange}
-        />
-      )
-    }
-
-    if (onExtraInstallmentAdd && onExtraInstallmentDelete) {
-      return (
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-lg font-medium">{t("payment_scenarios.extra_installments.title")}</h3>
-            <p className="text-sm text-muted-foreground">
-              {t("payment_scenarios.extra_installments.description")}
-            </p>
-          </div>
-
-          <ExtraInstallmentForm
-            onSubmit={(values) => {
-              onExtraInstallmentAdd({
-                amount: parseFloat(values.amount.replace(/[^0-9.]/g, "")),
-                frequency: values.frequency,
-                start_date: values.start_date.toISOString(),
-                amortization_id: "",
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              handleInstallmentsChange()
-            }}
-            loanAmount={loanAmount}
-            currency={currency}
-          />
-
-          <ExtraInstallmentsTable
-            installments={extraInstallments}
-            currency={currency}
-            onDelete={(id) => {
-              onExtraInstallmentDelete(id)
-              handleInstallmentsChange()
-            }}
-          />
-        </div>
-      )
-    }
-
-    return null
-  }
-
-  const chartProperty = {
-    id: "temp",
-    cost: loanAmount,
-    currency,
-    property_insurance: propertyInsurance,
-    property_insurance_type: "manual" as "auto" | "manual",
-    bonus: 0
-  }
-
-  const baseChartProps = {
-    property: chartProperty,
-    downPayment: 0,
+  }, [
+    loanAmount,
     annualInterestRate,
     termYears,
     installmentsPerYear,
     firstInstallmentDate,
     propertyInsurance,
-    loanProtection
+    loanProtection,
+    extraInstallments,
+    rateChanges
+  ])
+
+  const handleScenarioChange = (value: string) => {
+    setSelectedScenario(value)
   }
 
-  const content = (
-    <>
-      <h2 className="text-sm font-medium mb-4">{t("payment_scenarios.title")}</h2>
-      <Tabs defaultValue="regular" className="w-full" onValueChange={handleScenarioChange}>
-        <TabsList className="grid w-full grid-cols-4 gap-1">
-          <TabsTrigger value="regular" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">{t("payment_scenarios.regular")}</TabsTrigger>
-          <TabsTrigger value="accelerated" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">{t("payment_scenarios.accelerated")}</TabsTrigger>
-          <TabsTrigger value="lower" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">{t("payment_scenarios.lower_payment")}</TabsTrigger>
-          <TabsTrigger value="new-rate" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">{t("payment_scenarios.new_rate")}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="regular" className="mt-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                {t("payment_scenarios.regular_description")}
-              </p>
-              <div className="flex items-center space-x-2">
-                <Switch id="regular-select" />
-                <Label htmlFor="regular-select">{t("payment_scenarios.select")}</Label>
-              </div>
-            </div>
-            <PaymentSummary 
-              {...paymentDetails.regular} 
-              currency={currency}
-              scenarioType="regular"
-              loanAmount={loanAmount}
-              interestRate={annualInterestRate}
-              termYears={termYears}
-              installmentsPerYear={installmentsPerYear}
-              propertyInsurance={propertyInsurance}
-              loanInsurance={loanProtection}
-              firstInstallmentDate={firstInstallmentDate}
-              extraInstallments={extraInstallments}
-            />
-            <Separator className="my-4" />
-            {/* Temporarily comment out chart while we fix scenario calculations */}
-          </div>
-        </TabsContent>
-        <TabsContent value="accelerated" className="mt-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                {t("payment_scenarios.accelerated_description")}
-              </p>
-              <div className="flex items-center space-x-2">
-                <Switch id="accelerated-select" />
-                <Label htmlFor="accelerated-select">{t("payment_scenarios.select")}</Label>
-              </div>
-            </div>
-            <PaymentSummary 
-              {...paymentDetails.accelerated} 
-              currency={currency}
-              scenarioType="accelerated"
-              loanAmount={loanAmount}
-              interestRate={annualInterestRate}
-              termYears={termYears}
-              installmentsPerYear={14}
-              propertyInsurance={propertyInsurance}
-              loanInsurance={loanProtection}
-              firstInstallmentDate={firstInstallmentDate}
-              extraInstallments={extraInstallments}
-            />
-            <Separator className="my-4" />
-            {/* Temporarily comment out chart while we fix scenario calculations */}
-            {renderExtraInstallmentsSection()}
-          </div>
-        </TabsContent>
-        <TabsContent value="lower" className="mt-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                {t("payment_scenarios.lower_description")}
-              </p>
-              <div className="flex items-center space-x-2">
-                <Switch id="lower-select" />
-                <Label htmlFor="lower-select">{t("payment_scenarios.select")}</Label>
-              </div>
-            </div>
-            <PaymentSummary 
-              {...paymentDetails.lower} 
-              currency={currency}
-              scenarioType="lower_payment"
-              loanAmount={loanAmount}
-              interestRate={annualInterestRate}
-              termYears={termYears + 5}
-              installmentsPerYear={installmentsPerYear}
-              propertyInsurance={propertyInsurance}
-              loanInsurance={loanProtection}
-              firstInstallmentDate={firstInstallmentDate}
-              extraInstallments={extraInstallments}
-            />
-            <Separator className="my-4" />
-            {/* Temporarily comment out chart while we fix scenario calculations */}
-            {renderExtraInstallmentsSection()}
-          </div>
-        </TabsContent>
-        <TabsContent value="new-rate" className="mt-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                {t("payment_scenarios.new_rate_description")}
-              </p>
-              <div className="flex items-center space-x-2">
-                <Switch id="new-rate-select" />
-                <Label htmlFor="new-rate-select">{t("payment_scenarios.select")}</Label>
-              </div>
-            </div>
-            <PaymentSummary 
-              {...paymentDetails.newRate} 
-              currency={currency}
-              scenarioType="new_rate"
-              loanAmount={loanAmount}
-              interestRate={annualInterestRate}
-              termYears={termYears}
-              installmentsPerYear={installmentsPerYear}
-              propertyInsurance={propertyInsurance}
-              loanInsurance={loanProtection}
-              firstInstallmentDate={firstInstallmentDate}
-              extraInstallments={extraInstallments}
-              rateChanges={[]}
-            />
-            <Separator className="my-4" />
-            {/* Temporarily comment out chart while we fix scenario calculations */}
-            <NewRateForm
-              amortizationId={amortizationId}
-              onSuccess={handleNewRateSuccess}
-              className="space-y-4"
-            />
-          </div>
-        </TabsContent>
-      </Tabs>
-    </>
-  )
-
-  return (
-    <>
-      {/* Mobile Slide-in Panel */}
-      <div className={`fixed inset-0 bg-background md:hidden transition-transform duration-200 ${showMobileDetails ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="h-full flex flex-col">
-          <div className="p-4 border-b">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onCloseMobilePanel}
-              className="gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {t("payment_scenarios.back")}
-            </Button>
-          </div>
-          <div className="flex-1 p-6 overflow-y-auto">
-            {content}
-          </div>
+  const ScenarioSummary = ({ details }: { details: PaymentDetails }) => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground">
+            {t("Sum Interest & Insurances")}
+          </h3>
+          <p className="text-2xl font-bold">
+            {formatCurrency(details.totalInterestAndInsurance, currency)}
+          </p>
+        </div>
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground">
+            {t("Months")}
+          </h3>
+          <p className="text-2xl font-bold">
+            {details.totalMonths}
+          </p>
+        </div>
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground">
+            {t("Monthly Payment")}
+          </h3>
+          <p className="text-2xl font-bold">
+            {formatCurrency(details.monthlyPayment, currency)}
+          </p>
         </div>
       </div>
+    </div>
+  )
+  
+  return (
+    <div className="w-full p-6">
+      <h2 className="text-lg font-semibold mb-4">{t("Payment Scenarios and Amortizations")}</h2>
+      
+      <Tabs defaultValue="regular" className="w-full" onValueChange={handleScenarioChange}>
+        <TabsList className="grid w-full grid-cols-4 gap-1">
+          <TabsTrigger 
+            value="regular" 
+            className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3"
+          >
+            {t("Regular")}
+          </TabsTrigger>
+          <TabsTrigger 
+            value="accelerated" 
+            className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3"
+          >
+            {t("Accelerated")}
+          </TabsTrigger>
+          <TabsTrigger 
+            value="lower" 
+            className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3"
+          >
+            {t("Lower Payment")}
+          </TabsTrigger>
+          <TabsTrigger 
+            value="new-rate" 
+            className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3"
+          >
+            {t("New Rate")}
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Mobile Toggle Button */}
-      <div className="md:hidden">
-        <Button 
-          className="w-full" 
-          onClick={onOpenMobilePanel}
-        >
-          {t("payment_scenarios.view_scenarios")}
-        </Button>
-      </div>
+        <TabsContent value="regular" className="mt-4">
+          <p className="text-sm text-muted-foreground mb-4">
+            {t("Base mortgage with standard parameters.")}
+          </p>
+          <ScenarioSummary details={paymentDetails.regular} />
+        </TabsContent>
 
-      {/* Desktop View */}
-      <div className="hidden md:block w-[60%] p-6">
-        {content}
-      </div>
-    </>
+        <TabsContent value="accelerated" className="mt-4">
+          <p className="text-sm text-muted-foreground mb-4">
+            {t("Accelerated payment schedule to reduce total interest.")}
+          </p>
+          <ScenarioSummary details={paymentDetails.accelerated} />
+        </TabsContent>
+
+        <TabsContent value="lower" className="mt-4">
+          <p className="text-sm text-muted-foreground mb-4">
+            {t("Extended term with lower monthly payments.")}
+          </p>
+          <ScenarioSummary details={paymentDetails.lower} />
+        </TabsContent>
+
+        <TabsContent value="new-rate" className="mt-4">
+          <p className="text-sm text-muted-foreground mb-4">
+            {t("Scenario with interest rate changes.")}
+          </p>
+          <ScenarioSummary details={paymentDetails.newRate} />
+        </TabsContent>
+      </Tabs>
+    </div>
   )
 }

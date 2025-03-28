@@ -460,7 +460,8 @@ For component-specific implementation details, refer to:
      - Centralized `formatCurrency` utility function
      - Handles both string and number inputs
      - Defaults to PEN if no currency specified
-     - Always shows 2 decimal places
+     - Always shows 2 decimal places at input
+     - Always limit to 0 decimal at display
      - Uses comma as thousands separator
    - Used consistently in:
      - Form inputs
@@ -470,7 +471,24 @@ For component-specific implementation details, refer to:
      - Monthly payments
    - Ensures professional and consistent monetary value display
 
-3. **Badge Styling**
+3. **Insurance Formatting**
+   - Percentage values:
+     - Always shows 4 decimal places
+     - Used for insurance rate displays and calculations
+   - Amount values:
+     - Always shows 2 decimal places
+     - Used for Manual Property Insurance amounts
+   - Ensures precise and consistent insurance value representation
+
+4. **Interest Rate Formatting**
+   - Always shows 2 decimal places
+   - Applied consistently across:
+     - Input fields
+     - Display values
+     - Calculations
+   - Maintains precision in interest rate representation
+
+5. **Badge Styling**
    - All badges use `rounded-md` instead of fully rounded corners
    - Consistent with the application's modern, clean design language
    - Applied to:
@@ -480,17 +498,17 @@ For component-specific implementation details, refer to:
    - Maintains visual harmony with other UI elements that use `rounded-md`
    - Implemented through the base `badgeVariants` in the Badge component
 
-4. **Colors**
+6. **Colors**
    - Brand color: HSL(41, 89%, 61%)
    - Accent colors for interactive elements
    - Consistent use of color variables
 
-5. **Typography**
+7. **Typography**
    - System font stack
    - Consistent text sizes using Tailwind classes
    - Responsive text scaling
 
-6. **Focus States**
+8. **Focus States**
    - Clean 3px ring in brand color without offset for all focus states
    - Consistent focus styling across all interactive elements:
      - Form inputs
