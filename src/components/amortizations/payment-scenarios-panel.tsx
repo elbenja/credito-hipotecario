@@ -198,8 +198,8 @@ export function PaymentScenariosPanel({
   const content = (
     <>
       <h2 className="text-sm font-medium mb-4">{t("payment_scenarios.title")}</h2>
-      <Tabs defaultValue="regular" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 gap-1">
+      <Tabs defaultValue="regular" className="w-full" >
+        <TabsList className="grid w-full grid-cols-4 gap-1 ">
           <TabsTrigger value="regular" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">{t("payment_scenarios.regular")}</TabsTrigger>
           <TabsTrigger value="accelerated" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">{t("payment_scenarios.accelerated")}</TabsTrigger>
           <TabsTrigger value="lower" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">{t("payment_scenarios.lower_payment")}</TabsTrigger>

@@ -1,12 +1,34 @@
 import { formatCurrency } from "@/lib/utils"
 import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
+import { ScenarioCalculator } from "@/services/amortization/services/scenarioCalculator"
+import { useEffect, useState } from "react"
+
+type ScenarioType = 'regular' | 'accelerated' | 'lower_payment' | 'new_rate'
 
 type PaymentSummaryProps = {
   totalInterestAndInsurance: number
   totalMonths: number
   monthlyPayment: number
   currency: "USD" | "PEN"
+  scenarioType?: ScenarioType
+  loanAmount?: number
+  interestRate?: number
+  termYears?: number
+  installmentsPerYear?: number
+  propertyInsurance?: number
+  loanInsurance?: number
+  firstInstallmentDate?: Date
+  extraInstallments?: Array<{
+    amount: number
+    frequency: 'one-time' | 'monthly'
+    start_date: Date | string
+  }>
+  rateChanges?: Array<{
+    new_interest_rate: number
+    new_term_years?: number
+    effective_date: Date | string
+  }>
   rateChangeInfo?: {
     effectiveDate: string
     newInterestRate: number
@@ -19,9 +41,62 @@ export function PaymentSummary({
   totalMonths,
   monthlyPayment,
   currency,
+  scenarioType = 'regular',
+  loanAmount,
+  interestRate,
+  termYears,
+  installmentsPerYear = 12,
+  propertyInsurance = 0,
+  loanInsurance = 0,
+  firstInstallmentDate = new Date(),
+  extraInstallments = [],
+  rateChanges = [],
   rateChangeInfo
 }: PaymentSummaryProps) {
   const { t } = useTranslation()
+  const [calculatedSummary, setCalculatedSummary] = useState({
+    totalInterestAndInsurance,
+    totalMonths,
+    monthlyPayment
+  })
+
+  useEffect(() => {
+    // Only recalculate if we have all the necessary inputs
+    if (loanAmount && interestRate && termYears) {
+      const scenarios = ScenarioCalculator.calculateScenarios({
+        loan_amount: loanAmount,
+        interest_rate: interestRate,
+        term_years: termYears,
+        installments_per_year: installmentsPerYear,
+        first_installment_date: firstInstallmentDate,
+        property_insurance: propertyInsurance,
+        loan_insurance: loanInsurance,
+        extra_installments: extraInstallments,
+        rate_changes: rateChanges
+      })
+
+      // Get the appropriate scenario based on type
+      const scenario = scenarios[scenarioType]
+      if (scenario) {
+        setCalculatedSummary({
+          totalInterestAndInsurance: scenario.summary.total_interest_and_insurance,
+          totalMonths: scenario.summary.total_months,
+          monthlyPayment: scenario.summary.monthly_payment
+        })
+      }
+    }
+  }, [
+    scenarioType,
+    loanAmount,
+    interestRate,
+    termYears,
+    installmentsPerYear,
+    propertyInsurance,
+    loanInsurance,
+    firstInstallmentDate,
+    extraInstallments,
+    rateChanges
+  ])
 
   return (
     <div className="space-y-4">
@@ -31,7 +106,7 @@ export function PaymentSummary({
             {t("payment_summary.total_interest_insurance")}
           </div>
           <div className="text-2xl font-bold">
-            {formatCurrency(totalInterestAndInsurance, currency)}
+            {formatCurrency(calculatedSummary.totalInterestAndInsurance, currency)}
           </div>
         </div>
         <div className="col-span-2 grid gap-1">
@@ -39,7 +114,7 @@ export function PaymentSummary({
             {t("payment_summary.months")}
           </div>
           <div className="text-2xl font-bold">
-            {totalMonths}
+            {calculatedSummary.totalMonths}
           </div>
         </div>
         <div className="col-span-3 grid gap-1">
@@ -47,7 +122,7 @@ export function PaymentSummary({
             {t("payment_summary.monthly_payment")}
           </div>
           <div className="text-2xl font-bold">
-            {formatCurrency(monthlyPayment, currency)}
+            {formatCurrency(calculatedSummary.monthlyPayment, currency)}
           </div>
         </div>
       </div>

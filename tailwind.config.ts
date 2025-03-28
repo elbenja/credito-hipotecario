@@ -56,6 +56,8 @@ export default {
           dark: "hsl(var(--brand) / 1.2)",
         },
         // benjamin: {
+          rock100: "hsl(var(--rock-100))",
+          rock200: "hsl(var(--rock-200))",
           rock800: "hsl(var(--rock-800))",
 
       },
