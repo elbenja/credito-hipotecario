@@ -36,7 +36,7 @@ export const amortizationFormSchema = z.object({
     invalid_type_error: "Please enter a valid date in the format 'MMM d, yyyy' (e.g., Feb 28, 2025)",
   }),
   loan_protection_type: z.enum(["individual", "joint", "none", "custom"], {
-    required_error: "Please select an insurance type",
+    required_error: "Please select a loan protection type",
   }).default("none"),
   loan_protection_insurance: z.string().default("0"),
 })

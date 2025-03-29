@@ -8,7 +8,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { PropertySelect, Property, PropertyDisplay } from "@/components/amortizations/property-select"
 import { SEO } from "@/components/seo"
 import { amortizationFormSchema, type AmortizationFormValues, defaultValues } from "@/components/amortizations/schema"
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -32,6 +32,7 @@ import {
   NewRateScenarioPanel
 } from "@/components/amortizations/scenario-panels"
 import { useNavigate } from "react-router-dom"
+import React from "react"
 
 type Amortization = Database['public']['Tables']['amortizations']['Row']
 type ExtraInstallment = Database['public']['Tables']['extra_installments']['Row']
@@ -89,6 +90,34 @@ export default function TestExtraInstallments() {
   const amortizationForm = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
   })
+
+  // Add effect to handle loan protection insurance rates
+  React.useEffect(() => {
+    const type = amortizationForm.watch("loan_protection_type");
+    
+    // Only set default rates when type changes, not for manual inputs
+    switch (type) {
+      case "individual":
+        amortizationForm.setValue("loan_protection_insurance", "0.028", {
+          shouldValidate: true,
+          shouldDirty: true
+        });
+        break;
+      case "joint":
+        amortizationForm.setValue("loan_protection_insurance", "0.052", {
+          shouldValidate: true,
+          shouldDirty: true
+        });
+        break;
+      case "none":
+        amortizationForm.setValue("loan_protection_insurance", "0", {
+          shouldValidate: true,
+          shouldDirty: true
+        });
+        break;
+      // For custom type, don't override the value
+    }
+  }, [amortizationForm.watch("loan_protection_type")]);
 
   const { data: linkedAmortizations = [], isLoading: isLoadingAmortizations } = useQuery({
     queryKey: ["linked-amortizations", selectedProperty?.id],
@@ -193,9 +222,31 @@ export default function TestExtraInstallments() {
       const interestRate = parseFloat(values.interest_rate)
       const termYears = parseInt(values.term_years)
       const installmentsPerYear = parseInt(values.installments_per_year)
-      const loanProtectionInsurance = values.loan_protection_insurance 
-        ? parseFloat(values.loan_protection_insurance)
-        : null
+      
+      // Handle loan protection insurance based on type
+      let loanProtectionInsurance = null;
+      const loanProtectionType = values.loan_protection_type;
+      
+      switch (loanProtectionType) {
+        case "individual":
+          loanProtectionInsurance = 0.028;
+          break;
+        case "joint":
+          loanProtectionInsurance = 0.052;
+          break;
+        case "custom":
+          const rawValue = parseFloat(values.loan_protection_insurance || "0");
+          if (isNaN(rawValue) || rawValue < 0 || rawValue > 1) {
+            throw new Error("Invalid loan protection insurance amount (must be between 0 and 1)");
+          }
+          loanProtectionInsurance = rawValue;
+          break;
+        case "none":
+          loanProtectionInsurance = 0;
+          break;
+        default:
+          throw new Error("Invalid loan protection type");
+      }
 
       // Validate numeric values
       if (isNaN(downPayment) || downPayment < 0) {
@@ -452,7 +503,7 @@ export default function TestExtraInstallments() {
                                         <SelectItem value="individual">Individual</SelectItem>
                                         <SelectItem value="joint">Joint</SelectItem>
                                         <SelectItem value="none">None</SelectItem>
-                                        <SelectItem value="custom">Custom Amount</SelectItem>
+                                        <SelectItem value="custom">Manual</SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </FormItem>
@@ -465,12 +516,35 @@ export default function TestExtraInstallments() {
                                   <FormItem>
                                     <FormLabel>Monthly Insurance Cost</FormLabel>
                                     <FormControl>
-                                      <Input {...field} onChange={(e) => {
-                                        field.onChange(e);
-                                        // Trigger form validation to ensure field values are up-to-date
-                                        amortizationForm.trigger("loan_protection_insurance");
-                                      }} />
+                                      <div className="relative">
+                                        <Input
+                                          {...field}
+                                          type="number"
+                                          step="0.0001"
+                                          min="0"
+                                          max="1"
+                                          disabled={amortizationForm.watch("loan_protection_type") !== "custom"}
+                                          value={field.value || ""}
+                                          onChange={(e) => {
+                                            const value = e.target.value;
+                                            const numValue = parseFloat(value);
+                                            if (!isNaN(numValue) && numValue >= 0 && numValue <= 1) {
+                                              field.onChange(value);
+                                              amortizationForm.trigger("loan_protection_insurance");
+                                            }
+                                          }}
+                                          placeholder="Enter rate (0-1)"
+                                          className="pr-8"
+                                        />
+                                        <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted-foreground">
+                                          %
+                                        </div>
+                                      </div>
                                     </FormControl>
+                                    <FormMessage />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Enter the rate as a decimal (e.g., 0.028 for 2.8%)
+                                    </p>
                                   </FormItem>
                                 )}
                               />

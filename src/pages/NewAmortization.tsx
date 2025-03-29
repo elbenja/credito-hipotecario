@@ -119,7 +119,7 @@ export default function NewAmortization() {
       term_years: parseInt(form.getValues("term_years")),
       installments_per_year: parseInt(form.getValues("installments_per_year")) as 12 | 14,
       first_installment_date: form.getValues("first_installment_date"),
-      loan_protection_type: form.getValues("loan_protection_type") as "individual" | "joint" | "none" | "custom",
+      loan_protection_type: form.getValues("loan_protection_type") as "individual" | "joint" | "none" | "manual",
       loan_protection_insurance: parseFloat(form.getValues("loan_protection_insurance"))
     }
 

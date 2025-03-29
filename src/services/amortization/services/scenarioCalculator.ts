@@ -139,11 +139,11 @@ export class ScenarioCalculator {
     // });
 
     // Calculate lower payment scenario (extended term)
-    // console.log('📊 Calculating Lower Payment Scenario...');
+    // console.log('📊 Calculating Lower Payment Scenario input');
     const lowerPaymentScenario = this.calculateLowerPaymentScenario(
       loan_amount,
       interest_rate,
-      term_years + 5, // Extended term by 5 years
+      term_years, // Use original term without extension
       installments_per_year,
       property_insurance,
       loan_insurance,

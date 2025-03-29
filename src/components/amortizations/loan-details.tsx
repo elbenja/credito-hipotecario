@@ -88,12 +88,12 @@ export function LoanDetails({
       : 0;
   }, [downPaymentValue]);
 
-  const isCustom = insuranceType === "custom";
+  const isManual = insuranceType === "manual";
   const isNone = insuranceType === "none";
 
   // Memoize insurance rate calculation
   const calculatedInsuranceRate = React.useMemo(() => {
-    if (isCustom || isNone) return "0";
+    if (isManual || isNone) return "0";
     
     if (insuranceType === "individual" || insuranceType === "joint") {
       const defaultRates = {
@@ -108,29 +108,29 @@ export function LoanDetails({
     }
     
     return "0";
-  }, [insuranceType, insuranceRates, isCustom, isNone]);
+  }, [insuranceType, insuranceRates, isManual, isNone]);
 
   // Combine insurance rate update with form watch
   React.useEffect(() => {
-    const newRate = isCustom ? insuranceRate : calculatedInsuranceRate;
+    const newRate = isManual ? insuranceRate : calculatedInsuranceRate;
     if (form.getValues("loan_protection_insurance") !== newRate) {
       form.setValue("loan_protection_insurance", newRate, { 
         shouldDirty: false,
         shouldTouch: false
       });
     }
-  }, [calculatedInsuranceRate, isCustom, insuranceRate]);
+  }, [calculatedInsuranceRate, isManual, insuranceRate]);
 
   // Memoize insurance amount calculation
   const calculateInsuranceAmount = React.useCallback((type: string, amount: number) => {
     if (!amount || type === 'none') return 0;
     
-    const rate = isCustom 
+    const rate = isManual 
       ? parseFloat(insuranceRate || "0") / 100
       : parseFloat(calculatedInsuranceRate) / 100;
 
     return amount * rate;
-  }, [calculatedInsuranceRate, isCustom, insuranceRate]);
+  }, [calculatedInsuranceRate, isManual, insuranceRate]);
 
   // Load bonus rules
   useEffect(() => {
@@ -324,7 +324,7 @@ export function LoanDetails({
                     }}
                   />
                 </FormControl>
-                <div className="text-sm text-muted-foreground">
+                {/* <div className="text-sm text-muted-foreground">
                   <Badge
                     variant="secondary"
                     className={cn(
@@ -334,7 +334,7 @@ export function LoanDetails({
                   >
                     {formatInsurance(downPaymentPercent, true)}
                   </Badge>
-                </div>
+                </div> */}
                 <FormMessage />
               </FormItem>
             )}
@@ -380,9 +380,31 @@ export function LoanDetails({
                 <Select 
                   onValueChange={(value) => {
                     field.onChange(value);
-                    if (value === 'none') {
-                      form.setValue('loan_protection_insurance', '0');
+                    // Set default insurance rates when type changes
+                    switch (value) {
+                      case "individual":
+                        form.setValue("loan_protection_insurance", "0.028", {
+                          shouldValidate: true,
+                          shouldDirty: true
+                        });
+                        break;
+                      case "joint":
+                        form.setValue("loan_protection_insurance", "0.052", {
+                          shouldValidate: true,
+                          shouldDirty: true
+                        });
+                        break;
+                      case "none":
+                        form.setValue("loan_protection_insurance", "0", {
+                          shouldValidate: true,
+                          shouldDirty: true
+                        });
+                        break;
+                      case "custom":
+                        // For custom, don't change the value
+                        break;
                     }
+                    form.trigger("loan_protection_type");
                   }} 
                   value={field.value}
                 >
@@ -407,7 +429,7 @@ export function LoanDetails({
                       })}
                     </SelectItem>
                     <SelectItem value="none">{t("none")}</SelectItem>
-                    <SelectItem value="custom">{t("custom_amount")}</SelectItem>
+                    <SelectItem value="custom">{t("manual")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -428,18 +450,21 @@ export function LoanDetails({
                       type="number"
                       step="0.0001"
                       min="0"
-                      max="100"
-                      disabled={!isCustom}
-                      value={isCustom ? field.value : calculatedInsuranceRate}
+                      max="1"
+                      disabled={form.watch("loan_protection_type") !== "custom"}
+                      value={field.value || ""}
                       onChange={(e) => {
-                        if (isCustom) {
-                          const value = e.target.value;
-                          field.onChange(formatInsurance(value, true).replace('%', ''));
+                        const value = e.target.value;
+                        const numValue = parseFloat(value);
+                        if (!isNaN(numValue) && numValue >= 0 && numValue <= 1) {
+                          field.onChange(value);
+                          form.trigger("loan_protection_insurance");
                         }
                       }}
+                      placeholder="Enter rate (0-1)"
                       className={cn(
                         "pr-8",
-                        !isCustom && "text-muted-foreground"
+                        form.watch("loan_protection_type") !== "custom" && "text-muted-foreground"
                       )}
                     />
                     <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted-foreground">
@@ -447,14 +472,10 @@ export function LoanDetails({
                     </div>
                   </div>
                 </FormControl>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {formatInsurance(
-                    calculateInsuranceAmount(insuranceType, loanAmount),
-                    true
-                  )}
-                  {t(" of beginning balance")}
-                </div>
                 <FormMessage />
+                {/* <p className="text-xs text-muted-foreground mt-1">
+                  Enter the rate as a decimal (e.g., 0.028 for 2.8%)
+                </p> */}
               </FormItem>
             )}
           />
@@ -602,7 +623,7 @@ export function LoanDetails({
         </div>
       </div>
 
-      <div className="text-sm text-muted-foreground mt-2">
+      {/* <div className="text-sm text-muted-foreground mt-2">
         {t("monthly_insurance_cost")}: {formatCurrency(
           calculateInsuranceAmount(
             insuranceType,
@@ -611,7 +632,7 @@ export function LoanDetails({
           selectedProperty?.currency || "PEN",
           true
         )}
-      </div>
+      </div> */}
     </div>
   )
 }

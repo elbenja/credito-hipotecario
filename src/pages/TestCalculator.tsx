@@ -152,8 +152,8 @@ export default function TestCalculator() {
                   case "none":
                     setLoanProtection("0");
                     break;
-                  case "custom":
-                    // Keep current value if it's custom
+                  case "manual":
+                    // Keep current value if it's manual
                     break;
                 }
               }}
@@ -165,7 +165,7 @@ export default function TestCalculator() {
                 <SelectItem value="individual">Individual (0.028%)</SelectItem>
                 <SelectItem value="joint">Joint (0.052%)</SelectItem>
                 <SelectItem value="none">None (0%)</SelectItem>
-                <SelectItem value="custom">Custom</SelectItem>
+                <SelectItem value="manual">manual</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -178,14 +178,14 @@ export default function TestCalculator() {
               value={loanProtection}
               onChange={(e) => {
                 setLoanProtection(e.target.value);
-                // Set to custom type if user manually changes the value
-                if (loanProtectionType !== "custom" && e.target.value !== "0.028" && e.target.value !== "0.052" && e.target.value !== "0") {
-                  setLoanProtectionType("custom");
+                // Set to manual type if user manually changes the value
+                if (loanProtectionType !== "manual" && e.target.value !== "0.028" && e.target.value !== "0.052" && e.target.value !== "0") {
+                  setLoanProtectionType("manual");
                 }
               }}
               placeholder="Enter percentage rate (e.g. 0.028)"
               step="0.001"
-              disabled={loanProtectionType !== "custom" && loanProtectionType !== ""}
+              disabled={loanProtectionType !== "manual" && loanProtectionType !== ""}
             />
             <p className="text-xs text-muted-foreground">
               This percentage will be applied monthly to each month's beginning balance

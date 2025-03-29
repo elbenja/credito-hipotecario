@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client"
 
 export type InsuranceRate = {
   id: number
-  type: "individual" | "joint" | "custom"
+  type: "individual" | "joint" | "manual"
   percentage: number
   effective_year: number
 }

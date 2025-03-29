@@ -296,12 +296,12 @@ src/
 ##### Overview
 The Loan Protection Insurance is calculated and managed at the amortization level rather than the property level, as it depends on the loan amount after down payment. Unlike property insurance (which is fixed), loan protection insurance is calculated as a percentage of the beginning balance of each month.
 
-##### Insurance Types
+##### Loan Insurance Types
 Four options are available:
 1. **Individual** (0.028% of beginning balance)
 2. **Joint** (0.052% of beginning balance)
 3. **None** (0)
-4. **Custom** (user-defined percentage of beginning balance)
+4. **Manual** (user-specified percentage)
 
 ##### Calculation Logic
 - **Base Loan Amount** = Property Cost – Down Payment (minus applicable bonuses)
@@ -309,7 +309,7 @@ Four options are available:
   - Individual: beginning_balance * (0.028 / 100)
   - Joint: beginning_balance * (0.052 / 100)
   - None: 0
-  - Custom: beginning_balance * (user_specified_percentage / 100)
+  - Manual: beginning_balance * (user_specified_percentage / 100)
 
 > Note: The loan protection insurance is recalculated each month based on the remaining loan balance, not a fixed amount based on the initial loan amount.
 
@@ -319,7 +319,7 @@ Four options are available:
 - Dynamic amount field:
   - Read-only for Individual/Joint (calculated)
   - Zero for None
-  - Editable for Custom
+  - Editable for Manual
 - Real-time updates on type change or custom amount entry
 - Integrated into monthly payment breakdown and total cost calculations
 
