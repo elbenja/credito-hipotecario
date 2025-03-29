@@ -67,12 +67,12 @@ export default function EditAmortization() {
   // Update the formValues state to store 4 decimal places for interest and insurance
   const [formValues, setFormValues] = useState(() => ({
     loanAmount: selectedProperty?.price_cost || 0,
-    interestRate: parseFloat((form.getValues().interest_rate || "4.0000").padEnd(6, '0')),
+    interestRate: parseFloat(form.getValues().interest_rate || "4"),
     termYears: parseInt(form.getValues().term_years || "20"),
     installmentsPerYear: parseInt(form.getValues().installments_per_year || "12"),
     firstInstallmentDate: form.getValues().first_installment_date || new Date(),
     propertyInsurance: selectedProperty?.property_insurance || 0,
-    loanInsurance: parseFloat((form.getValues().loan_protection_insurance || "0.0000").padEnd(6, '0')),
+    loanInsurance: parseFloat(form.getValues().loan_protection_insurance || "0"),
     downPayment: parseFloat(form.getValues().down_payment || "0")
   }));
 
@@ -294,32 +294,40 @@ export default function EditAmortization() {
 
   const loanCalculator = new LoanCalculator()
 
+  // Update form values when amortization data is loaded
   useEffect(() => {
-    if (amortization && amortization.property) {
-      // Create a proper date object from the YYYY-MM-DD string
-      const [year, month, day] = amortization.first_installment_date.split('-').map(Number);
-      const firstInstallmentDate = new Date(year, month - 1, day, 12, 0, 0, 0);
-
-      setSelectedProperty({
-        ...amortization.property,
-        is_first_home: amortization.property.is_first_home || false,
-        is_sustainable: amortization.property.is_sustainable || false
-      })
+    if (amortization) {
       form.reset({
-        name: amortization.name,
-        property_id: amortization.property_id,
-        down_payment: amortization.down_payment.toString(),
-        interest_rate: amortization.interest_rate.toString(),
-        term_years: amortization.term_years.toString(),
-        installments_per_year: amortization.installments_per_year.toString(),
-        first_installment_date: firstInstallmentDate,
+        name: amortization.name || "",
+        property_id: amortization.property_id || "",
+        down_payment: amortization.down_payment?.toString() || "0",
+        interest_rate: amortization.interest_rate?.toString() || "4",
+        term_years: amortization.term_years?.toString() || "20",
+        installments_per_year: amortization.installments_per_year?.toString() || "12",
+        first_installment_date: amortization.first_installment_date 
+          ? new Date(amortization.first_installment_date) 
+          : new Date(),
         loan_protection_type: amortization.loan_protection_type || "none",
-        loan_protection_insurance: amortization.loan_protection_insurance?.toString() || "0",
-      }, {
-        keepDefaultValues: true
-      })
+        loan_protection_insurance: amortization.loan_protection_insurance?.toString() || "0"
+      });
+
+      setSelectedProperty(amortization.property || null);
+
+      // Update formValues state to match loaded data
+      setFormValues({
+        loanAmount: amortization.property?.price_cost || 0,
+        interestRate: amortization.interest_rate || 4,
+        termYears: parseInt(amortization.term_years?.toString() || "20"),
+        installmentsPerYear: parseInt(amortization.installments_per_year?.toString() || "12"),
+        firstInstallmentDate: amortization.first_installment_date 
+          ? new Date(amortization.first_installment_date) 
+          : new Date(),
+        propertyInsurance: amortization.property?.property_insurance || 0,
+        loanInsurance: amortization.loan_protection_insurance || 0,
+        downPayment: parseFloat(amortization.down_payment?.toString() || "0")
+      });
     }
-  }, [amortization, form])
+  }, [amortization]);
 
   useEffect(() => {
     if (amortization && amortization.user_id !== user?.id) {

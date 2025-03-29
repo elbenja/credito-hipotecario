@@ -115,11 +115,33 @@ export function LoanDetails({
     const newRate = isManual ? insuranceRate : calculatedInsuranceRate;
     if (form.getValues("loan_protection_insurance") !== newRate) {
       form.setValue("loan_protection_insurance", newRate, { 
-        shouldDirty: false,
-        shouldTouch: false
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true
       });
     }
-  }, [calculatedInsuranceRate, isManual, insuranceRate]);
+  }, [calculatedInsuranceRate, isManual, insuranceRate, form]);
+
+  // Update form when insurance type changes
+  React.useEffect(() => {
+    if (!isManual && !isNone) {
+      const defaultRates = {
+        individual: "0.028",
+        joint: "0.052"
+      };
+      
+      const newRate = Array.isArray(insuranceRates)
+        ? insuranceRates.find((r: any) => r.type === insuranceType)?.percentage?.toString() ?? 
+          defaultRates[insuranceType as keyof typeof defaultRates]
+        : defaultRates[insuranceType as keyof typeof defaultRates];
+        
+      form.setValue("loan_protection_insurance", newRate, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true
+      });
+    }
+  }, [insuranceType, insuranceRates, isManual, isNone, form]);
 
   // Memoize insurance amount calculation
   const calculateInsuranceAmount = React.useCallback((type: string, amount: number) => {
