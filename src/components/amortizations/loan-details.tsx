@@ -93,7 +93,7 @@ export function LoanDetails({
 
   // Memoize insurance rate calculation
   const calculatedInsuranceRate = React.useMemo(() => {
-    if (isManual || isNone) return "0";
+    if (insuranceType === "none") return "0";
     
     if (insuranceType === "individual" || insuranceType === "joint") {
       const defaultRates = {
@@ -103,28 +103,20 @@ export function LoanDetails({
       
       return Array.isArray(insuranceRates)
         ? insuranceRates.find((r: any) => r.type === insuranceType)?.percentage?.toString() ?? 
-          defaultRates[insuranceType]
-        : defaultRates[insuranceType];
+          defaultRates[insuranceType as keyof typeof defaultRates]
+        : defaultRates[insuranceType as keyof typeof defaultRates];
+    }
+    
+    if (insuranceType === "custom") {
+      return insuranceRate || "0";
     }
     
     return "0";
-  }, [insuranceType, insuranceRates, isManual, isNone]);
-
-  // Combine insurance rate update with form watch
-  React.useEffect(() => {
-    const newRate = isManual ? insuranceRate : calculatedInsuranceRate;
-    if (form.getValues("loan_protection_insurance") !== newRate) {
-      form.setValue("loan_protection_insurance", newRate, { 
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true
-      });
-    }
-  }, [calculatedInsuranceRate, isManual, insuranceRate, form]);
+  }, [insuranceType, insuranceRates, insuranceRate]);
 
   // Update form when insurance type changes
   React.useEffect(() => {
-    if (!isManual && !isNone) {
+    if (insuranceType === "individual" || insuranceType === "joint") {
       const defaultRates = {
         individual: "0.028",
         joint: "0.052"
@@ -140,8 +132,15 @@ export function LoanDetails({
         shouldTouch: true,
         shouldValidate: true
       });
+    } else if (insuranceType === "none") {
+      form.setValue("loan_protection_insurance", "0", {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true
+      });
     }
-  }, [insuranceType, insuranceRates, isManual, isNone, form]);
+    // Don't update the rate for custom type - let the user input handle that
+  }, [insuranceType, insuranceRates, form]);
 
   // Memoize insurance amount calculation
   const calculateInsuranceAmount = React.useCallback((type: string, amount: number) => {
@@ -451,7 +450,7 @@ export function LoanDetails({
                       })}
                     </SelectItem>
                     <SelectItem value="none">{t("none")}</SelectItem>
-                    <SelectItem value="custom">{t("manual")}</SelectItem>
+                    <SelectItem value="custom">{t("custom")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

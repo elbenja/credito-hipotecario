@@ -2,9 +2,7 @@ import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { formatCurrency, normalizeDate } from "@/lib/utils"
-import { ScenarioCalculator } from "@/services/amortization/services/scenarioCalculator"
-import { useQuery } from "@tanstack/react-query"
-import { supabase } from "@/integrations/supabase/client"
+import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
 
 interface PaymentDetails {
   totalInterestAndInsurance: number
@@ -50,61 +48,21 @@ export function PaymentScenariosPanel({
   const { t } = useTranslation()
   const [selectedScenario, setSelectedScenario] = useState("regular")
 
-  // Fetch extra installments
-  const { data: extraInstallments = [] } = useQuery({
-    queryKey: ["extra-installments", amortizationId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("extra_installments")
-        .select("*")
-        .eq("amortization_id", amortizationId)
-        .order("start_date", { ascending: true })
-
-      if (error) {
-        console.error("Error fetching extra installments:", error)
-        return []
-      }
-
-      return data
-    },
-    enabled: !!amortizationId,
+  // Use the scenario calculations hook
+  const { data: scenarios, isLoading } = useScenarioCalculations({
+    amortizationId,
+    loanAmount,
+    interestRate: annualInterestRate,
+    termYears,
+    installmentsPerYear,
+    firstInstallmentDate,
+    propertyInsurance,
+    loanInsurance: loanProtection
   })
 
-  // Fetch rate changes
-  const { data: rateChanges = [] } = useQuery({
-    queryKey: ["rate-changes", amortizationId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("new_rates")
-        .select("*")
-        .eq("amortization_id", amortizationId)
-        .order("effective_date", { ascending: true })
-
-      if (error) {
-        console.error("Error fetching rate changes:", error)
-        return []
-      }
-
-      return data
-    },
-    enabled: !!amortizationId,
-  })
-
-  // Memoize scenario calculations to prevent unnecessary recalculations
+  // Memoize payment details based on scenarios
   const paymentDetails = useMemo(() => {
-    const normalizedDate = normalizeDate(firstInstallmentDate)
-
-    const scenarios = ScenarioCalculator.calculateScenarios({
-      loan_amount: loanAmount,
-      interest_rate: annualInterestRate,
-      term_years: termYears,
-      installments_per_year: installmentsPerYear,
-      first_installment_date: normalizedDate,
-      property_insurance: propertyInsurance,
-      loan_insurance: loanProtection,
-      extra_installments: extraInstallments,
-      rate_changes: rateChanges
-    })
+    if (!scenarios) return null
 
     return {
       regular: {
@@ -128,20 +86,24 @@ export function PaymentScenariosPanel({
         monthlyPayment: scenarios.new_rate.summary.monthly_payment
       }
     }
-  }, [
-    loanAmount,
-    annualInterestRate,
-    termYears,
-    installmentsPerYear,
-    firstInstallmentDate,
-    propertyInsurance,
-    loanProtection,
-    extraInstallments,
-    rateChanges
-  ])
+  }, [scenarios])
 
   const handleScenarioChange = (value: string) => {
     setSelectedScenario(value)
+  }
+
+  // Loading state
+  if (isLoading || !paymentDetails) {
+    return (
+      <div className="w-full p-6">
+        <div className="flex items-center justify-center h-[200px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p className="mt-2 text-sm text-muted-foreground">{t("loading_scenarios")}</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const ScenarioSummary = ({ details }: { details: PaymentDetails }) => (
