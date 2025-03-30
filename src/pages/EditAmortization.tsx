@@ -348,13 +348,13 @@ export default function EditAmortization() {
 
           {/* Right Container */}
           <div className="flex-1 px-8 pt-6">
-            <h2 className="text-2xl font-bold mb-6">{t("payment_scenarios_graphs")}</h2>
+            <h2 className="text-md  mb-6">payment scenarios graphs</h2>
             {!amortization || !scenarios ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-muted-foreground">{t("loading")}</div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1  gap-6">
                 <RegularPanelGraph
                   scenario={scenarios.regular}
                   currency={amortization.property.currency}

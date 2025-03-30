@@ -12,6 +12,9 @@ export function RegularPanelGraph({
   if (!scenario) return null
 
   return (
+
+
+    
     <CollapsibleScenarioPanel 
       title="Regular Scenario Graph"
       tag="Baseline"
