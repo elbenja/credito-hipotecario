@@ -374,7 +374,9 @@ export const resources = {
         "confirm_password": "Confirm Password",
         "updating": "Updating...",
         "update_password": "Update Password"
-      }
+      },
+      "edit_property_description": "Update your property details, costs, and bonus eligibility.",
+      "add_property_description": "Add a new property with details, costs, and check bonus eligibility."
     }
   },
   es: {
@@ -749,7 +751,9 @@ export const resources = {
         "confirm_password": "Confirmar Contraseña",
         "updating": "Actualizando...",
         "update_password": "Actualizar Contraseña"
-      }
+      },
+      "edit_property_description": "Actualiza los detalles de la propiedad, costos y elegibilidad del bono.",
+      "add_property_description": "Agrega una nueva propiedad con detalles, costos y verifica la elegibilidad del bono."
     }
   }
 };

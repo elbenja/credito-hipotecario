@@ -29,9 +29,11 @@ import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { Pencil } from "lucide-react"
 import { PropertyForm } from "@/components/properties/property-form"
 import { useTranslation } from "react-i18next"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
 
 // Helper function for currency formatting
-const formatAmount = (amount: number, currency: string) => {
+const formatAmount = (amount: number, currency: "USD" | "PEN") => {
   const roundedAmount = Math.round(amount)
   return formatCurrency(roundedAmount, currency)
 }
@@ -39,6 +41,7 @@ const formatAmount = (amount: number, currency: string) => {
 export type Property = {
   id: string
   name: string
+  description?: string
   price_cost: number
   currency: "USD" | "PEN"
   is_first_home: boolean
@@ -61,141 +64,57 @@ type PropertySelectProps = {
   initialProperty?: Property | null
 }
 
-export function PropertyDisplay({ 
-  property,
-  onPropertyUpdate
-}: { 
-  property: Property
-  onPropertyUpdate?: (updatedProperty: Property) => void
-}) {
-  const { t } = useTranslation()
-  const { data: exchangeRate } = useExchangeRate()
-  const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
-  const [open, setOpen] = useState(false)
-  const [currentProperty, setCurrentProperty] = useState<Property>(property)
+interface PropertyEditSheetProps {
+  property: Property;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onPropertyUpdate?: (property: Property) => void;
+}
 
+function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: PropertyEditSheetProps) {
+  const { t } = useTranslation();
+  const [bonusRules, setBonusRules] = useState<BonusRule[]>([]);
+
+  // Load bonus rules
   useEffect(() => {
     const loadBonusRules = async () => {
-      const { data: rulesData, error } = await supabase
+      const { data, error } = await supabase
         .from("bonus_rules")
         .select("*")
-        .order('min_value', { ascending: true })
-      
-      if (error) {
-        console.error(t("error_loading_bonus_rules"), error)
-        return
-      }
-      
-      setBonusRules(rulesData || [])
-    }
-    loadBonusRules()
-  }, [t])
-
-  useEffect(() => {
-    const loadProperty = async () => {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("*")
-        .eq('id', property.id)
-        .single()
+        .order('min_value', { ascending: true });
 
       if (error) {
-        console.error(t("error_fetching_property"), error)
-        return
+        console.error("Error loading bonus rules:", error);
+        return;
       }
 
-      if (data) {
-        setCurrentProperty(data as Property)
-      }
-    }
+      setBonusRules(data || []);
+    };
 
-    loadProperty()
-  }, [property.id, t])
-
-  const convertToPEN = (amount: number, currency: string): number => {
-    if (currency === 'PEN') return amount
-    return amount * (exchangeRate || 3.7167)
-  }
-
-  const calculateBonus = (property: Property): number | null => {
-    if (!property.is_first_home) return null
-
-    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency)
-    
-    const applicableRule = bonusRules.find(
-      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
-    )
-
-    if (!applicableRule) return null
-
-    return property.is_sustainable 
-      ? applicableRule.sustainable_bonus 
-      : applicableRule.traditional_bonus
-  }
-
-  const cost = currentProperty.price_cost
-  const bonus = calculateBonus(currentProperty)
-  const costInPEN = convertToPEN(cost, currentProperty.currency)
+    loadBonusRules();
+  }, []);
 
   const handlePropertyUpdate = async () => {
     // Fetch the updated property data
     const { data, error } = await supabase
       .from("properties")
       .select("*")
-      .eq('id', currentProperty.id)
-      .single()
+      .eq('id', property.id)
+      .single();
 
     if (error) {
-      console.error("Error fetching updated property:", error)
-      return
+      console.error("Error fetching updated property:", error);
+      return;
     }
 
-    if (data) {
-      const updatedProperty = data as Property
-      setCurrentProperty(updatedProperty)
-      // Call the onPropertyUpdate callback if provided
-      if (onPropertyUpdate) {
-        onPropertyUpdate(updatedProperty)
-      }
+    onOpenChange(false);
+    if (onPropertyUpdate) {
+      onPropertyUpdate(data);
     }
-    setOpen(false)
-  }
+  };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <div className="relative w-full rounded-md border border-input bg-background px-3 py-2">
-        <div className="flex flex-col items-start">
-          <span className="font-medium">{currentProperty.name}</span>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-foreground">
-              {t("property_cost")}: {formatAmount(cost, currentProperty.currency)}
-            </span>
-            {bonus && (
-              <>
-                <span className="text-sm text-muted-foreground/75">|</span>
-                <span className="text-sm text-foreground">
-                  {t("property_bonus")}: {formatAmount(bonus, "PEN")}
-                </span>
-              </>
-            )}
-            {currentProperty.property_insurance !== null && 
-             !(currentProperty.property_insurance_type === "manual" && currentProperty.property_insurance === 0) && (
-              <>
-                <span className="text-sm text-muted-foreground/75">|</span>
-                <span className="text-sm text-foreground">
-                  {t("property_insurance")}: {formatAmount(currentProperty.property_insurance, currentProperty.currency)}
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-        <div 
-          className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer hover:text-primary transition-colors"
-          onClick={() => setOpen(true)}
-        >
-          <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
-        </div>
-      </div>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>{t("edit_property_title")}</SheetTitle>
@@ -203,14 +122,141 @@ export function PropertyDisplay({
         <div className="mt-8">
           <PropertyForm
             onSuccess={handlePropertyUpdate}
-            onClose={() => setOpen(false)}
-            selectedProperty={currentProperty}
+            onClose={() => onOpenChange(false)}
+            selectedProperty={property}
             bonusRules={bonusRules}
           />
         </div>
       </SheetContent>
     </Sheet>
-  )
+  );
+}
+
+export function PropertyDisplay({ 
+  property,
+  onPropertyUpdate
+}: { 
+  property: Property | null;
+  onPropertyUpdate?: (property: Property) => void;
+}) {
+  const [currentProperty, setCurrentProperty] = useState<Property | null>(null);
+  const [bonusRules, setBonusRules] = useState<BonusRule[]>([]);
+  const [propertyEditSheetOpen, setPropertyEditSheetOpen] = useState(false);
+  const { data: exchangeRate } = useExchangeRate();
+
+  // Helper function to convert currency to PEN
+  const convertToPEN = (amount: number, currency: string): number => {
+    if (currency === 'PEN') return amount;
+    return amount * (exchangeRate || 3.7167);
+  };
+
+  // Helper function to calculate bonus
+  const calculateBonus = (property: Property, rules: BonusRule[]): number | null => {
+    if (!property.is_first_home) return null;
+
+    // Convert property value to PEN for bonus calculation
+    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency);
+    
+    const applicableRule = rules.find(
+      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
+    );
+
+    if (!applicableRule) return null;
+
+    return property.is_sustainable 
+      ? applicableRule.sustainable_bonus 
+      : applicableRule.traditional_bonus;
+  };
+
+  // Load bonus rules
+  useEffect(() => {
+    const loadBonusRules = async () => {
+      const { data, error } = await supabase
+        .from("bonus_rules")
+        .select("*")
+        .order('min_value', { ascending: true });
+
+      if (error) {
+        console.error("Error loading bonus rules:", error);
+        return;
+      }
+
+      setBonusRules(data || []);
+    };
+
+    loadBonusRules();
+  }, []);
+
+  // Update currentProperty when property changes
+  useEffect(() => {
+    if (property) {
+      setCurrentProperty(property);
+    }
+  }, [property]);
+
+  // Early return if no property or bonus rules
+  if (!currentProperty || bonusRules.length === 0) {
+    return (
+      <div className="flex items-center justify-center p-4 text-gray-500">
+        No property selected
+      </div>
+    );
+  }
+
+  // Calculate cost and bonus
+  const cost = currentProperty.price_cost;
+  const bonus = calculateBonus(currentProperty, bonusRules);
+  const costInPEN = convertToPEN(cost, currentProperty.currency);
+
+  return (
+    <div className="space-y-4 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm">Property</p>
+          <h3 className=" font-semibold">{currentProperty.name}</h3>
+          {/* <p className="text-sm text-gray-500">{currentProperty.description}</p> */}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPropertyEditSheetOpen(true)}
+        >
+          Edit
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-1">
+        <div>
+          <Label className="text-xs font-normal">Cost</Label>
+          <div className="text-xs font-medium">
+            {formatCurrency(cost, currentProperty.currency)}
+          </div>
+        </div>
+        <div>
+        <Label className="text-xs font-normal">Bonus</Label>
+          <div className="text-xs font-medium">
+            {bonus ? formatCurrency(bonus, currentProperty.currency) : "None"}
+          </div>
+        </div>
+
+        <div>
+        <Label className="text-xs font-normal">Insurance</Label>
+          <div className="text-xs font-medium">
+            {currentProperty.property_insurance !== null
+              ? formatCurrency(currentProperty.property_insurance, currentProperty.currency)
+              : "None"}
+          </div>
+        </div>
+      </div>
+
+      <PropertyEditSheet
+        property={currentProperty}
+        open={propertyEditSheetOpen}
+        onOpenChange={setPropertyEditSheetOpen}
+        onPropertyUpdate={onPropertyUpdate}
+      />
+    </div>
+  );
 }
 
 export function PropertySelect({ 
@@ -261,7 +307,7 @@ export function PropertySelect({
         const [{ data: propertiesData, error: propertiesError }, { data: rulesData, error: rulesError }] = await Promise.all([
           supabase
             .from("properties")
-            .select("id, name, price_cost, currency, is_first_home, is_sustainable, property_insurance")
+            .select("id, name, price_cost, currency, is_first_home, is_sustainable, property_insurance, property_insurance_type")
             .eq("user_id", user.id),
           supabase
             .from("bonus_rules")

@@ -92,13 +92,13 @@ export default function Properties() {
     }
     
     setSortConfig({ key, direction })
-    
     const sortedProperties = [...properties].sort((a, b) => {
-      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1
-      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1
-      return 0
-    })
-    
+      const aValue = a[key] ?? '';
+      const bValue = b[key] ?? '';
+      if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
     setProperties(sortedProperties)
   }
 
@@ -119,7 +119,11 @@ export default function Properties() {
   }
 
   const headerActions = (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet 
+      open={open} 
+      onOpenChange={setOpen}
+      aria-describedby="property-form-description"
+    >
       <SheetTrigger asChild>
         <Button onClick={handleAddNewClick}>
           <Plus className="mr-2 h-4 w-4" />
@@ -131,6 +135,9 @@ export default function Properties() {
           <SheetTitle>
             {selectedProperty ? t('edit_property') : t('add_property')}
           </SheetTitle>
+          <p id="property-form-description" className="text-sm text-muted-foreground">
+            {selectedProperty ? t('edit_property_description') : t('add_property_description')}
+          </p>
         </SheetHeader>
         <div className="mt-8">
           <PropertyForm

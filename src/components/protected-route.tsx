@@ -1,4 +1,3 @@
-
 import { Navigate } from "react-router-dom"
 import { useAuth } from "@/context/auth-context"
 
@@ -10,7 +9,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!session || !user) {
-    return <Navigate to="/auth" />
+    return <Navigate to="/" />
   }
 
   return <>{children}</>

@@ -1,237 +1,197 @@
-import { useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams, Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { Link } from "react-router-dom"
+import { EditableHeading } from "@/components/ui/editable-heading"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { PropertyDisplay, type Property } from "@/components/amortizations/property-select"
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { AmortizationDetailsForm } from "@/components/amortizations/amortization-details-form"
 import { useForm } from "react-hook-form"
-import { EditableHeading } from "@/components/ui/editable-heading"
-import { 
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form"
-import { Button } from "@/components/ui/button"
-import { PropertySelect, PropertyDisplay, type Property } from "@/components/amortizations/property-select"
-import { LoanDetails } from "@/components/amortizations/loan-details"
-import { useToast } from "@/hooks/use-toast"
-import { 
-  amortizationFormSchema, 
-  type AmortizationFormValues 
-} from "@/components/amortizations/schema"
-import { PaymentScenariosPanel } from "@/components/amortizations/payment-scenarios-panel"
-import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
-import { useTranslation } from "react-i18next"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { amortizationFormSchema, type AmortizationFormValues } from "@/components/amortizations/schema"
+import { useToast } from "@/components/ui/use-toast"
+import { createLocalDate } from "@/lib/utils"
 
 export default function EditAmortization() {
-  const { id } = useParams()
+  const { t } = useTranslation()
   const navigate = useNavigate()
+  const { id } = useParams()
   const { user } = useAuth()
   const { toast } = useToast()
-  const { t } = useTranslation()
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
-  const [showMobileDetails, setShowMobileDetails] = useState(false)
-  
-  const form = useForm<AmortizationFormValues>({
+
+  const amortizationForm = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
-    defaultValues: {
-      name: "",
-      property_id: "",
-      down_payment: "0",
-      interest_rate: "4",
-      term_years: "20",
-      installments_per_year: "12",
-      first_installment_date: new Date(),
-      loan_protection_type: "none",
-      loan_protection_insurance: "0"
-    }
   })
 
-  // Get current form values
-  const formValues = form.watch()
-  const downPayment = parseFloat(formValues.down_payment?.replace(/[^0-9.]/g, "") || "0")
-  const loanAmount = selectedProperty ? selectedProperty.price_cost - downPayment : 0
-
-  // Use the scenario calculations hook
-  const { data: scenarios, isLoading: scenariosLoading } = useScenarioCalculations({
-    amortizationId: id || "",
-    loanAmount,
-    interestRate: parseFloat(formValues.interest_rate || "4"),
-    termYears: parseInt(formValues.term_years || "20"),
-    installmentsPerYear: parseInt(formValues.installments_per_year || "12"),
-    firstInstallmentDate: formValues.first_installment_date || new Date(),
-    propertyInsurance: selectedProperty?.property_insurance || 0,
-    loanInsurance: parseFloat(formValues.loan_protection_insurance || "0")
-  })
-
-  const { data: amortization, isLoading: amortizationLoading, refetch } = useQuery({
+  const { data: amortization, isLoading } = useQuery({
     queryKey: ["amortization", id],
     queryFn: async () => {
       if (!user || !id) return null
 
-      const [{ data: amortizationData, error: amortizationError }, { data: limitsData, error: limitsError }] = await Promise.all([
-        supabase
-          .from("amortizations")
-          .select(`
-            *,
-            property:properties (
-              id,
-              name,
-              currency,
-              price_cost,
-              is_first_home,
-              is_sustainable,
-              property_insurance,
-              property_insurance_type
-            )
-          `)
-          .eq("id", id)
-          .maybeSingle(),
-        supabase
-          .from("interest_rate_limits")
-          .select("min_rate, max_rate")
-          .eq("is_active", true)
-          .maybeSingle()
-      ])
+      const { data, error } = await supabase
+        .from("amortizations")
+        .select(`
+          id, 
+          name,
+          down_payment,
+          interest_rate,
+          term_years,
+          installments_per_year,
+          first_installment_date,
+          loan_protection_type,
+          loan_protection_insurance,
+          loan_amount,
+          property:properties (
+            id,
+            name,
+            description,
+            currency,
+            price_cost,
+            is_first_home,
+            is_sustainable,
+            property_insurance,
+            property_insurance_type
+          )
+        `)
+        .eq("id", id)
+        .single()
 
-      if (amortizationError) throw amortizationError
-      if (!amortizationData || !amortizationData.property) return null
+      if (error) throw error
+      if (!data) return null
+
+      // Initialize form with fetched data
+      amortizationForm.reset({
+        name: data.name || "",
+        down_payment: data.down_payment?.toString() || "",
+        interest_rate: data.interest_rate?.toString() || "",
+        term_years: data.term_years?.toString() || "",
+        installments_per_year: data.installments_per_year?.toString() || "",
+        first_installment_date: createLocalDate(data.first_installment_date),
+        loan_protection_type: data.loan_protection_type as "none" | "custom" | "individual" | "joint",
+        loan_protection_insurance: data.loan_protection_insurance?.toString() || "",
+      })
 
       return {
-        ...amortizationData,
-        property: {
-          ...amortizationData.property,
-          currency: amortizationData.property.currency as "USD" | "PEN"
-        },
-        interestRateLimits: limitsData || { min_rate: 4, max_rate: 18 }
+        ...data,
+        property: data.property as Property
       }
     },
     enabled: !!user && !!id
   })
 
-  // Update form when amortization data is loaded
-  useEffect(() => {
-    if (amortization) {
-      form.reset({
-        name: amortization.name || "",
-        property_id: amortization.property_id || "",
-        down_payment: amortization.down_payment?.toString() || "0",
-        interest_rate: amortization.interest_rate?.toString() || "4",
-        term_years: amortization.term_years?.toString() || "20",
-        installments_per_year: amortization.installments_per_year?.toString() || "12",
-        first_installment_date: amortization.first_installment_date 
-          ? new Date(amortization.first_installment_date) 
-          : new Date(),
-        loan_protection_type: amortization.loan_protection_type || "none",
-        loan_protection_insurance: amortization.loan_protection_insurance?.toString() || "0"
-      })
-
-      setSelectedProperty(amortization.property || null)
-    }
-  }, [amortization, form])
-
-  // Redirect if not owner
-  useEffect(() => {
-    if (amortization && amortization.user_id !== user?.id) {
-      navigate("/mortgages")
-    }
-  }, [amortization, user, navigate])
-
-  const onSubmit = async (values: AmortizationFormValues) => {
+  const onUpdateAmortization = async (values: AmortizationFormValues) => {
     try {
-      if (!user || !amortization?.property) return
-
-      const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, ""))
-      const loanAmount = amortization.property.price_cost - downPayment
-
-      const amortizationData = {
-        name: values.name,
-        property_id: values.property_id,
-        down_payment: downPayment,
-        interest_rate: parseFloat(values.interest_rate),
-        term_years: parseInt(values.term_years),
-        installments_per_year: parseInt(values.installments_per_year),
-        first_installment_date: values.first_installment_date.toISOString().split('T')[0],
-        loan_amount: loanAmount,
-        total_payment: 0,
-        total_interest: 0,
-        installment_amount: 0,
-        loan_protection_type: values.loan_protection_type,
-        loan_protection_insurance: parseFloat(values.loan_protection_insurance),
+      if (!amortization) {
+        throw new Error("No amortization selected")
       }
 
-      const { error } = await supabase
+      // Parse numeric values safely
+      const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, ""))
+      const interestRate = parseFloat(values.interest_rate)
+      const termYears = parseInt(values.term_years)
+      const installmentsPerYear = parseInt(values.installments_per_year)
+      
+      // Handle loan protection insurance based on type
+      let loanProtectionInsurance = null;
+      const loanProtectionType = values.loan_protection_type;
+      
+      switch (loanProtectionType) {
+        case "individual":
+          loanProtectionInsurance = 0.028;
+          break;
+        case "joint":
+          loanProtectionInsurance = 0.052;
+          break;
+        case "custom":
+          const rawValue = parseFloat(values.loan_protection_insurance || "0");
+          if (isNaN(rawValue) || rawValue < 0 || rawValue > 1) {
+            throw new Error("Invalid loan protection insurance amount (must be between 0 and 1)");
+          }
+          loanProtectionInsurance = rawValue;
+          break;
+        case "none":
+          loanProtectionInsurance = 0;
+          break;
+        default:
+          throw new Error("Invalid loan protection type");
+      }
+
+      // Validate numeric values
+      if (isNaN(downPayment) || downPayment < 0) {
+        throw new Error("Invalid down payment amount")
+      }
+      if (isNaN(interestRate) || interestRate < 0) {
+        throw new Error("Invalid interest rate")
+      }
+      if (isNaN(termYears) || termYears < 1) {
+        throw new Error("Invalid term years")
+      }
+      if (![12, 14].includes(installmentsPerYear)) {
+        throw new Error("Invalid installments per year")
+      }
+
+      // Calculate loan amount
+      const loanAmount = amortization.property.price_cost - downPayment
+
+      // Validate loan amount
+      if (loanAmount <= 0) {
+        throw new Error("Down payment cannot be greater than property cost")
+      }
+
+      // Create a proper ISO date string preserving the exact date
+      const inputDate = new Date(values.first_installment_date);
+      const dateString = `${inputDate.getFullYear()}-${String(inputDate.getMonth() + 1).padStart(2, '0')}-${String(inputDate.getDate()).padStart(2, '0')}`;
+      
+      // Prepare amortization data
+      const amortizationData = {
+        name: values.name,
+        down_payment: downPayment,
+        interest_rate: interestRate,
+        term_years: termYears,
+        installments_per_year: installmentsPerYear,
+        first_installment_date: dateString,
+        loan_amount: loanAmount,
+        loan_protection_type: values.loan_protection_type,
+        loan_protection_insurance: loanProtectionInsurance,
+      }
+
+      // Update amortization in Supabase
+      const { error: updateError } = await supabase
         .from("amortizations")
         .update(amortizationData)
         .eq('id', id)
 
-      if (error) throw error
+      if (updateError) throw updateError
 
       toast({
         title: t("success"),
-        description: t("success_update"),
+        description: t("amortization_updated"),
       })
-
-      const isExplicitSubmit = (event?.target as HTMLElement)?.tagName === 'FORM'
-      if (isExplicitSubmit) {
-        navigate("/mortgages")
-      }
     } catch (error) {
       console.error("Error updating amortization:", error)
       toast({
         variant: "destructive",
         title: t("error"),
-        description: t("error_update"),
-      })
-    }
-  }
-
-  const handleNameChange = async (newName: string) => {
-    try {
-      if (!user || !id) return
-
-      const { error } = await supabase
-        .from("amortizations")
-        .update({ name: newName })
-        .eq('id', id)
-
-      if (error) throw error
-
-      toast({
-        title: t("success"),
-        description: t("success_name_update"),
-      })
-
-      refetch()
-    } catch (error) {
-      console.error("Error updating name:", error)
-      toast({
-        variant: "destructive",
-        title: t("error"),
-        description: t("error_name_update"),
+        description: error instanceof Error ? error.message : t("error_updating_amortization")
       })
     }
   }
 
   const handlePropertyUpdate = (updatedProperty: Property) => {
-    setSelectedProperty(updatedProperty)
-    refetch()
+    // We'll implement this later when we add refetch functionality
+    console.log("Property updated:", updatedProperty)
   }
 
-  if (amortizationLoading || scenariosLoading || !scenarios) {
+  if (isLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-[50vh]">
@@ -246,33 +206,18 @@ export default function EditAmortization() {
 
   if (!amortization) {
     return (
-      <DashboardLayout
-        header={{
-          title: (
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <Link to="/mortgages" className="transition-colors hover:text-foreground">
-                    {t("mortgages")}
-                  </Link>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{t("amortization_not_found")}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          )
-        }}
-      >
-        <div className="text-center py-8">
-          <h1 className="text-2xl font-semibold mb-2">{t("amortization_not_found")}</h1>
-          <p className="text-muted-foreground mb-4">
-            {t("amortization_not_found_description")}
-          </p>
-          <Button onClick={() => navigate("/mortgages")}>
-            {t("back_to_mortgages")}
-          </Button>
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <p className="text-lg text-foreground">{t("error_loading_amortization")}</p>
+            <Button 
+              variant="link" 
+              className="mt-2"
+              onClick={() => navigate("/mortgages")}
+            >
+              {t("back_to_mortgages")}
+            </Button>
+          </div>
         </div>
       </DashboardLayout>
     )
@@ -293,7 +238,18 @@ export default function EditAmortization() {
               <BreadcrumbItem>
                 <EditableHeading 
                   value={amortization.name} 
-                  onChange={handleNameChange}
+                  onChange={async (newName) => {
+                    try {
+                      const { error } = await supabase
+                        .from("amortizations")
+                        .update({ name: newName })
+                        .eq("id", id)
+
+                      if (error) throw error
+                    } catch (error) {
+                      console.error("Error updating name:", error)
+                    }
+                  }}
                   size="breadcrumb"
                   as="span"
                   className="text-foreground"
@@ -306,54 +262,33 @@ export default function EditAmortization() {
     >
       <div className="flex flex-col min-h-screen">
         <div className="flex flex-col md:flex-row flex-1">
-          <div className="w-full md:w-[40%] px-8 pt-6 relative flex-shrink-0">
+          {/* Left Container */}
+          <div className="w-full md:w-[40%] min-w-[320px] max-w-[400px] relative flex-shrink-0">
             <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-border"></div>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormItem>
-                  <FormLabel>{t("property")}</FormLabel>
-                  <PropertyDisplay 
-                    property={selectedProperty!}
-                    onPropertyUpdate={handlePropertyUpdate}
+            <PropertyDisplay 
+              property={amortization.property}
+              onPropertyUpdate={handlePropertyUpdate}
+            />
+
+            {amortization && (
+              <div className="mt-8">
+                <h2 className="text-2xl font-bold mb-6">{t("amortization_details")}</h2>
+                <div className="p-6 border rounded-lg">
+                  <AmortizationDetailsForm
+                    form={amortizationForm}
+                    selectedProperty={amortization.property}
+                    onSubmit={onUpdateAmortization}
+                    submitLabel={t("update")}
                   />
-                </FormItem>
-
-                <LoanDetails 
-                  form={form}
-                  selectedProperty={selectedProperty}
-                  interestRateLimits={amortization?.interestRateLimits || { min_rate: 4, max_rate: 18 }}
-                />
-
-                <Separator className="w-full" />
-
-                <div className="flex flex-col gap-2">
-                  <Button type="submit" className="w-full">
-                    {t("update")}
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="secondary" 
-                    className="w-full"
-                    onClick={() => navigate("/mortgages")}
-                  >
-                    {t("cancel")}
-                  </Button>
                 </div>
-              </form>
-            </Form>
+              </div>
+            )}
           </div>
 
-          <PaymentScenariosPanel 
-            currency={selectedProperty?.currency || "USD"}
-            loanAmount={loanAmount}
-            annualInterestRate={parseFloat(formValues.interest_rate || "4")}
-            termYears={parseInt(formValues.term_years || "20")}
-            installmentsPerYear={parseInt(formValues.installments_per_year || "12") as 12 | 14}
-            firstInstallmentDate={formValues.first_installment_date || new Date()}
-            propertyInsurance={selectedProperty?.property_insurance || 0}
-            loanProtection={parseFloat(formValues.loan_protection_insurance || "0")}
-            amortizationId={id || ""}
-          />
+          {/* Right Container */}
+          <div className="flex-1 px-8 pt-6">
+            <h2>{t("right_container_content")}</h2>
+          </div>
         </div>
       </div>
     </DashboardLayout>

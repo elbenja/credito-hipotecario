@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { GalleryVerticalEnd } from "lucide-react"
 import { LoginForm } from "@/components/login-form"
 import { supabase } from "@/integrations/supabase/client"
@@ -10,22 +10,26 @@ import { useTranslation } from "react-i18next"
 
 export default function Auth() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const location = useLocation()
+  const { user, loading } = useAuth()
   const { t } = useTranslation()
 
   useEffect(() => {
-    if (user) {
-      navigate("/dashboard")
+    // If we have a user and we're not loading, redirect to dashboard
+    if (!loading && user) {
+      navigate('/dashboard', { replace: true })
     }
-  }, [user, navigate])
+  }, [user, loading, navigate])
 
-  useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate("/dashboard")
-      }
-    })
-  }, [navigate])
+  // Show nothing while loading
+  if (loading) {
+    return null
+  }
+
+  // If we have a user, show nothing while redirecting
+  if (user) {
+    return null
+  }
 
   return (
     <div className="grid min-h-svh lg:grid-cols-2">

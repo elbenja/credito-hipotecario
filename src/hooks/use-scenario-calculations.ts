@@ -53,13 +53,13 @@ interface ScenarioResult {
   payments: PaymentRow[]
 }
 
-interface UseScenarioCalculationsProps {
+export interface UseScenarioCalculationsProps {
   amortizationId: string
   loanAmount: number
   interestRate: number
   termYears: number
   installmentsPerYear: number
-  firstInstallmentDate: Date
+  firstInstallmentDate?: Date
   propertyInsurance: number
   loanInsurance: number
 }
@@ -115,6 +115,11 @@ export function useScenarioCalculations({
   const debouncedPropertyInsurance = useDebounce(propertyInsurance, 500)
   const debouncedLoanInsurance = useDebounce(loanInsurance, 500)
 
+  // Ensure we have a valid date before calling toISOString
+  const firstInstallmentDateString = debouncedFirstInstallmentDate instanceof Date ? 
+    debouncedFirstInstallmentDate.toISOString() : 
+    new Date().toISOString()
+
   return useQuery({
     queryKey: [
       "scenarios",
@@ -123,7 +128,7 @@ export function useScenarioCalculations({
       debouncedInterestRate,
       debouncedTermYears,
       debouncedInstallmentsPerYear,
-      debouncedFirstInstallmentDate.toISOString(),
+      firstInstallmentDateString,
       debouncedPropertyInsurance,
       debouncedLoanInsurance
     ],
@@ -218,7 +223,7 @@ export function useScenarioCalculations({
         interest_rate: debouncedInterestRate,
         term_years: debouncedTermYears,
         installments_per_year: debouncedInstallmentsPerYear,
-        first_installment_date: debouncedFirstInstallmentDate,
+        first_installment_date: debouncedFirstInstallmentDate || new Date(),
         property_insurance: debouncedPropertyInsurance,
         loan_insurance: debouncedLoanInsurance,
         extra_installments: extraInstallments,
@@ -240,8 +245,10 @@ export function useScenarioCalculations({
         new_rate: newRateScenario
       }
     },
-    gcTime: 1000 * 60 * 30, // Cache for 30 minutes
-    staleTime: 0, // Always calculate fresh scenarios
-    refetchOnWindowFocus: false // Don't refetch when window regains focus
+    staleTime: 0, // Consider data as stale immediately
+    gcTime: 0, // Don't cache the data
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    enabled: !!amortizationId // Only run query when we have an amortization ID
   })
 } 

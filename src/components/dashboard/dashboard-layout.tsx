@@ -11,7 +11,7 @@ interface HeaderProps {
 
 function Header({ title, actions }: HeaderProps) {
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-8">
+    <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-8">
       <SidebarTrigger />
       <Separator orientation="vertical" className="h-4" />
       {title && <div className="flex-1">{title}</div>}
@@ -29,11 +29,11 @@ function DashboardContent({ children, header }: DashboardLayoutProps) {
   useSidebarAutoCollapse()
   
   return (
-    <div className="min-h-screen flex w-full">
+    <div className="min-h-screen flex w-full bg-background">
       <DashboardSidebar />
       <main className="flex-1 flex flex-col">
-        <Header title={header?.title} actions={header?.actions} />
-        <div className="flex-1">
+        <Header title={header?.title || "Dashboard"} actions={header?.actions} />
+        <div className="flex-1 bg-muted/10">
           {children}
         </div>
       </main>
@@ -43,8 +43,11 @@ function DashboardContent({ children, header }: DashboardLayoutProps) {
 
 export function DashboardLayout({ children, header }: DashboardLayoutProps) {
   return (
-    <SidebarProvider>
-      <SEO title="Dashboard - CreditoHipotecar.io" />
+    <SidebarProvider defaultOpen={true}>
+      <SEO 
+        title="Dashboard - CreditoHipotecar.io"
+        description="Dashboard for CreditoHipotecar.io"
+      />
       <DashboardContent header={header}>
         {children}
       </DashboardContent>

@@ -27,9 +27,10 @@ import UpdatePassword from "./pages/update-password"
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // Data stays fresh for 5 minutes
-      cacheTime: 1000 * 60 * 30, // Cache persists for 30 minutes
-      refetchOnWindowFocus: true, // Refetch data when window regains focus
+      staleTime: 0, // Data is considered stale immediately
+      gcTime: 1000 * 60 * 5, // Cache for 5 minutes
+      refetchOnMount: true, // Refetch when component mounts
+      refetchOnWindowFocus: true, // Refetch when window regains focus
       refetchOnReconnect: true, // Refetch when reconnecting
       retry: 3, // Retry failed requests 3 times
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
@@ -39,13 +40,13 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <HelmetProvider>
-    <ThemeProvider defaultTheme="light" attribute="class">
+    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+        <BrowserRouter>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
               <Routes>
                 <Route path="/" element={<Auth />} />
                 <Route path="/coming-soon" element={<ComingSoon />} />
@@ -121,9 +122,9 @@ const App = () => (
                 <Route path="/test-extra-installments" element={<TestExtraInstallments />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </AuthProvider>
+            </TooltipProvider>
+          </AuthProvider>
+        </BrowserRouter>
       </QueryClientProvider>
     </ThemeProvider>
   </HelmetProvider>

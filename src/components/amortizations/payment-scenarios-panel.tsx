@@ -1,99 +1,87 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { formatCurrency, normalizeDate } from "@/lib/utils"
 import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
-
-interface PaymentDetails {
-  totalInterestAndInsurance: number
-  totalMonths: number
-  monthlyPayment: number
-}
+import { RegularScenarioPanel } from "./scenario-panels/regular-scenario-panel"
+import { AcceleratedScenarioPanel } from "./scenario-panels/accelerated-scenario-panel"
+import { LowerPaymentScenarioPanel } from "./scenario-panels/lower-payment-scenario-panel"
+import { NewRateScenarioPanel } from "./scenario-panels/new-rate-scenario-panel"
+import { supabase } from "@/integrations/supabase/client"
+import { useQuery } from "@tanstack/react-query"
 
 interface PaymentScenariosProps {
-  paymentDetails: {
-    regular: PaymentDetails
-    accelerated: PaymentDetails
-    lower: PaymentDetails
-    newRate: PaymentDetails
-  }
-  showMobileDetails?: boolean
-  onCloseMobilePanel?: () => void
-  onOpenMobilePanel?: () => void
-  currency: "USD" | "PEN"
-  loanAmount: number
-  annualInterestRate: number
-  termYears: number
-  installmentsPerYear?: 12 | 14
-  firstInstallmentDate?: Date
-  propertyInsurance?: number
-  loanProtection?: number
   amortizationId: string
+  currency: "USD" | "PEN"
 }
 
 export function PaymentScenariosPanel({
-  showMobileDetails,
-  onCloseMobilePanel,
-  onOpenMobilePanel,
-  currency,
-  loanAmount,
-  annualInterestRate,
-  termYears,
-  installmentsPerYear = 12,
-  firstInstallmentDate = new Date(),
-  propertyInsurance = 0,
-  loanProtection = 0,
-  amortizationId
+  amortizationId,
+  currency
 }: PaymentScenariosProps) {
   const { t } = useTranslation()
-  const [selectedScenario, setSelectedScenario] = useState("regular")
 
-  // Use the scenario calculations hook
-  const { data: scenarios, isLoading } = useScenarioCalculations({
-    amortizationId,
-    loanAmount,
-    interestRate: annualInterestRate,
-    termYears,
-    installmentsPerYear,
-    firstInstallmentDate,
-    propertyInsurance,
-    loanInsurance: loanProtection
+  // Fetch amortization data
+  const { data: amortization, isLoading: isLoadingAmortization } = useQuery({
+    queryKey: ["amortization", amortizationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("amortizations")
+        .select("*")
+        .eq("id", amortizationId)
+        .single()
+
+      if (error) throw error
+      return data
+    }
   })
 
-  // Memoize payment details based on scenarios
-  const paymentDetails = useMemo(() => {
-    if (!scenarios) return null
+  // Return early if amortization data is not loaded
+  if (isLoadingAmortization || !amortization) {
+    return (
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-6">{t('payment_scenarios.title')}</h2>
+        <div className="flex items-center justify-center h-48">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p className="mt-2 text-sm text-muted-foreground">{t('payment_scenarios.loading')}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
+  // Use the scenario calculations hook with amortization data
+  const { data: scenarios, isLoading: isLoadingScenarios } = useScenarioCalculations({
+    amortizationId,
+    loanAmount: amortization.loan_amount,
+    interestRate: amortization.interest_rate,
+    termYears: amortization.term_years,
+    installmentsPerYear: amortization.installments_per_year,
+    firstInstallmentDate: amortization.first_installment_date ? new Date(amortization.first_installment_date) : undefined,
+    propertyInsurance: amortization.property_insurance,
+    loanInsurance: amortization.loan_insurance
+  })
+
+  // Helper function to transform payment rows for ScenarioTable
+  const mapPaymentForTable = (payment: any) => {
+    const paymentDate = new Date(payment.payment_date);
+    const isDoublePaymentMonth = payment.is_double_payment;
+    
     return {
-      regular: {
-        totalInterestAndInsurance: scenarios.regular.summary.total_interest_and_insurance,
-        totalMonths: scenarios.regular.summary.total_months,
-        monthlyPayment: scenarios.regular.summary.monthly_payment
-      },
-      accelerated: {
-        totalInterestAndInsurance: scenarios.accelerated.summary.total_interest_and_insurance,
-        totalMonths: scenarios.accelerated.summary.total_months,
-        monthlyPayment: scenarios.accelerated.summary.monthly_payment
-      },
-      lower: {
-        totalInterestAndInsurance: scenarios.lower_payment.summary.total_interest_and_insurance,
-        totalMonths: scenarios.lower_payment.summary.total_months,
-        monthlyPayment: scenarios.lower_payment.summary.monthly_payment
-      },
-      newRate: {
-        totalInterestAndInsurance: scenarios.new_rate.summary.total_interest_and_insurance,
-        totalMonths: scenarios.new_rate.summary.total_months,
-        monthlyPayment: scenarios.new_rate.summary.monthly_payment
-      }
-    }
-  }, [scenarios])
-
-  const handleScenarioChange = (value: string) => {
-    setSelectedScenario(value)
+      date: paymentDate,
+      beginning_balance: payment.beginning_balance || 0,
+      capital: payment.principal || payment.capital || 0,
+      interest: payment.monthly_interest || payment.interest || 0,
+      property_insurance: payment.property_insurance || 0,
+      loan_insurance: payment.monthly_loan_insurance || payment.loan_insurance || 0,
+      monthly_payment: payment.monthly_payment || 0,
+      ending_balance: payment.ending_balance || 0,
+      is_different_from_base: payment.is_different_from_base || false,
+      is_double_payment: isDoublePaymentMonth
+    };
   }
 
   // Loading state
-  if (isLoading || !paymentDetails) {
+  if (isLoadingAmortization || isLoadingScenarios || !scenarios) {
     return (
       <div className="w-full p-6">
         <div className="flex items-center justify-center h-[200px]">
@@ -106,97 +94,42 @@ export function PaymentScenariosPanel({
     )
   }
 
-  const ScenarioSummary = ({ details }: { details: PaymentDetails }) => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <h3 className="text-sm font-medium text-muted-foreground">
-            {t("Sum Interest & Insurances")}
-          </h3>
-          <p className="text-2xl font-bold">
-            {formatCurrency(details.totalInterestAndInsurance, currency)}
-          </p>
-        </div>
-        <div>
-          <h3 className="text-sm font-medium text-muted-foreground">
-            {t("Months")}
-          </h3>
-          <p className="text-2xl font-bold">
-            {details.totalMonths}
-          </p>
-        </div>
-        <div>
-          <h3 className="text-sm font-medium text-muted-foreground">
-            {t("Monthly Payment")}
-          </h3>
-          <p className="text-2xl font-bold">
-            {formatCurrency(details.monthlyPayment, currency)}
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-  
   return (
     <div className="w-full p-6">
       <h2 className="text-lg font-semibold mb-4">{t("Payment Scenarios and Amortizations")}</h2>
       
-      <Tabs defaultValue="regular" className="w-full" onValueChange={handleScenarioChange}>
-        <TabsList className="grid w-full grid-cols-4 gap-1">
-          <TabsTrigger 
-            value="regular" 
-            className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3"
-          >
-            {t("Regular")}
-          </TabsTrigger>
-          <TabsTrigger 
-            value="accelerated" 
-            className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3"
-          >
-            {t("Accelerated")}
-          </TabsTrigger>
-          <TabsTrigger 
-            value="lower" 
-            className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3"
-          >
-            {t("Lower Payment")}
-          </TabsTrigger>
-          <TabsTrigger 
-            value="new-rate" 
-            className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3"
-          >
-            {t("New Rate")}
-          </TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <RegularScenarioPanel
+          scenario={scenarios.regular}
+          currency={currency}
+          installmentsPerYear={amortization.installments_per_year}
+          mapPaymentForTable={mapPaymentForTable}
+        />
 
-        <TabsContent value="regular" className="mt-4">
-          <p className="text-sm text-muted-foreground mb-4">
-            {t("Base mortgage with standard parameters.")}
-          </p>
-          <ScenarioSummary details={paymentDetails.regular} />
-        </TabsContent>
+        <AcceleratedScenarioPanel
+          scenario={scenarios.accelerated}
+          regularScenario={scenarios.regular}
+          currency={currency}
+          installmentsPerYear={amortization.installments_per_year}
+          mapPaymentForTable={mapPaymentForTable}
+        />
 
-        <TabsContent value="accelerated" className="mt-4">
-          <p className="text-sm text-muted-foreground mb-4">
-            {t("Accelerated payment schedule to reduce total interest.")}
-          </p>
-          <ScenarioSummary details={paymentDetails.accelerated} />
-        </TabsContent>
+        <LowerPaymentScenarioPanel
+          scenario={scenarios.lower_payment}
+          regularScenario={scenarios.regular}
+          currency={currency}
+          installmentsPerYear={amortization.installments_per_year}
+          mapPaymentForTable={mapPaymentForTable}
+        />
 
-        <TabsContent value="lower" className="mt-4">
-          <p className="text-sm text-muted-foreground mb-4">
-            {t("Extended term with lower monthly payments.")}
-          </p>
-          <ScenarioSummary details={paymentDetails.lower} />
-        </TabsContent>
-
-        <TabsContent value="new-rate" className="mt-4">
-          <p className="text-sm text-muted-foreground mb-4">
-            {t("Scenario with interest rate changes.")}
-          </p>
-          <ScenarioSummary details={paymentDetails.newRate} />
-        </TabsContent>
-      </Tabs>
+        <NewRateScenarioPanel
+          scenario={scenarios.new_rate}
+          regularScenario={scenarios.regular}
+          currency={currency}
+          installmentsPerYear={amortization.installments_per_year}
+          mapPaymentForTable={mapPaymentForTable}
+        />
+      </div>
     </div>
   )
 }

@@ -4,7 +4,7 @@ globs:
 alwaysApply: false
 ---
 # Coding pattern preferences
-
+- this is a Vite application, never change to Next.js
 – Always prefer simple solutions
 – Avoid duplication of code whenever possible, which means checking for other areas of the codebase that might already have similar code and functionality
 – Write code that takes into account the different environments: dev, test, and prod

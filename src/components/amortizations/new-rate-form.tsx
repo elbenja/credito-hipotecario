@@ -26,14 +26,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
+import { cn, formatDate, createLocalDate } from "@/lib/utils"
 import { newRateSchema, type NewRateFormValues } from "./new-rate-schema"
-import { createLocalDate } from "@/lib/utils"
 
 interface NewRateFormProps {
   amortizationId: string
   onSuccess?: () => void
   className?: string
+  firstInstallmentDate?: Date
 }
 
 interface RefinancingOption {
@@ -46,7 +46,8 @@ interface RefinancingOption {
 export function NewRateForm({
   amortizationId,
   onSuccess,
-  className
+  className,
+  firstInstallmentDate
 }: NewRateFormProps) {
   const { toast } = useToast()
   const { t } = useTranslation()
@@ -132,17 +133,6 @@ export function NewRateForm({
     }
   }
 
-  const form = useForm<NewRateFormValues>({
-    resolver: zodResolver(newRateSchema),
-    defaultValues: {
-      new_interest_rate: undefined,
-      effective_date: undefined,
-      new_term_years: null,
-    },
-  })
-
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
   // Get the date boundaries
   const lastWeek = startOfDay(subWeeks(new Date(), 1));
   const thirtyYearsFromNow = startOfDay(addYears(new Date(), 30));
@@ -152,29 +142,61 @@ export function NewRateForm({
   const endYear = thirtyYearsFromNow.getFullYear();
   const yearsRange = endYear - startYear + 1;
 
+  // Get the initial date based on priority
+  const getInitialDate = () => {
+    // 1. Last chronological date from refinancing options
+    if (refinancingOptions.length > 0) {
+      const lastDate = refinancingOptions
+        .map(option => createLocalDate(option.effective_date))
+        .sort((a, b) => b.getTime() - a.getTime())[0];
+      
+      return lastDate;
+    }
+    
+    // 2. First installment date if available
+    if (firstInstallmentDate) {
+      return createLocalDate(firstInstallmentDate.toISOString().split('T')[0]);
+    }
+    
+    // 3. Today's date as fallback
+    const today = new Date();
+    return createLocalDate(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`);
+  };
+
   // Function to determine if a date should be disabled
   const isDateDisabled = (date: Date) => {
-    const startOfDate = startOfDay(date);
+    const normalizedDate = createLocalDate(date.toISOString().split('T')[0]);
     return (
-      isBefore(startOfDate, lastWeek) || 
-      isAfter(startOfDate, thirtyYearsFromNow) ||
-      isSameDay(startOfDate, lastWeek) || 
-      isSameDay(startOfDate, thirtyYearsFromNow)
+      isBefore(normalizedDate, lastWeek) || 
+      isAfter(normalizedDate, thirtyYearsFromNow) ||
+      isSameDay(normalizedDate, lastWeek) || 
+      isSameDay(normalizedDate, thirtyYearsFromNow)
     );
   };
+
+  const form = useForm<NewRateFormValues>({
+    resolver: zodResolver(newRateSchema),
+    defaultValues: {
+      new_interest_rate: undefined,
+      effective_date: getInitialDate(),
+      new_term_years: null,
+    },
+  })
+
+  // Update the form's date when refinancingOptions changes
+  useEffect(() => {
+    const newDate = getInitialDate();
+    form.setValue("effective_date", newDate);
+  }, [refinancingOptions]);
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (values: NewRateFormValues) => {
     try {
       setIsSubmitting(true);
       
-      // Extract date components to create YYYY-MM-DD format without timezone issues
-      const date = values.effective_date;
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0'); // months are 0-indexed
-      const day = String(date.getDate()).padStart(2, '0');
-      
-      // Format as YYYY-MM-DD
-      const formattedDate = `${year}-${month}-${day}`;
+      // Use the date's ISO string to get YYYY-MM-DD format
+      const formattedDate = values.effective_date.toISOString().split('T')[0];
       
       const { data, error } = await supabase
         .from("new_rates")
@@ -309,6 +331,32 @@ export function NewRateForm({
                           "w-full justify-start text-left font-normal form-control-focus",
                           !field.value && "text-muted-foreground"
                         )}
+                        classNames={{
+                          caption: "text-sm font-medium",
+                          caption_label: "text-sm font-medium",
+                          nav: "space-x-1 flex items-center",
+                          nav_button: cn(
+                            "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+                          ),
+                          nav_button_previous: "absolute left-1",
+                          nav_button_next: "absolute right-1",
+                          table: "w-full border-collapse space-y-1",
+                          head_row: "flex",
+                          head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+                          row: "flex w-full mt-2",
+                          cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                          day: cn(
+                            "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+                          ),
+                          day_selected:
+                            "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                          day_today: "bg-accent text-accent-foreground",
+                          day_outside: "text-muted-foreground opacity-50",
+                          day_disabled: "text-muted-foreground opacity-50",
+                          day_range_middle:
+                            "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                          day_hidden: "invisible",
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -354,7 +402,7 @@ export function NewRateForm({
                   <td className="p-2 text-sm">{index + 1}</td>
                   <td className="p-2 text-sm">{option.new_interest_rate}%</td>
                   <td className="p-2 text-sm">{option.new_term_years ? t("payment_scenarios.new_rate_form.years", { value: option.new_term_years }) : t("payment_scenarios.new_rate_form.remaining")}</td>
-                  <td className="p-2 text-sm">{format(createLocalDate(option.effective_date), 'MMM dd, yyyy')}</td>
+                  <td className="p-2 text-sm">{formatDate(createLocalDate(option.effective_date))}</td>
                   <td className="p-2">
                     <Button
                       variant="ghost"

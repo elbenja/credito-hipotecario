@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
-import { addYears, subWeeks, startOfDay, isBefore, isAfter, isSameDay } from "date-fns";
+import { addYears, subYears, startOfDay, isBefore, isAfter, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import { useTranslation } from "react-i18next";
 
@@ -31,22 +31,22 @@ export default function Test() {
   });
 
   // Get the date boundaries
-  const lastWeek = startOfDay(subWeeks(new Date(), 1));
-  const thirtyYearsFromNow = startOfDay(addYears(new Date(), 30));
+  const fifteenYearsAgo = startOfDay(subYears(new Date(), 15));
+  const twentyYearsFromNow = startOfDay(addYears(new Date(), 20));
 
-  // Calculate years range from last week to 30 years ahead
-  const startYear = lastWeek.getFullYear();
-  const endYear = thirtyYearsFromNow.getFullYear();
+  // Calculate years range
+  const startYear = fifteenYearsAgo.getFullYear();
+  const endYear = twentyYearsFromNow.getFullYear();
   const yearsRange = endYear - startYear + 1;
 
   // Function to determine if a date should be disabled
   const isDateDisabled = (date: Date) => {
     const startOfDate = startOfDay(date);
     return (
-      isBefore(startOfDate, lastWeek) || 
-      isAfter(startOfDate, thirtyYearsFromNow) ||
-      isSameDay(startOfDate, lastWeek) || 
-      isSameDay(startOfDate, thirtyYearsFromNow)
+      isBefore(startOfDate, fifteenYearsAgo) || 
+      isAfter(startOfDate, twentyYearsFromNow) ||
+      isSameDay(startOfDate, fifteenYearsAgo) || 
+      isSameDay(startOfDate, twentyYearsFromNow)
     );
   };
 
