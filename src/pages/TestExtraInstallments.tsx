@@ -152,7 +152,10 @@ export default function TestExtraInstallments() {
       const { data: { user }, error } = await supabase.auth.getUser()
       
       if (error || !user) {
-        toast.error(t('please_login'))
+        toast({
+          variant: "destructive",
+          title: t('please_login')
+        })
         navigate('/')
         return
       }
@@ -164,20 +167,29 @@ export default function TestExtraInstallments() {
         .single()
 
       if (profileError) {
-        toast.error(t('error_fetching_profile'))
+        toast({
+          variant: "destructive",
+          title: t('error_fetching_profile')
+        })
         navigate('/')
         return
       }
 
       if (!profile.is_admin) {
-        toast.error(t('admin_only'))
+        toast({
+          variant: "destructive",
+          title: t('admin_only')
+        })
         navigate('/')
         return
       }
 
       setIsAdmin(true)
     } catch (error) {
-      toast.error(t('error_checking_admin'))
+      toast({
+        variant: "destructive",
+        title: t('error_checking_admin')
+      })
       navigate('/')
     }
   }
@@ -743,13 +755,17 @@ function ScenarioCalculationsSection({
     const isDoublePaymentMonth = formValues.installmentsPerYear === 14 && 
       (paymentDate.getMonth() === 6 || paymentDate.getMonth() === 11);
     
+    const capital = payment.principal || payment.capital || 0;
+    const interest = payment.monthly_interest || payment.interest || 0;
+    const loanInsurance = payment.monthly_loan_insurance || payment.loan_insurance || 0;
+    
     return {
       date: paymentDate,
       beginning_balance: payment.beginning_balance || 0,
-      capital: payment.principal || payment.capital || 0,
-      interest: payment.monthly_interest || payment.interest || 0,
+      capital,
+      interest,
       property_insurance: payment.property_insurance || 0,
-      loan_insurance: payment.monthly_loan_insurance || payment.loan_insurance || 0,
+      loan_insurance: loanInsurance,
       monthly_payment: payment.monthly_payment || 0,
       ending_balance: payment.ending_balance || 0,
       is_different_from_base: payment.is_different_from_base || false,

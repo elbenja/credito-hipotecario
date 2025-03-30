@@ -24,7 +24,7 @@ export interface Scenario {
 export interface BaseScenarioPanelProps {
   scenario?: Scenario
   regularScenario?: Scenario
-  currency: string
+  currency: "USD" | "PEN"
   installmentsPerYear: number
   mapPaymentForTable: (payment: PaymentRow) => any
 } 

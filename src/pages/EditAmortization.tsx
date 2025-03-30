@@ -20,6 +20,14 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { amortizationFormSchema, type AmortizationFormValues } from "@/components/amortizations/schema"
 import { useToast } from "@/components/ui/use-toast"
 import { createLocalDate } from "@/lib/utils"
+import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
+import { 
+  RegularPanelGraph,
+  AcceleratedPanelGraph,
+  LowerPaymentPanelGraph,
+  NewRatePanelGraph 
+} from '@/components/amortizations/scenario-panels/graph-panels'
+import { useMemo, useCallback } from "react"
 
 export default function EditAmortization() {
   const { t } = useTranslation()
@@ -50,7 +58,7 @@ export default function EditAmortization() {
           loan_protection_type,
           loan_protection_insurance,
           loan_amount,
-          property:properties (
+          property:properties!inner (
             id,
             name,
             description,
@@ -82,11 +90,64 @@ export default function EditAmortization() {
 
       return {
         ...data,
-        property: data.property as Property
+        property: {
+          id: data.property.id,
+          name: data.property.name,
+          description: data.property.description,
+          currency: data.property.currency,
+          price_cost: data.property.price_cost,
+          is_first_home: data.property.is_first_home,
+          is_sustainable: data.property.is_sustainable,
+          property_insurance: data.property.property_insurance,
+          property_insurance_type: data.property.property_insurance_type
+        } as Property
       }
     },
     enabled: !!user && !!id
   })
+
+  // Memoize the scenario calculation inputs to prevent unnecessary recalculations
+  const scenarioInputs = useMemo(() => ({
+    amortizationId: id || "",
+    loanAmount: amortization?.loan_amount || 0,
+    interestRate: amortization?.interest_rate || 0,
+    termYears: amortization?.term_years || 0,
+    installmentsPerYear: amortization?.installments_per_year || 12,
+    firstInstallmentDate: amortization?.first_installment_date ? new Date(amortization.first_installment_date) : undefined,
+    propertyInsurance: amortization?.property?.property_insurance || 0,
+    loanInsurance: amortization?.loan_protection_insurance || 0
+  }), [
+    id,
+    amortization?.loan_amount,
+    amortization?.interest_rate,
+    amortization?.term_years,
+    amortization?.installments_per_year,
+    amortization?.first_installment_date,
+    amortization?.property?.property_insurance,
+    amortization?.loan_protection_insurance
+  ])
+
+  const { data: scenarios } = useScenarioCalculations(scenarioInputs)
+
+  // Helper function to transform payment rows for ScenarioTable
+  const mapPaymentForTable = useCallback((payment: any) => {
+    const paymentDate = new Date(payment.payment_date)
+    const isDoublePaymentMonth = amortization?.installments_per_year === 14 && 
+      (paymentDate.getMonth() === 6 || paymentDate.getMonth() === 11)
+    
+    return {
+      date: paymentDate,
+      beginning_balance: payment.beginning_balance || 0,
+      capital: payment.principal || payment.capital || 0,
+      interest: payment.monthly_interest || payment.interest || 0,
+      property_insurance: payment.property_insurance || 0,
+      loan_insurance: payment.monthly_loan_insurance || payment.loan_insurance || 0,
+      monthly_payment: payment.monthly_payment || 0,
+      ending_balance: payment.ending_balance || 0,
+      is_different_from_base: payment.is_different_from_base || false,
+      is_double_payment: isDoublePaymentMonth
+    }
+  }, [amortization?.installments_per_year])
 
   const onUpdateAmortization = async (values: AmortizationFormValues) => {
     try {
@@ -287,7 +348,45 @@ export default function EditAmortization() {
 
           {/* Right Container */}
           <div className="flex-1 px-8 pt-6">
-            <h2>{t("right_container_content")}</h2>
+            <h2 className="text-2xl font-bold mb-6">{t("payment_scenarios_graphs")}</h2>
+            {!amortization || !scenarios ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-muted-foreground">{t("loading")}</div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <RegularPanelGraph
+                  scenario={scenarios.regular}
+                  currency={amortization.property.currency}
+                  installmentsPerYear={amortization.installments_per_year}
+                  mapPaymentForTable={mapPaymentForTable}
+                />
+
+                <AcceleratedPanelGraph
+                  scenario={scenarios.accelerated}
+                  regularScenario={scenarios.regular}
+                  currency={amortization.property.currency}
+                  installmentsPerYear={amortization.installments_per_year}
+                  mapPaymentForTable={mapPaymentForTable}
+                />
+
+                <LowerPaymentPanelGraph
+                  scenario={scenarios.lower_payment}
+                  regularScenario={scenarios.regular}
+                  currency={amortization.property.currency}
+                  installmentsPerYear={amortization.installments_per_year}
+                  mapPaymentForTable={mapPaymentForTable}
+                />
+
+                <NewRatePanelGraph
+                  scenario={scenarios.new_rate}
+                  regularScenario={scenarios.regular}
+                  currency={amortization.property.currency}
+                  installmentsPerYear={amortization.installments_per_year}
+                  mapPaymentForTable={mapPaymentForTable}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
