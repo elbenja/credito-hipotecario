@@ -328,8 +328,8 @@ export default function EditAmortization() {
 
             {amortization && (
               <div className="mt-8">
-                <h2 className="text-2xl font-bold mb-6">{t("amortization_details")}</h2>
-                <div className="p-6 border rounded-lg">
+                
+                <div className="p-6  ">
                   <AmortizationDetailsForm
                     form={amortizationForm}
                     selectedProperty={amortization.property}
