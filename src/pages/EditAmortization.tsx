@@ -328,9 +328,9 @@ export default function EditAmortization() {
               property={amortization.property}
               onPropertyUpdate={handlePropertyUpdate}
             />
-
+            <Separator className="my-2" />
             {amortization && (
-              <div className="mt-8">
+              <div >
                 
                 <div className="p-6  ">
                   <AmortizationDetailsForm

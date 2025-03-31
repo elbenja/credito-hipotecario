@@ -225,23 +225,23 @@ export function PropertyDisplay({
         </Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-1">
-        <div>
+      <div className="grid grid-cols-7 gap-1">
+        <div className="col-span-3">
           <Label className="text-xs font-normal">Cost</Label>
-          <div className="text-xs font-medium">
+          <div className="text-sm font-medium">
             {formatCurrency(cost, currentProperty.currency)}
           </div>
         </div>
-        <div>
+        <div className="col-span-2">
         <Label className="text-xs font-normal">Bonus</Label>
-          <div className="text-xs font-medium">
+          <div className="text-sm font-medium">
             {bonus ? formatCurrency(bonus, currentProperty.currency) : "None"}
           </div>
         </div>
 
-        <div>
+        <div className="col-span-2">
         <Label className="text-xs font-normal">Insurance</Label>
-          <div className="text-xs font-medium">
+          <div className="text-sm font-medium">
             {currentProperty.property_insurance !== null
               ? formatCurrency(currentProperty.property_insurance, currentProperty.currency)
               : "None"}
