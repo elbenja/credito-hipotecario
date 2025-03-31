@@ -64,20 +64,20 @@ export interface RateChange {
  */
 export interface PaymentRow {
   payment_date: Date
-  beginning_balance: number
-  monthly_payment: number
-  monthly_interest: number
+  capital: number
+  interest: number
   property_insurance: number
-  monthly_loan_insurance: number
-  principal: number
-  ending_balance: number
+  loan_insurance: number
+  monthly_payment: number
   is_different_from_base: boolean
+  beginning_balance?: number
+  ending_balance?: number
 }
 
 /**
  * Summary of a payment scenario
  */
-export interface ScenarioSummary {
+export interface ScenarioSummaryResult {
   total_interest_and_insurance: number
   total_months: number
   monthly_payment: number
@@ -86,17 +86,17 @@ export interface ScenarioSummary {
 /**
  * Complete scenario with summary and payment schedule
  */
-export interface Scenario {
-  summary: ScenarioSummary
+export interface ScenarioResult {
+  summary: ScenarioSummaryResult
   payments: PaymentRow[]
 }
 
 /**
  * Collection of all possible scenarios
  */
-export interface Scenarios {
-  regular?: Scenario
-  accelerated?: Scenario
-  lower_payment?: Scenario
-  new_rate?: Scenario
+export type Scenarios = {
+  regular: ScenarioResult
+  accelerated: ScenarioResult
+  lower_payment: ScenarioResult
+  new_rate: ScenarioResult
 } 

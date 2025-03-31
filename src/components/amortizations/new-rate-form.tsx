@@ -331,7 +331,7 @@ export function NewRateForm({
                           "w-full justify-start text-left font-normal form-control-focus",
                           !field.value && "text-muted-foreground"
                         )}
-                        classnames={{
+                        classNames={{
                           caption: "text-sm font-medium",
                           caption_label: "text-sm font-medium",
                           nav: "space-x-1 flex items-center",

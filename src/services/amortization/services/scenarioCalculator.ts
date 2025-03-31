@@ -1,6 +1,6 @@
 import { GoalSeekService } from "./goalSeek"
 import { FixedPaymentsService } from "./fixedPayments"
-import type { Scenarios, ScenarioSummary, PaymentRow } from "../types/common"
+import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios } from "../types/common"
 import { normalizeDate } from "@/lib/utils"
 
 interface ExtraInstallment {
@@ -53,15 +53,7 @@ export class ScenarioCalculator {
       rate_changes = []
     } = input
 
-    console.log('🔍 ScenarioCalculator Input Values:', {
-      loan_amount,
-      interest_rate,
-      term_years,
-      installments_per_year,
-      property_insurance,
-      loan_insurance,
-      first_installment_date: first_installment_date.toISOString()
-    });
+
 
     // Normalize the first installment date
     const normalizedFirstInstallmentDate = first_installment_date ? normalizeDate(first_installment_date) : normalizeDate(new Date());
@@ -673,7 +665,7 @@ export class ScenarioCalculator {
   /**
    * Calculate summary statistics for a payment schedule
    */
-  private static calculateSummary(payments: PaymentRow[], originalTotalMonths?: number): ScenarioSummary {
+  private static calculateSummary(payments: PaymentRow[], originalTotalMonths?: number): ScenarioSummaryResult {
     const totalInterestAndInsurance = payments.reduce(
       (sum, payment) => 
         sum + payment.monthly_interest + payment.property_insurance + payment.monthly_loan_insurance,

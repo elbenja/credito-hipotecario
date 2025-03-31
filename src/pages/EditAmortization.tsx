@@ -126,11 +126,12 @@ export default function EditAmortization() {
 
   // Helper function to transform payment rows for ScenarioTable
   const mapPaymentForTable = useCallback((payment: any) => {
+    console.log('Raw payment data:', payment);
     const paymentDate = new Date(payment.payment_date)
     const isDoublePaymentMonth = amortization?.installments_per_year === 14 && 
       (paymentDate.getMonth() === 6 || paymentDate.getMonth() === 11)
     
-    return {
+    const mappedPayment = {
       date: paymentDate,
       beginning_balance: payment.beginning_balance || 0,
       capital: payment.principal || payment.capital || 0,
@@ -141,7 +142,9 @@ export default function EditAmortization() {
       ending_balance: payment.ending_balance || 0,
       is_different_from_base: payment.is_different_from_base || false,
       is_double_payment: isDoublePaymentMonth
-    }
+    };
+    console.log('Mapped payment data:', mappedPayment);
+    return mappedPayment;
   }, [amortization?.installments_per_year])
 
   const onUpdateAmortization = async (values: AmortizationFormValues) => {
@@ -350,13 +353,14 @@ export default function EditAmortization() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-2">
+              
                 <RegularPanelGraph
                   scenario={scenarios.regular}
                   currency={amortization.property.currency}
                   installmentsPerYear={amortization.installments_per_year}
                 />
 
-                <AcceleratedPanelGraph
+                {/* <AcceleratedPanelGraph
                   scenario={scenarios.accelerated}
                   regularScenario={scenarios.regular}
                   currency={amortization.property.currency}
@@ -375,7 +379,7 @@ export default function EditAmortization() {
                   regularScenario={scenarios.regular}
                   currency={amortization.property.currency}
                   installmentsPerYear={amortization.installments_per_year}
-                />
+                /> */}
               </div>
             )}
 

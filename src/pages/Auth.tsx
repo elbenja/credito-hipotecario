@@ -21,14 +21,16 @@ export default function Auth() {
     }
   }, [user, loading, navigate])
 
-  // Show nothing while loading
-  if (loading) {
-    return null
-  }
-
-  // If we have a user, show nothing while redirecting
-  if (user) {
-    return null
+  // Show loading state
+  if (loading || user) {
+    return (
+      <div className="flex min-h-svh items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-sm text-muted-foreground">{t("loading")}</p>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -4,6 +4,8 @@ import type { Database } from "@/types/supabase"
 import { normalizeDate } from "@/lib/utils"
 
 // Other imports for GoalSeekService x
+// deprecated ts 
+
 import { GoalSeekService } from "../services/goalSeek"
 
 export type ScenarioType = Database['public']['Enums']['scenario_type']
@@ -336,6 +338,13 @@ export class ScenarioCalculator {
     payments: PaymentRow[]
   }> {
     console.warn('⚠️ Deprecated calculateScenario called from calculations/scenario-calculator.ts');
+    console.log('Calculating scenario with inputs:', {
+      amortization,
+      extraInstallments,
+      rateChanges,
+      scenarioType
+    });
+
     const totalMonths = amortization.term_years * 12
     
     // Ensure correct date handling for first installment date
@@ -679,21 +688,40 @@ export class ScenarioCalculator {
       }
     }
 
+    // After calculating payments
+    console.log('Calculated payments before mapping:', payments);
+    
+    payments = payments.map(payment => {
+      const mappedPayment = {
+        payment_date: payment.payment_date,
+        capital: payment.capital || 0,
+        interest: payment.interest || 0,
+        property_insurance: payment.property_insurance || 0,
+        loan_insurance: payment.loan_insurance || 0,
+        monthly_payment: payment.monthly_payment || 0,
+        is_different_from_base: payment.is_different_from_base || false
+      };
+      console.log('Mapped payment:', mappedPayment);
+      return mappedPayment;
+    });
+
     // Calculate summary
     const totalInterest = payments.reduce((sum, payment) => sum + payment.interest, 0)
     const totalInsurance = payments.reduce((sum, payment) => 
       sum + payment.property_insurance + payment.loan_insurance, 0)
 
-    return {
+    const result = {
       summary: {
         total_interest_and_insurance: totalInterest + totalInsurance,
-        // For new_rate scenario, always use actual payment count
         total_months: scenarioType === 'new_rate' ? payments.length : 
           (scenarioType === 'accelerated' ? payments.length : totalMonths),
         monthly_payment: payments[0].monthly_payment
       },
       payments
-    }
+    };
+    
+    console.log('Final scenario result:', result);
+    return result;
   }
 
   private async cleanupExistingScenarios(amortizationId: string): Promise<void> {

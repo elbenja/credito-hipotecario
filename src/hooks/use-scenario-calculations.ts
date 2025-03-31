@@ -5,18 +5,9 @@ import { useDebounce } from "./use-debounce"
 import { ScenarioCalculator } from "@/services/amortization/services/scenarioCalculator"
 import type { Database } from "@/types/supabase"
 import { addMonths, startOfMonth } from "date-fns"
+import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios } from "@/services/amortization/types/common"
 
 type ScenarioType = Database["public"]["Enums"]["scenario_type"]
-
-interface PaymentRow {
-  payment_date: Date
-  capital: number
-  interest: number
-  property_insurance: number
-  loan_insurance: number
-  monthly_payment: number
-  is_different_from_base: boolean
-}
 
 interface ExtraInstallment {
   id: string
@@ -40,17 +31,6 @@ interface AmortizationInput {
   first_installment_date: Date
   property_insurance: number
   loan_insurance: number
-}
-
-interface ScenarioSummaryResult {
-  total_interest_and_insurance: number
-  total_months: number
-  monthly_payment: number
-}
-
-interface ScenarioResult {
-  summary: ScenarioSummaryResult
-  payments: PaymentRow[]
 }
 
 export interface UseScenarioCalculationsProps {
@@ -133,6 +113,7 @@ export function useScenarioCalculations({
       debouncedLoanInsurance
     ],
     queryFn: async () => {
+
       // Fetch extra installments and rate changes from Supabase
       const [extraInstallmentsResult, newRatesResult] = await Promise.all([
         supabase
@@ -149,6 +130,8 @@ export function useScenarioCalculations({
 
       if (extraInstallmentsResult.error) throw extraInstallmentsResult.error
       if (newRatesResult.error) throw newRatesResult.error
+
+
 
       // Improved handling of extra installments to preserve exact dates
       const extraInstallments = extraInstallmentsResult.data.map(ei => {
@@ -230,6 +213,8 @@ export function useScenarioCalculations({
         rate_changes: rateChanges
       })
 
+    
+
       // If there are no rate changes, the new_rate scenario should be the same as regular
       const hasNewRates = rateChanges && rateChanges.length > 0
       const newRateScenario = hasNewRates && scenarios.new_rate?.summary && 
@@ -238,17 +223,20 @@ export function useScenarioCalculations({
           ? scenarios.new_rate
           : scenarios.regular
 
-      return {
+      const result = {
         regular: scenarios.regular,
         accelerated: scenarios.accelerated,
         lower_payment: scenarios.lower_payment,
         new_rate: newRateScenario
-      }
+      };
+
+
+      return result;
     },
-    staleTime: 0, // Consider data as stale immediately
-    gcTime: 0, // Don't cache the data
-    refetchOnMount: true, // Refetch when component mounts
-    refetchOnWindowFocus: true, // Refetch when window regains focus
-    enabled: !!amortizationId // Only run query when we have an amortization ID
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    enabled: !!amortizationId
   })
 } 

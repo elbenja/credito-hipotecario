@@ -1,18 +1,12 @@
 import React from "react"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts"
+import { ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart"
+import { format } from "date-fns"
+import { PaymentRow, ScenarioResult } from "@/services/amortization/types/common"
 
 type Currency = "USD" | "PEN"
-
-interface PaymentRow {
-  payment_date: Date
-  capital: number
-  interest: number
-  property_insurance: number
-  loan_insurance: number
-  monthly_payment: number
-  is_different_from_base: boolean
-}
 
 interface ScenarioSummaryResult {
   total_interest_and_insurance: number
@@ -20,16 +14,42 @@ interface ScenarioSummaryResult {
   monthly_payment: number
 }
 
-interface ScenarioResult {
-  summary: ScenarioSummaryResult
-  payments: PaymentRow[]
-}
-
 interface ScenarioPanelProps {
   scenario: ScenarioResult | undefined
   regularScenario?: ScenarioResult | undefined
   currency: string
   installmentsPerYear: number
+}
+
+const chartConfig = {
+  principal: {
+    label: "Principal",
+    color: "hsl(var(--chart-1))",
+  },
+  interest_insurance: {
+    label: "Interest & Insurance",
+    color: "hsl(var(--chart-2))",
+  },
+} satisfies ChartConfig
+
+const transformPaymentsToChartData = (payments: PaymentRow[]) => {
+
+  
+  return payments.map((payment) => {
+    // Calculate total interest and insurances
+    const totalInterestAndInsurances = (payment.monthly_interest || payment.interest || 0) + 
+                                     (payment.property_insurance || 0) + 
+                                     (payment.monthly_loan_insurance || payment.loan_insurance || 0)
+
+    const transformedData = {
+      date: payment.payment_date,
+      principal: payment.principal || payment.capital || 0,
+      interest_insurance: totalInterestAndInsurances,
+    }
+    
+  
+    return transformedData
+  })
 }
 
 const ScenarioPanel = ({ 
@@ -40,6 +60,12 @@ const ScenarioPanel = ({
   showBaseline = false
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
   if (!scenario?.summary) return null
+
+  console.log('Scenario data:', {
+    title,
+    summary: scenario.summary,
+    paymentsCount: scenario.payments?.length
+  })
 
   const getDifference = (current: number, base?: number) => {
     if (!base) return null
@@ -75,6 +101,11 @@ const ScenarioPanel = ({
   const paymentDifference = getDifference(
     scenario.summary.monthly_payment,
     regularScenario?.summary?.monthly_payment
+  )
+
+  const chartData = React.useMemo(() => 
+    transformPaymentsToChartData(scenario.payments),
+    [scenario.payments]
   )
 
   return (
@@ -118,6 +149,78 @@ const ScenarioPanel = ({
               </Badge>
             )}
           </div>
+        </div>
+
+        <div className="h-[300px] w-full mt-6">
+          <ChartContainer config={chartConfig}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={chartData}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="principal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="interest" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis 
+                  dataKey="date"
+                  tickFormatter={(value) => format(new Date(value), 'MMM yyyy')}
+                  className="text-muted-foreground text-xs"
+                />
+                <YAxis 
+                  tickFormatter={(value) => formatCurrency(Number(value || 0), currency as Currency)}
+                  className="text-muted-foreground text-xs"
+                />
+                <ChartTooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null
+                    return (
+                      <div className="rounded-lg border bg-background p-2 shadow-sm">
+                        <div className="text-sm font-medium mb-2">
+                          {format(new Date(label), 'MMM yyyy')}
+                        </div>
+                        {payload.map((entry) => (
+                          <div key={entry.name} className="flex items-center gap-2 text-sm">
+                            <div 
+                              className="h-2 w-2 rounded-full"
+                              style={{ backgroundColor: entry.color }}
+                            />
+                            <span className="text-muted-foreground">
+                              {chartConfig[entry.name as keyof typeof chartConfig].label}:
+                            </span>
+                            <span className="font-medium">
+                              {formatCurrency(Number(entry.value || 0), currency as Currency)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="principal"
+                  stroke="hsl(var(--chart-1))"
+                  fillOpacity={1}
+                  fill="url(#principal)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="interest_insurance"
+                  stroke="hsl(var(--chart-2))"
+                  fillOpacity={1}
+                  fill="url(#interest)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartContainer>
         </div>
       </div>
     </div>
