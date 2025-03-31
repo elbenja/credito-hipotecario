@@ -87,9 +87,9 @@ const ScenarioPanel = ({
           <div className="flex items-center gap-2">
             <span>{formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}</span>
             {showBaseline ? (
-              <Badge variant="primary">Baseline</Badge>
+              <Badge variant="primary" className="text-sm">Baseline</Badge>
             ) : sumDifference && (
-              <Badge variant={getBadgeVariant(sumDifference)} className="text-green-600">
+              <Badge variant={getBadgeVariant(sumDifference)} className="text-sm text-green-600">
                 {sumDifference < 0 ? '-' : '+'}{formatCurrency(Math.abs(sumDifference), currency as Currency)}
               </Badge>
             )}
@@ -101,7 +101,7 @@ const ScenarioPanel = ({
           <div className="flex items-center gap-2">
             <span>{scenario.summary.total_months}</span>
             {monthsDifference && !showBaseline && (
-              <Badge variant={getBadgeVariant(monthsDifference, true)}>
+              <Badge variant={getBadgeVariant(monthsDifference, true)} className="text-sm">
                 {formatDifference(monthsDifference)}
               </Badge>
             )}
@@ -113,7 +113,7 @@ const ScenarioPanel = ({
           <div className="flex items-center gap-2">
             <span>{formatCurrency(scenario.summary.monthly_payment, currency as Currency)}</span>
             {paymentDifference && !showBaseline && (
-              <Badge variant={getBadgeVariant(paymentDifference)}>
+              <Badge variant={getBadgeVariant(paymentDifference)} className="text-sm">
                 {paymentDifference < 0 ? '-' : '+'}{formatCurrency(Math.abs(paymentDifference), currency as Currency)}
               </Badge>
             )}

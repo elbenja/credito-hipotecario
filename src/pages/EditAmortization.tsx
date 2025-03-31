@@ -1,6 +1,6 @@
 import { useNavigate, useParams, Link } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
@@ -26,7 +26,9 @@ import {
   AcceleratedPanelGraph,
   LowerPaymentPanelGraph,
   NewRatePanelGraph 
-} from '@/components/amortizations/scenario-panels/graph-panels.tsx'
+} from '@/components/amortizations/scenario-panels/graph-panels'
+import { ExtraInstallmentsSection } from '@/components/amortizations/extra-installments-section'
+import { NewRateForm } from '@/components/amortizations/new-rate-form'
 import { useMemo, useCallback } from "react"
 
 export default function EditAmortization() {
@@ -35,6 +37,7 @@ export default function EditAmortization() {
   const { id } = useParams()
   const { user } = useAuth()
   const { toast } = useToast()
+  const queryClient = useQueryClient()
 
   const amortizationForm = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
@@ -346,7 +349,7 @@ export default function EditAmortization() {
                 <div className="text-muted-foreground">{t("loading")}</div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6">
+              <div className="grid grid-cols-1 gap-2">
                 <RegularPanelGraph
                   scenario={scenarios.regular}
                   currency={amortization.property.currency}
@@ -375,6 +378,32 @@ export default function EditAmortization() {
                 />
               </div>
             )}
+
+            <div className="mt-8">
+              <ExtraInstallmentsSection
+                amortizationId={id || ""}
+                currency={amortization.property.currency}
+                loanAmount={amortization.loan_amount}
+                onInstallmentsChange={() => {
+                  queryClient.invalidateQueries({
+                    queryKey: ["scenarios", id]
+                  })
+                }}
+              />
+            </div>
+
+            <div className="mt-8">
+              <NewRateForm
+                amortizationId={id || ""}
+                onSuccess={() => {
+                  queryClient.invalidateQueries({
+                    queryKey: ["scenarios", id]
+                  })
+                }}
+                className="space-y-4"
+                firstInstallmentDate={amortization.first_installment_date ? new Date(amortization.first_installment_date) : undefined}
+              />
+            </div>
           </div>
         </div>
       </div>
