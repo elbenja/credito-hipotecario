@@ -360,7 +360,7 @@ export default function EditAmortization() {
                   installmentsPerYear={amortization.installments_per_year}
                 />
 
-                {/* <AcceleratedPanelGraph
+                <AcceleratedPanelGraph
                   scenario={scenarios.accelerated}
                   regularScenario={scenarios.regular}
                   currency={amortization.property.currency}
@@ -379,7 +379,7 @@ export default function EditAmortization() {
                   regularScenario={scenarios.regular}
                   currency={amortization.property.currency}
                   installmentsPerYear={amortization.installments_per_year}
-                /> */}
+                />
               </div>
             )}
 
