@@ -26,7 +26,7 @@ import {
   AcceleratedPanelGraph,
   LowerPaymentPanelGraph,
   NewRatePanelGraph 
-} from '@/components/amortizations/scenario-panels/graph-panels'
+} from '@/components/amortizations/scenario-panels/graph-panels.tsx'
 import { useMemo, useCallback } from "react"
 
 export default function EditAmortization() {
@@ -88,19 +88,11 @@ export default function EditAmortization() {
         loan_protection_insurance: data.loan_protection_insurance?.toString() || "",
       })
 
+      const property = data.property as unknown as Property
+
       return {
         ...data,
-        property: {
-          id: data.property.id,
-          name: data.property.name,
-          description: data.property.description,
-          currency: data.property.currency,
-          price_cost: data.property.price_cost,
-          is_first_home: data.property.is_first_home,
-          is_sustainable: data.property.is_sustainable,
-          property_insurance: data.property.property_insurance,
-          property_insurance_type: data.property.property_insurance_type
-        } as Property
+        property
       }
     },
     enabled: !!user && !!id
@@ -354,12 +346,11 @@ export default function EditAmortization() {
                 <div className="text-muted-foreground">{t("loading")}</div>
               </div>
             ) : (
-              <div className="grid grid-cols-1  gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 <RegularPanelGraph
                   scenario={scenarios.regular}
                   currency={amortization.property.currency}
                   installmentsPerYear={amortization.installments_per_year}
-                  mapPaymentForTable={mapPaymentForTable}
                 />
 
                 <AcceleratedPanelGraph
@@ -367,7 +358,6 @@ export default function EditAmortization() {
                   regularScenario={scenarios.regular}
                   currency={amortization.property.currency}
                   installmentsPerYear={amortization.installments_per_year}
-                  mapPaymentForTable={mapPaymentForTable}
                 />
 
                 <LowerPaymentPanelGraph
@@ -375,7 +365,6 @@ export default function EditAmortization() {
                   regularScenario={scenarios.regular}
                   currency={amortization.property.currency}
                   installmentsPerYear={amortization.installments_per_year}
-                  mapPaymentForTable={mapPaymentForTable}
                 />
 
                 <NewRatePanelGraph
@@ -383,7 +372,6 @@ export default function EditAmortization() {
                   regularScenario={scenarios.regular}
                   currency={amortization.property.currency}
                   installmentsPerYear={amortization.installments_per_year}
-                  mapPaymentForTable={mapPaymentForTable}
                 />
               </div>
             )}
