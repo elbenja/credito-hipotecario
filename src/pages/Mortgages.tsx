@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react"
+import { Plus, MoreVertical, Copy, Trash } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
@@ -14,9 +14,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { formatCurrency } from "@/lib/utils"
 import { SEO } from "@/components/seo"
 import { useTranslation } from "react-i18next"
+import { useToast } from "@/components/ui/use-toast"
+import { useQueryClient } from "@tanstack/react-query"
 
 type Property = {
   id: string
@@ -44,6 +52,8 @@ export default function Mortgages() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { t } = useTranslation()
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
 
   const { data: propertiesWithAmortizations, isLoading } = useQuery({
     queryKey: ["properties-with-amortizations", user?.id],
@@ -52,7 +62,7 @@ export default function Mortgages() {
 
       const { data: properties, error: propertiesError } = await supabase
         .from("properties")
-        .select("*")
+        .select("*, amortizations(*)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
 
@@ -65,6 +75,67 @@ export default function Mortgages() {
     },
     enabled: !!user,
   })
+
+  const handleDuplicate = async (e: React.MouseEvent, amortization: Amortization) => {
+    e.stopPropagation()
+    try {
+      const duplicatedAmortization = {
+        ...amortization,
+        name: `${amortization.name} (${t('copy')})`,
+      }
+      delete (duplicatedAmortization as any).id
+
+      const { data, error } = await supabase
+        .from("amortizations")
+        .insert(duplicatedAmortization)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      toast({
+        title: t('success'),
+        description: t('amortization_duplicated'),
+      })
+
+      // Refresh the data
+      queryClient.invalidateQueries({ queryKey: ["properties-with-amortizations"] })
+    } catch (error) {
+      console.error("Error duplicating amortization:", error)
+      toast({
+        variant: "destructive",
+        title: t('error'),
+        description: t('error_duplicating_amortization'),
+      })
+    }
+  }
+
+  const handleDelete = async (e: React.MouseEvent, amortization: Amortization) => {
+    e.stopPropagation()
+    try {
+      const { error } = await supabase
+        .from("amortizations")
+        .delete()
+        .eq('id', amortization.id)
+
+      if (error) throw error
+
+      toast({
+        title: t('success'),
+        description: t('amortization_deleted'),
+      })
+
+      // Refresh the data
+      queryClient.invalidateQueries({ queryKey: ["properties-with-amortizations"] })
+    } catch (error) {
+      console.error("Error deleting amortization:", error)
+      toast({
+        variant: "destructive",
+        title: t('error'),
+        description: t('error_deleting_amortization'),
+      })
+    }
+  }
 
   const headerActions = (
     <Button onClick={() => navigate("/mortgages/new")}>
@@ -116,6 +187,7 @@ export default function Mortgages() {
                     <TableHead className="w-[10%]">{t('monthly_payment')}</TableHead>
                     <TableHead className="w-[10%]">{t('total_interest')}</TableHead>
                     <TableHead className="w-[10%]">{t('total_payment')}</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -143,6 +215,30 @@ export default function Mortgages() {
                       </TableCell>
                       <TableCell className="w-[10%]">
                         {formatCurrency(amortization.total_payment, property.currency)}
+                      </TableCell>
+                      <TableCell className="w-[50px]">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            className="flex h-8 w-8 items-center justify-center rounded-md border transition-colors hover:bg-muted"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                            <span className="sr-only">{t('open_menu')}</span>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => handleDuplicate(e, amortization)}>
+                              <Copy className="mr-2 h-4 w-4" />
+                              <span>{t('duplicate')}</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={(e) => handleDelete(e, amortization)}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Trash className="mr-2 h-4 w-4" />
+                              <span>{t('delete')}</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}

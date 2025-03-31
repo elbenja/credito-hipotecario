@@ -107,10 +107,14 @@ export default function Properties() {
     setOpen(true)
   }
 
-  const handlePropertyUpdate = (updatedProperty: Property) => {
-    setProperties(properties.map(p => 
-      p.id === updatedProperty.id ? updatedProperty : p
-    ))
+  const handlePropertyUpdate = (updatedProperty: Property, isDelete: boolean = false) => {
+    if (isDelete) {
+      setProperties(properties.filter(p => p.id !== updatedProperty.id))
+    } else {
+      setProperties(properties.map(p => 
+        p.id === updatedProperty.id ? updatedProperty : p
+      ))
+    }
   }
 
   const handleAddNewClick = () => {

@@ -7,10 +7,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useToast } from "@/components/ui/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useTranslation } from "react-i18next"
+import { MoreVertical, Copy, Trash } from "lucide-react"
+import { useAuth } from "@/context/auth-context"
 
 type Property = {
   id: string
@@ -35,7 +43,7 @@ type PropertyListProps = {
   properties: Property[]
   bonusRules: BonusRule[]
   onPropertySelect: (property: Property) => void
-  onPropertyUpdate: (updatedProperty: Property) => void
+  onPropertyUpdate: (updatedProperty: Property, isDelete?: boolean) => void
   sortConfig: {
     key: keyof Property;
     direction: 'asc' | 'desc';
@@ -65,6 +73,7 @@ export function PropertyList({
   const { t } = useTranslation()
   const { toast } = useToast()
   const { data: exchangeRate } = useExchangeRate()
+  const { user } = useAuth()
 
   const convertToPEN = (amount: number, currency: string): number => {
     if (currency === 'PEN') return amount
@@ -94,6 +103,70 @@ export function PropertyList({
     return null
   }
 
+  const handleDuplicate = async (e: React.MouseEvent, property: Property) => {
+    e.stopPropagation()
+    try {
+      if (!user) throw new Error(t('no_user_found'))
+
+      const duplicatedProperty = {
+        ...property,
+        name: `${property.name} (${t('copy')})`,
+        user_id: user.id,
+      }
+      delete (duplicatedProperty as any).id
+
+      const { data, error } = await supabase
+        .from("properties")
+        .insert(duplicatedProperty)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      toast({
+        title: t('success'),
+        description: t('property_duplicated'),
+      })
+
+      if (data) {
+        onPropertyUpdate(data)
+      }
+    } catch (error) {
+      console.error("Error duplicating property:", error)
+      toast({
+        variant: "destructive",
+        title: t('error'),
+        description: t('error_duplicating_property'),
+      })
+    }
+  }
+
+  const handleDelete = async (e: React.MouseEvent, property: Property) => {
+    e.stopPropagation()
+    try {
+      const { error } = await supabase
+        .from("properties")
+        .delete()
+        .eq('id', property.id)
+
+      if (error) throw error
+
+      toast({
+        title: t('success'),
+        description: t('property_deleted'),
+      })
+
+      onPropertyUpdate(property, true)
+    } catch (error) {
+      console.error("Error deleting property:", error)
+      toast({
+        variant: "destructive",
+        title: t('error'),
+        description: t('error_deleting_property'),
+      })
+    }
+  }
+
   return (
     <Table>
       <TableHeader>
@@ -112,12 +185,13 @@ export function PropertyList({
           </TableHead>
           <TableHead>{t('property_insurance')}</TableHead>
           <TableHead>{t('bonus_amount_currency')}</TableHead>
+          <TableHead className="w-[50px]"></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {properties.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={4} className="text-center py-4">
+            <TableCell colSpan={5} className="text-center py-4">
               {t('no_properties')}
             </TableCell>
           </TableRow>
@@ -143,6 +217,30 @@ export function PropertyList({
                 </TableCell>
                 <TableCell>
                   {bonusAmount ? formatCurrency(bonusAmount, 'PEN') : t('no_bonus')}
+                </TableCell>
+                <TableCell className="w-[50px]">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      className="flex h-8 w-8 items-center justify-center rounded-md border transition-colors hover:bg-muted"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                      <span className="sr-only">{t('open_menu')}</span>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={(e) => handleDuplicate(e, property)}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        <span>{t('duplicate')}</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={(e) => handleDelete(e, property)}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash className="mr-2 h-4 w-4" />
+                        <span>{t('delete')}</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             )
