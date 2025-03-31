@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Download, Search, UserPlus, Mail, UserCog } from "lucide-react"
+import { Download, Search, UserPlus, Mail, UserCog, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -54,6 +54,8 @@ export default function UserManagement() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [creatingUser, setCreatingUser] = useState(false)
   const [sendingResetEmail, setSendingResetEmail] = useState<{[key: string]: boolean}>({})
+  const [userToDelete, setUserToDelete] = useState<User | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     checkAdminStatus()
@@ -224,6 +226,47 @@ export default function UserManagement() {
     }
   }
 
+  async function deleteUser(user: User) {
+    setIsDeleting(true)
+    try {
+      // Try using admin API via Supabase Edge Function first
+      try {
+        const { data, error } = await supabase.functions.invoke('delete-user', {
+          body: { userId: user.id }
+        })
+
+        if (error) throw error
+
+        toast.success(`User ${user.email} deleted successfully`)
+        fetchUsers() // Refresh the user list
+        setUserToDelete(null) // Close the modal
+        return
+      } catch (edgeFunctionError) {
+        console.error("Edge function error:", edgeFunctionError)
+        
+        // If Edge Function fails, try direct database deletion
+        toast.info("Trying alternative method to delete user...")
+        
+        // Delete from profiles table
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', user.id)
+
+        if (profileError) throw profileError
+
+        toast.success(`User ${user.email} deleted from profiles`)
+        fetchUsers() // Refresh the user list
+        setUserToDelete(null) // Close the modal
+      }
+    } catch (error: any) {
+      toast.error(`Failed to delete user: ${error.message || "Unknown error"}`)
+      console.error("User deletion error:", error)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   // If still checking admin status or not an admin, show loading
   if (isAdmin === null || !isAdmin) {
     return (
@@ -367,15 +410,24 @@ export default function UserManagement() {
                         : t("never")}
                     </TableCell>
                     <TableCell>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => sendPasswordResetEmail(user.email)}
-                        disabled={sendingResetEmail[user.id]}
-                      >
-                        <Mail className="mr-2 h-4 w-4" />
-                        {sendingResetEmail[user.id] ? t("sending") : t("send_reset_email")}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => sendPasswordResetEmail(user.email)}
+                          disabled={sendingResetEmail[user.id]}
+                        >
+                          <Mail className="mr-2 h-4 w-4" />
+                          {sendingResetEmail[user.id] ? t("sending") : t("send_reset_email")}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setUserToDelete(user)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -383,6 +435,39 @@ export default function UserManagement() {
             </TableBody>
           </Table>
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t("confirm_delete_user")}</DialogTitle>
+              <DialogDescription>
+                {t("delete_user_description", { email: userToDelete?.email })}
+                {userToDelete?.role === 'admin' && (
+                  <p className="mt-2 text-destructive">
+                    {t("warning_deleting_admin")}
+                  </p>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setUserToDelete(null)}
+                disabled={isDeleting}
+              >
+                {t("cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => userToDelete && deleteUser(userToDelete)}
+                disabled={isDeleting}
+              >
+                {isDeleting ? t("deleting") : t("delete")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   )

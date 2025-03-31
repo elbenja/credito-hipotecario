@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart"
+import { ChartThemeWrapper } from "@/components/ui/chart/theme-wrapper"
 import { format } from "date-fns"
 import { PaymentRow, ScenarioResult } from "@/services/amortization/types/common"
 
@@ -24,11 +25,11 @@ interface ScenarioPanelProps {
 const chartConfig = {
   principal: {
     label: "Principal",
-    color: "hsl(var(--chart-1))",
+    color: "var(--color-principal)",
   },
   interest_insurance: {
     label: "Interest & Insurance",
-    color: "hsl(var(--chart-2))",
+    color: "var(--color-interest_insurance)",
   },
 } satisfies ChartConfig
 
@@ -156,76 +157,78 @@ const ScenarioPanel = ({
 
 
         <div className="h-[300px] w-full mt-6">
-          <ChartContainer config={chartConfig}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={chartData}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="principal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
-                  </linearGradient>
-                  <linearGradient id="interest" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0.1}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="date"
-                  tickFormatter={(value) => format(new Date(value), 'yy')}
-                  interval={24}  // Show every 12th tick
-                  className="text-muted-foreground text-xs"
-                />
-                {/* <YAxis 
-                  tickFormatter={(value) => formatCurrency(Number(value || 0), currency as Currency)}
-                  className="text-muted-foreground text-xs"
-                /> */}
-                <ChartTooltip
-                  content={({ active, payload, label }) => {
-                    if (!active || !payload?.length) return null
-                    return (
-                      <div className="rounded-lg border bg-background p-2 shadow-sm">
-                        <div className="text-sm font-medium mb-2">
-                          {format(new Date(label), 'MMM yyyy')}
-                        </div>
-                        {payload.map((entry) => (
-                          <div key={entry.name} className="flex items-center gap-2 text-sm">
-                            <div 
-                              className="h-2 w-2 rounded-full"
-                              style={{ backgroundColor: entry.color }}
-                            />
-                            <span className="text-muted-foreground">
-                              {chartConfig[entry.name as keyof typeof chartConfig].label}:
-                            </span>
-                            <span className="font-medium">
-                              {formatCurrency(Number(entry.value || 0), currency as Currency)}
-                            </span>
+          <ChartThemeWrapper>
+            <ChartContainer config={chartConfig}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={chartData}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="principal" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-principal)" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="var(--color-principal)" stopOpacity={0.1}/>
+                    </linearGradient>
+                    <linearGradient id="interest" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-interest_insurance)" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="var(--color-interest_insurance)" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="date"
+                    tickFormatter={(value) => format(new Date(value), 'yy')}
+                    interval={24}  // Show every 12th tick
+                    className="text-muted-foreground text-xs"
+                  />
+                  {/* <YAxis 
+                    tickFormatter={(value) => formatCurrency(Number(value || 0), currency as Currency)}
+                    className="text-muted-foreground text-xs"
+                  /> */}
+                  <ChartTooltip
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload?.length) return null
+                      return (
+                        <div className="rounded-lg border bg-background p-2 shadow-sm">
+                          <div className="text-sm font-medium mb-2">
+                            {format(new Date(label), 'MMM yyyy')}
                           </div>
-                        ))}
-                      </div>
-                    )
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="principal"
-                  stroke="hsl(var(--chart-1))"
-                  fillOpacity={1}
-                  fill="url(#principal)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="interest_insurance"
-                  stroke="hsl(var(--chart-2))"
-                  fillOpacity={1}
-                  fill="url(#interest)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </ChartContainer>
+                          {payload.map((entry) => (
+                            <div key={entry.name} className="flex items-center gap-2 text-sm">
+                              <div 
+                                className="h-2 w-2 rounded-full"
+                                style={{ backgroundColor: entry.color }}
+                              />
+                              <span className="text-muted-foreground">
+                                {chartConfig[entry.name as keyof typeof chartConfig].label}:
+                              </span>
+                              <span className="font-medium">
+                                {formatCurrency(Number(entry.value || 0), currency as Currency)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="principal"
+                    stroke="var(--color-principal)"
+                    fillOpacity={1}
+                    fill="url(#principal)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="interest_insurance"
+                    stroke="var(--color-interest_insurance)"
+                    fillOpacity={1}
+                    fill="url(#interest)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </ChartThemeWrapper>
         </div>
       </div>
     </div>
