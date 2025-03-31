@@ -112,25 +112,26 @@ const ScenarioPanel = ({
     <div className="p-4 border rounded-lg">
       <h3 className="text-lg font-semibold mb-4">{title}</h3>
       
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
+      <div className="space-y-4 ">
+      <div className="grid grid-cols-4 gap-1 "> 
+      <div className="col-span-2 p-4">
           <span className="text-muted-foreground">Sum Interest & Insurances:</span>
           <div className="flex items-center gap-2">
-            <span>{formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}</span>
+            <span className="text-lg font-medium">{formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}</span>
             {showBaseline ? (
               <Badge variant="primary" className="text-sm">Baseline</Badge>
             ) : sumDifference && (
-              <Badge variant={getBadgeVariant(sumDifference)} className="text-sm text-green-600">
+              <Badge variant={getBadgeVariant(sumDifference)} className="text-sm bg-green-600/10 text-green-600">
                 {sumDifference < 0 ? '-' : '+'}{formatCurrency(Math.abs(sumDifference), currency as Currency)}
               </Badge>
             )}
           </div>
         </div>
 
-        <div className="flex justify-between items-center">
+        <div className="col-span-1  p-4">
           <span className="text-muted-foreground">Months:</span>
           <div className="flex items-center gap-2">
-            <span>{scenario.summary.total_months}</span>
+            <span className="text-lg font-medium">{scenario.summary.total_months}</span>
             {monthsDifference && !showBaseline && (
               <Badge variant={getBadgeVariant(monthsDifference, true)} className="text-sm">
                 {formatDifference(monthsDifference)}
@@ -139,10 +140,10 @@ const ScenarioPanel = ({
           </div>
         </div>
 
-        <div className="flex justify-between items-center">
+        <div className="col-span-1 p-4">
           <span className="text-muted-foreground">Monthly Payment:</span>
           <div className="flex items-center gap-2">
-            <span>{formatCurrency(scenario.summary.monthly_payment, currency as Currency)}</span>
+            <span className="text-lg font-medium">{formatCurrency(scenario.summary.monthly_payment, currency as Currency)}</span>
             {paymentDifference && !showBaseline && (
               <Badge variant={getBadgeVariant(paymentDifference)} className="text-sm">
                 {paymentDifference < 0 ? '-' : '+'}{formatCurrency(Math.abs(paymentDifference), currency as Currency)}
@@ -150,6 +151,9 @@ const ScenarioPanel = ({
             )}
           </div>
         </div>
+
+      </div>
+
 
         <div className="h-[300px] w-full mt-6">
           <ChartContainer config={chartConfig}>
@@ -171,13 +175,14 @@ const ScenarioPanel = ({
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
                   dataKey="date"
-                  tickFormatter={(value) => format(new Date(value), 'MMM yyyy')}
+                  tickFormatter={(value) => format(new Date(value), 'yy')}
+                  interval={24}  // Show every 12th tick
                   className="text-muted-foreground text-xs"
                 />
-                <YAxis 
+                {/* <YAxis 
                   tickFormatter={(value) => formatCurrency(Number(value || 0), currency as Currency)}
                   className="text-muted-foreground text-xs"
-                />
+                /> */}
                 <ChartTooltip
                   content={({ active, payload, label }) => {
                     if (!active || !payload?.length) return null

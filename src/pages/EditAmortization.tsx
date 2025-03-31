@@ -322,7 +322,7 @@ export default function EditAmortization() {
       <div className="flex flex-col min-h-screen">
         <div className="flex flex-col md:flex-row flex-1">
           {/* Left Container */}
-          <div className="w-full sm:w-full md:w-[40%] md:min-w-[320px] md:max-w-[400px] relative flex-shrink-0">
+          <div className="w-full sm:w-full md:w-[40%] md:min-w-[320px] md:max-w-[540px] relative flex-shrink-0">
             <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-border"></div>
             <PropertyDisplay 
               property={amortization.property}
@@ -346,7 +346,7 @@ export default function EditAmortization() {
 
           {/* Right Container */}
           <div className="flex-1 px-8 pt-6">
-            <h2 className="text-md  mb-6">payment scenarios graphs</h2>
+            <h2 className="text-sm  mb-6">payment scenarios graphs</h2>
             {!amortization || !scenarios ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-muted-foreground">{t("loading")}</div>

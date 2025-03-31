@@ -7,7 +7,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
     return (
       <input
         type={type}
-        className={cn("input bg-card", className)}
+        className={cn("input", className)}
         ref={ref}
         {...props}
       />

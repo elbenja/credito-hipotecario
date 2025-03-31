@@ -4,14 +4,14 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 210 40% 97%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
     --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary-foreground: 210 40% 99%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%; 
     --muted: 214.3 31.8% 94%; /*210 40% 96.1%;*/
@@ -80,12 +80,12 @@
 
   /* Input styles */
   .input {
-    @apply form-control-base form-control-focus;
+    @apply form-control-base form-control-focus  bg-card;
   }
 
   /* Select trigger styles */
   .select-trigger {
-    @apply form-control-base form-control-focus flex items-center justify-between [&>span]:line-clamp-1;
+    @apply form-control-base form-control-focus flex items-center justify-between [&>span]:line-clamp-1 bg-card;
   }
 
   /* Select item styles */
