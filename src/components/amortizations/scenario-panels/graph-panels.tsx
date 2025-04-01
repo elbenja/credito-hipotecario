@@ -9,6 +9,13 @@ import { PaymentRow, ScenarioResult } from "@/services/amortization/types/common
 
 type Currency = "USD" | "PEN"
 
+// Extend PaymentRow with additional properties we know exist
+interface ExtendedPaymentRow extends PaymentRow {
+  monthly_interest?: number
+  monthly_loan_insurance?: number
+  principal?: number
+}
+
 interface ScenarioSummaryResult {
   total_interest_and_insurance: number
   total_months: number
@@ -25,15 +32,15 @@ interface ScenarioPanelProps {
 const chartConfig = {
   principal: {
     label: "Principal",
+ 
   },
   interest_insurance: {
     label: "Interest & Insurance",
+ 
   },
 } satisfies ChartConfig
 
-const transformPaymentsToChartData = (payments: PaymentRow[]) => {
-
-  
+const transformPaymentsToChartData = (payments: ExtendedPaymentRow[]) => {
   return payments.map((payment) => {
     // Calculate total interest and insurances
     const totalInterestAndInsurances = (payment.monthly_interest || payment.interest || 0) + 
@@ -46,7 +53,6 @@ const transformPaymentsToChartData = (payments: PaymentRow[]) => {
       interest_insurance: totalInterestAndInsurances,
     }
     
-  
     return transformedData
   })
 }
@@ -60,7 +66,12 @@ const ScenarioPanel = ({
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
   if (!scenario?.summary) return null
 
- 
+  const chartData = React.useMemo(() => {
+    if (!scenario.payments?.length) return []
+    return transformPaymentsToChartData(scenario.payments)
+  }, [scenario.payments])
+
+  if (!chartData.length) return null
 
   const getDifference = (current: number, base?: number) => {
     if (!base) return null
@@ -96,11 +107,6 @@ const ScenarioPanel = ({
   const paymentDifference = getDifference(
     scenario.summary.monthly_payment,
     regularScenario?.summary?.monthly_payment
-  )
-
-  const chartData = React.useMemo(() => 
-    transformPaymentsToChartData(scenario.payments),
-    [scenario.payments]
   )
 
   return (

@@ -5,7 +5,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, session, loading } = useAuth()
 
   // Add debug logging
-  console.log('ProtectedRoute state:', { user, session, loading })
 
   // Show loading state while checking auth
   if (loading) {

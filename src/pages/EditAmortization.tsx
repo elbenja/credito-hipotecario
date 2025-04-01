@@ -416,14 +416,12 @@ export default function EditAmortization() {
               <Separator className="my-2" />
               {amortization && (
                 <Form {...amortizationForm}>
-                  <form onSubmit={amortizationForm.handleSubmit(onUpdateAmortization)} className="space-y-6">
-                    <AmortizationDetailsForm
-                      form={amortizationForm}
-                      selectedProperty={amortization.property}
-                      onSubmit={onUpdateAmortization}
-                      submitLabel={t("update")}
-                    />
-                  </form>
+                  <AmortizationDetailsForm
+                    form={amortizationForm}
+                    selectedProperty={amortization.property}
+                    onSubmit={onUpdateAmortization}
+                    submitLabel={t("update")}
+                  />
                 </Form>
               )}
             </div>
@@ -431,39 +429,48 @@ export default function EditAmortization() {
 
           {/* Right Container */}
           <div className="w-full overflow-hidden flex-1 px-2 sm:px-8 pt-2 sm:pt-6">
-            <h2 className="text-sm mb-6">{t("payment_scenarios_graphs")}</h2>
+            {/* <h2 className="text-sm mb-6">{t("payment_scenarios_graphs")}</h2> */}
             {!amortization || !scenarios ? (
               <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-2"></div>
                 <div className="text-muted-foreground">{t("loading")}</div>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-2">
-                <RegularPanelGraph
-                  scenario={scenarios.regular}
-                  currency={amortization.property.currency}
-                  installmentsPerYear={amortization.installments_per_year}
-                />
+                {scenarios.regular && (
+                  <RegularPanelGraph
+                    scenario={scenarios.regular}
+                    currency={amortization.property.currency}
+                    installmentsPerYear={amortization.installments_per_year}
+                  />
+                )}
 
-                <AcceleratedPanelGraph
-                  scenario={scenarios.accelerated}
-                  regularScenario={scenarios.regular}
-                  currency={amortization.property.currency}
-                  installmentsPerYear={amortization.installments_per_year}
-                />
+                {scenarios.accelerated && (
+                  <AcceleratedPanelGraph
+                    scenario={scenarios.accelerated}
+                    regularScenario={scenarios.regular}
+                    currency={amortization.property.currency}
+                    installmentsPerYear={amortization.installments_per_year}
+                  />
+                )}
 
-                <LowerPaymentPanelGraph
-                  scenario={scenarios.lower_payment}
-                  regularScenario={scenarios.regular}
-                  currency={amortization.property.currency}
-                  installmentsPerYear={amortization.installments_per_year}
-                />
+                {scenarios.lower_payment && (
+                  <LowerPaymentPanelGraph
+                    scenario={scenarios.lower_payment}
+                    regularScenario={scenarios.regular}
+                    currency={amortization.property.currency}
+                    installmentsPerYear={amortization.installments_per_year}
+                  />
+                )}
 
-                <NewRatePanelGraph
-                  scenario={scenarios.new_rate}
-                  regularScenario={scenarios.regular}
-                  currency={amortization.property.currency}
-                  installmentsPerYear={amortization.installments_per_year}
-                />
+                {scenarios.new_rate && (
+                  <NewRatePanelGraph
+                    scenario={scenarios.new_rate}
+                    regularScenario={scenarios.regular}
+                    currency={amortization.property.currency}
+                    installmentsPerYear={amortization.installments_per_year}
+                  />
+                )}
               </div>
             )}
 
