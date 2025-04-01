@@ -9,8 +9,8 @@ export function ChartThemeWrapper({ children }: ChartThemeWrapperProps) {
   const { theme } = useTheme()
 
   const chartThemeStyles = {
-    '--color-principal': `hsl(${theme === 'light' ? '359 80% 60%' : '359 2% 90%'})`,
-    '--color-interest_insurance': `hsl(${theme === 'light' ? '240 70% 50%' : '240 1% 74%'})`,
+    '--color-principal': `hsl(${theme === 'light' ? ' 41 89% 61%' : ' 41 89% 61%'})`,
+    '--color-interest_insurance': `hsl(${theme === 'light' ? '215.3 19.3% 34.5%' : '215.4 16.3% 46.9%'})`,
   } as React.CSSProperties
 
   return (
@@ -19,3 +19,5 @@ export function ChartThemeWrapper({ children }: ChartThemeWrapperProps) {
     </div>
   )
 } 
+
+

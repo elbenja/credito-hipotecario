@@ -30,8 +30,10 @@
     --chart-5: 240 2% 26%;
   }
 
-  .dark {
-    --background: 240 5% 6%;
+  .light {
+    --color-principal: 41 89% 61%; /* NO FUNCIONA :/ */
+
+    --background:0 84.2% 60.2%;
     --foreground: 60 5% 90%;
     --primary: 240 0% 90%;
     --primary-foreground: 60 0% 0%;
@@ -57,8 +59,8 @@
     --chart-5: 240 2% 26%;
   }
 
-  .light {
-    --background: 0 0% 100%;
+  .dark {
+    --background:24.6 95% 53.1%;
     --foreground: 240 10% 3.9%;
     --primary: 240 5.9% 10%;
     --primary-foreground: 0 0% 98%;

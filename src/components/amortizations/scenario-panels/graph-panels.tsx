@@ -25,11 +25,12 @@ interface ScenarioPanelProps {
 const chartConfig = {
   principal: {
     label: "Principal",
-    color: "var(--color-principal)",
+    
   },
   interest_insurance: {
     label: "Interest & Insurance",
-    color: "var(--color-interest_insurance)",
+    
+   
   },
 } satisfies ChartConfig
 
