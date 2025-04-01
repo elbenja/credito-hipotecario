@@ -61,6 +61,7 @@ export function AmortizationDetailsForm({
                   </FormItem>
                 )}
               />
+              
               <FormField
                 control={form.control}
                 name="property_id"
@@ -70,11 +71,39 @@ export function AmortizationDetailsForm({
                     <FormControl>
                       <Input 
                         type="number" 
-                        value={((parseFloat(form.watch("down_payment") || "0") / selectedProperty.price_cost) * 100).toFixed(2)}
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        placeholder="0.00"
+                        value={form.watch("down_payment") ? 
+                          Number(((parseFloat(form.watch("down_payment")) / selectedProperty.price_cost) * 100).toFixed(2)) : 
+                          ""}
                         onChange={(e) => {
-                          const percentage = parseFloat(e.target.value)
-                          const downPayment = (percentage / 100 * selectedProperty.price_cost).toString()
-                          form.setValue("down_payment", downPayment)
+                          const value = e.target.value
+                          // Allow empty input
+                          if (value === "") {
+                            form.setValue("down_payment", "0")
+                            return
+                          }
+                          
+                          // Parse the percentage input and calculate down payment
+                          const percentage = parseFloat(value)
+                          if (!isNaN(percentage)) {
+                            const downPayment = (percentage / 100 * selectedProperty.price_cost).toFixed(2)
+                            form.setValue("down_payment", downPayment)
+                          }
+                        }}
+                        onBlur={(e) => {
+                          // Format to 2 decimal places when leaving the field
+                          const value = e.target.value
+                          if (value) {
+                            const percentage = parseFloat(value)
+                            if (!isNaN(percentage)) {
+                              e.target.value = percentage.toFixed(2)
+                              const downPayment = (percentage / 100 * selectedProperty.price_cost).toFixed(2)
+                              form.setValue("down_payment", downPayment)
+                            }
+                          }
                         }}
                       />
                     </FormControl>
