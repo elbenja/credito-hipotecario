@@ -4,12 +4,22 @@ import { useAuth } from "@/context/auth-context"
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, session, loading } = useAuth()
 
+  // Add debug logging
+  console.log('ProtectedRoute state:', { user, session, loading })
+
+  // Show loading state while checking auth
   if (loading) {
-    return <div>Loading...</div>
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    )
   }
 
+  // Redirect to login if no session or user
   if (!session || !user) {
-    return <Navigate to="/" />
+    console.log('No session or user, redirecting to /')
+    return <Navigate to="/" replace />
   }
 
   return <>{children}</>

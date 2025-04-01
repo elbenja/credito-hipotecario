@@ -325,9 +325,9 @@ export function PropertySelect({
 
   useEffect(() => {
     const loadProperties = async () => {
-      if (!user || (disabled && !initialLoad && !initialProperty)) return
+      if (!user) return;
       
-      setIsLoading(true)
+      setIsLoading(true);
       try {
         const [{ data: propertiesData, error: propertiesError }, { data: rulesData, error: rulesError }] = await Promise.all([
           supabase
@@ -338,57 +338,58 @@ export function PropertySelect({
             .from("bonus_rules")
             .select("*")
             .order('min_value', { ascending: true })
-        ])
+        ]);
 
         if (propertiesError) {
-          console.error(t("error_loading_properties"), propertiesError)
-          return
+          console.error(t("error_loading_properties"), propertiesError);
+          return;
         }
 
         if (rulesError) {
-          console.error(t("error_loading_bonus_rules"), rulesError)
-          return
+          console.error(t("error_loading_bonus_rules"), rulesError);
+          return;
         }
 
         const validProperties = (propertiesData || []).filter(
           (p): p is Property => p.currency === "USD" || p.currency === "PEN"
-        )
+        );
         
-        setProperties(validProperties)
-        setBonusRules(rulesData || [])
+        setProperties(validProperties);
+        setBonusRules(rulesData || []);
 
         // Handle initial property if provided
-        if (initialProperty) {
-          setSelectedPropertyName(initialProperty.name)
-          onPropertyChange(initialProperty)
-        } else if (propertyId) {
-          const selectedProperty = validProperties.find(p => p.id === propertyId)
+        if (initialProperty && initialLoad) {
+          setSelectedPropertyName(initialProperty.name);
+          onPropertyChange(initialProperty);
+        } else if (propertyId && initialLoad) {
+          const selectedProperty = validProperties.find(p => p.id === propertyId);
           if (selectedProperty) {
-            setSelectedPropertyName(selectedProperty.name)
-            onPropertyChange(selectedProperty)
+            setSelectedPropertyName(selectedProperty.name);
+            onPropertyChange(selectedProperty);
           }
         }
       } catch (error) {
-        console.error(t("error_loading_properties"), error)
+        console.error(t("error_loading_properties"), error);
       } finally {
-        setIsLoading(false)
-        setInitialLoad(false)
+        setIsLoading(false);
+        setInitialLoad(false);
       }
-    }
+    };
 
-    loadProperties()
-  }, [user, propertyId, disabled, initialLoad, initialProperty, onPropertyChange, t])
+    loadProperties();
+  }, [user, initialLoad]); // Only depend on user and initialLoad
 
   const handlePropertyChange = (propertyId: string) => {
     const property = properties.find((p) => p.id === propertyId)
     if (property) {
       setSelectedPropertyName(property.name)
       onPropertyChange(property)
+      form.setValue("property_id", propertyId, { shouldValidate: true })
     } else {
       setSelectedPropertyName("")
       onPropertyChange(null)
+      form.setValue("property_id", "", { shouldValidate: true })
     }
-    form.setValue("property_id", propertyId)
   }
 
   const formatPropertyOption = (property: Property, isSelected: boolean = false) => {
@@ -445,8 +446,11 @@ export function PropertySelect({
         <FormItem>
           <FormLabel>{t("property")}</FormLabel>
           <Select
-            onValueChange={handlePropertyChange}
-            value={field.value}
+            onValueChange={(value) => {
+              field.onChange(value)
+              handlePropertyChange(value)
+            }}
+            value={field.value || ""}
             disabled={disabled || isLoading}
           >
             <FormControl>

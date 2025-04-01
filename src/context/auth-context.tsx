@@ -53,15 +53,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function initializeAuth() {
       try {
+        console.log('Initializing auth...')
         // Get the current session from Supabase
         const { data: { session: currentSession } } = await supabase.auth.getSession()
         
         if (mounted) {
+          console.log('Auth initialized:', { 
+            hasSession: !!currentSession,
+            userEmail: currentSession?.user?.email,
+            currentPath: location.pathname
+          })
+
           setSession(currentSession)
           setUser(currentSession?.user ?? null)
           
           // If we have a session and we're at the root or auth page, redirect to dashboard
           if (currentSession?.user && (location.pathname === '/' || location.pathname === '/auth')) {
+            console.log('Redirecting to dashboard...')
             navigate('/dashboard', { replace: true })
           }
           
@@ -82,18 +90,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (mounted) {
-        console.log('Auth state changed:', event, session?.user?.email)
+        console.log('Auth state changed:', { 
+          event, 
+          userEmail: session?.user?.email,
+          currentPath: location.pathname
+        })
+
         setSession(session)
         setUser(session?.user ?? null)
         
         if (session?.user) {
           // If we have a session and we're at the root or auth page, redirect to dashboard
           if (location.pathname === '/' || location.pathname === '/auth') {
+            console.log('Redirecting to dashboard after auth change...')
             navigate('/dashboard', { replace: true })
           }
         } else {
           // If we don't have a session and we're not at the root, redirect to root
           if (location.pathname !== '/') {
+            console.log('Redirecting to root after session end...')
             navigate('/', { replace: true })
           }
         }
@@ -106,9 +121,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [navigate, location.pathname])
 
-  // If loading, show nothing
+  // Show loading state while initializing auth
   if (loading) {
-    return null
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Initializing...</div>
+      </div>
+    )
   }
 
   return (

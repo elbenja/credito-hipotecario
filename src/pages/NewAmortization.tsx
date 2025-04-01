@@ -2,9 +2,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { Plus } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
-import { supabase } from "@/integrations/supabase/client"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { useTranslation } from "react-i18next"
@@ -26,81 +24,45 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { PropertySelect, type Property } from "@/components/amortizations/property-select"
-import { LoanDetails } from "@/components/amortizations/loan-details"
-import { PaymentSchedule } from "@/components/amortizations/payment-schedule"
+import { AmortizationDetailsForm } from "@/components/amortizations/amortization-details-form"
+import { RegularPanelGraph } from '@/components/amortizations/scenario-panels/graph-panels'
 import { 
   amortizationFormSchema, 
   defaultValues, 
   type AmortizationFormValues 
 } from "@/components/amortizations/schema"
-import { PaymentScenariosPanel } from "@/components/amortizations/payment-scenarios-panel"
-import { ExtraInstallmentsSection } from "@/components/amortizations/extra-installments-section"
-import { type ExtraInstallment } from "@/components/amortizations/types"
 import { LoanCalculator } from "@/services/amortization/calculations/loan"
+import { supabase } from "@/integrations/supabase/client"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function NewAmortization() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { toast } = useToast()
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
-  const [temporaryInstallments, setTemporaryInstallments] = useState<ExtraInstallment[]>([])
-  const [interestRateLimits, setInterestRateLimits] = useState({
-    min_rate: 1,
-    max_rate: 25
+  const [interestRateLimits] = useState({
+    min_rate: 4,
+    max_rate: 18
   })
-  const [paymentDetails, setPaymentDetails] = useState({
-    regular: {
-      totalInterestAndInsurance: 0,
-      totalMonths: 0,
-      monthlyPayment: 0
-    },
-    accelerated: {
-      totalInterestAndInsurance: 0,
-      totalMonths: 0,
-      monthlyPayment: 0
-    },
-    lower: {
-      totalInterestAndInsurance: 0,
-      totalMonths: 0,
-      monthlyPayment: 0
-    },
-    newRate: {
-      totalInterestAndInsurance: 0,
-      totalMonths: 0,
-      monthlyPayment: 0
-    }
-  })
-  const [showMobileDetails, setShowMobileDetails] = useState(false)
-  const loanCalculator = new LoanCalculator()
 
   const form = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
     defaultValues,
+    mode: "onChange"
   })
 
-  useEffect(() => {
-    const loadInterestRateLimits = async () => {
-      const { data, error } = await supabase
-        .from("interest_rate_limits")
-        .select("min_rate, max_rate")
-        .eq("is_active", true)
-        .maybeSingle()
+  // Watch for name changes to update breadcrumb
+  const amortizationName = form.watch("name")
 
-      if (error) {
-        console.error("Error loading interest rate limits:", error)
-        return
-      }
-      
-      if (data) {
-        setInterestRateLimits(data)
-      }
+  // Calculate regular scenario when form values change
+  const [regularScenario, setRegularScenario] = useState<any>(null)
+  const loanCalculator = new LoanCalculator()
+
+  const calculateRegularScenario = (values: Partial<AmortizationFormValues>) => {
+    if (!selectedProperty || !values.down_payment || !values.interest_rate || !values.term_years || !values.installments_per_year || !values.first_installment_date) {
+      return null
     }
-
-    loadInterestRateLimits()
-  }, [])
-
-  useEffect(() => {
-    if (!selectedProperty) return
 
     const mockProperty = {
       id: selectedProperty.id,
@@ -113,124 +75,39 @@ export default function NewAmortization() {
 
     const baseValues = {
       property_id: selectedProperty.id,
-      down_payment: parseFloat(form.getValues("down_payment")),
-      down_payment_percentage: (parseFloat(form.getValues("down_payment")) / selectedProperty.price_cost) * 100,
-      interest_rate: parseFloat(form.getValues("interest_rate")),
-      term_years: parseInt(form.getValues("term_years")),
-      installments_per_year: parseInt(form.getValues("installments_per_year")) as 12 | 14,
-      first_installment_date: form.getValues("first_installment_date"),
-      loan_protection_type: form.getValues("loan_protection_type") as "individual" | "joint" | "none" | "manual",
-      loan_protection_insurance: parseFloat(form.getValues("loan_protection_insurance"))
+      down_payment: parseFloat(values.down_payment),
+      down_payment_percentage: (parseFloat(values.down_payment) / selectedProperty.price_cost) * 100,
+      interest_rate: parseFloat(values.interest_rate),
+      term_years: parseInt(values.term_years),
+      installments_per_year: parseInt(values.installments_per_year) as 12 | 14,
+      first_installment_date: values.first_installment_date,
+      loan_protection_type: values.loan_protection_type as "individual" | "joint" | "none" | "custom",
+      loan_protection_insurance: parseFloat(values.loan_protection_insurance || "0")
     }
 
-    // Calculate results using the loan calculator service
-    const results = loanCalculator.calculateResults(mockProperty, baseValues)
+    return loanCalculator.calculateResults(mockProperty, baseValues)
+  }
 
-    // Base calculation for regular payments
-    const regularCalculation = {
-      totalInterestAndInsurance: results.total_interest_and_insurance,
-      totalMonths: results.total_months,
-      monthlyPayment: results.monthly_payment
-    }
+  // Update scenario when form values change
+  const handleFormChange = () => {
+    const values = form.getValues()
+    const scenario = calculateRegularScenario(values)
+    setRegularScenario(scenario)
+  }
 
-    // Calculate total extra payments
-    const extraPayments = temporaryInstallments.reduce((total, installment) => {
-      if (installment.frequency === 'monthly') {
-        return total + (installment.amount * results.total_months)
-      }
-      return total + installment.amount
-    }, 0)
+  // Subscribe to form changes
+  useEffect(() => {
+    const subscription = form.watch(handleFormChange)
+    return () => subscription.unsubscribe()
+  }, [form, selectedProperty])
 
-    // Accelerated calculation (reduced term)
-    const acceleratedMonthlyPayment = results.monthly_payment
-    const reducedLoanAmount = selectedProperty.price_cost - parseFloat(form.getValues("down_payment")) - extraPayments
-    const acceleratedResults = loanCalculator.calculateResults(mockProperty, {
-      ...baseValues,
-      down_payment: parseFloat(form.getValues("down_payment")) + extraPayments
-    })
-
-    // Lower payment calculation (same term)
-    const lowerResults = loanCalculator.calculateResults(mockProperty, {
-      ...baseValues,
-      down_payment: parseFloat(form.getValues("down_payment")) + extraPayments
-    })
-
-    setPaymentDetails({
-      regular: regularCalculation,
-      accelerated: {
-        totalInterestAndInsurance: acceleratedResults.total_interest_and_insurance,
-        totalMonths: acceleratedResults.total_months,
-        monthlyPayment: acceleratedResults.monthly_payment
-      },
-      lower: {
-        totalInterestAndInsurance: lowerResults.total_interest_and_insurance,
-        totalMonths: lowerResults.total_months,
-        monthlyPayment: lowerResults.monthly_payment
-      },
-      newRate: regularCalculation // This will be updated when a new rate is selected
-    })
-  }, [selectedProperty, form.watch(), temporaryInstallments])
-
-  const onSubmit = async (values: AmortizationFormValues) => {
-    try {
-      if (!user || !selectedProperty) return
-
-      const interestRate = parseFloat(values.interest_rate)
-      if (interestRate < interestRateLimits.min_rate || interestRate > interestRateLimits.max_rate) {
-        return
-      }
-
-      const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, ""))
-      const loanAmount = selectedProperty.price_cost - downPayment
-
-      const amortizationData = {
-        name: values.name,
-        property_id: values.property_id,
-        down_payment: downPayment,
-        interest_rate: interestRate,
-        term_years: parseInt(values.term_years),
-        installments_per_year: parseInt(values.installments_per_year),
-        first_installment_date: values.first_installment_date.toISOString(),
-        loan_amount: loanAmount,
-        user_id: user.id,
-        total_payment: 0,
-        total_interest: 0,
-        installment_amount: 0,
-        loan_protection_type: values.loan_protection_type,
-        loan_protection_insurance: parseFloat(values.loan_protection_insurance),
-      }
-
-      // Insert amortization and get the ID
-      const { data: amortizationResult, error: amortizationError } = await supabase
-        .from("amortizations")
-        .insert(amortizationData)
-        .select("id")
-        .single()
-
-      if (amortizationError) throw amortizationError
-
-      // If we have temporary installments, insert them with the new amortization ID
-      if (temporaryInstallments.length > 0 && amortizationResult) {
-        const installmentsToInsert = temporaryInstallments.map(installment => ({
-          amortization_id: amortizationResult.id,
-          amount: installment.amount,
-          frequency: installment.frequency,
-          start_date: installment.start_date
-        }))
-
-        const { error: installmentsError } = await supabase
-          .from("extra_installments")
-          .insert(installmentsToInsert)
-
-        if (installmentsError) throw installmentsError
-      }
-
-      // Navigate to the amortizations page using React Router
-      setTimeout(() => {
-        navigate("/mortgages")
-      }, 1500)
-    } catch (error) {
-      console.error("Error saving amortization:", error)
+  // Handle property selection
+  const handlePropertyChange = (property: Property | null) => {
+    setSelectedProperty(property)
+    if (property) {
+      form.setValue("property_id", property.id, { shouldValidate: true })
+    } else {
+      form.setValue("property_id", "", { shouldValidate: true })
     }
   }
 
@@ -241,36 +118,35 @@ export default function NewAmortization() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <Link to="/dashboard">{t('dashboard')}</Link>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
                 <Link to="/mortgages" className="transition-colors hover:text-foreground">
-                  {t('amortizations_title')}
+                  {t("mortgages")}
                 </Link>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>{t("new_amortization")}</BreadcrumbPage>
+                <BreadcrumbPage>
+                  {amortizationName || t("new_amortization")}
+                </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
         )
       }}
     >
-      <div className="flex flex-col min-h-screen">
-        <div className="flex items-center justify-between px-8 py-4">
-          <h1 className="text-2xl font-bold">{t("new_amortization")}</h1>
-        </div>
+      <Form {...form}>
+        <div className="flex flex-col min-h-screen">
+          <div className="flex flex-col md:flex-row flex-1">
+            {/* Left Container */}
+            <div className="w-full md:w-[40%] md:min-w-[320px] md:max-w-[540px] relative flex-shrink-0">
+              <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-border"></div>
+              <div className="p-6 space-y-6">
+                <PropertySelect 
+                  form={form} 
+                  onPropertyChange={handlePropertyChange}
+                />
 
-        <Separator />
+                <Separator />
 
-        <div className="flex flex-col md:flex-row flex-1">
-          {/* Left Container */}
-          <div className="w-full md:w-[40%] px-8 pt-6 relative flex-shrink-0">
-            <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-border"></div>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
                   name="name"
@@ -285,62 +161,147 @@ export default function NewAmortization() {
                   )}
                 />
 
-                <Separator />
+                {selectedProperty && (
+                  <>
+                    <Separator />
+                    <AmortizationDetailsForm
+                      form={form}
+                      selectedProperty={selectedProperty}
+                      onSubmit={async (values) => {
+                        try {
+                          if (!selectedProperty || !regularScenario) {
+                            toast({
+                              variant: "destructive",
+                              title: t("error"),
+                              description: t("please_complete_all_fields"),
+                            })
+                            return
+                          }
 
-                <PropertySelect 
-                  form={form} 
-                  onPropertyChange={setSelectedProperty} 
-                />
+                          // Parse numeric values safely
+                          const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, ""))
+                          const interestRate = parseFloat(values.interest_rate)
+                          const termYears = parseInt(values.term_years)
+                          const installmentsPerYear = parseInt(values.installments_per_year)
+                          
+                          // Handle loan protection insurance based on type
+                          let loanProtectionInsurance = null;
+                          const loanProtectionType = values.loan_protection_type;
+                          
+                          switch (loanProtectionType) {
+                            case "individual":
+                              loanProtectionInsurance = 0.028;
+                              break;
+                            case "joint":
+                              loanProtectionInsurance = 0.052;
+                              break;
+                            case "custom":
+                              const rawValue = parseFloat(values.loan_protection_insurance || "0");
+                              if (isNaN(rawValue) || rawValue < 0 || rawValue > 1) {
+                                throw new Error("Invalid loan protection insurance amount (must be between 0 and 1)");
+                              }
+                              loanProtectionInsurance = rawValue;
+                              break;
+                            case "none":
+                              loanProtectionInsurance = 0;
+                              break;
+                            default:
+                              throw new Error("Invalid loan protection type");
+                          }
 
-                <LoanDetails 
-                  form={form}
-                  selectedProperty={selectedProperty}
-                  interestRateLimits={interestRateLimits}
-                />
+                          // Validate numeric values
+                          if (isNaN(downPayment) || downPayment < 0) {
+                            throw new Error("Invalid down payment amount")
+                          }
+                          if (isNaN(interestRate) || interestRate < 0) {
+                            throw new Error("Invalid interest rate")
+                          }
+                          if (isNaN(termYears) || termYears < 1) {
+                            throw new Error("Invalid term years")
+                          }
+                          if (![12, 14].includes(installmentsPerYear)) {
+                            throw new Error("Invalid installments per year")
+                          }
 
-                <Separator />
+                          // Calculate loan amount
+                          const loanAmount = selectedProperty.price_cost - downPayment
 
-                <div className="flex flex-col gap-2">
-                  <Button type="submit">
-                    {t("save")}
-                  </Button>
-                  <Button type="button" variant="secondary">
-                    <Plus className="mr-2 h-4 w-4" />
-                    {t("save_and_create_rental")}
-                  </Button>
+                          // Validate loan amount
+                          if (loanAmount <= 0) {
+                            throw new Error("Down payment cannot be greater than property cost")
+                          }
+
+                          // Create a proper ISO date string preserving the exact date
+                          const inputDate = new Date(values.first_installment_date);
+                          const dateString = `${inputDate.getFullYear()}-${String(inputDate.getMonth() + 1).padStart(2, '0')}-${String(inputDate.getDate()).padStart(2, '0')}`;
+
+                          const amortizationData = {
+                            name: values.name,
+                            property_id: selectedProperty.id,
+                            user_id: user?.id,
+                            loan_amount: loanAmount,
+                            down_payment: downPayment,
+                            interest_rate: interestRate,
+                            term_years: termYears,
+                            installments_per_year: installmentsPerYear,
+                            installment_amount: regularScenario.monthlyInstallment || 0,
+                            total_interest: regularScenario.totalInterest || 0,
+                            total_payment: regularScenario.totalPayment || 0,
+                            loan_protection_type: values.loan_protection_type,
+                            loan_protection_insurance: loanProtectionInsurance,
+                            first_installment_date: dateString,
+                          }
+
+                          console.log('Saving amortization data:', amortizationData)
+                          const { data, error } = await supabase
+                            .from("amortizations")
+                            .insert(amortizationData)
+                            .select()
+                            .single()
+
+                          if (error) {
+                            console.error('Supabase error details:', error)
+                            throw error
+                          }
+
+                          toast({
+                            title: t("success"),
+                            description: t("amortization_created"),
+                          })
+
+                          navigate("/mortgages")
+                        } catch (error) {
+                          console.error("Error saving amortization:", error)
+                          toast({
+                            variant: "destructive",
+                            title: t("error"),
+                            description: error instanceof Error ? error.message : t("error_creating_amortization"),
+                          })
+                        }
+                      }}
+                      submitLabel={t("create")}
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Right Container */}
+            <div className="w-full overflow-hidden flex-1 px-2 sm:px-8 pt-2 sm:pt-6">
+              {selectedProperty && regularScenario && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold">{t("payment_schedule")}</h2>
+                  <RegularPanelGraph
+                    scenario={regularScenario}
+                    currency={selectedProperty.currency}
+                    installmentsPerYear={parseInt(form.getValues("installments_per_year"))}
+                  />
                 </div>
-              </form>
-            </Form>
+              )}
+            </div>
           </div>
-
-          <PaymentScenariosPanel 
-            paymentDetails={paymentDetails}
-            showMobileDetails={showMobileDetails}
-            onCloseMobilePanel={() => setShowMobileDetails(false)}
-            onOpenMobilePanel={() => setShowMobileDetails(true)}
-            currency={selectedProperty?.currency || "PEN"}
-            loanAmount={selectedProperty ? selectedProperty.price_cost - parseFloat(form.getValues("down_payment").replace(/[^0-9.]/g, "")) : 0}
-            annualInterestRate={parseFloat(form.getValues("interest_rate"))}
-            termYears={parseInt(form.getValues("term_years"))}
-            installmentsPerYear={parseInt(form.getValues("installments_per_year")) as 12 | 14}
-            firstInstallmentDate={form.getValues("first_installment_date")}
-            propertyInsurance={selectedProperty?.property_insurance || 0}
-            loanProtection={parseFloat(form.getValues("loan_protection_insurance") || "0")}
-            amortizationId=""
-            extraInstallments={temporaryInstallments}
-            onExtraInstallmentAdd={(installment) => {
-              const newInstallment: Omit<ExtraInstallment, 'amortization_id' | 'created_at' | 'updated_at'> = {
-                id: Math.random().toString(36).substr(2, 9), // Temporary ID
-                ...installment
-              }
-              setTemporaryInstallments([...temporaryInstallments, newInstallment as ExtraInstallment])
-            }}
-            onExtraInstallmentDelete={(id) => {
-              setTemporaryInstallments(temporaryInstallments.filter(i => i.id !== id))
-            }}
-          />
         </div>
-      </div>
+      </Form>
     </DashboardLayout>
   )
 }
