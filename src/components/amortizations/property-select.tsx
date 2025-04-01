@@ -75,13 +75,7 @@ function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: P
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([]);
 
   // Debug logs for props
-  useEffect(() => {
-    console.log('PropertyEditSheet - Props:', { 
-      propertyId: property?.id,
-      open,
-      hasUpdateCallback: !!onPropertyUpdate 
-    });
-  }, [property, open, onPropertyUpdate]);
+
 
   const handlePropertyUpdate = async () => {
     console.log('PropertyEditSheet - handlePropertyUpdate called');

@@ -46,6 +46,9 @@ type Amortization = {
   total_interest: number
   total_payment: number
   property_id: string
+  loan_protection_type: "none" | "custom" | "individual" | "joint"
+  loan_protection_insurance: number
+  first_installment_date: string
 }
 
 export default function Mortgages() {
@@ -80,10 +83,21 @@ export default function Mortgages() {
     e.stopPropagation()
     try {
       const duplicatedAmortization = {
-        ...amortization,
         name: `${amortization.name} (${t('copy')})`,
+        property_id: amortization.property_id,
+        user_id: user?.id,
+        loan_amount: amortization.loan_amount,
+        down_payment: amortization.down_payment,
+        interest_rate: amortization.interest_rate,
+        term_years: amortization.term_years,
+        installments_per_year: amortization.installments_per_year,
+        installment_amount: amortization.installment_amount,
+        total_interest: amortization.total_interest,
+        total_payment: amortization.total_payment,
+        loan_protection_type: amortization.loan_protection_type,
+        loan_protection_insurance: amortization.loan_protection_insurance,
+        first_installment_date: amortization.first_installment_date,
       }
-      delete (duplicatedAmortization as any).id
 
       const { data, error } = await supabase
         .from("amortizations")
