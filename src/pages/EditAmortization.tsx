@@ -14,6 +14,14 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form"
 import { AmortizationDetailsForm } from "@/components/amortizations/amortization-details-form"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -30,7 +38,6 @@ import {
 import { ExtraInstallmentsSection } from '@/components/amortizations/extra-installments-section'
 import { NewRateForm } from '@/components/amortizations/new-rate-form'
 import { useMemo, useCallback, useEffect, useState } from "react"
-import { Form } from "@/components/ui/form"
 
 export default function EditAmortization() {
   const { t } = useTranslation()
@@ -409,12 +416,14 @@ export default function EditAmortization() {
               <Separator className="my-2" />
               {amortization && (
                 <Form {...amortizationForm}>
-                  <AmortizationDetailsForm
-                    form={amortizationForm}
-                    selectedProperty={amortization.property}
-                    onSubmit={onUpdateAmortization}
-                    submitLabel={t("update")}
-                  />
+                  <form onSubmit={amortizationForm.handleSubmit(onUpdateAmortization)} className="space-y-6">
+                    <AmortizationDetailsForm
+                      form={amortizationForm}
+                      selectedProperty={amortization.property}
+                      onSubmit={onUpdateAmortization}
+                      submitLabel={t("update")}
+                    />
+                  </form>
                 </Form>
               )}
             </div>
@@ -422,14 +431,13 @@ export default function EditAmortization() {
 
           {/* Right Container */}
           <div className="w-full overflow-hidden flex-1 px-2 sm:px-8 pt-2 sm:pt-6">
-            <h2 className="text-sm  mb-6">payment scenarios graphs</h2>
+            <h2 className="text-sm mb-6">{t("payment_scenarios_graphs")}</h2>
             {!amortization || !scenarios ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-muted-foreground">{t("loading")}</div>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-2">
-              
                 <RegularPanelGraph
                   scenario={scenarios.regular}
                   currency={amortization.property.currency}
