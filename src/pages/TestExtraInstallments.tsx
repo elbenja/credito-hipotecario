@@ -393,7 +393,18 @@ export default function TestExtraInstallments() {
                         Property
                       </span>
                     </div>
-                    {selectedProperty && <PropertyDisplay property={selectedProperty} />}
+                    {selectedProperty && (
+                      <PropertyDisplay 
+                        property={selectedProperty} 
+                        onPropertyUpdate={(updatedProperty) => {
+                          setSelectedProperty(updatedProperty);
+                          // Refresh linked amortizations if needed
+                          queryClient.invalidateQueries({
+                            queryKey: ["linked-amortizations", updatedProperty.id]
+                          });
+                        }}
+                      />
+                    )}
                   </div>
                 )}
               </form>

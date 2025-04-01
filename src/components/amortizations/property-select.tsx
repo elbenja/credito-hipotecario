@@ -17,7 +17,6 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/context/auth-context"
@@ -75,26 +74,17 @@ function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: P
   const { t } = useTranslation();
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([]);
 
-  // Load bonus rules
+  // Debug logs for props
   useEffect(() => {
-    const loadBonusRules = async () => {
-      const { data, error } = await supabase
-        .from("bonus_rules")
-        .select("*")
-        .order('min_value', { ascending: true });
-
-      if (error) {
-        console.error("Error loading bonus rules:", error);
-        return;
-      }
-
-      setBonusRules(data || []);
-    };
-
-    loadBonusRules();
-  }, []);
+    console.log('PropertyEditSheet - Props:', { 
+      propertyId: property?.id,
+      open,
+      hasUpdateCallback: !!onPropertyUpdate 
+    });
+  }, [property, open, onPropertyUpdate]);
 
   const handlePropertyUpdate = async () => {
+    console.log('PropertyEditSheet - handlePropertyUpdate called');
     // Fetch the updated property data
     const { data, error } = await supabase
       .from("properties")
@@ -107,22 +97,41 @@ function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: P
       return;
     }
 
+    console.log('PropertyEditSheet - Updated property data:', data);
     onOpenChange(false);
     if (onPropertyUpdate) {
       onPropertyUpdate(data);
     }
   };
 
+  // If no property is provided, don't render anything
+  if (!property) {
+    console.log('PropertyEditSheet - No property provided');
+    return null;
+  }
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+    <Sheet 
+      open={open} 
+      onOpenChange={(newOpen) => {
+        console.log('Sheet onOpenChange called with:', newOpen);
+        onOpenChange(newOpen);
+      }}
+    >
+      <SheetContent className="w-full sm:max-w-xl overflow-y-auto" side="right">
         <SheetHeader>
           <SheetTitle>{t("edit_property_title")}</SheetTitle>
         </SheetHeader>
         <div className="mt-8">
           <PropertyForm
-            onSuccess={handlePropertyUpdate}
-            onClose={() => onOpenChange(false)}
+            onSuccess={() => {
+              console.log('PropertyForm - onSuccess called');
+              handlePropertyUpdate();
+            }}
+            onClose={() => {
+              console.log('PropertyForm - onClose called');
+              onOpenChange(false);
+            }}
             selectedProperty={property}
             bonusRules={bonusRules}
           />
@@ -143,6 +152,11 @@ export function PropertyDisplay({
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([]);
   const [propertyEditSheetOpen, setPropertyEditSheetOpen] = useState(false);
   const { data: exchangeRate } = useExchangeRate();
+
+  // Debug logs for state changes
+  useEffect(() => {
+    console.log('PropertyDisplay - Sheet Open State:', propertyEditSheetOpen);
+  }, [propertyEditSheetOpen]);
 
   // Helper function to convert currency to PEN
   const convertToPEN = (amount: number, currency: string): number => {
@@ -208,18 +222,27 @@ export function PropertyDisplay({
   const bonus = calculateBonus(currentProperty, bonusRules);
   const costInPEN = convertToPEN(cost, currentProperty.currency);
 
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent any form submission
+    e.stopPropagation(); // Stop event bubbling
+    console.log('Edit button clicked');
+    console.log('Current property:', currentProperty);
+    setPropertyEditSheetOpen(true);
+  };
+
   return (
     <div className="space-y-4 p-6">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm">Property</p>
-          <h3 className=" font-semibold">{currentProperty.name}</h3>
+          <h3 className=" font-semibold">{currentProperty?.name}</h3>
           {/* <p className="text-sm text-gray-500">{currentProperty.description}</p> */}
         </div>
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setPropertyEditSheetOpen(true)}
+          onClick={handleEditClick}
+          type="button" // Explicitly set button type
         >
           Edit
         </Button>
@@ -252,8 +275,16 @@ export function PropertyDisplay({
       <PropertyEditSheet
         property={currentProperty}
         open={propertyEditSheetOpen}
-        onOpenChange={setPropertyEditSheetOpen}
-        onPropertyUpdate={onPropertyUpdate}
+        onOpenChange={(open) => {
+          console.log('PropertyEditSheet - onOpenChange called with:', open);
+          setPropertyEditSheetOpen(open);
+        }}
+        onPropertyUpdate={(updatedProperty) => {
+          console.log('PropertyEditSheet - property update:', updatedProperty);
+          if (onPropertyUpdate) {
+            onPropertyUpdate(updatedProperty);
+          }
+        }}
       />
     </div>
   );
