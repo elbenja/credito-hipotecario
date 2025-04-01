@@ -212,15 +212,11 @@ export function AmortizationDetailsForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="12">Regular (12)</SelectItem>
-                        <SelectItem value="14">Double (14) - 2x in July & December</SelectItem>
+                        <SelectItem value="12">Regular </SelectItem>
+                        <SelectItem value="14">Double </SelectItem>
                       </SelectContent>
                     </Select>
-                    {field.value === "14" && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Double payments in July and December. Monthly payment and insurances are doubled for these months.
-                      </p>
-                    )}
+                
                     <FormMessage />
                   </FormItem>
                 )}
