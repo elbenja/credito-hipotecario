@@ -79,9 +79,12 @@ export default function EditAmortization() {
       if (error) throw error
       if (!data) return null
 
+      const property = data.property as unknown as Property
+
       // Initialize form with fetched data
       amortizationForm.reset({
         name: data.name || "",
+        property_id: property.id,
         down_payment: data.down_payment?.toString() || "",
         interest_rate: data.interest_rate?.toString() || "",
         term_years: data.term_years?.toString() || "",
@@ -90,8 +93,6 @@ export default function EditAmortization() {
         loan_protection_type: data.loan_protection_type as "none" | "custom" | "individual" | "joint",
         loan_protection_insurance: data.loan_protection_insurance?.toString() || "",
       })
-
-      const property = data.property as unknown as Property
 
       return {
         ...data,

@@ -119,7 +119,7 @@ export function AmortizationDetailsForm({
                 name="loan_protection_type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Loan Protection Insurance</FormLabel>
+                    <FormLabel>Loan Protection </FormLabel>
                     <Select onValueChange={(value) => {
                       field.onChange(value);
                       form.trigger("loan_protection_type");
@@ -145,7 +145,7 @@ export function AmortizationDetailsForm({
                 name="loan_protection_insurance"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Monthly Insurance Cost</FormLabel>
+                    <FormLabel>Monthly % </FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
