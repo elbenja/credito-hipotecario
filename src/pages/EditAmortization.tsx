@@ -51,6 +51,18 @@ export default function EditAmortization() {
     resolver: zodResolver(amortizationFormSchema),
   })
 
+  // Initial state for scenario inputs
+  const [scenarioInputs, setScenarioInputs] = useState({
+    amortizationId: id || "",
+    loanAmount: 0,
+    interestRate: 0,
+    termYears: 0,
+    installmentsPerYear: 12,
+    firstInstallmentDate: undefined as Date | undefined,
+    propertyInsurance: 0,
+    loanInsurance: 0
+  });
+
   // Add loan protection type watcher effect
   useEffect(() => {
     const type = amortizationForm.watch("loan_protection_type");
@@ -137,24 +149,33 @@ export default function EditAmortization() {
     enabled: !!user && !!id
   })
 
-  // Replace useMemo with useState for scenario inputs
-  const [scenarioInputs, setScenarioInputs] = useState(() => ({
-    amortizationId: id || "",
-    loanAmount: amortization?.loan_amount || 0,
-    interestRate: amortization?.interest_rate || 0,
-    termYears: amortization?.term_years || 0,
-    installmentsPerYear: amortization?.installments_per_year || 12,
-    firstInstallmentDate: amortization?.first_installment_date ? new Date(amortization.first_installment_date) : undefined,
-    propertyInsurance: amortization?.property?.property_insurance || 0,
-    loanInsurance: amortization?.loan_protection_insurance || 0
-  }));
-
-  // Add form value watching effect
+  // Update scenario inputs when amortization data changes
   useEffect(() => {
+    if (amortization) {
+      setScenarioInputs({
+        amortizationId: id || "",
+        loanAmount: amortization.loan_amount || 0,
+        interestRate: amortization.interest_rate || 0,
+        termYears: amortization.term_years || 0,
+        installmentsPerYear: amortization.installments_per_year || 12,
+        firstInstallmentDate: amortization.first_installment_date ? new Date(amortization.first_installment_date) : undefined,
+        propertyInsurance: amortization.property?.property_insurance || 0,
+        loanInsurance: amortization.loan_protection_insurance || 0
+      });
+    }
+  }, [
+    id, 
+    amortization
+  ]);
+
+  // Add form value watching effect with proper dependency array
+  useEffect(() => {
+    if (!amortization?.property) return;
+    
     const subscription = amortizationForm.watch((values) => {
-      if (!values || !amortization?.property) return;
+      if (!values) return;
       
-      // Parse form values
+      // Only call this function when we have meaningful changes
       const downPayment = parseFloat(values.down_payment?.replace(/[^0-9.]/g, "") || "0");
       const loanAmount = amortization.property.price_cost - downPayment;
       const interestRate = parseFloat(values.interest_rate || "0");
@@ -190,7 +211,6 @@ export default function EditAmortization() {
         );
       }
 
-      // Update scenario inputs
       setScenarioInputs({
         amortizationId: id || "",
         loanAmount,
@@ -206,16 +226,17 @@ export default function EditAmortization() {
     return () => subscription.unsubscribe();
   }, [amortizationForm, id, amortization?.property]);
 
-  const { data: scenarios } = useScenarioCalculations(scenarioInputs)
+  const { data: scenarios, isLoading: isLoadingScenarios } = useScenarioCalculations(scenarioInputs)
 
   // Helper function to transform payment rows for ScenarioTable
   const mapPaymentForTable = useCallback((payment: any) => {
-    console.log('Raw payment data:', payment);
+    if (!payment) return null;
+    
     const paymentDate = new Date(payment.payment_date)
     const isDoublePaymentMonth = amortization?.installments_per_year === 14 && 
       (paymentDate.getMonth() === 6 || paymentDate.getMonth() === 11)
     
-    const mappedPayment = {
+    return {
       date: paymentDate,
       beginning_balance: payment.beginning_balance || 0,
       capital: payment.principal || payment.capital || 0,
@@ -227,9 +248,7 @@ export default function EditAmortization() {
       is_different_from_base: payment.is_different_from_base || false,
       is_double_payment: isDoublePaymentMonth
     };
-    console.log('Mapped payment data:', mappedPayment);
-    return mappedPayment;
-  }, [amortization?.installments_per_year])
+  }, [amortization?.installments_per_year]);
 
   const onUpdateAmortization = async (values: AmortizationFormValues) => {
     try {
@@ -430,7 +449,7 @@ export default function EditAmortization() {
           {/* Right Container */}
           <div className="w-full overflow-hidden flex-1 px-2 sm:px-8 pt-2 sm:pt-6">
             {/* <h2 className="text-sm mb-6">{t("payment_scenarios_graphs")}</h2> */}
-            {!amortization || !scenarios ? (
+            {(!amortization || !scenarios || isLoadingScenarios) ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-2"></div>
                 <div className="text-muted-foreground">{t("loading")}</div>

@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useMemo } from "react"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts"
@@ -32,28 +32,29 @@ interface ScenarioPanelProps {
 const chartConfig = {
   principal: {
     label: "Principal",
- 
+    // color: "var(--color-principal)",
   },
   interest_insurance: {
     label: "Interest & Insurance",
- 
+    // color: "var(--color-interest_insurance)",
   },
 } satisfies ChartConfig
 
+// Memoize the data transformation function to avoid recalculating on every render
 const transformPaymentsToChartData = (payments: ExtendedPaymentRow[]) => {
+  if (!payments?.length) return [];
+  
   return payments.map((payment) => {
     // Calculate total interest and insurances
     const totalInterestAndInsurances = (payment.monthly_interest || payment.interest || 0) + 
                                      (payment.property_insurance || 0) + 
                                      (payment.monthly_loan_insurance || payment.loan_insurance || 0)
 
-    const transformedData = {
+    return {
       date: payment.payment_date,
       principal: payment.principal || payment.capital || 0,
       interest_insurance: totalInterestAndInsurances,
     }
-    
-    return transformedData
   })
 }
 
@@ -64,21 +65,48 @@ const ScenarioPanel = ({
   currency,
   showBaseline = false
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
-  if (!scenario?.summary) return null
+  if (!scenario?.summary) return null;
 
-  const chartData = React.useMemo(() => {
-    if (!scenario.payments?.length) return []
-    return transformPaymentsToChartData(scenario.payments)
-  }, [scenario.payments])
+  // Memoize chart data to prevent unnecessary recalculations
+  const chartData = useMemo(() => {
+    if (!scenario?.payments?.length) return [];
+    return transformPaymentsToChartData(scenario.payments);
+  }, [scenario.payments]);
 
-  if (!chartData.length) return null
+  // Bail early if we don't have chart data
+  if (!chartData.length) return null;
 
-  const getDifference = (current: number, base?: number) => {
-    if (!base) return null
-    const diff = current - base
-    // Return null if the difference is 0 to hide the badge
-    return diff === 0 ? null : diff
-  }
+  // Memoize the difference calculations
+  const differences = useMemo(() => {
+    const getDifference = (current: number, base?: number) => {
+      if (!base) return null;
+      const diff = current - base;
+      // Return null if the difference is 0 to hide the badge
+      return diff === 0 ? null : diff;
+    };
+
+    return {
+      sum: getDifference(
+        scenario.summary.total_interest_and_insurance,
+        regularScenario?.summary?.total_interest_and_insurance
+      ),
+      months: getDifference(
+        scenario.summary.total_months,
+        regularScenario?.summary?.total_months
+      ),
+      payment: getDifference(
+        scenario.summary.monthly_payment,
+        regularScenario?.summary?.monthly_payment
+      )
+    };
+  }, [
+    scenario.summary.total_interest_and_insurance,
+    scenario.summary.total_months,
+    scenario.summary.monthly_payment,
+    regularScenario?.summary?.total_interest_and_insurance,
+    regularScenario?.summary?.total_months,
+    regularScenario?.summary?.monthly_payment
+  ]);
 
   const getBadgeVariant = (difference: number | null, isMonths = false): "default" | "destructive" | "primary" | "outline" | "blue" | "green" => {
     if (difference === null || showBaseline) return "primary"
@@ -94,79 +122,56 @@ const ScenarioPanel = ({
     return `${prefix}${Math.abs(difference)}`
   }
 
-  const sumDifference = getDifference(
-    scenario.summary.total_interest_and_insurance,
-    regularScenario?.summary?.total_interest_and_insurance
-  )
-
-  const monthsDifference = getDifference(
-    scenario.summary.total_months,
-    regularScenario?.summary?.total_months
-  )
-
-  const paymentDifference = getDifference(
-    scenario.summary.monthly_payment,
-    regularScenario?.summary?.monthly_payment
-  )
-
   return (
     <div className="p-1 sm:p-4 border rounded-lg">
       <h3 className="text-lg font-semibold mb-1">{title}</h3>
       
       <div className="space-y-4 ">
-        
-      <div className="grid  grid-flow-col grid-cols-4 grid-rows-2 auto-rows-min gap-0 "> 
-         <div className="col-span-2 px-1 sm:px-3 ">
-          <span className=" text-sm text-muted-foreground">Sum Interest & Insurances</span>
-        </div>
+        <div className="grid grid-flow-col grid-cols-4 grid-rows-2 auto-rows-min gap-0 "> 
+          <div className="col-span-2 px-1 sm:px-3 ">
+            <span className=" text-sm text-muted-foreground">Sum Interest & Insurances</span>
+          </div>
 
-        <div className="col-span-2 flex items-center gap-2 px-2 sm:px-3 ">
-          <span className="text-lg font-medium">{formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}</span>
-          {showBaseline ? (
-            <Badge variant="primary" className="text-sm">Baseline</Badge>
-          ) : sumDifference && (
-            <Badge variant={getBadgeVariant(sumDifference)} className="text-sm bg-green-600/10 text-green-600">
-              {sumDifference < 0 ? '-' : '+'}{formatCurrency(Math.abs(sumDifference), currency as Currency)}
-            </Badge>
-          )}
-          
-        </div>
-
-
-
-        <div className="col-span-1 px-1 sm:px-3  ">
-          <span className=" text-sm text-muted-foreground">Months</span>
-         </div>
-          
-          <div className="col-span-1 flex items-center gap-2 px-2 sm:px-3 ">
-            <span className="text-lg font-medium">{scenario.summary.total_months}</span>
-            {monthsDifference && !showBaseline && (
-              <Badge variant={getBadgeVariant(monthsDifference, true)} className="text-sm">
-                {formatDifference(monthsDifference)}
-              </Badge>
-            )}
-          
-        </div>
-
-        <div className="col-span-1 px-1 sm:px-3 ">
-          <span className=" text-sm text-muted-foreground">Monthly Payment</span>
-        </div>
-
-          <div className="col-span-1 flex items-center gap-2 px-2 sm:px-3 ">
-            <span className="text-lg font-medium">{formatCurrency(scenario.summary.monthly_payment, currency as Currency)}</span>
-            {paymentDifference && !showBaseline && (
-              <Badge variant={getBadgeVariant(paymentDifference)} className="text-sm">
-                {paymentDifference < 0 ? '-' : '+'}{formatCurrency(Math.abs(paymentDifference), currency as Currency)}
+          <div className="col-span-2 flex items-center gap-2 px-2 sm:px-3 ">
+            <span className="text-lg font-medium">{formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}</span>
+            {showBaseline ? (
+              <Badge variant="primary" className="text-sm">Baseline</Badge>
+            ) : differences.sum && (
+              <Badge variant={getBadgeVariant(differences.sum)} className="text-sm bg-green-600/10 text-green-600">
+                {differences.sum < 0 ? '-' : '+'}{formatCurrency(Math.abs(differences.sum), currency as Currency)}
               </Badge>
             )}
           </div>
-        
-      </div>
 
+          <div className="col-span-1 px-1 sm:px-3  ">
+            <span className=" text-sm text-muted-foreground">Months</span>
+          </div>
+            
+          <div className="col-span-1 flex items-center gap-2 px-2 sm:px-3 ">
+            <span className="text-lg font-medium">{scenario.summary.total_months}</span>
+            {differences.months && !showBaseline && (
+              <Badge variant={getBadgeVariant(differences.months, true)} className="text-sm">
+                {formatDifference(differences.months)}
+              </Badge>
+            )}
+          </div>
+
+          <div className="col-span-1 px-1 sm:px-3 ">
+            <span className=" text-sm text-muted-foreground">Monthly Payment</span>
+          </div>
+
+          <div className="col-span-1 flex items-center gap-2 px-2 sm:px-3 ">
+            <span className="text-lg font-medium">{formatCurrency(scenario.summary.monthly_payment, currency as Currency)}</span>
+            {differences.payment && !showBaseline && (
+              <Badge variant={getBadgeVariant(differences.payment)} className="text-sm">
+                {differences.payment < 0 ? '-' : '+'}{formatCurrency(Math.abs(differences.payment), currency as Currency)}
+              </Badge>
+            )}
+          </div>
+        </div>
 
         <div className="h-[300px] w-full mt-6">
-          <ChartThemeWrapper    cardBackground="black"
-            textColor="white"      >
+          <ChartThemeWrapper cardBackground="black" textColor="white">
             <ChartContainer config={chartConfig}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
@@ -190,10 +195,6 @@ const ScenarioPanel = ({
                     interval={24}  // Show every 12th tick
                     className="text-muted-foreground text-xs"
                   />
-                  {/* <YAxis 
-                    tickFormatter={(value) => formatCurrency(Number(value || 0), currency as Currency)}
-                    className="text-muted-foreground text-xs"
-                  /> */}
                   <ChartTooltip
                     content={({ active, payload, label }) => {
                       if (!active || !payload?.length) return null

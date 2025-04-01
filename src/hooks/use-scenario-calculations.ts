@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { useDebounce } from "./use-debounce"
 import { ScenarioCalculator } from "@/services/amortization/services/scenarioCalculator"
@@ -86,19 +86,47 @@ export function useScenarioCalculations({
     };
   }, [amortizationId, queryClient]);
   
-  // Debounce all input values with a 500ms delay
-  const debouncedLoanAmount = useDebounce(loanAmount, 500)
-  const debouncedInterestRate = useDebounce(interestRate, 500)
-  const debouncedTermYears = useDebounce(termYears, 500)
-  const debouncedInstallmentsPerYear = useDebounce(installmentsPerYear, 500)
-  const debouncedFirstInstallmentDate = useDebounce(firstInstallmentDate, 500)
-  const debouncedPropertyInsurance = useDebounce(propertyInsurance, 500)
-  const debouncedLoanInsurance = useDebounce(loanInsurance, 500)
+  // Batch all inputs into a single object for debouncing
+  // This reduces the number of re-renders and recalculations
+  const inputs = useMemo(() => ({
+    loanAmount,
+    interestRate,
+    termYears,
+    installmentsPerYear,
+    firstInstallmentDate,
+    propertyInsurance,
+    loanInsurance
+  }), [
+    loanAmount,
+    interestRate,
+    termYears,
+    installmentsPerYear,
+    firstInstallmentDate,
+    propertyInsurance,
+    loanInsurance
+  ]);
+  
+  // Debounce the entire inputs object at once
+  const debouncedInputs = useDebounce(inputs, 500);
+  
+  // Extract values from debounced inputs for easier use
+  const {
+    loanAmount: debouncedLoanAmount,
+    interestRate: debouncedInterestRate,
+    termYears: debouncedTermYears,
+    installmentsPerYear: debouncedInstallmentsPerYear,
+    firstInstallmentDate: debouncedFirstInstallmentDate,
+    propertyInsurance: debouncedPropertyInsurance,
+    loanInsurance: debouncedLoanInsurance
+  } = debouncedInputs;
 
   // Ensure we have a valid date before calling toISOString
-  const firstInstallmentDateString = debouncedFirstInstallmentDate instanceof Date ? 
-    debouncedFirstInstallmentDate.toISOString() : 
-    new Date().toISOString()
+  const firstInstallmentDateString = useMemo(() => {
+    if (!(debouncedFirstInstallmentDate instanceof Date)) {
+      return new Date().toISOString();
+    }
+    return debouncedFirstInstallmentDate.toISOString();
+  }, [debouncedFirstInstallmentDate]);
 
   return useQuery({
     queryKey: [
@@ -233,10 +261,10 @@ export function useScenarioCalculations({
 
       return result;
     },
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 30000, // Add a reasonable staleTime to prevent frequent refetches
+    gcTime: 300000, // Increase gcTime to keep data in cache longer
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // Disable refetch on window focus to reduce unnecessary calls
     enabled: !!amortizationId
   })
 } 
