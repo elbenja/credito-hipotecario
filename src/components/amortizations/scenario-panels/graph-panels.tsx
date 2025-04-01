@@ -60,11 +60,7 @@ const ScenarioPanel = ({
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
   if (!scenario?.summary) return null
 
-  console.log('Scenario data:', {
-    title,
-    summary: scenario.summary,
-    paymentsCount: scenario.payments?.length
-  })
+ 
 
   const getDifference = (current: number, base?: number) => {
     if (!base) return null

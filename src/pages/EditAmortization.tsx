@@ -29,7 +29,7 @@ import {
 } from '@/components/amortizations/scenario-panels/graph-panels'
 import { ExtraInstallmentsSection } from '@/components/amortizations/extra-installments-section'
 import { NewRateForm } from '@/components/amortizations/new-rate-form'
-import { useMemo, useCallback } from "react"
+import { useMemo, useCallback, useEffect, useState } from "react"
 
 export default function EditAmortization() {
   const { t } = useTranslation()
@@ -42,6 +42,33 @@ export default function EditAmortization() {
   const amortizationForm = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
   })
+
+  // Add loan protection type watcher effect
+  useEffect(() => {
+    const type = amortizationForm.watch("loan_protection_type");
+    
+    switch (type) {
+      case "individual":
+        amortizationForm.setValue("loan_protection_insurance", "0.028", {
+          shouldValidate: true,
+          shouldDirty: true
+        });
+        break;
+      case "joint":
+        amortizationForm.setValue("loan_protection_insurance", "0.052", {
+          shouldValidate: true,
+          shouldDirty: true
+        });
+        break;
+      case "none":
+        amortizationForm.setValue("loan_protection_insurance", "0", {
+          shouldValidate: true,
+          shouldDirty: true
+        });
+        break;
+      // For custom type, don't override the value
+    }
+  }, [amortizationForm.watch("loan_protection_type")]);
 
   const { data: amortization, isLoading } = useQuery({
     queryKey: ["amortization", id],
@@ -102,8 +129,8 @@ export default function EditAmortization() {
     enabled: !!user && !!id
   })
 
-  // Memoize the scenario calculation inputs to prevent unnecessary recalculations
-  const scenarioInputs = useMemo(() => ({
+  // Replace useMemo with useState for scenario inputs
+  const [scenarioInputs, setScenarioInputs] = useState(() => ({
     amortizationId: id || "",
     loanAmount: amortization?.loan_amount || 0,
     interestRate: amortization?.interest_rate || 0,
@@ -112,16 +139,64 @@ export default function EditAmortization() {
     firstInstallmentDate: amortization?.first_installment_date ? new Date(amortization.first_installment_date) : undefined,
     propertyInsurance: amortization?.property?.property_insurance || 0,
     loanInsurance: amortization?.loan_protection_insurance || 0
-  }), [
-    id,
-    amortization?.loan_amount,
-    amortization?.interest_rate,
-    amortization?.term_years,
-    amortization?.installments_per_year,
-    amortization?.first_installment_date,
-    amortization?.property?.property_insurance,
-    amortization?.loan_protection_insurance
-  ])
+  }));
+
+  // Add form value watching effect
+  useEffect(() => {
+    const subscription = amortizationForm.watch((values) => {
+      if (!values || !amortization?.property) return;
+      
+      // Parse form values
+      const downPayment = parseFloat(values.down_payment?.replace(/[^0-9.]/g, "") || "0");
+      const loanAmount = amortization.property.price_cost - downPayment;
+      const interestRate = parseFloat(values.interest_rate || "0");
+      const termYears = parseInt(values.term_years || "0");
+      const installmentsPerYear = parseInt(values.installments_per_year || "12");
+      
+      // Handle loan protection insurance based on type
+      let loanInsurance = 0;
+      switch (values.loan_protection_type) {
+        case "individual":
+          loanInsurance = 0.028;
+          break;
+        case "joint":
+          loanInsurance = 0.052;
+          break;
+        case "custom":
+          loanInsurance = parseFloat(values.loan_protection_insurance || "0");
+          break;
+        case "none":
+          loanInsurance = 0;
+          break;
+      }
+
+      // Handle date properly to preserve the day of month
+      let firstInstallmentDate;
+      if (values.first_installment_date) {
+        const tempDate = new Date(values.first_installment_date);
+        firstInstallmentDate = new Date(
+          tempDate.getFullYear(),
+          tempDate.getMonth(),
+          tempDate.getDate(),
+          12, 0, 0, 0
+        );
+      }
+
+      // Update scenario inputs
+      setScenarioInputs({
+        amortizationId: id || "",
+        loanAmount,
+        interestRate,
+        termYears,
+        installmentsPerYear,
+        firstInstallmentDate,
+        propertyInsurance: amortization.property.property_insurance || 0,
+        loanInsurance
+      });
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [amortizationForm, id, amortization?.property]);
 
   const { data: scenarios } = useScenarioCalculations(scenarioInputs)
 
