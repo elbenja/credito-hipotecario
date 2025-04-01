@@ -108,40 +108,49 @@ const ScenarioPanel = ({
   )
 
   return (
-    <div className="p-4 border rounded-lg">
-      <h3 className="text-lg font-semibold mb-4">{title}</h3>
+    <div className="p-1 sm:p-4 border rounded-lg">
+      <h3 className="text-lg font-semibold mb-1">{title}</h3>
       
       <div className="space-y-4 ">
-      <div className="grid grid-cols-4 gap-1 "> 
-      <div className="col-span-2 p-4">
-          <span className="text-muted-foreground">Sum Interest & Insurances:</span>
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-medium">{formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}</span>
-            {showBaseline ? (
-              <Badge variant="primary" className="text-sm">Baseline</Badge>
-            ) : sumDifference && (
-              <Badge variant={getBadgeVariant(sumDifference)} className="text-sm bg-green-600/10 text-green-600">
-                {sumDifference < 0 ? '-' : '+'}{formatCurrency(Math.abs(sumDifference), currency as Currency)}
-              </Badge>
-            )}
-          </div>
+        
+      <div className="grid  grid-flow-col grid-cols-4 grid-rows-2 auto-rows-min gap-0 "> 
+         <div className="col-span-2 px-1 sm:px-3 ">
+          <span className=" text-sm text-muted-foreground">Sum Interest & Insurances</span>
         </div>
 
-        <div className="col-span-1  p-4">
-          <span className="text-muted-foreground">Months:</span>
-          <div className="flex items-center gap-2">
+        <div className="col-span-2 flex items-center gap-2 px-2 sm:px-3 ">
+          <span className="text-lg font-medium">{formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}</span>
+          {showBaseline ? (
+            <Badge variant="primary" className="text-sm">Baseline</Badge>
+          ) : sumDifference && (
+            <Badge variant={getBadgeVariant(sumDifference)} className="text-sm bg-green-600/10 text-green-600">
+              {sumDifference < 0 ? '-' : '+'}{formatCurrency(Math.abs(sumDifference), currency as Currency)}
+            </Badge>
+          )}
+          
+        </div>
+
+
+
+        <div className="col-span-1 px-1 sm:px-3  ">
+          <span className=" text-sm text-muted-foreground">Months</span>
+         </div>
+          
+          <div className="col-span-1 flex items-center gap-2 px-2 sm:px-3 ">
             <span className="text-lg font-medium">{scenario.summary.total_months}</span>
             {monthsDifference && !showBaseline && (
               <Badge variant={getBadgeVariant(monthsDifference, true)} className="text-sm">
                 {formatDifference(monthsDifference)}
               </Badge>
             )}
-          </div>
+          
         </div>
 
-        <div className="col-span-1 p-4">
-          <span className="text-muted-foreground">Monthly Payment:</span>
-          <div className="flex items-center gap-2">
+        <div className="col-span-1 px-1 sm:px-3 ">
+          <span className=" text-sm text-muted-foreground">Monthly Payment</span>
+        </div>
+
+          <div className="col-span-1 flex items-center gap-2 px-2 sm:px-3 ">
             <span className="text-lg font-medium">{formatCurrency(scenario.summary.monthly_payment, currency as Currency)}</span>
             {paymentDifference && !showBaseline && (
               <Badge variant={getBadgeVariant(paymentDifference)} className="text-sm">
@@ -149,8 +158,7 @@ const ScenarioPanel = ({
               </Badge>
             )}
           </div>
-        </div>
-
+        
       </div>
 
 

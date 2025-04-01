@@ -345,7 +345,7 @@ export default function EditAmortization() {
           </div>
 
           {/* Right Container */}
-          <div className="flex-1 px-8 pt-6">
+          <div className="w-full overflow-hidden flex-1 px-2 sm:px-8 pt-2 sm:pt-6">
             <h2 className="text-sm  mb-6">payment scenarios graphs</h2>
             {!amortization || !scenarios ? (
               <div className="flex items-center justify-center h-64">
