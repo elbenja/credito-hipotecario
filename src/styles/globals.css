@@ -84,4 +84,13 @@
     --chart-4: 240 50% 30%;
     --chart-5: 240 40% 20%;
   }
+}
+
+/* Fix for mobile Safari dropdown menus */
+[data-radix-popper-content-wrapper] {
+  touch-action: none !important;
+}
+
+[data-touch="true"] {
+  -webkit-tap-highlight-color: transparent;
 } 

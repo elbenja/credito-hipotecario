@@ -221,13 +221,15 @@ export function PropertyList({
                 <TableCell className="w-[50px]">
                   <DropdownMenu>
                     <DropdownMenuTrigger
-                      className="flex h-8 w-8 items-center justify-center rounded-md border transition-colors hover:bg-muted"
+                      className="flex h-8 w-8 items-center justify-center rounded-md border transition-colors hover:bg-muted touch-none"
                       onClick={(e) => e.stopPropagation()}
+                      data-touch="true"
+                      style={{ touchAction: 'none' }}
                     >
                       <MoreVertical className="h-4 w-4" />
                       <span className="sr-only">{t('open_menu')}</span>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" sideOffset={5} className="touch-none">
                       <DropdownMenuItem onClick={(e) => handleDuplicate(e, property)}>
                         <Copy className="mr-2 h-4 w-4" />
                         <span>{t('duplicate')}</span>
