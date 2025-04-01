@@ -322,7 +322,7 @@ export default function EditAmortization() {
       <div className="flex flex-col min-h-screen">
         <div className="flex flex-col md:flex-row flex-1">
           {/* Left Container */}
-          <div className="w-full sm:w-full md:w-[40%] md:min-w-[320px] md:max-w-[540px] relative flex-shrink-0">
+          <div className=" sm:w-full md:w-[40%] md:min-w-[320px] md:max-w-[540px] relative flex-shrink-0">
             <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-border"></div>
             <PropertyDisplay 
               property={amortization.property}

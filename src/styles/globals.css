@@ -31,7 +31,6 @@
   }
 
   .light {
-    --color-principal: 41 89% 61%; /* NO FUNCIONA :/ */
 
     --background:0 84.2% 60.2%;
     --foreground: 60 5% 90%;

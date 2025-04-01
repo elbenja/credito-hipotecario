@@ -25,12 +25,9 @@ interface ScenarioPanelProps {
 const chartConfig = {
   principal: {
     label: "Principal",
-    
   },
   interest_insurance: {
     label: "Interest & Insurance",
-    
-   
   },
 } satisfies ChartConfig
 
@@ -158,7 +155,8 @@ const ScenarioPanel = ({
 
 
         <div className="h-[300px] w-full mt-6">
-          <ChartThemeWrapper>
+          <ChartThemeWrapper    cardBackground="black"
+            textColor="white"      >
             <ChartContainer config={chartConfig}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
@@ -190,17 +188,17 @@ const ScenarioPanel = ({
                     content={({ active, payload, label }) => {
                       if (!active || !payload?.length) return null
                       return (
-                        <div className="rounded-lg border bg-background p-2 shadow-sm">
+                        <div className="rounded-lg bg-primary p-2 shadow-sm text-primary-foreground">
                           <div className="text-sm font-medium mb-2">
                             {format(new Date(label), 'MMM yyyy')}
                           </div>
                           {payload.map((entry) => (
                             <div key={entry.name} className="flex items-center gap-2 text-sm">
                               <div 
-                                className="h-2 w-2 rounded-full"
+                                className="h-3 w-1 rounded-full"
                                 style={{ backgroundColor: entry.color }}
                               />
-                              <span className="text-muted-foreground">
+                              <span className="text-primary-foreground">
                                 {chartConfig[entry.name as keyof typeof chartConfig].label}:
                               </span>
                               <span className="font-medium">
