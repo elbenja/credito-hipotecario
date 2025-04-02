@@ -1,5 +1,16 @@
 {
   "extra_installments_section": {
+    "title": "Pagos Adicionales",
+    "success": {
+      "title": "Éxito",
+      "add": "Pago adicional agregado exitosamente",
+      "delete": "Pago adicional eliminado exitosamente"
+    },
+    "error": {
+      "title": "Error",
+      "add": "Error al agregar pago adicional",
+      "delete": "Error al eliminar pago adicional"
+    },
     "form": {
       "amount": "Monto",
       "amount_required": "El monto es requerido",
@@ -9,9 +20,17 @@
       "frequency_placeholder": "Seleccione frecuencia",
       "frequency_monthly": "Mensual",
       "frequency_one_time": "Una vez",
-      "first_date": "Primera Fecha",
+      "first_date": "Fecha de Inicio",
       "start_date_required": "La fecha de inicio es requerida",
       "add_button": "Agregar"
+    },
+    "table": {
+      "number": "#",
+      "amount": "Monto",
+      "frequency": "Frecuencia",
+      "date": "Fecha",
+      "delete_tooltip": "Eliminar pago",
+      "no_installments": "Aún no hay pagos adicionales"
     }
   },
   "payment_scenarios": {
@@ -34,6 +53,28 @@
         "delete_tooltip": "Eliminar tasa"
       },
       "no_options": "Aún no hay opciones de refinanciamiento"
+    }
+  },
+  "scenario_graphs": {
+    "regular": {
+      "title": " Regular",
+      "baseline": "Línea Base"
+    },
+    "accelerated": {
+      "title": "Amotizaciones a plazo"
+    },
+    "lower_payment": {
+      "title": "Amotizaciones a cuotas"
+    },
+    "new_rate": {
+      "title": "Compra de deuda"
+    },
+    "common": {
+      "sum_interest_insurance": "Suma de Intereses y Seguros",
+      "months": "Meses",
+      "monthly_payment": "Pago Mensual",
+      "principal": "Principal",
+      "interest_insurance": "Intereses y Seguros"
     }
   }
 } 

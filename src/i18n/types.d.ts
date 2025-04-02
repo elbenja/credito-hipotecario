@@ -201,6 +201,28 @@ declare module 'i18next' {
             no_options: string
           }
         }
+        scenario_graphs: {
+          regular: {
+            title: string
+            baseline: string
+          }
+          accelerated: {
+            title: string
+          }
+          lower_payment: {
+            title: string
+          }
+          new_rate: {
+            title: string
+          }
+          common: {
+            sum_interest_insurance: string
+            months: string
+            monthly_payment: string
+            principal: string
+            interest_insurance: string
+          }
+        }
       }
     }
   }

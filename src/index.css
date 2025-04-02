@@ -126,3 +126,11 @@
     text-wrap: balance;
   }
 }
+/* Fix for mobile Safari dropdown menus */
+[data-radix-popper-content-wrapper] {
+  touch-action: none !important;
+}
+
+[data-touch="true"] {
+  -webkit-tap-highlight-color: transparent;
+} 

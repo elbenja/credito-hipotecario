@@ -1,5 +1,16 @@
 {
   "extra_installments_section": {
+    "title": "Extra Installments",
+    "success": {
+      "title": "Success",
+      "add": "Extra installment added successfully",
+      "delete": "Extra installment deleted successfully"
+    },
+    "error": {
+      "title": "Error",
+      "add": "Error adding extra installment",
+      "delete": "Error deleting extra installment"
+    },
     "form": {
       "amount": "Amount",
       "amount_required": "Amount is required",
@@ -12,6 +23,14 @@
       "first_date": "First Date",
       "start_date_required": "Start date is required",
       "add_button": "Add"
+    },
+    "table": {
+      "number": "#",
+      "amount": "Amount",
+      "frequency": "Frequency",
+      "date": "Date",
+      "delete_tooltip": "Delete installment",
+      "no_installments": "No extra installments added yet"
     }
   },
   "payment_scenarios": {

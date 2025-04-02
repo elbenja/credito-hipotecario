@@ -40,7 +40,7 @@ export function ExtraInstallmentsSection({
   onInstallmentsChange
 }: ExtraInstallmentsSectionProps) {
   const { toast } = useToast()
-  const { t } = useTranslation()
+  const { t } = useTranslation(['components'])
   const [isLoading, setIsLoading] = useState(false)
   const queryClient = useQueryClient()
 
@@ -117,15 +117,15 @@ export function ExtraInstallmentsSection({
       
       onInstallmentsChange()
       toast({
-        title: t("success"),
-        description: t("extra_installment_added"),
+        title: t('extra_installments_section.success.title', 'Success', { ns: 'components' }),
+        description: t('extra_installments_section.success.add', 'Extra installment added successfully', { ns: 'components' }),
         variant: "default"
       })
     } catch (error) {
       console.error("Error details:", error)
       toast({
-        title: t("error"),
-        description: t("error_adding_extra_installment"),
+        title: t('extra_installments_section.error.title', 'Error', { ns: 'components' }),
+        description: t('extra_installments_section.error.add', 'Error adding extra installment', { ns: 'components' }),
         variant: "destructive"
       })
     } finally {
@@ -155,15 +155,15 @@ export function ExtraInstallmentsSection({
 
       onInstallmentsChange()
       toast({
-        title: t("extra_installments_section.success.delete"),
-        description: t("extra_installments_section.success.delete"),
+        title: t('extra_installments_section.success.title', 'Success', { ns: 'components' }),
+        description: t('extra_installments_section.success.delete', 'Extra installment deleted successfully', { ns: 'components' }),
       })
     } catch (error) {
       console.error("Error deleting extra installment:", error)
       toast({
         variant: "destructive",
-        title: t("extra_installments_section.error.title"),
-        description: t("extra_installments_section.error.delete"),
+        title: t('extra_installments_section.error.title', 'Error', { ns: 'components' }),
+        description: t('extra_installments_section.error.delete', 'Error deleting extra installment', { ns: 'components' }),
       })
     } finally {
       setIsLoading(false)
@@ -173,7 +173,7 @@ export function ExtraInstallmentsSection({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium">{t("extra_installments_section.title")}</h3>
+        <h3 className="text-lg font-medium">{t('extra_installments_section.title', 'Extra Installments', { ns: 'components' })}</h3>
       </div>
 
       <ExtraInstallmentForm

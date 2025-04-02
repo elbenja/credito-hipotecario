@@ -6,6 +6,7 @@ import { ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart
 import { ChartThemeWrapper } from "@/components/ui/chart/theme-wrapper"
 import { format } from "date-fns"
 import { PaymentRow, ScenarioResult } from "@/services/amortization/types/common"
+import { useTranslation } from "react-i18next"
 
 type Currency = "USD" | "PEN"
 
@@ -32,11 +33,11 @@ interface ScenarioPanelProps {
 const chartConfig = {
   principal: {
     label: "Principal",
-    // color: "var(--color-principal)",
+    color: "var(--color-principal)",
   },
   interest_insurance: {
     label: "Interest & Insurance",
-    // color: "var(--color-interest_insurance)",
+    color: "var(--color-interest_insurance)",
   },
 } satisfies ChartConfig
 
@@ -65,6 +66,8 @@ const ScenarioPanel = ({
   currency,
   showBaseline = false
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
+  const { t } = useTranslation()
+  
   if (!scenario?.summary) return null;
 
   // Memoize chart data to prevent unnecessary recalculations
@@ -122,6 +125,18 @@ const ScenarioPanel = ({
     return `${prefix}${Math.abs(difference)}`
   }
 
+  // Create translated chart config
+  const translatedChartConfig = {
+    principal: {
+      label: t('scenario_graphs.common.principal', 'Principal', { ns: 'components' }),
+     
+    },
+    interest_insurance: {
+      label: t('scenario_graphs.common.interest_insurance', 'Interest & Insurance', { ns: 'components' }),
+    
+    }
+  } satisfies ChartConfig
+
   return (
     <div className="p-1 sm:p-4 border rounded-lg">
       <h3 className="text-lg font-semibold mb-1">{title}</h3>
@@ -129,13 +144,17 @@ const ScenarioPanel = ({
       <div className="space-y-4 ">
         <div className="grid grid-flow-col grid-cols-4 grid-rows-2 auto-rows-min gap-0 "> 
           <div className="col-span-2 px-1 sm:px-3 ">
-            <span className=" text-sm text-muted-foreground">Sum Interest & Insurances</span>
+            <span className=" text-sm text-muted-foreground">
+              {t('scenario_graphs.common.sum_interest_insurance', 'Sum Interest & Insurances', { ns: 'components' })}
+            </span>
           </div>
 
           <div className="col-span-2 flex items-center gap-2 px-2 sm:px-3 ">
             <span className="text-lg font-medium">{formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}</span>
             {showBaseline ? (
-              <Badge variant="primary" className="text-sm">Baseline</Badge>
+              <Badge variant="primary" className="text-sm">
+                {t('scenario_graphs.regular.baseline', 'Baseline', { ns: 'components' })}
+              </Badge>
             ) : differences.sum && (
               <Badge variant={getBadgeVariant(differences.sum)} className="text-sm bg-green-600/10 text-green-600">
                 {differences.sum < 0 ? '-' : '+'}{formatCurrency(Math.abs(differences.sum), currency as Currency)}
@@ -144,7 +163,9 @@ const ScenarioPanel = ({
           </div>
 
           <div className="col-span-1 px-1 sm:px-3  ">
-            <span className=" text-sm text-muted-foreground">Months</span>
+            <span className=" text-sm text-muted-foreground">
+              {t('scenario_graphs.common.months', 'Months', { ns: 'components' })}
+            </span>
           </div>
             
           <div className="col-span-1 flex items-center gap-2 px-2 sm:px-3 ">
@@ -157,7 +178,9 @@ const ScenarioPanel = ({
           </div>
 
           <div className="col-span-1 px-1 sm:px-3 ">
-            <span className=" text-sm text-muted-foreground">Monthly Payment</span>
+            <span className=" text-sm text-muted-foreground">
+              {t('scenario_graphs.common.monthly_payment', 'Monthly Payment', { ns: 'components' })}
+            </span>
           </div>
 
           <div className="col-span-1 flex items-center gap-2 px-2 sm:px-3 ">
@@ -172,7 +195,7 @@ const ScenarioPanel = ({
 
         <div className="h-[300px] w-full mt-6">
           <ChartThemeWrapper cardBackground="black" textColor="white">
-            <ChartContainer config={chartConfig}>
+            <ChartContainer config={translatedChartConfig}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
                   data={chartData}
@@ -210,7 +233,7 @@ const ScenarioPanel = ({
                                 style={{ backgroundColor: entry.color }}
                               />
                               <span className="text-primary-foreground">
-                                {chartConfig[entry.name as keyof typeof chartConfig].label}:
+                                {translatedChartConfig[entry.name as keyof typeof translatedChartConfig].label}:
                               </span>
                               <span className="font-medium">
                                 {formatCurrency(Number(entry.value || 0), currency as Currency)}
@@ -245,18 +268,22 @@ const ScenarioPanel = ({
   )
 }
 
-export const RegularPanelGraph = (props: ScenarioPanelProps) => (
-  <ScenarioPanel {...props} title="Regular Scenario" showBaseline />
-)
+export const RegularPanelGraph = (props: ScenarioPanelProps) => {
+  const { t } = useTranslation()
+  return <ScenarioPanel {...props} title={t('scenario_graphs.regular.title', 'Regular Scenario', { ns: 'components' })} showBaseline />
+}
 
-export const AcceleratedPanelGraph = (props: ScenarioPanelProps) => (
-  <ScenarioPanel {...props} title="Accelerated Scenario" />
-)
+export const AcceleratedPanelGraph = (props: ScenarioPanelProps) => {
+  const { t } = useTranslation()
+  return <ScenarioPanel {...props} title={t('scenario_graphs.accelerated.title', 'Accelerated Scenario', { ns: 'components' })} />
+}
 
-export const LowerPaymentPanelGraph = (props: ScenarioPanelProps) => (
-  <ScenarioPanel {...props} title="Lower Payment Scenario" />
-)
+export const LowerPaymentPanelGraph = (props: ScenarioPanelProps) => {
+  const { t } = useTranslation()
+  return <ScenarioPanel {...props} title={t('scenario_graphs.lower_payment.title', 'Lower Payment Scenario', { ns: 'components' })} />
+}
 
-export const NewRatePanelGraph = (props: ScenarioPanelProps) => (
-  <ScenarioPanel {...props} title="New Rate Scenario" />
-) 
+export const NewRatePanelGraph = (props: ScenarioPanelProps) => {
+  const { t } = useTranslation()
+  return <ScenarioPanel {...props} title={t('scenario_graphs.new_rate.title', 'New Rate Scenario', { ns: 'components' })} />
+} 

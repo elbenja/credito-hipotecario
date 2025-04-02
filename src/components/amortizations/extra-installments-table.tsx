@@ -22,17 +22,17 @@ export function ExtraInstallmentsTable({
   currency,
   onDelete
 }: ExtraInstallmentsTableProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation(['components'])
 
   return (
     <div className="rounded-md border">
       <table className="w-full">
         <thead>
           <tr className="border-b bg-muted/50">
-            <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("extra_installments_section.table.number")}</th>
-            <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("extra_installments_section.table.amount")}</th>
-            <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("extra_installments_section.table.frequency")}</th>
-            <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("extra_installments_section.table.date")}</th>
+            <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t('extra_installments_section.table.number', '#', { ns: 'components' })}</th>
+            <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t('extra_installments_section.table.amount', 'Amount', { ns: 'components' })}</th>
+            <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t('extra_installments_section.table.frequency', 'Frequency', { ns: 'components' })}</th>
+            <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t('extra_installments_section.table.date', 'Date', { ns: 'components' })}</th>
             <th className="p-2 text-left font-medium w-[50px] text-xs text-muted-foreground"></th>
           </tr>
         </thead>
@@ -44,8 +44,8 @@ export function ExtraInstallmentsTable({
               <td className="p-2 capitalize text-sm">
                 <span className="text-sm">
                   {installment.frequency === "one-time" 
-                  ? t("extra_installments_section.table.frequency_one_time")
-                  : t("extra_installments_section.table.frequency_monthly")}
+                  ? t('extra_installments_section.form.frequency_one_time', 'One-time', { ns: 'components' })
+                  : t('extra_installments_section.form.frequency_monthly', 'Monthly', { ns: 'components' })}
                 </span>
               </td>
               <td className="p-2 text-sm">
@@ -75,7 +75,7 @@ export function ExtraInstallmentsTable({
                   className="h-8 w-8"
                   variant="ghost"
                   onClick={() => onDelete(installment.id)}
-                  title={t("extra_installments_section.table.delete_tooltip")}
+                  title={t('extra_installments_section.table.delete_tooltip', 'Delete installment', { ns: 'components' })}
                 >
                   <Trash2 className="h-4 w-4 text-muted-foreground" />
                 </Button>
@@ -85,7 +85,7 @@ export function ExtraInstallmentsTable({
           {installments.length === 0 && (
             <tr>
               <td colSpan={5} className="p-2 text-sm text-center text-muted-foreground">
-                {t("extra_installments_section.table.no_installments")}
+                {t('extra_installments_section.table.no_installments', 'No extra installments added yet', { ns: 'components' })}
               </td>
             </tr>
           )}
