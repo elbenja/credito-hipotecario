@@ -17,6 +17,8 @@
     "monthly_payment": "Monthly Payment",
     "total_interest": "Total Interest",
     "total_payment": "Total Payment",
+    "first_date": "First Date",
+    "monthly_rate": "Monthly",
     "installment_type": {
       "title": "Installment Type",
       "regular": "Regular",

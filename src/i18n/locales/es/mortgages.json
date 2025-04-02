@@ -17,8 +17,10 @@
     "monthly_payment": "Cuota Mensual",
     "total_interest": "Interés Total",
     "total_payment": "Pago Total",
+    "first_date": "Fecha de Inicio",
+    "monthly_rate": "Mensual",
     "installment_type": {
-      "title": "Installment Type",
+      "title": "Tipo de Cuota",
       "regular": "Simple",
       "double": "Doble"
     },

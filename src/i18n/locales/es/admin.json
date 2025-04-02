@@ -1,8 +1,8 @@
 {
   "user_management": {
-    "title": "Gestión de Usuarios",
+    "title": "Gestión de Administrador",
     "description": "Gestiona usuarios y sus roles",
-    "create_user": "Crear Usuario",
+    "create_user": "Acceso Anticipado",
     "create_new_user": "Crear Nuevo Usuario",
     "create_user_description": "Crear una nueva cuenta de usuario",
     "email": "Correo",

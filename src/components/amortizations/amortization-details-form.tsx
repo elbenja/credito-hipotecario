@@ -234,7 +234,7 @@ export function AmortizationDetailsForm({
               name="loan_protection_insurance"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Monthly % </FormLabel>
+                  <FormLabel>{t('amortization.monthly_rate', { ns: 'mortgages' })}  </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
@@ -343,7 +343,7 @@ export function AmortizationDetailsForm({
               name="first_installment_date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>First Date</FormLabel>
+                  <FormLabel>{t('amortization.first_date', { ns: 'mortgages' })}</FormLabel>
                   <FormControl>
                     <CalendarDatePicker
                       date={{
