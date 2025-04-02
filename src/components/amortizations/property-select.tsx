@@ -432,10 +432,10 @@ export function PropertySelect({
   }
 
   const getSelectedPropertyDisplay = () => {
-    if (isLoading) return t('ui.loading')
-    if (!propertyId) return t('form.select_currency', '', { ns: 'properties' })
+    if (isLoading) return t('ui.loading', { ns: 'global' })
+    if (!propertyId) return t('form.select_property', 'Select a Property', { ns: 'properties' })
     const property = properties.find(p => p.id === propertyId)
-    if (!property) return t('form.select_currency', '', { ns: 'properties' })
+    if (!property) return t('form.select_property', 'Select a Property', { ns: 'properties' })
     return formatPropertyOption(property, true)
   }
 
@@ -456,7 +456,10 @@ export function PropertySelect({
           >
             <FormControl>
               <SelectTrigger className="form-control-focus h-auto flex items-center py-2">
-                <SelectValue placeholder={t('form.select_currency', '', { ns: 'properties' })} className="text-left">
+                <SelectValue 
+                  placeholder={t('form.select_property', 'Select a Property', { ns: 'properties' })} 
+                  className="text-left"
+                >
                   {getSelectedPropertyDisplay()}
                 </SelectValue>
               </SelectTrigger>
@@ -464,7 +467,7 @@ export function PropertySelect({
             <SelectContent>
               {properties.length === 0 ? (
                 <div className="px-2 py-4 text-sm text-muted-foreground text-center">
-                  {t('messages.no_properties', '', { ns: 'properties' })}
+                  {t('messages.no_properties', 'No properties found', { ns: 'properties' })}
                 </div>
               ) : (
                 properties.map((property) => (
