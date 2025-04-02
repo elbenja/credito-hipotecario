@@ -222,7 +222,7 @@ const ScenarioPanel = ({
                     content={({ active, payload, label }) => {
                       if (!active || !payload?.length) return null
                       return (
-                        <div className="rounded-lg bg-primary p-2 shadow-sm text-primary-foreground">
+                        <div className="rounded-lg bg-black p-2 shadow-sm text-white">
                           <div className="text-sm font-medium mb-2">
                             {format(new Date(label), 'MMM yyyy')}
                           </div>
@@ -232,7 +232,7 @@ const ScenarioPanel = ({
                                 className="h-3 w-1 rounded-full"
                                 style={{ backgroundColor: entry.color }}
                               />
-                              <span className="text-primary-foreground">
+                              <span className="text-gray-400">
                                 {translatedChartConfig[entry.name as keyof typeof translatedChartConfig].label}:
                               </span>
                               <span className="font-medium">
