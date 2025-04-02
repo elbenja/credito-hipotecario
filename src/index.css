@@ -80,7 +80,7 @@
 
   /* Input styles */
   .input {
-    @apply form-control-base form-control-focus  bg-card;
+    @apply form-control-base form-control-focus bg-card;
   }
 
   /* Select trigger styles */
@@ -105,7 +105,7 @@
 
   /* Textarea styles */
   .textarea {
-    @apply form-control-base form-control-focus min-h-[80px];
+    @apply form-control-base form-control-focus min-h-[80px] bg-card;
   }
 
   /* Button focus styles */

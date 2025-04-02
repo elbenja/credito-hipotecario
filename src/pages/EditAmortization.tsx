@@ -335,15 +335,15 @@ export default function EditAmortization() {
       if (updateError) throw updateError
 
       toast({
-        title: t("success"),
-        description: t("amortization_updated"),
+        title: t("ui.success", { ns: "global" }),
+        description: t("messages.success_update", { ns: "mortgages" }),
       })
     } catch (error) {
       console.error("Error updating amortization:", error)
       toast({
         variant: "destructive",
-        title: t("error"),
-        description: error instanceof Error ? error.message : t("error_updating_amortization")
+        title: t("ui.error", { ns: "global" }),
+        description: error instanceof Error ? error.message : t("messages.error_update", { ns: "mortgages" })
       })
     }
   }
@@ -359,7 +359,7 @@ export default function EditAmortization() {
         <div className="flex items-center justify-center h-[50vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="mt-2 text-sm text-muted-foreground">{t("loading_amortization")}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{t("ui.loading", { ns: "global" })}</p>
           </div>
         </div>
       </DashboardLayout>
@@ -371,7 +371,7 @@ export default function EditAmortization() {
       <DashboardLayout>
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
-            <p className="text-lg text-foreground">{t("error_loading_amortization")}</p>
+            <p className="text-lg text-foreground">{t("messages.amortization_not_found", { ns: "mortgages" })}</p>
             <Button 
               variant="link" 
               className="mt-2"
@@ -393,7 +393,7 @@ export default function EditAmortization() {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <Link to="/mortgages" className="transition-colors hover:text-foreground">
-                  {t("mortgages")}
+                  {t("sections.mortgages", { ns: "dashboard" })}
                 </Link>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -441,7 +441,7 @@ export default function EditAmortization() {
                     form={amortizationForm}
                     selectedProperty={amortization.property}
                     onSubmit={onUpdateAmortization}
-                    submitLabel={t("update")}
+                    submitLabel={t("ui.update", { ns: "global" })}
                   />
                 </Form>
               )}
@@ -454,7 +454,7 @@ export default function EditAmortization() {
             {(!amortization || !scenarios || isLoadingScenarios) ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-2"></div>
-                <div className="text-muted-foreground">{t("loading")}</div>
+                <div className="text-muted-foreground">{t("ui.loading", { ns: "global" })}</div>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-2">
