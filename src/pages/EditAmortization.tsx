@@ -427,12 +427,14 @@ export default function EditAmortization() {
           {/* Left Container */}
           <div className="sm:w-full md:w-[40%] md:min-w-[320px] md:max-w-[540px] relative flex-shrink-0">
             <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-border"></div>
-            <div className="p-6 space-y-6">
+            
               <PropertyDisplay 
                 property={amortization.property}
                 onPropertyUpdate={handlePropertyUpdate}
               />
               <Separator className="my-2" />
+              <div className="p-6">
+
               {amortization && (
                 <Form {...amortizationForm}>
                   <AmortizationDetailsForm

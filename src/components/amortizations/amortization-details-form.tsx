@@ -18,9 +18,21 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
-import { cn, normalizeDate } from "@/lib/utils"
+import { cn, normalizeDate, formatCurrency } from "@/lib/utils"
 import type { Property } from "./property-select"
 import type { AmortizationFormValues } from "./schema"
+import { LoanCalculator } from "@/services/amortization/calculations/loan"
+import { Separator } from "@/components/ui/separator"
+import { useExchangeRate } from "@/hooks/use-exchange-rate"
+import { useState, useEffect, useMemo } from "react"
+import { supabase } from "@/integrations/supabase/client"
+
+type BonusRule = {
+  min_value: number
+  max_value: number
+  traditional_bonus: number
+  sustainable_bonus: number
+}
 
 interface AmortizationDetailsFormProps {
   form: ReturnType<typeof useForm<AmortizationFormValues>>
@@ -36,11 +48,90 @@ export function AmortizationDetailsForm({
   submitLabel = "Update"
 }: AmortizationDetailsFormProps) {
   const { t } = useTranslation()
+  const { data: exchangeRate } = useExchangeRate()
+  const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
+
+  // Load bonus rules
+  useEffect(() => {
+    const loadBonusRules = async () => {
+      const { data, error } = await supabase
+        .from("bonus_rules")
+        .select("*")
+        .order('min_value', { ascending: true });
+
+      if (error) {
+        console.error("Error loading bonus rules:", error);
+        return;
+      }
+
+      setBonusRules(data || []);
+    };
+
+    loadBonusRules();
+  }, []);
+
+  // Helper function to convert currency to PEN
+  const convertToPEN = (amount: number, currency: string): number => {
+    if (currency === 'PEN') return amount;
+    return amount * (exchangeRate || 3.7167);
+  };
+
+  // Helper function to calculate bonus - same as in property-select.tsx
+  const calculateBonus = (property: Property): number | null => {
+    if (!property.is_first_home) return null;
+
+    // Convert property value to PEN for bonus calculation without rounding
+    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency);
+    
+    const applicableRule = bonusRules.find(
+      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
+    );
+
+    if (!applicableRule) return null;
+
+    // Return the exact bonus amount - rounding will be handled in display
+    return property.is_sustainable 
+      ? applicableRule.sustainable_bonus 
+      : applicableRule.traditional_bonus;
+  };
+
+  // Watch the down payment field for real-time calculation
+  const downPayment = form.watch("down_payment")
+  const numericDownPayment = parseFloat(downPayment?.replace(/[^0-9.]/g, "") || "0")
+
+  // Calculate loan amount using the same bonus calculation
+  const loanAmount = useMemo(() => {
+    if (!selectedProperty) return 0;
+
+    const bonus = calculateBonus(selectedProperty);
+    const bonusInPropertyCurrency = bonus && selectedProperty.currency === 'USD'
+      ? bonus / (exchangeRate || 3.7167)
+      : bonus || 0;
+
+    return selectedProperty.price_cost - bonusInPropertyCurrency - numericDownPayment;
+  }, [selectedProperty, numericDownPayment, bonusRules, exchangeRate]);
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      {/* Loan Amount Display */}
+      <div className="space-y-2">
+        <h4 className=" font-medium ">{t("loan_amount")}</h4>
+        <div className="text-3xl font-bold">
+          {formatCurrency(Math.round(loanAmount), selectedProperty?.currency || "PEN")}
+        </div>
+        <div className="text-xs ">
+          {t("loan_amount_formula")}
+        </div>
+        {/* {selectedProperty && calculateBonus(selectedProperty) && (
+          <div className="text-sm text-muted-foreground">
+            {t("includes_bonus")}: {formatCurrency(calculateBonus(selectedProperty) || 0, "PEN")}
+          </div>
+        )} */}
+      </div>
+      <Separator />
+
       <div>
-        <h4 className="font-medium mb-4">Basics</h4>
+        <h4 className="font-medium mb-4">{t("basics")}</h4>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField

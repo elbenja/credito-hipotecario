@@ -2,7 +2,8 @@ import type {
   BaseAmortizationValues,
   CalculationResults,
   PaymentDetail,
-  Property
+  Property,
+  BonusRule
 } from '../types/common';
 
 export class LoanCalculator {
@@ -13,6 +14,40 @@ export class LoanCalculator {
   } as const;
 
   private static readonly MONTHS_IN_YEAR = 12;
+
+  // Add property to store exchange rate
+  private exchangeRate: number = 3.7167; // Default exchange rate
+
+  // Method to update exchange rate
+  setExchangeRate(rate: number) {
+    this.exchangeRate = rate;
+  }
+
+  // Helper method to convert currency to PEN
+  private convertToPEN(amount: number, currency: string): number {
+    if (currency === 'PEN') return amount;
+    return amount * this.exchangeRate;
+  }
+
+  // Helper method to calculate bonus
+  private calculateBonus(property: Property): number {
+    if (!property || !property.is_first_home) return 0;
+
+    const propertyValueInPEN = this.convertToPEN(property.price_cost, property.currency);
+    
+    // Get bonus rules from property or use empty array
+    const bonusRules = property.bonus_rules || [];
+    
+    const applicableRule = bonusRules.find(
+      (rule: BonusRule) => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
+    );
+
+    if (!applicableRule) return 0;
+
+    return property.is_sustainable 
+      ? applicableRule.sustainable_bonus 
+      : applicableRule.traditional_bonus;
+  }
 
   // Add new method for goal-seeking calculation
   private findCorrectMonthlyInstallment(
@@ -66,9 +101,14 @@ export class LoanCalculator {
   }
 
   calculateLoanAmount(property: Property, downPayment: number): number {
-    // Apply bonus before down payment
-    const costAfterBonus = property.cost - property.bonus;
-    return costAfterBonus - downPayment;
+    if (!property) return 0;
+
+    const bonus = this.calculateBonus(property);
+    const bonusInPropertyCurrency = property.currency === 'USD' 
+      ? bonus / this.exchangeRate
+      : bonus;
+
+    return property.price_cost - bonusInPropertyCurrency - downPayment;
   }
 
   calculateMonthlyPayment(
@@ -206,7 +246,7 @@ export class LoanCalculator {
   getSuggestedValues(property: Property): Partial<BaseAmortizationValues> {
     return {
       term_years: LoanCalculator.FIXED_VALUES.SUGGESTED_TERM_YEARS,
-      down_payment: property.cost * (LoanCalculator.FIXED_VALUES.SUGGESTED_DOWN_PAYMENT_PERCENT / 100),
+      down_payment: property.price_cost * (LoanCalculator.FIXED_VALUES.SUGGESTED_DOWN_PAYMENT_PERCENT / 100),
       down_payment_percentage: LoanCalculator.FIXED_VALUES.SUGGESTED_DOWN_PAYMENT_PERCENT,
       installments_per_year: LoanCalculator.FIXED_VALUES.SUGGESTED_INSTALLMENTS
     };

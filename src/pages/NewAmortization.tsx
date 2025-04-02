@@ -34,6 +34,7 @@ import {
 import { LoanCalculator } from "@/services/amortization/calculations/loan"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
+import type { ScenarioResult } from "@/services/amortization/types/common"
 
 export default function NewAmortization() {
   const { t } = useTranslation()
@@ -41,6 +42,7 @@ export default function NewAmortization() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+  const [regularScenario, setRegularScenario] = useState<ScenarioResult | null>(null)
   const [interestRateLimits] = useState({
     min_rate: 4,
     max_rate: 18
@@ -55,8 +57,6 @@ export default function NewAmortization() {
   // Watch for name changes to update breadcrumb
   const amortizationName = form.watch("name")
 
-  // Calculate regular scenario when form values change
-  const [regularScenario, setRegularScenario] = useState<any>(null)
   const loanCalculator = new LoanCalculator()
 
   const calculateRegularScenario = (values: Partial<AmortizationFormValues>) => {
@@ -66,10 +66,14 @@ export default function NewAmortization() {
 
     const mockProperty = {
       id: selectedProperty.id,
+      name: selectedProperty.name,
+      price_cost: selectedProperty.price_cost,
       cost: selectedProperty.price_cost,
       currency: selectedProperty.currency,
       property_insurance: selectedProperty.property_insurance || 0,
       property_insurance_type: selectedProperty.property_insurance_type,
+      is_first_home: selectedProperty.is_first_home || false,
+      is_sustainable: selectedProperty.is_sustainable || false,
       bonus: 0
     }
 
@@ -85,7 +89,27 @@ export default function NewAmortization() {
       loan_protection_insurance: parseFloat(values.loan_protection_insurance || "0")
     }
 
-    return loanCalculator.calculateResults(mockProperty, baseValues)
+    const results = loanCalculator.calculateResults(mockProperty, baseValues)
+    
+    // Transform results into the format expected by RegularPanelGraph
+    return {
+      summary: {
+        total_interest_and_insurance: results.total_interest_and_insurance,
+        total_months: results.total_months,
+        monthly_payment: results.monthly_payment
+      },
+      payments: results.payment_schedule.map(payment => ({
+        payment_date: payment.date,
+        capital: payment.principal,
+        interest: payment.interest,
+        property_insurance: payment.property_insurance,
+        loan_insurance: payment.loan_protection_insurance,
+        monthly_payment: payment.total_payment,
+        is_different_from_base: false,
+        beginning_balance: payment.beginning_balance,
+        ending_balance: payment.ending_balance
+      }))
+    }
   }
 
   // Update scenario when form values change
@@ -93,6 +117,7 @@ export default function NewAmortization() {
     const values = form.getValues()
     const scenario = calculateRegularScenario(values)
     setRegularScenario(scenario)
+    console.log('Regular scenario updated:', { scenario, selectedProperty })
   }
 
   // Subscribe to form changes
@@ -164,6 +189,7 @@ export default function NewAmortization() {
                 {selectedProperty && (
                   <>
                     <Separator />
+                    
                     <AmortizationDetailsForm
                       form={form}
                       selectedProperty={selectedProperty}
@@ -244,9 +270,9 @@ export default function NewAmortization() {
                             interest_rate: interestRate,
                             term_years: termYears,
                             installments_per_year: installmentsPerYear,
-                            installment_amount: regularScenario.monthlyInstallment || 0,
-                            total_interest: regularScenario.totalInterest || 0,
-                            total_payment: regularScenario.totalPayment || 0,
+                            installment_amount: regularScenario.summary.monthly_payment || 0,
+                            total_interest: regularScenario.summary.total_interest_and_insurance || 0,
+                            total_payment: regularScenario.summary.monthly_payment * regularScenario.summary.total_months || 0,
                             loan_protection_type: values.loan_protection_type,
                             loan_protection_insurance: loanProtectionInsurance,
                             first_installment_date: dateString,
@@ -290,7 +316,6 @@ export default function NewAmortization() {
             <div className="w-full overflow-hidden flex-1 px-2 sm:px-8 pt-2 sm:pt-6">
               {selectedProperty && regularScenario && (
                 <div className="space-y-4">
-                  <h2 className="text-lg font-semibold">{t("payment_schedule")}</h2>
                   <RegularPanelGraph
                     scenario={regularScenario}
                     currency={selectedProperty.currency}

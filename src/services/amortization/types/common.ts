@@ -2,11 +2,22 @@ export type Currency = "PEN" | "USD";
 
 export interface Property {
   id: string;
-  cost: number;
-  currency: Currency;
-  bonus: number;
+  name: string;
+  price_cost: number;
+  currency: string;
   property_insurance: number;
   property_insurance_type: "auto" | "manual";
+  is_first_home: boolean;
+  is_sustainable: boolean;
+  description?: string | null;
+  bonus_rules?: BonusRule[];
+}
+
+export interface BonusRule {
+  min_value: number;
+  max_value: number;
+  traditional_bonus: number;
+  sustainable_bonus: number;
 }
 
 export interface BaseAmortizationValues {
