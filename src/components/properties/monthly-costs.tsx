@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { useTranslation } from "react-i18next"
+import { useEffect } from "react"
 import * as z from "zod"
 
 const formSchema = z.object({
@@ -51,6 +52,13 @@ export function MonthlyCosts({ form }: MonthlyCostsProps) {
 
   // Calculate auto insurance amount when property value or rate changes
   const autoInsuranceAmount = (propertyValue * (insuranceRate || 0.0280)) / 100
+
+  // Update insurance amount when relevant values change
+  useEffect(() => {
+    if (insuranceType === "auto") {
+      form.setValue("property_insurance", autoInsuranceAmount.toFixed(2))
+    }
+  }, [propertyValue, insuranceRate, insuranceType, form, autoInsuranceAmount])
 
   return (
     <div className="space-y-4">
