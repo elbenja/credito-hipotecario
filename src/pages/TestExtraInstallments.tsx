@@ -464,12 +464,14 @@ export default function TestExtraInstallments() {
                 <h3 className="text-xl font-semibold mb-4">Amortization Details</h3>
                 <div className="p-6 border rounded-lg">
                   {selectedAmortization ? (
-                    <AmortizationDetailsForm
-                      form={amortizationForm}
-                      selectedProperty={selectedProperty}
-                      onSubmit={onUpdateAmortization}
-                      submitLabel="Update"
-                    />
+                    <Form {...amortizationForm}>
+                      <AmortizationDetailsForm
+                        form={amortizationForm}
+                        selectedProperty={selectedProperty}
+                        onSubmit={onUpdateAmortization}
+                        submitLabel="Update"
+                      />
+                    </Form>
                   ) : (
                     <p className="text-muted-foreground">Select an amortization to view details</p>
                   )}
@@ -788,38 +790,40 @@ function ScenarioCalculationsSection({
     <div className="mt-8">
       <h2 className="text-2xl font-bold mb-6">Payment Scenarios</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <RegularScenarioPanel
-          scenario={scenarios?.regular}
-          currency={property.currency}
-          installmentsPerYear={formValues.installmentsPerYear}
-          mapPaymentForTable={mapPaymentForTable}
-        />
+      <Form {...form}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <RegularScenarioPanel
+            scenario={scenarios?.regular}
+            currency={property.currency}
+            installmentsPerYear={formValues.installmentsPerYear}
+            mapPaymentForTable={mapPaymentForTable}
+          />
 
-        <AcceleratedScenarioPanel
-          scenario={scenarios?.accelerated}
-          regularScenario={scenarios?.regular}
-          currency={property.currency}
-          installmentsPerYear={formValues.installmentsPerYear}
-          mapPaymentForTable={mapPaymentForTable}
-        />
+          <AcceleratedScenarioPanel
+            scenario={scenarios?.accelerated}
+            regularScenario={scenarios?.regular}
+            currency={property.currency}
+            installmentsPerYear={formValues.installmentsPerYear}
+            mapPaymentForTable={mapPaymentForTable}
+          />
 
-        <LowerPaymentScenarioPanel
-          scenario={scenarios?.lower_payment}
-          regularScenario={scenarios?.regular}
-          currency={property.currency}
-          installmentsPerYear={formValues.installmentsPerYear}
-          mapPaymentForTable={mapPaymentForTable}
-        />
+          <LowerPaymentScenarioPanel
+            scenario={scenarios?.lower_payment}
+            regularScenario={scenarios?.regular}
+            currency={property.currency}
+            installmentsPerYear={formValues.installmentsPerYear}
+            mapPaymentForTable={mapPaymentForTable}
+          />
 
-        <NewRateScenarioPanel
-          scenario={scenarios?.new_rate}
-          regularScenario={scenarios?.regular}
-          currency={property.currency}
-          installmentsPerYear={formValues.installmentsPerYear}
-          mapPaymentForTable={mapPaymentForTable}
-        />
-      </div>
+          <NewRateScenarioPanel
+            scenario={scenarios?.new_rate}
+            regularScenario={scenarios?.regular}
+            currency={property.currency}
+            installmentsPerYear={formValues.installmentsPerYear}
+            mapPaymentForTable={mapPaymentForTable}
+          />
+        </div>
+      </Form>
     </div>
   )
 }

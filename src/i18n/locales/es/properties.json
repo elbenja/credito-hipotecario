@@ -11,6 +11,7 @@
     "delete_property": "Eliminar Propiedad"
   },
   "form": {
+    "select_property": "Seleccionar Propiedad",
     "property_details": "Detalles de la Propiedad",
     "property_name": "Nueva Propiedad",
     "property_description": "Descripción",

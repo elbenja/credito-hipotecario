@@ -1,15 +1,15 @@
 {
   "extra_installments_section": {
-    "title": "Pagos Adicionales",
+    "title": "Amortizaciones Extra",
     "success": {
       "title": "Éxito",
-      "add": "Pago adicional agregado exitosamente",
-      "delete": "Pago adicional eliminado exitosamente"
+      "add": "Amortizaciones Extra agregado exitosamente",
+      "delete": "Amortizaciones Extra eliminado exitosamente"
     },
     "error": {
       "title": "Error",
-      "add": "Error al agregar pago adicional",
-      "delete": "Error al eliminar pago adicional"
+      "add": "Error al agregar Amortizaciones Extra",
+      "delete": "Error al eliminar Amortizaciones Extra"
     },
     "form": {
       "amount": "Monto",
@@ -29,8 +29,8 @@
       "amount": "Monto",
       "frequency": "Frecuencia",
       "date": "Fecha",
-      "delete_tooltip": "Eliminar pago",
-      "no_installments": "Aún no hay pagos adicionales"
+      "delete_tooltip": "Eliminar Amortización",
+      "no_installments": "Aún no hay Amortizaciones Extra"
     }
   },
   "payment_scenarios": {

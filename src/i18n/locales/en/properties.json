@@ -11,6 +11,7 @@
     "delete_property": "Delete Property"
   },
   "form": {
+    "select_property": "Select a Property",
     "property_details": "Property Details",
     "property_name": "New Property",
     "property_description": "Description",
