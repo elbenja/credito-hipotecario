@@ -37,7 +37,7 @@ import { useToast } from "@/components/ui/use-toast"
 import type { ScenarioResult } from "@/services/amortization/types/common"
 
 export default function NewAmortization() {
-  const { t } = useTranslation()
+  const { t } = useTranslation(['mortgages', 'dashboard', 'global'])
   const { user } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -144,13 +144,13 @@ export default function NewAmortization() {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <Link to="/mortgages" className="transition-colors hover:text-foreground">
-                  {t("mortgages")}
+                  {t("sections.mortgages", { ns: "dashboard" })}
                 </Link>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbPage>
-                  {amortizationName || t("new_amortization")}
+                  {amortizationName || t("amortization.new", { ns: "mortgages" })}
                 </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
@@ -177,9 +177,9 @@ export default function NewAmortization() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("amortization_name")}</FormLabel>
+                      <FormLabel>{t("amortization.name", { ns: "mortgages" })}</FormLabel>
                       <FormControl>
-                        <Input placeholder={t("enter_amortization_name")} {...field} />
+                        <Input placeholder={t("amortization.name", { ns: "mortgages" })} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -198,8 +198,8 @@ export default function NewAmortization() {
                           if (!selectedProperty || !regularScenario) {
                             toast({
                               variant: "destructive",
-                              title: t("error"),
-                              description: t("please_complete_all_fields"),
+                              title: t("ui.error", { ns: "global" }),
+                              description: t("messages.please_complete_all_fields", { ns: "mortgages" }),
                             })
                             return
                           }
@@ -291,8 +291,8 @@ export default function NewAmortization() {
                           }
 
                           toast({
-                            title: t("success"),
-                            description: t("amortization_created"),
+                            title: t("ui.success", { ns: "global" }),
+                            description: t("messages.amortization_created", { ns: "mortgages" }),
                           })
 
                           navigate("/mortgages")
@@ -300,12 +300,12 @@ export default function NewAmortization() {
                           console.error("Error saving amortization:", error)
                           toast({
                             variant: "destructive",
-                            title: t("error"),
-                            description: error instanceof Error ? error.message : t("error_creating_amortization"),
+                            title: t("ui.error", { ns: "global" }),
+                            description: error instanceof Error ? error.message : t("messages.error_creating_amortization", { ns: "mortgages" }),
                           })
                         }
                       }}
-                      submitLabel={t("create")}
+                      submitLabel={t("ui.create", { ns: "global" })}
                     />
                   </>
                 )}
