@@ -70,7 +70,7 @@ export function PropertyList({
   sortConfig,
   onSort
 }: PropertyListProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation(['properties', 'global'])
   const { toast } = useToast()
   const { data: exchangeRate } = useExchangeRate()
   const { user } = useAuth()
@@ -98,7 +98,7 @@ export function PropertyList({
 
   const getSortIcon = (key: keyof Property) => {
     if (sortConfig?.key === key) {
-      return sortConfig.direction === 'asc' ? t('sort_ascending') : t('sort_descending')
+      return sortConfig.direction === 'asc' ? t('ui.sort_ascending', { ns: 'global' }) : t('ui.sort_descending', { ns: 'global' })
     }
     return null
   }
@@ -106,11 +106,11 @@ export function PropertyList({
   const handleDuplicate = async (e: React.MouseEvent, property: Property) => {
     e.stopPropagation()
     try {
-      if (!user) throw new Error(t('no_user_found'))
+      if (!user) throw new Error(t('messages.no_user_found', { ns: 'global' }))
 
       const duplicatedProperty = {
         ...property,
-        name: `${property.name} (${t('copy')})`,
+        name: `${property.name} (${t('ui.copy', { ns: 'global' })})`,
         user_id: user.id,
       }
       delete (duplicatedProperty as any).id
@@ -124,8 +124,8 @@ export function PropertyList({
       if (error) throw error
 
       toast({
-        title: t('success'),
-        description: t('property_duplicated'),
+        title: t('ui.success', { ns: 'global' }),
+        description: t('messages.property_duplicated', { ns: 'properties' }),
       })
 
       if (data) {
@@ -135,8 +135,8 @@ export function PropertyList({
       console.error("Error duplicating property:", error)
       toast({
         variant: "destructive",
-        title: t('error'),
-        description: t('error_duplicating_property'),
+        title: t('ui.error', { ns: 'global' }),
+        description: t('messages.error_duplicating_property', { ns: 'properties' }),
       })
     }
   }
@@ -152,8 +152,8 @@ export function PropertyList({
       if (error) throw error
 
       toast({
-        title: t('success'),
-        description: t('property_deleted'),
+        title: t('ui.success', { ns: 'global' }),
+        description: t('messages.property_deleted', { ns: 'properties' }),
       })
 
       onPropertyUpdate(property, true)
@@ -161,8 +161,8 @@ export function PropertyList({
       console.error("Error deleting property:", error)
       toast({
         variant: "destructive",
-        title: t('error'),
-        description: t('error_deleting_property'),
+        title: t('ui.error', { ns: 'global' }),
+        description: t('messages.error_deleting_property', { ns: 'properties' }),
       })
     }
   }
@@ -175,16 +175,16 @@ export function PropertyList({
             className="cursor-pointer hover:bg-muted/50"
             onClick={() => onSort('name')}
           >
-            {t('property_name')} {getSortIcon('name')}
+            {t('form.property_name', { ns: 'properties' })} {getSortIcon('name')}
           </TableHead>
           <TableHead 
             className="cursor-pointer hover:bg-muted/50"
             onClick={() => onSort('price_cost')}
           >
-            {t('property_cost')} {getSortIcon('price_cost')}
+            {t('form.property_cost', { ns: 'properties' })} {getSortIcon('price_cost')}
           </TableHead>
-          <TableHead>{t('property_insurance')}</TableHead>
-          <TableHead>{t('bonus_amount_currency')}</TableHead>
+          <TableHead>{t('form.property_insurance', { ns: 'properties' })}</TableHead>
+          <TableHead>{t('bonus.amount_currency', { ns: 'properties' })}</TableHead>
           <TableHead className="w-[50px]"></TableHead>
         </TableRow>
       </TableHeader>
@@ -192,7 +192,7 @@ export function PropertyList({
         {properties.length === 0 ? (
           <TableRow>
             <TableCell colSpan={5} className="text-center py-4">
-              {t('no_properties')}
+              {t('messages.no_properties', { ns: 'properties' })}
             </TableCell>
           </TableRow>
         ) : (
@@ -203,7 +203,7 @@ export function PropertyList({
                 key={property.id}
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => onPropertySelect(property)}
-                title={t('click_to_edit')}
+                title={t('ui.click_to_edit', { ns: 'global' })}
               >
                 <TableCell>{property.name}</TableCell>
                 <TableCell>
@@ -212,11 +212,11 @@ export function PropertyList({
                 <TableCell>
                   {formatCurrency(property.property_insurance || 0, property.currency)}
                   <span className="text-xs text-muted-foreground ml-1">
-                    ({t(property.property_insurance_type)})
+                    ({t(`insurance.${property.property_insurance_type}`, { ns: 'properties' })})
                   </span>
                 </TableCell>
                 <TableCell>
-                  {bonusAmount ? formatCurrency(bonusAmount, 'PEN') : t('no_bonus')}
+                  {bonusAmount ? formatCurrency(bonusAmount, 'PEN') : t('bonus.no_bonus', { ns: 'properties' })}
                 </TableCell>
                 <TableCell className="w-[50px]">
                   <DropdownMenu>
@@ -227,19 +227,19 @@ export function PropertyList({
                       style={{ touchAction: 'none' }}
                     >
                       <MoreVertical className="h-4 w-4" />
-                      <span className="sr-only">{t('open_menu')}</span>
+                      <span className="sr-only">{t('ui.open_menu', { ns: 'global' })}</span>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" sideOffset={5} className="touch-none">
                       <DropdownMenuItem onClick={(e) => handleDuplicate(e, property)}>
                         <Copy className="mr-2 h-4 w-4" />
-                        <span>{t('duplicate')}</span>
+                        <span>{t('ui.duplicate', { ns: 'global' })}</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={(e) => handleDelete(e, property)}
                         className="text-red-600 focus:text-red-600"
                       >
                         <Trash className="mr-2 h-4 w-4" />
-                        <span>{t('delete')}</span>
+                        <span>{t('ui.delete', { ns: 'global' })}</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

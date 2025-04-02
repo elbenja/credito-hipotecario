@@ -45,9 +45,9 @@ export function AmortizationDetailsForm({
   form,
   selectedProperty,
   onSubmit,
-  submitLabel = "Update"
+  submitLabel = 'update'
 }: AmortizationDetailsFormProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation(['mortgages', 'global'])
   const { data: exchangeRate } = useExchangeRate()
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
 
@@ -115,12 +115,12 @@ export function AmortizationDetailsForm({
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       {/* Loan Amount Display */}
       <div className="space-y-2">
-        <h4 className=" font-medium ">{t("loan_amount")}</h4>
+        <h4 className=" font-medium ">{t('amortization.loan_amount', { ns: 'mortgages' })}</h4>
         <div className="text-3xl font-bold">
           {formatCurrency(Math.round(loanAmount), selectedProperty?.currency || "PEN")}
         </div>
         <div className="text-xs ">
-          {t("loan_amount_formula")}
+          {t('amortization.loan_amount_formula', { ns: 'mortgages' })}
         </div>
         {/* {selectedProperty && calculateBonus(selectedProperty) && (
           <div className="text-sm text-muted-foreground">
@@ -131,7 +131,7 @@ export function AmortizationDetailsForm({
       <Separator />
 
       <div>
-        <h4 className="font-medium mb-4">{t("basics")}</h4>
+        <h4 className="font-medium mb-4">{t('amortization.title', { ns: 'mortgages' })}</h4>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
@@ -139,7 +139,7 @@ export function AmortizationDetailsForm({
               name="down_payment"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Down Payment</FormLabel>
+                  <FormLabel>{t('amortization.down_payment', { ns: 'mortgages' })}</FormLabel>
                   <FormControl>
                     <Input {...field} onChange={(e) => {
                       field.onChange(e)
@@ -156,7 +156,7 @@ export function AmortizationDetailsForm({
               name="property_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Property %</FormLabel>
+                  <FormLabel>{t('amortization.property_percentage', 'Property %', { ns: 'mortgages' })}</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -208,7 +208,7 @@ export function AmortizationDetailsForm({
               name="loan_protection_type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Loan Protection </FormLabel>
+                  <FormLabel>{t('insurance.loan_protection', { ns: 'mortgages' })} </FormLabel>
                   <Select onValueChange={(value) => {
                     field.onChange(value)
                     form.trigger("loan_protection_type")
@@ -219,10 +219,10 @@ export function AmortizationDetailsForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="individual">Individual</SelectItem>
-                      <SelectItem value="joint">Joint</SelectItem>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectItem value="custom">Manual</SelectItem>
+                      <SelectItem value="individual">{t('insurance.individual')}</SelectItem>
+                      <SelectItem value="joint">{t('insurance.joint')}</SelectItem>
+                      <SelectItem value="none">{t('insurance.none')}</SelectItem>
+                      <SelectItem value="custom">{t('amortization.insurance.manual', 'Manual', { ns: 'mortgages' })}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -273,7 +273,7 @@ export function AmortizationDetailsForm({
               name="interest_rate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Interest rate</FormLabel>
+                  <FormLabel>{t('amortization.interest_rate', { ns: 'mortgages' })}</FormLabel>
                   <FormControl>
                     <Input {...field} type="number" step="0.01" onChange={(e) => {
                       field.onChange(e)
@@ -289,7 +289,7 @@ export function AmortizationDetailsForm({
               name="term_years"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amortization Term</FormLabel>
+                  <FormLabel>{t('amortization.term', { ns: 'mortgages' })}</FormLabel>
                   <Select onValueChange={(value) => {
                     field.onChange(value)
                     form.trigger("term_years")
@@ -300,9 +300,9 @@ export function AmortizationDetailsForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {[5, 10, 15, 20, 25, 30].map((years) => (
+                      {[10, 15, 20, 25, 30].map((years) => (
                         <SelectItem key={years} value={years.toString()}>
-                          {years} years
+                          {years} {t('scenarios.new_rate.form.years', { ns: 'mortgages', value: years })}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -319,7 +319,7 @@ export function AmortizationDetailsForm({
               name="installments_per_year"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Installments per Year</FormLabel>
+                  <FormLabel>{t('amortization.installments_per_year', { ns: 'mortgages' })}</FormLabel>
                   <Select onValueChange={(value) => {
                     field.onChange(value)
                     form.trigger("installments_per_year")
@@ -330,8 +330,8 @@ export function AmortizationDetailsForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="12">Regular </SelectItem>
-                      <SelectItem value="14">Double </SelectItem>
+                      <SelectItem value="12">{t('amortization.installment_type.regular', 'Regular', { ns: 'mortgages' })}</SelectItem>
+                      <SelectItem value="14">{t('amortization.installment_type.double', 'Double', { ns: 'mortgages' })}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -386,7 +386,9 @@ export function AmortizationDetailsForm({
         </div>
       </div>
 
-      <Button type="submit" className="w-full">{submitLabel}</Button>
+      <Button type="submit" className="w-full">
+        {submitLabel === 'update' ? t('ui.update', { ns: 'global' }) : submitLabel}
+      </Button>
     </form>
   )
 } 

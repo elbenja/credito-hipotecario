@@ -1,0 +1,25 @@
+{
+  "title": "Panel de Control",
+  "sections": {
+    "main": "Principal",
+    "dashboard": "Panel de Control",
+    "properties": "Propiedades",
+    "mortgages": "Hipotecas",
+    "rentals": "Alquileres",
+    "courses": "Cursos",
+    "ai_chat": "Chat IA",
+    "account": "Cuenta",
+    "billing": "Facturación",
+    "notifications": "Notificaciones"
+  },
+  "welcome": {
+    "title": "Bienvenido a CreditoHipotecar.io",
+    "description": "Analiza diferentes escenarios y comprende claramente tu crédito.",
+    "get_started": "Comenzar"
+  },
+  "stats": {
+    "total_properties": "Total de Propiedades",
+    "active_mortgages": "Hipotecas Activas",
+    "total_value": "Valor Total"
+  }
+} 

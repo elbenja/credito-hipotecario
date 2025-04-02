@@ -1,0 +1,58 @@
+{
+  "ui": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "update": "Update",
+    "create": "Create",
+    "loading": "Loading",
+    "success": "Success",
+    "error": "Error",
+    "yes": "Yes",
+    "no": "No",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "log_out": "Log out",
+    "coming": "Coming soon",
+    "click_to_edit": "Click to edit",
+    "duplicate": "Duplicate"
+  },
+  "components": {
+    "calendar": {
+      "today": "Today",
+      "month": "Month",
+      "year": "Year",
+      "previous_month": "Previous month",
+      "next_month": "Next month",
+      "previous_year": "Previous year",
+      "next_year": "Next year"
+    },
+    "property_form": {
+      "name": "Name",
+      "type": "Type",
+      "price": "Price",
+      "location": "Location",
+      "description": "Description",
+      "status": "Status"
+    }
+  },
+  "messages": {
+    "please_login": "Please log in",
+    "loading": "Loading...",
+    "error_fetching_profile": "Error fetching profile",
+    "error_checking_admin": "Error checking admin status"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "appearance_description": "Customize how the app looks and feels.",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "language": "Language",
+    "language_description": "Choose your preferred language."
+  }
+} 

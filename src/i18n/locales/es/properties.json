@@ -1,0 +1,58 @@
+{
+  "title": "Propiedades",
+  "description": "Gestiona tu cartera de propiedades con nuestras herramientas integrales. Realiza seguimiento de los detalles, costos e información hipotecaria.",
+  "edit_property_description": "Edita los detalles de la propiedad, costos y verifica elegibilidad para el Bono MiVivienda.",
+  "add_property_description": "Agrega una nueva propiedad con detalles, costos y verifica elegibilidad para el Bono MiVivienda.",
+  "new_property": "Nueva Propiedad",
+  "property": "Propiedad",
+  "actions": {
+    "add_property": "Agregar Propiedad",
+    "edit_property": "Editar Propiedad",
+    "delete_property": "Eliminar Propiedad"
+  },
+  "form": {
+    "property_details": "Detalles de la Propiedad",
+    "property_name": "Nueva Propiedad",
+    "property_description": "Descripción",
+    "property_type": "Tipo de Propiedad",
+    "price": "Precio",
+    "currency": "Moneda",
+    "location": "Ubicación",
+    "status": "Estado",
+    "description": "Descripción",
+    "description_placeholder": "Ingresa detalles de la propiedad (dirección, notas, etc.)",
+    "property_cost": "Costo",
+    "property_insurance": "Seguro del Bien",
+    "first_home": "Vivienda MiVivienda",
+    "sustainable": "Sostenible"
+  },
+  "insurance": {
+    "type": "Tipo",
+    "auto": "Automático",
+    "manual": "Manual",
+    "auto_rate": "Automático ({{rate}}%)",
+    "amount": "Monto"
+  },
+  "bonus": {
+    "amount": "Monto del Bono",
+    "amount_currency": "Bono (S/)",
+    "eligible": "Elegible para Bono",
+    "first_home": "Bono MiVivienda",
+    "price_range": "Bono para precios entre S/67,400 - S/355,100.",
+    "applicable_range": "Rango aplicable: S/{{min}} - S/{{max}}",
+    "price_outside_range": "Precio fuera del rango.",
+    "price_outside_range_usd": "Precio (S/{{penAmount}}) fuera del rango.",
+    "no_bonus": "-",
+    "first_home_buyer": "Bono MiVivienda",
+    "sustainable_property": "Bono de Propiedad Sostenible",
+    "qualifies_higher_bonus": "Califica para el bono más alto"
+  },
+  "messages": {
+    "no_properties": "No se encontraron propiedades. Agrega tu primera propiedad para comenzar.",
+    "error_loading_properties": "No se pudieron cargar las propiedades",
+    "error_loading_bonus_rules": "No se pudieron cargar las reglas del bono",
+    "property_updated": "Propiedad actualizada exitosamente",
+    "property_added": "Propiedad agregada exitosamente",
+    "error_saving": "Hubo un error al guardar la propiedad"
+  }
+} 

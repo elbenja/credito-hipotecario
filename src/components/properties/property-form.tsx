@@ -13,9 +13,9 @@ import { Property, BonusRule } from "./types"
 import { useTranslation } from "react-i18next"
 
 const formSchema = z.object({
-  name: z.string().min(1, "property_name_required"),
+  name: z.string().min(1, "validation.property_name_required"),
   description: z.string().optional(),
-  price_cost: z.string().min(1, "price_required"),
+  price_cost: z.string().min(1, "validation.price_required"),
   currency: z.enum(["PEN", "USD"]).default("PEN"),
   property_insurance: z.string().optional(),
   property_insurance_type: z.enum(["auto", "manual"]).default("auto"),
@@ -33,7 +33,8 @@ type PropertyFormProps = {
 export function PropertyForm({ onSuccess, onClose, selectedProperty, bonusRules }: PropertyFormProps) {
   const { toast } = useToast()
   const { user } = useAuth()
-  const { t } = useTranslation()
+  const { t: tGlobal } = useTranslation('global')
+  const { t: tProperties } = useTranslation('properties')
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -51,7 +52,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty, bonusRules 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      if (!user) throw new Error(t('no_user_found'))
+      if (!user) throw new Error(tGlobal('messages.no_user_found'))
 
       const propertyData = {
         name: values.name,
@@ -74,8 +75,8 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty, bonusRules 
         if (error) throw error
 
         toast({
-          title: t('success'),
-          description: t('property_updated'),
+          title: tGlobal('ui.success'),
+          description: tProperties('messages.property_updated'),
         })
       } else {
         const { error } = await supabase
@@ -85,8 +86,8 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty, bonusRules 
         if (error) throw error
 
         toast({
-          title: t('success'),
-          description: t('property_added'),
+          title: tGlobal('ui.success'),
+          description: tProperties('messages.property_added'),
         })
       }
       
@@ -97,8 +98,8 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty, bonusRules 
       console.error("Error saving property:", error)
       toast({
         variant: "destructive",
-        title: t('error'),
-        description: t('error_saving'),
+        title: tGlobal('ui.error'),
+        description: tProperties('messages.error_saving'),
       })
     }
   }
@@ -111,7 +112,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty, bonusRules 
         <BonusSection form={form} bonusRules={bonusRules} />
         
         <Button type="submit" className="w-full">
-          {selectedProperty ? t('update_property') : t('add_new_property')}
+          {selectedProperty ? tGlobal('ui.update') : tGlobal('ui.create')}
         </Button>
       </form>
     </Form>

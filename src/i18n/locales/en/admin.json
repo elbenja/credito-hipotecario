@@ -1,0 +1,33 @@
+{
+  "user_management": {
+    "title": "User Management",
+    "description": "Manage users and their roles",
+    "create_user": "Create User",
+    "create_new_user": "Create New User",
+    "create_user_description": "Create a new user account",
+    "email": "Email",
+    "role": "Role",
+    "user": "User",
+    "admin": "Admin",
+    "created_at": "Created At",
+    "last_sign_in": "Last Sign In",
+    "actions": "Actions",
+    "no_users_found": "No users found",
+    "never": "Never",
+    "send_reset_email": "Send Reset Email",
+    "sending": "Sending...",
+    "confirm_delete_user": "Confirm Delete User",
+    "delete_user_description": "Are you sure you want to delete user {{email}}?",
+    "warning_deleting_admin": "Warning: You are about to delete an admin user",
+    "deleting": "Deleting...",
+    "filter_by_role": "Filter by Role",
+    "search_by_email": "Search by email",
+    "all": "All"
+  },
+  "messages": {
+    "admin_only": "Admin access only",
+    "please_login": "Please log in",
+    "error_fetching_profile": "Error fetching profile",
+    "error_checking_admin": "Error checking admin status"
+  }
+} 

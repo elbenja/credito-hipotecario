@@ -71,7 +71,7 @@ interface PropertyEditSheetProps {
 }
 
 function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: PropertyEditSheetProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['global', 'properties', 'dashboard']);
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([]);
 
   // Debug logs for props
@@ -114,7 +114,7 @@ function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: P
     >
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto" side="right">
         <SheetHeader>
-          <SheetTitle>{t("edit_property_title")}</SheetTitle>
+          <SheetTitle>{t("ui.edit", { ns: "global" })}</SheetTitle>
         </SheetHeader>
         <div className="mt-8">
           <PropertyForm
@@ -142,6 +142,7 @@ export function PropertyDisplay({
   property: Property | null;
   onPropertyUpdate?: (property: Property) => void;
 }) {
+  const { t } = useTranslation(['global', 'properties', 'dashboard']);
   const [currentProperty, setCurrentProperty] = useState<Property | null>(null);
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([]);
   const [propertyEditSheetOpen, setPropertyEditSheetOpen] = useState(false);
@@ -206,7 +207,7 @@ export function PropertyDisplay({
   if (!currentProperty || bonusRules.length === 0) {
     return (
       <div className="flex items-center justify-center p-4 text-gray-500">
-        No property selected
+        {t('messages.no_properties', { ns: 'properties' })}
       </div>
     );
   }
@@ -228,7 +229,7 @@ export function PropertyDisplay({
     <div className="space-y-4 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm">Property</p>
+          <p className="text-sm">{t('property', '', { ns: 'properties' })}</p>
           <h3 className=" font-semibold">{currentProperty?.name}</h3>
           {/* <p className="text-sm text-gray-500">{currentProperty.description}</p> */}
         </div>
@@ -238,30 +239,30 @@ export function PropertyDisplay({
           onClick={handleEditClick}
           type="button" // Explicitly set button type
         >
-          Edit
+          {t('ui.edit', { ns: 'global' })}
         </Button>
       </div>
 
       <div className="grid grid-cols-7 gap-1">
         <div className="col-span-3">
-          <Label className="text-xs font-normal">Cost</Label>
-          <div className="text-sm font-medium">
+          <Label className="text-xs font-normal">{t('form.property_cost', { ns: 'properties' })}</Label>
+          <div className=" font-medium">
             {formatCurrency(cost, currentProperty.currency)}
           </div>
         </div>
         <div className="col-span-2">
-        <Label className="text-xs font-normal">Bonus</Label>
-          <div className="text-sm font-medium">
-            {bonus ? formatCurrency(bonus, currentProperty.currency) : "None"}
+        <Label className="text-xs font-normal">{t('bonus.amount', '', { ns: 'properties' })}</Label>
+          <div className="font-medium">
+            {bonus ? formatCurrency(bonus, currentProperty.currency) : t('bonus.no_bonus', '', { ns: 'properties' })}
           </div>
         </div>
 
         <div className="col-span-2">
-        <Label className="text-xs font-normal">Insurance</Label>
-          <div className="text-sm font-medium">
+        <Label className="text-xs font-normal">{t('form.property_insurance', '', { ns: 'properties' })}</Label>
+          <div className=" font-medium">
             {currentProperty.property_insurance !== null
               ? formatCurrency(currentProperty.property_insurance, currentProperty.currency)
-              : "None"}
+              : t('bonus.no_bonus', '', { ns: 'properties' })}
           </div>
         </div>
       </div>
@@ -290,7 +291,7 @@ export function PropertySelect({
   disabled = false,
   initialProperty = null
 }: PropertySelectProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation(['global', 'properties', 'dashboard'])
   const { user } = useAuth()
   const [properties, setProperties] = useState<Property[]>([])
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
@@ -341,12 +342,12 @@ export function PropertySelect({
         ]);
 
         if (propertiesError) {
-          console.error(t("error_loading_properties"), propertiesError);
+          console.error(t("messages.error_saving", { ns: "properties" }), propertiesError);
           return;
         }
 
         if (rulesError) {
-          console.error(t("error_loading_bonus_rules"), rulesError);
+          console.error(t("messages.error_saving", { ns: "properties" }), rulesError);
           return;
         }
 
@@ -369,7 +370,7 @@ export function PropertySelect({
           }
         }
       } catch (error) {
-        console.error(t("error_loading_properties"), error);
+        console.error(t("messages.error_saving", { ns: "properties" }), error);
       } finally {
         setIsLoading(false);
         setInitialLoad(false);
@@ -405,13 +406,13 @@ export function PropertySelect({
           </span>
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`text-sm ${isSelected ? 'text-inherit/90' : 'text-muted-foreground'}`}>
-              {t("property_cost")}: {formatAmount(cost, property.currency)}
+              {t("form.property_cost", { ns: "properties" })}: {formatAmount(cost, property.currency)}
             </span>
             {bonus && (
               <>
                 <span className={`text-sm ${isSelected ? 'text-inherit/75' : 'text-muted-foreground/75'}`}>|</span>
                 <span className={`text-sm ${isSelected ? 'text-inherit/90' : 'text-muted-foreground'}`}>
-                  {t("property_bonus")}: {formatAmount(bonus, "PEN")}
+                  {t("bonus.amount", { ns: "properties" })}: {formatAmount(bonus, "PEN")}
                 </span>
               </>
             )}
@@ -420,7 +421,7 @@ export function PropertySelect({
               <>
                 <span className={`text-sm ${isSelected ? 'text-inherit/75' : 'text-muted-foreground/75'}`}>|</span>
                 <span className={`text-sm ${isSelected ? 'text-inherit/90' : 'text-muted-foreground'}`}>
-                  {t("property_insurance")}: {formatAmount(property.property_insurance, property.currency)}
+                  {t("form.property_insurance", { ns: "properties" })}: {formatAmount(property.property_insurance, property.currency)}
                 </span>
               </>
             )}
@@ -431,10 +432,10 @@ export function PropertySelect({
   }
 
   const getSelectedPropertyDisplay = () => {
-    if (isLoading) return t("loading_properties")
-    if (!propertyId) return t("select_property")
+    if (isLoading) return t('ui.loading')
+    if (!propertyId) return t('form.select_currency', '', { ns: 'properties' })
     const property = properties.find(p => p.id === propertyId)
-    if (!property) return t("select_property")
+    if (!property) return t('form.select_currency', '', { ns: 'properties' })
     return formatPropertyOption(property, true)
   }
 
@@ -444,7 +445,7 @@ export function PropertySelect({
       name="property_id"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>{t("property")}</FormLabel>
+          <FormLabel>{t('sections.properties', { ns: 'dashboard' })}</FormLabel>
           <Select
             onValueChange={(value) => {
               field.onChange(value)
@@ -455,7 +456,7 @@ export function PropertySelect({
           >
             <FormControl>
               <SelectTrigger className="form-control-focus h-auto flex items-center py-2">
-                <SelectValue placeholder={t("select_property")} className="text-left">
+                <SelectValue placeholder={t('form.select_currency', '', { ns: 'properties' })} className="text-left">
                   {getSelectedPropertyDisplay()}
                 </SelectValue>
               </SelectTrigger>
@@ -463,7 +464,7 @@ export function PropertySelect({
             <SelectContent>
               {properties.length === 0 ? (
                 <div className="px-2 py-4 text-sm text-muted-foreground text-center">
-                  {t("no_properties")}
+                  {t('messages.no_properties', '', { ns: 'properties' })}
                 </div>
               ) : (
                 properties.map((property) => (

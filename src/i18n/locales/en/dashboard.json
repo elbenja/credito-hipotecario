@@ -1,0 +1,25 @@
+{
+  "title": "Dashboard",
+  "sections": {
+    "main": "Main",
+    "dashboard": "Dashboard",
+    "properties": "Properties",
+    "mortgages": "Mortgages",
+    "rentals": "Rentals",
+    "courses": "Courses",
+    "ai_chat": "AI Chat",
+    "account": "Account",
+    "billing": "Billing",
+    "notifications": "Notifications"
+  },
+  "welcome": {
+    "title": "Welcome to CreditoHipotecar.io",
+    "description": "Analyze different scenarios, and clearly understand your credit.",
+    "get_started": "Get Started"
+  },
+  "stats": {
+    "total_properties": "Total Properties",
+    "active_mortgages": "Active Mortgages",
+    "total_value": "Total Value"
+  }
+} 

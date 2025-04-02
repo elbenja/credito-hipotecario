@@ -50,7 +50,7 @@ export function NewRateForm({
   firstInstallmentDate
 }: NewRateFormProps) {
   const { toast } = useToast()
-  const { t } = useTranslation()
+  const { t } = useTranslation(['components'])
   const [refinancingOptions, setRefinancingOptions] = useState<RefinancingOption[]>([])
   const queryClient = useQueryClient()
   
@@ -117,8 +117,8 @@ export function NewRateForm({
       })
       
       toast({
-        title: t("payment_scenarios.new_rate_form.success_title"),
-        description: t("payment_scenarios.new_rate_form.success_message"),
+        title: t('payment_scenarios.new_rate_form.success_title', 'Success', { ns: 'components' }),
+        description: t('payment_scenarios.new_rate_form.success_message', 'Rate updated successfully', { ns: 'components' }),
       })
       
       // Call onSuccess callback to notify parent components
@@ -126,8 +126,8 @@ export function NewRateForm({
     } catch (error) {
       console.error("Error deleting new rate:", error)
       toast({
-        title: t("payment_scenarios.new_rate_form.error_title"),
-        description: t("payment_scenarios.new_rate_form.error_message"),
+        title: t('payment_scenarios.new_rate_form.error_title', 'Error', { ns: 'components' }),
+        description: t('payment_scenarios.new_rate_form.error_message', 'Failed to update rate', { ns: 'components' }),
         variant: "destructive",
       })
     }
@@ -232,14 +232,14 @@ export function NewRateForm({
       onSuccess?.()
       
       toast({
-        title: t("payment_scenarios.new_rate_form.success_title"),
-        description: t("payment_scenarios.new_rate_form.success_message"),
+        title: t('payment_scenarios.new_rate_form.success_title', 'Success', { ns: 'components' }),
+        description: t('payment_scenarios.new_rate_form.success_message', 'Rate updated successfully', { ns: 'components' }),
       })
     } catch (error) {
       console.error("Error saving new rate:", error)
       toast({
-        title: t("payment_scenarios.new_rate_form.error_title"),
-        description: t("payment_scenarios.new_rate_form.error_message"),
+        title: t('payment_scenarios.new_rate_form.error_title', 'Error', { ns: 'components' }),
+        description: t('payment_scenarios.new_rate_form.error_message', 'Failed to update rate', { ns: 'components' }),
         variant: "destructive",
       })
     } finally {
@@ -259,7 +259,7 @@ export function NewRateForm({
                 name="new_interest_rate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("payment_scenarios.new_rate_form.new_interest_rate")}</FormLabel>
+                    <FormLabel>{t('payment_scenarios.new_rate_form.new_interest_rate', 'New Interest Rate', { ns: 'components' })}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input 
@@ -287,7 +287,7 @@ export function NewRateForm({
                 name="new_term_years"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("payment_scenarios.new_rate_form.new_term")}</FormLabel>
+                    <FormLabel>{t('payment_scenarios.new_rate_form.new_term', 'New Term', { ns: 'components' })}</FormLabel>
                     <FormControl>
                       <Select 
                         onValueChange={(value) => field.onChange(value === "remaining" ? null : parseInt(value))}
@@ -297,10 +297,10 @@ export function NewRateForm({
                           <SelectValue placeholder="10" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="remaining">{t("payment_scenarios.new_rate_form.remaining")}</SelectItem>
+                          <SelectItem value="remaining">{t('payment_scenarios.new_rate_form.remaining', 'Remaining Term', { ns: 'components' })}</SelectItem>
                           {[5, 10, 15, 20, 25, 30].map((years) => (
                             <SelectItem key={years} value={years.toString()}>
-                              {t("payment_scenarios.new_rate_form.years", { value: years })}
+                              {t('payment_scenarios.new_rate_form.years', '{{value}} years', { ns: 'components', value: years })}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -316,7 +316,7 @@ export function NewRateForm({
                 name="effective_date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("payment_scenarios.new_rate_form.start_date")}</FormLabel>
+                    <FormLabel>{t('payment_scenarios.new_rate_form.start_date', 'Start Date', { ns: 'components' })}</FormLabel>
                     <FormControl>
                       <CalendarDatePicker
                         date={{ from: field.value || null, to: field.value || null }}
@@ -371,7 +371,7 @@ export function NewRateForm({
                 disabled={isSubmitting}
               >
                 <Plus className="h-4 w-4 opacity-50" />
-                <span>{t("payment_scenarios.new_rate_form.add_button")}</span>
+                <span>{t('payment_scenarios.new_rate_form.add_button', 'Add', { ns: 'components' })}</span>
               </Button>
             </div>
           </div>
@@ -382,10 +382,10 @@ export function NewRateForm({
         <table className="w-full">
           <thead>
             <tr className="border-b bg-muted/50">
-              <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("payment_scenarios.new_rate_form.table.number")}</th>
-              <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("payment_scenarios.new_rate_form.table.interest_rate")}</th>
-              <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("payment_scenarios.new_rate_form.table.new_term")}</th>
-              <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t("payment_scenarios.new_rate_form.table.start_date")}</th>
+              <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t('payment_scenarios.new_rate_form.table.number', '#', { ns: 'components' })}</th>
+              <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t('payment_scenarios.new_rate_form.table.interest_rate', 'Interest Rate', { ns: 'components' })}</th>
+              <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t('payment_scenarios.new_rate_form.table.new_term', 'New Term', { ns: 'components' })}</th>
+              <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t('payment_scenarios.new_rate_form.table.start_date', 'Start Date', { ns: 'components' })}</th>
               <th className="p-2 text-left font-medium w-[50px] text-xs text-muted-foreground"></th>
             </tr>
           </thead>
@@ -393,7 +393,7 @@ export function NewRateForm({
             {refinancingOptions.length === 0 ? (
               <tr>
                 <td colSpan={5} className="p-2 text-center text-sm text-muted-foreground">
-                  {t("payment_scenarios.new_rate_form.no_options")}
+                  {t('payment_scenarios.new_rate_form.no_options', 'No refinancing options added yet', { ns: 'components' })}
                 </td>
               </tr>
             ) : (
@@ -401,7 +401,11 @@ export function NewRateForm({
                 <tr key={option.id} className="border-b last:border-0">
                   <td className="p-2 text-sm">{index + 1}</td>
                   <td className="p-2 text-sm">{option.new_interest_rate}%</td>
-                  <td className="p-2 text-sm">{option.new_term_years ? t("payment_scenarios.new_rate_form.years", { value: option.new_term_years }) : t("payment_scenarios.new_rate_form.remaining")}</td>
+                  <td className="p-2 text-sm">
+                    {option.new_term_years 
+                      ? t('payment_scenarios.new_rate_form.years', '{{value}} years', { ns: 'components', value: option.new_term_years })
+                      : t('payment_scenarios.new_rate_form.remaining', 'Remaining Term', { ns: 'components' })}
+                  </td>
                   <td className="p-2 text-sm">{formatDate(createLocalDate(option.effective_date))}</td>
                   <td className="p-2">
                     <Button
@@ -409,7 +413,7 @@ export function NewRateForm({
                       size="icon"
                       onClick={() => handleDelete(option.id)}
                       className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      title={t("payment_scenarios.new_rate_form.table.delete_tooltip")}
+                      title={t('payment_scenarios.new_rate_form.table.delete_tooltip', 'Delete rate', { ns: 'components' })}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

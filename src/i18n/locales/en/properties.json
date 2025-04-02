@@ -1,0 +1,58 @@
+{
+  "title": "Properties",
+  "description": "Manage your property portfolio with our comprehensive property management tools. Track property details, costs, and mortgage information.",
+  "edit_property_description": "Edit your property details, costs, and check bonus eligibility.",
+  "add_property_description": "Add a new property with details, costs, and check bonus eligibility.",
+  "new_property": "New Property",
+  "property": "Property",
+  "actions": {
+    "add_property": "Add Property",
+    "edit_property": "Edit Property",
+    "delete_property": "Delete Property"
+  },
+  "form": {
+    "property_details": "Property Details",
+    "property_name": "New Property",
+    "property_description": "Description",
+    "property_type": "Property Type",
+    "price": "Price",
+    "currency": "Currency",
+    "location": "Location",
+    "status": "Status",
+    "description": "Description",
+    "description_placeholder": "Enter property details (address, notes, etc.)",
+    "property_cost": "Cost",
+    "property_insurance": "Property Insurance",
+    "first_home": "MiVivienda Bonus",
+    "sustainable": "Sustainable"
+  },
+  "insurance": {
+    "type": "Insurance Type",
+    "auto": "Auto",
+    "manual": "Manual",
+    "auto_rate": "Auto ({{rate}}%)",
+    "amount": "Amount"
+  },
+  "bonus": {
+    "amount": "Bonus Amount",
+    "amount_currency": "Bonus (S/)",
+    "eligible": "Bonus Eligible",
+    "first_home": "MiVivienda Bonus",
+    "price_range": "Bonus for prices between S/67,400 - S/355,100.",
+    "applicable_range": "Applicable range: S/{{min}} - S/{{max}}",
+    "price_outside_range": "Price outside the range.",
+    "price_outside_range_usd": "Price (S/{{penAmount}}) outside the range.",
+    "no_bonus": "-",
+    "first_home_buyer": "First Home Buyer Bonus",
+    "sustainable_property": "Sustainable Property Bonus",
+    "qualifies_higher_bonus": "Qualifies for the higher bonus"
+  },
+  "messages": {
+    "no_properties": "No properties found. Add your first property to get started.",
+    "error_loading_properties": "Could not load properties",
+    "error_loading_bonus_rules": "Could not load bonus rules",
+    "property_updated": "Property updated successfully",
+    "property_added": "Property added successfully",
+    "error_saving": "There was an error saving the property"
+  }
+} 

@@ -165,38 +165,51 @@ function CoursesIcon({ className }: { className?: string }) {
   )
 }
 
-const mainNavItems = [
-  { title: "dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { title: "properties", icon: PropertyIcon, href: "/properties" },
-  { title: "mortgages", icon: AmortizationIcon, href: "/mortgages" },
+type DashboardSectionKey = 'dashboard' | 'properties' | 'mortgages' | 'rentals' | 'courses' | 'ai_chat' | 'account' | 'billing' | 'notifications'
+type AdminSectionKey = 'title' | 'create_user' | 'test_extra_installments'
+
+type NavItem = {
+  title: DashboardSectionKey | AdminSectionKey
+  namespace: 'dashboard' | 'admin'
+  icon: any
+  href: string
+  badge?: 'coming'
+}
+
+const mainNavItems: NavItem[] = [
+  { title: "dashboard", namespace: "dashboard", icon: LayoutDashboard, href: "/dashboard" },
+  { title: "properties", namespace: "dashboard", icon: PropertyIcon, href: "/properties" },
+  { title: "mortgages", namespace: "dashboard", icon: AmortizationIcon, href: "/mortgages" },
   { 
     title: "rentals", 
+    namespace: "dashboard",
     icon: RentalIcon, 
     href: "/rentals",
     badge: "coming"
   },
   { 
     title: "courses", 
+    namespace: "dashboard",
     icon: CoursesIcon, 
     href: "/courses",
     badge: "coming"
   },
 ]
 
-const adminNavItems = [
-  { title: "user_management", icon: UsersRound, href: "/admin/users" },
-  { title: "early_access", icon: UserCog, href: "/admin/early-access" },
-  { title: "test_extra_installments", icon: Calculator, href: "/test-extra-installments" },
+const adminNavItems: NavItem[] = [
+  { title: "title", namespace: "admin", icon: UsersRound, href: "/admin/users" },
+  { title: "create_user", namespace: "admin", icon: UserCog, href: "/admin/early-access" },
+  { title: "test_extra_installments", namespace: "admin", icon: Calculator, href: "/test-extra-installments" },
 ]
 
-const footerNavItems = [
-  { title: "ai_chat", icon: MessageSquare, href: "/chat" },
+const footerNavItems: NavItem[] = [
+  { title: "ai_chat", namespace: "dashboard", icon: MessageSquare, href: "/chat" },
 ]
 
 export function DashboardSidebar() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t } = useTranslation(['dashboard', 'admin', 'global'])
   const { theme } = useTheme()
   const [isAdmin, setIsAdmin] = useState(false)
 
@@ -277,7 +290,7 @@ export function DashboardSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{t('main')}</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('sections.main', { ns: 'dashboard' })}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => (
@@ -285,9 +298,9 @@ export function DashboardSidebar() {
                   <SidebarMenuButton asChild>
                     <Link to={item.href} className="flex items-center gap-2">
                       <item.icon className="h-4 w-4" />
-                      <span>{t(item.title)}</span>
+                      <span>{t(`sections.${item.title}`, { ns: item.namespace })}</span>
                       {item.badge && (
-                        <Badge variant="outline" className="ml-2 text-xs">{t(item.badge)}</Badge>
+                        <Badge variant="outline" className="ml-2 text-xs">{t('ui.coming', { ns: 'global' })}</Badge>
                       )}
                       {item.title === "properties" && propertiesCount > 0 && (
                         <SidebarMenuBadge>{propertiesCount}</SidebarMenuBadge>
@@ -305,7 +318,7 @@ export function DashboardSidebar() {
         
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel>{t('admin')}</SidebarGroupLabel>
+            <SidebarGroupLabel>{t('user_management.title', { ns: 'admin' })}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminNavItems.map((item) => (
@@ -313,7 +326,7 @@ export function DashboardSidebar() {
                     <SidebarMenuButton asChild>
                       <Link to={item.href} className="flex items-center gap-2">
                         <item.icon className="h-4 w-4" />
-                        <span>{t(item.title)}</span>
+                        <span>{t(`user_management.${item.title}`, { ns: item.namespace })}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -332,7 +345,7 @@ export function DashboardSidebar() {
                   <SidebarMenuButton asChild>
                     <Link to={item.href} className="flex items-center gap-2">
                       <item.icon className="h-4 w-4" />
-                      <span>{t(item.title)}</span>
+                      <span>{t(`sections.${item.title}`, { ns: item.namespace })}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -352,31 +365,31 @@ export function DashboardSidebar() {
                     <DropdownMenuItem asChild>
                       <Link to="/profile" className="flex items-center">
                         <User className="mr-2 h-4 w-4" />
-                        <span>{t('account')}</span>
+                        <span>{t('sections.account', { ns: 'dashboard' })}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/billing" className="flex items-center">
                         <CreditCard className="mr-2 h-4 w-4" />
-                        <span>{t('billing')}</span>
+                        <span>{t('sections.billing', { ns: 'dashboard' })}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/notifications" className="flex items-center">
                         <Bell className="mr-2 h-4 w-4" />
-                        <span>{t('notifications')}</span>
+                        <span>{t('sections.notifications', { ns: 'dashboard' })}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/settings" className="flex items-center">
                         <Settings className="mr-2 h-4 w-4" />
-                        <span>{t('settings')}</span>
+                        <span>{t('settings.title', { ns: 'global' })}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="flex items-center text-red-500 focus:text-red-500">
                       <LogOut className="mr-2 h-4 w-4" />
-                      <span>{t('log_out')}</span>
+                      <span>{t('ui.log_out', { ns: 'global' })}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

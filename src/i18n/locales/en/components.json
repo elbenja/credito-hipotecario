@@ -1,0 +1,39 @@
+{
+  "extra_installments_section": {
+    "form": {
+      "amount": "Amount",
+      "amount_required": "Amount is required",
+      "amount_positive": "Amount must be positive",
+      "amount_placeholder": "Enter amount",
+      "frequency": "Frequency",
+      "frequency_placeholder": "Select frequency",
+      "frequency_monthly": "Monthly",
+      "frequency_one_time": "One-time",
+      "first_date": "First Date",
+      "start_date_required": "Start date is required",
+      "add_button": "Add"
+    }
+  },
+  "payment_scenarios": {
+    "new_rate_form": {
+      "success_title": "Success",
+      "success_message": "Rate updated successfully",
+      "error_title": "Error",
+      "error_message": "Failed to update rate",
+      "new_interest_rate": "New Interest Rate",
+      "new_term": "New Term",
+      "remaining": "Remaining Term",
+      "years": "{{value}} years",
+      "start_date": "Start Date",
+      "add_button": "Add",
+      "table": {
+        "number": "#",
+        "interest_rate": "Interest Rate",
+        "new_term": "New Term",
+        "start_date": "Start Date",
+        "delete_tooltip": "Delete rate"
+      },
+      "no_options": "No refinancing options added yet"
+    }
+  }
+} 

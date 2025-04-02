@@ -9,9 +9,13 @@ import { supabase } from "@/integrations/supabase/client"
 import { useTranslation } from "react-i18next"
 
 const formSchema = z.object({
-  name: z.string().min(1, "property_name_required"),
+  name: z.string().min(1, {
+    message: "validation.property_name_required"
+  }),
   description: z.string().optional(),
-  price_cost: z.string().min(1, "price_required"),
+  price_cost: z.string().min(1, {
+    message: "validation.price_required"
+  }),
   currency: z.enum(["PEN", "USD"]).default("PEN"),
   property_insurance: z.string().optional(),
   property_insurance_type: z.enum(["auto", "manual"]).default("auto"),
@@ -25,7 +29,7 @@ type BonusSectionProps = {
 }
 
 export function BonusSection({ form, bonusRules }: BonusSectionProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation('properties')
   const price = form.watch("price_cost")
   const currency = form.watch("currency")
   const isFirstHome = form.watch("is_first_home")
@@ -77,10 +81,10 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <FormLabel className="text-xl font-semibold">
-                  {t('first_home_buyer_bonus')}
+                  {t('bonus.first_home_buyer')}
                 </FormLabel>
                 <div className="text-sm text-muted-foreground">
-                  {t('bonus_price_range')}
+                  {t('bonus.price_range')}
                 </div>
               </div>
               <FormControl>
@@ -102,10 +106,10 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
                         <FormItem className="flex flex-row items-center justify-between border-t pt-4">
                           <div className="space-y-0.5">
                             <FormLabel className="text-lg font-semibold">
-                              {t('sustainable_property')}
+                              {t('bonus.sustainable_property')}
                             </FormLabel>
                             <div className="text-sm text-muted-foreground">
-                              {t('qualifies_higher_bonus')}
+                              {t('bonus.qualifies_higher_bonus')}
                             </div>
                           </div>
                           <FormControl>
@@ -120,7 +124,7 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
 
                     {getApplicableRule(parseFloat(price)) && (
                       <div className="mt-4 rounded-md bg-primary-foreground p-6">
-                        <p className="text-lg font-medium">{t('bonus_amount')}:</p>
+                        <p className="text-lg font-medium">{t('bonus.amount')}:</p>
                         <p className="text-4xl font-bold">
                           {formatCurrency(
                             isSustainable
@@ -132,7 +136,7 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
                         <div className="space-y-2">
                           {getApplicableRule(parseFloat(price)) && (
                             <p className="text-sm text-muted-foreground">
-                              {t('applicable_range', {
+                              {t('bonus.applicable_range', {
                                 min: getApplicableRule(parseFloat(price))?.min_value.toLocaleString(),
                                 max: getApplicableRule(parseFloat(price))?.max_value.toLocaleString()
                               })}
@@ -145,10 +149,10 @@ export function BonusSection({ form, bonusRules }: BonusSectionProps) {
                 ) : (
                   <div className="mt-2 text-sm text-muted-foreground">
                     {currency === 'USD' ? 
-                      t('price_outside_range_usd', {
+                      t('bonus.price_outside_range_usd', {
                         penAmount: convertToPEN(parseFloat(price)).toLocaleString()
                       }) :
-                      t('price_outside_range')
+                      t('bonus.price_outside_range')
                     }
                   </div>
                 )}

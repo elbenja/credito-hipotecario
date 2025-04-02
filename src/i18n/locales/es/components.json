@@ -1,0 +1,39 @@
+{
+  "extra_installments_section": {
+    "form": {
+      "amount": "Monto",
+      "amount_required": "El monto es requerido",
+      "amount_positive": "El monto debe ser positivo",
+      "amount_placeholder": "Ingrese monto",
+      "frequency": "Frecuencia",
+      "frequency_placeholder": "Seleccione frecuencia",
+      "frequency_monthly": "Mensual",
+      "frequency_one_time": "Una vez",
+      "first_date": "Primera Fecha",
+      "start_date_required": "La fecha de inicio es requerida",
+      "add_button": "Agregar"
+    }
+  },
+  "payment_scenarios": {
+    "new_rate_form": {
+      "success_title": "Éxito",
+      "success_message": "Tasa actualizada exitosamente",
+      "error_title": "Error",
+      "error_message": "Error al actualizar la tasa",
+      "new_interest_rate": "Nueva Tasa de Interés",
+      "new_term": "Nuevo Plazo",
+      "remaining": "Plazo Restante",
+      "years": "{{value}} años",
+      "start_date": "Fecha de Inicio",
+      "add_button": "Agregar",
+      "table": {
+        "number": "#",
+        "interest_rate": "Tasa de Interés",
+        "new_term": "Nuevo Plazo",
+        "start_date": "Fecha de Inicio",
+        "delete_tooltip": "Eliminar tasa"
+      },
+      "no_options": "Aún no hay opciones de refinanciamiento"
+    }
+  }
+} 

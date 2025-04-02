@@ -1,0 +1,58 @@
+{
+  "ui": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "update": "Actualizar",
+    "create": "Crear",
+    "loading": "Cargando",
+    "success": "Éxito",
+    "error": "Error",
+    "yes": "Sí",
+    "no": "No",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "submit": "Enviar",
+    "confirm": "Confirmar",
+    "log_out": "Cerrar sesión",
+    "coming": "Pronto",
+    "click_to_edit": "Click para editar",
+    "duplicate": "Duplicar"
+  },
+  "components": {
+    "calendar": {
+      "today": "Hoy",
+      "month": "Mes",
+      "year": "Año",
+      "previous_month": "Mes anterior",
+      "next_month": "Mes siguiente",
+      "previous_year": "Año anterior",
+      "next_year": "Año siguiente"
+    },
+    "property_form": {
+      "name": "Nombre",
+      "type": "Tipo",
+      "price": "Precio",
+      "location": "Ubicación",
+      "description": "Descripción",
+      "status": "Estado"
+    }
+  },
+  "messages": {
+    "please_login": "Por favor, inicia sesión",
+    "loading": "Cargando...",
+    "error_fetching_profile": "Error al obtener el perfil",
+    "error_checking_admin": "Error al verificar el estado de administrador"
+  },
+  "settings": {
+    "title": "Configuración",
+    "appearance": "Apariencia",
+    "appearance_description": "Personaliza el aspecto y la sensación de la aplicación.",
+    "theme": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "language": "Idioma",
+    "language_description": "Elige tu idioma preferido."
+  }
+} 

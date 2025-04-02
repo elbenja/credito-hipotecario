@@ -11,9 +11,13 @@ import { useTranslation } from "react-i18next"
 import * as z from "zod"
 
 const formSchema = z.object({
-  name: z.string().min(1, "property_name_required"),
+  name: z.string().min(1, {
+    message: "validation.property_name_required"
+  }),
   description: z.string().optional(),
-  price_cost: z.string().min(1, "price_required"),
+  price_cost: z.string().min(1, {
+    message: "validation.price_required"
+  }),
   currency: z.enum(["PEN", "USD"]).default("PEN"),
   property_insurance: z.string().optional(),
   property_insurance_type: z.enum(["auto", "manual"]).default("auto"),
@@ -27,7 +31,7 @@ type PropertyDetailsProps = {
 }
 
 export function PropertyDetails({ form, isNewProperty = false }: PropertyDetailsProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation('properties')
   const selectedCurrency = form.watch("currency")
   const currentName = form.watch("name")
   const { user } = useAuth()
@@ -50,14 +54,17 @@ export function PropertyDetails({ form, isNewProperty = false }: PropertyDetails
           .update({ last_property_number: nextNumber })
           .eq('id', user.id)
 
-        form.setValue("name", t('new_property', { number: nextNumber }), { shouldValidate: true })
+        const newPropertyName = t('form.property_name') + ' #' + nextNumber
+        form.setValue("name", newPropertyName, { shouldValidate: true })
+
+
       } catch (error) {
         console.error('Error setting up default property name:', error)
       }
     }
 
     setupDefaultName()
-  }, [isNewProperty, user, form, t])
+  }, [isNewProperty, user, form, t, currentName])
 
   const handleNameChange = (newName: string) => {
     form.setValue("name", newName, { shouldValidate: true })
@@ -75,10 +82,10 @@ export function PropertyDetails({ form, isNewProperty = false }: PropertyDetails
         name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{t('description')}</FormLabel>
+            <FormLabel>{t('form.description')}</FormLabel>
             <FormControl>
               <Textarea 
-                placeholder={t('description_placeholder')}
+                placeholder={t('form.description_placeholder')}
                 className="min-h-[60px]"
                 {...field} 
               />
@@ -93,10 +100,10 @@ export function PropertyDetails({ form, isNewProperty = false }: PropertyDetails
           name="price_cost"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('price')}</FormLabel>
+              <FormLabel>{t('form.property_cost')}</FormLabel>
               <FormControl>
                 <CurrencyInput
-                  placeholder={t('enter_price')}
+                  placeholder={t('form.property_cost')}
                   currency={selectedCurrency}
                   {...field}
                 />
@@ -110,14 +117,14 @@ export function PropertyDetails({ form, isNewProperty = false }: PropertyDetails
           name="currency"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('currency')}</FormLabel>
+              <FormLabel>{t('form.currency')}</FormLabel>
               <Select
                 onValueChange={field.onChange}
                 defaultValue={field.value}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder={t('select_currency')} />
+                    <SelectValue placeholder={t('form.currency')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>

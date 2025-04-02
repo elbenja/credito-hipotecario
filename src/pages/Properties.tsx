@@ -20,7 +20,10 @@ import { Property, BonusRule } from "@/components/properties/types"
 import { useTranslation } from "react-i18next"
 
 export default function Properties() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation(['properties', 'global'])
+  
+
+  
   const [open, setOpen] = useState(false)
   const { user } = useAuth()
   const { toast } = useToast()
@@ -43,11 +46,11 @@ export default function Properties() {
       if (error) throw error
       setBonusRules(data || [])
     } catch (error) {
-      console.error('Error loading bonus rules:', error)
+      // console.error('Error loading bonus rules:', error)
       toast({
         variant: "destructive",
-        title: t('error'),
-        description: t('error_loading_bonus_rules'),
+        title: t('global:ui.error'),
+        description: t('properties:messages.error_loading_bonus_rules'),
       })
     }
   }
@@ -73,8 +76,8 @@ export default function Properties() {
       console.error('Error loading properties:', error)
       toast({
         variant: "destructive",
-        title: t('error'),
-        description: t('error_loading_properties'),
+        title: t('global:ui.error'),
+        description: t('properties:messages.error_loading_properties'),
       })
     }
   }
@@ -131,16 +134,16 @@ export default function Properties() {
       <SheetTrigger asChild>
         <Button onClick={handleAddNewClick}>
           <Plus className="mr-2 h-4 w-4" />
-          {t('add_property')}
+          {t('actions.add_property', { ns: 'properties' })}
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>
-            {selectedProperty ? t('edit_property') : t('add_property')}
+            {selectedProperty ? t('actions.edit_property', { ns: 'properties' }) : t('actions.add_property', { ns: 'properties' })}
           </SheetTitle>
-          <p id="property-form-description" className="text-sm text-muted-foreground">
-            {selectedProperty ? t('edit_property_description') : t('add_property_description')}
+          <p id="property-form-description" className="text-sm text-muted-foreground"> 
+            {selectedProperty ? t('edit_property_description', { ns: 'properties' }) : t('add_property_description', { ns: 'properties' })}
           </p>
         </SheetHeader>
         <div className="mt-8">
@@ -158,13 +161,13 @@ export default function Properties() {
   return (
     <DashboardLayout
       header={{
-        title: <h1 className="text-3xl font-bold">{t('properties')}</h1>,
+        title: <h1 className="text-xl font-bold">{t('title', { ns: 'properties' })}</h1>,
         actions: headerActions
       }}
     >
       <SEO 
-        title={`${t('properties')} - CreditoHipotecar.io`}
-        description={t('properties_description')}
+        title={`${t('title', { ns: 'properties' })} - CreditoHipotecar.io`}
+        description={t('description', { ns: 'properties' })}
       />
       <div className="p-8">
         <div className="rounded-md border">

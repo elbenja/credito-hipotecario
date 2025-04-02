@@ -1,0 +1,85 @@
+{
+  "title": "Hipotecas",
+  "description": "Calcula y gestiona tus calendarios de amortización hipotecaria. Realiza seguimiento de pagos, tasas de interés y explora diferentes escenarios de pago.",
+  "amortization": {
+    "title": "Básico",
+    "description": "Calcula tu amortización hipotecaria",
+    "new": "Nueva Amortización",
+    "edit": "Editar Amortización",
+    "name": "Nombre",
+    "loan_amount": "Monto del Préstamo",
+    "loan_amount_formula": "= Costo de Propiedad - Bono MiVivienda - Cuota Inicial",
+    "down_payment": "Cuota Inicial",
+    "property_percentage": "% Propiedad",
+    "interest_rate": "Interés - TEA",
+    "term": "Plazo",
+    "installments_per_year": "Cuotas/Año",
+    "monthly_payment": "Cuota Mensual",
+    "total_interest": "Interés Total",
+    "total_payment": "Pago Total",
+    "installment_type": {
+      "title": "Installment Type",
+      "regular": "Simple",
+      "double": "Doble"
+    },
+    "insurance": {
+      "manual": "Manual"
+    }
+  },
+  "scenarios": {
+    "title": "Escenarios de Pago",
+    "regular": {
+      "title": "Regular",
+      "description": "Hipoteca base con parámetros estándar."
+    },
+    "accelerated": {
+      "title": "Acelerado",
+      "description": "Los pagos extra reducen el plazo, la cuota se mantiene constante."
+    },
+    "lower_payment": {
+      "title": "Cuota Menor",
+      "description": "Los pagos extra reducen la cuota mensual, el plazo se mantiene igual."
+    },
+    "new_rate": {
+      "title": "Nueva Tasa",
+      "description": "Simula una nueva tasa de interés.",
+      "form": {
+        "new_interest_rate": "Nueva Tasa de Interés (%)",
+        "new_term": "Nuevo Plazo (Años)",
+        "start_date": "Fecha de Inicio",
+        "remaining": "Restante",
+        "years": "años"
+      }
+    }
+  },
+  "insurance": {
+    "loan_protection": "Seguro de Desgravamen",
+    "individual": "Individual",
+    "joint": "Mancomunado",
+    "none": "Ninguno",
+    "monthly_cost": "Costo Mensual del Seguro"
+  },
+  "payment_summary": {
+    "total_interest_insurance": "Suma de Intereses y Seguros",
+    "months": "Meses",
+    "monthly_payment": "Cuota Mensual"
+  },
+  "payment_chart": {
+    "title": "Desglose de Pagos en el Tiempo",
+    "no_data": "No hay datos disponibles. Por favor, verifica los parámetros del préstamo.",
+    "monthly_payment": "Cuota Mensual",
+    "principal": "Principal",
+    "interest_insurance": "Intereses y Seguros",
+    "total_interest": "Interés Total",
+    "total_insurance": "Seguro Total",
+    "years_short": "{{value}}a"
+  },
+  "messages": {
+    "amortization_not_found": "Amortización no encontrada",
+    "amortization_not_found_description": "La amortización que buscas no existe o ha sido eliminada.",
+    "success_update": "Amortización actualizada exitosamente",
+    "error_update": "Hubo un error al actualizar la amortización",
+    "success_delete": "Amortización eliminada exitosamente",
+    "error_delete": "Hubo un error al eliminar la amortización"
+  }
+} 

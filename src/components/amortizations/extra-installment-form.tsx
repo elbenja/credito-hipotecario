@@ -58,7 +58,7 @@ export function ExtraInstallmentForm({
   lastExtraInstallmentDate,
   firstInstallmentDate 
 }: ExtraInstallmentFormProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation(['components'])
 
   // Get the initial date based on priority
   const getInitialDate = () => {
@@ -149,11 +149,11 @@ export function ExtraInstallmentForm({
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("extra_installments_section.form.amount")}</FormLabel>
+                <FormLabel>{t('extra_installments_section.form.amount', 'Amount', { ns: 'components' })}</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input 
-                      placeholder={t("extra_installments_section.form.amount_placeholder")}
+                      placeholder={t('extra_installments_section.form.amount_placeholder', 'Enter amount', { ns: 'components' })}
                       className="pl-8"
                       {...field}
                       onChange={(e) => {
@@ -182,19 +182,19 @@ export function ExtraInstallmentForm({
             name="frequency"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("extra_installments_section.form.frequency")}</FormLabel>
+                <FormLabel>{t('extra_installments_section.form.frequency', 'Frequency', { ns: 'components' })}</FormLabel>
                 <Select
                   value={field.value}
                   onValueChange={(value: "monthly" | "one-time") => field.onChange(value)}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder={t("extra_installments_section.form.frequency_placeholder")} />
+                      <SelectValue placeholder={t('extra_installments_section.form.frequency_placeholder', 'Select frequency', { ns: 'components' })} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="monthly">{t("extra_installments_section.form.frequency_monthly")}</SelectItem>
-                    <SelectItem value="one-time">{t("extra_installments_section.form.frequency_one_time")}</SelectItem>
+                    <SelectItem value="monthly">{t('extra_installments_section.form.frequency_monthly', 'Monthly', { ns: 'components' })}</SelectItem>
+                    <SelectItem value="one-time">{t('extra_installments_section.form.frequency_one_time', 'One-time', { ns: 'components' })}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -207,7 +207,7 @@ export function ExtraInstallmentForm({
             name="start_date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("extra_installments_section.form.first_date")}</FormLabel>
+                <FormLabel>{t('extra_installments_section.form.first_date', 'First Date', { ns: 'components' })}</FormLabel>
                 <FormControl>
                   <CalendarDatePicker
                     date={{
@@ -264,7 +264,7 @@ export function ExtraInstallmentForm({
             className="self-end px-3 w-[100px]"
           >
             <Plus className="h-4 w-4 opacity-50" />
-            <span>{t("extra_installments_section.form.add_button")}</span>
+            <span>{t('extra_installments_section.form.add_button', 'Add', { ns: 'components' })}</span>
           </Button>
         </div>
       </form>

@@ -1,0 +1,85 @@
+{
+  "title": "Mortgages",
+  "description": "Calculate and manage your mortgage amortization schedules. Track payments, interest rates, and explore different payment scenarios.",
+  "amortization": {
+    "title": "Basics",
+    "description": "Calculate your mortgage amortization",
+    "new": "New Amortization",
+    "edit": "Edit Amortization",
+    "name": "Name",
+    "loan_amount": "Loan Amount",
+    "loan_amount_formula": "= Property Cost - First Home Bonus - Down Payment",
+    "down_payment": "Down Payment",
+    "property_percentage": "Property %",
+    "interest_rate": "Interest Rate - EAR",
+    "term": "Term",
+    "installments_per_year": "Installments/Year",
+    "monthly_payment": "Monthly Payment",
+    "total_interest": "Total Interest",
+    "total_payment": "Total Payment",
+    "installment_type": {
+      "title": "Installment Type",
+      "regular": "Regular",
+      "double": "Double"
+    },
+    "insurance": {
+      "manual": "Manual"
+    }
+  },
+  "scenarios": {
+    "title": "Payment Scenarios",
+    "regular": {
+      "title": "Regular",
+      "description": "Base mortgage with standard parameters."
+    },
+    "accelerated": {
+      "title": "Accelerated",
+      "description": "Extra payments reduce the term, installment remains constant."
+    },
+    "lower_payment": {
+      "title": "Lower Payment",
+      "description": "Extra payments reduce the monthly payment, term remains the same."
+    },
+    "new_rate": {
+      "title": "New Rate",
+      "description": "Simulate a new interest rate.",
+      "form": {
+        "new_interest_rate": "New Interest Rate (%)",
+        "new_term": "New Term (Years)",
+        "start_date": "Start Date",
+        "remaining": "Remaining",
+        "years": "years"
+      }
+    }
+  },
+  "insurance": {
+    "loan_protection": "Loan Protection Insurance",
+    "individual": "Individual",
+    "joint": "Joint",
+    "none": "None",
+    "monthly_cost": "Monthly Insurance Cost"
+  },
+  "payment_summary": {
+    "total_interest_insurance": "Sum Interest & Insurances",
+    "months": "Months",
+    "monthly_payment": "Monthly Payment"
+  },
+  "payment_chart": {
+    "title": "Payment Breakdown Over Time",
+    "no_data": "No data available. Please check the loan parameters.",
+    "monthly_payment": "Monthly Payment",
+    "principal": "Principal",
+    "interest_insurance": "Interest & Insurances",
+    "total_interest": "Total Interest",
+    "total_insurance": "Total Insurance",
+    "years_short": "{{value}}y"
+  },
+  "messages": {
+    "amortization_not_found": "Amortization not found",
+    "amortization_not_found_description": "The amortization you're looking for doesn't exist or has been deleted.",
+    "success_update": "Amortization updated successfully",
+    "error_update": "There was an error updating the amortization",
+    "success_delete": "Amortization deleted successfully",
+    "error_delete": "There was an error deleting the amortization"
+  }
+} 

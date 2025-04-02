@@ -8,9 +8,13 @@ import { useTranslation } from "react-i18next"
 import * as z from "zod"
 
 const formSchema = z.object({
-  name: z.string().min(1, "property_name_required"),
+  name: z.string().min(1, {
+    message: "validation.property_name_required"
+  }),
   description: z.string().optional(),
-  price_cost: z.string().min(1, "price_required"),
+  price_cost: z.string().min(1, {
+    message: "validation.price_required"
+  }),
   currency: z.enum(["PEN", "USD"]).default("PEN"),
   property_insurance: z.string().optional(),
   property_insurance_type: z.enum(["auto", "manual"]).default("auto"),
@@ -23,7 +27,7 @@ type MonthlyCostsProps = {
 }
 
 export function MonthlyCosts({ form }: MonthlyCostsProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation('properties')
   const selectedCurrency = form.watch("currency")
   const propertyValue = parseFloat(form.watch("price_cost") || "0")
   const insuranceType = form.watch("property_insurance_type")
@@ -50,14 +54,13 @@ export function MonthlyCosts({ form }: MonthlyCostsProps) {
 
   return (
     <div className="space-y-4">
-  
       <div className="grid grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="property_insurance_type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('property_insurance_type')}</FormLabel>
+              <FormLabel>{t('form.property_insurance')}</FormLabel>
               <Select
                 onValueChange={(value) => {
                   field.onChange(value)
@@ -69,14 +72,14 @@ export function MonthlyCosts({ form }: MonthlyCostsProps) {
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder={t('select_insurance_type')} />
+                    <SelectValue placeholder={t('form.property_insurance')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="auto">
-                    {t('auto_insurance_rate', { rate: (insuranceRate || 0.0280).toFixed(4) })}
+                    {t('insurance.auto')} ({(insuranceRate || 0.0280).toFixed(4)}%)
                   </SelectItem>
-                  <SelectItem value="manual">{t('manual')}</SelectItem>
+                  <SelectItem value="manual">{t('insurance.manual')}</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -88,13 +91,13 @@ export function MonthlyCosts({ form }: MonthlyCostsProps) {
           name="property_insurance"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('property_insurance_amount')}</FormLabel>
+              <FormLabel>{t('insurance.amount')}</FormLabel>
               <FormControl>
                 <CurrencyInput
-                  placeholder={t('monthly_insurance')}
+                  placeholder={t('insurance.amount')}
                   currency={selectedCurrency}
                   {...field}
-                  value={insuranceType === "auto" ? autoInsuranceAmount.toFixed(2) : field.value}
+                  value={insuranceType === "auto" ? autoInsuranceAmount.toFixed(2) : field.value || ''}
                   disabled={insuranceType === "auto"}
                 />
               </FormControl>
