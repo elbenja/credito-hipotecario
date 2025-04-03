@@ -227,7 +227,7 @@ export function PropertyDisplay({
 
   return (
     <div className="space-y-4 ">
-      <div className="flex items-center p-2 sm:p-6 justify-between">
+      <div className="flex items-center p-2 sm:p-4 justify-between">
         <div>
           <p className="text-sm">{t('property', '', { ns: 'properties' })}</p>
           <h3 className=" font-semibold">{currentProperty?.name}</h3>
@@ -247,7 +247,7 @@ export function PropertyDisplay({
   <div className="justify-top flex flex-1 flex-col gap-2 px-2 py-2 sm:px-4 sm:py-4">
     
     <Label className="text-muted-foreground text-xs">{t('form.property_cost', { ns: 'properties' })}</Label>
-    <span className="text-lg leading-none font-bold sm:text-xl">
+    <span className="text-lg leading-none font-bold sm:text-lg whitespace-nowrap">
       {formatCurrency(cost, currentProperty.currency)}
     </span>
   </div>
@@ -258,7 +258,7 @@ export function PropertyDisplay({
         {t('bonus.amount_short', '', { ns: 'properties' })}
       </span>
       <Label className="text-xs font-normal"></Label>
-      <span className="text-lg leading-none font-bold sm:text-xl">
+      <span className="text-lg leading-none font-bold sm:text-lg whitespace-nowrap">
         {bonus ? formatCurrency(bonus, currentProperty.currency) : t('bonus.no_bonus', '', { ns: 'properties' })}
       </span>
     </div>
@@ -267,7 +267,7 @@ export function PropertyDisplay({
       <span className="text-muted-foreground text-xs whitespace-nowrap">
       <Label className="text-xs font-normal">{t('form.property_insurance_short', '', { ns: 'properties' })}</Label>
       </span>
-      <span className="text-lg leading-none font-bold sm:text-xl">
+      <span className="text-lg leading-none font-bold sm:text-lg whitespace-nowrap">
       {currentProperty.property_insurance !== null
               ? formatCurrency(currentProperty.property_insurance, currentProperty.currency)
               : t('bonus.no_bonus', '', { ns: 'properties' })}
