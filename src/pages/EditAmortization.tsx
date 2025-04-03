@@ -38,6 +38,7 @@ import {
 import { ExtraInstallmentsSection } from '@/components/amortizations/extra-installments-section'
 import { NewRateForm } from '@/components/amortizations/new-rate-form'
 import { useMemo, useCallback, useEffect, useState } from "react"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 export default function EditAmortization() {
   const { t } = useTranslation()
@@ -377,7 +378,7 @@ export default function EditAmortization() {
               className="mt-2"
               onClick={() => navigate("/mortgages")}
             >
-              {t("back_to_mortgages")}
+              {t("ui.back", { ns: "global" })}
             </Button>
           </div>
         </div>
@@ -449,7 +450,7 @@ export default function EditAmortization() {
           </div>
 
           {/* Right Container */}
-          <div className="w-full overflow-hidden flex-1">
+          <div className="w-full overflow-hidden flex-1 p-1 sm:p-6">
             {/* <h2 className="text-sm mb-6">{t("payment_scenarios_graphs")}</h2> */}
             {(!amortization || !scenarios || isLoadingScenarios) ? (
               <div className="flex items-center justify-center h-64">
@@ -457,42 +458,53 @@ export default function EditAmortization() {
                 <div className="text-muted-foreground">{t("ui.loading", { ns: "global" })}</div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-2">
-                {scenarios.regular && (
-                  <RegularPanelGraph
-                    scenario={scenarios.regular}
-                    currency={amortization.property.currency}
-                    installmentsPerYear={amortization.installments_per_year}
-                  />
-                )}
-
-                {scenarios.accelerated && (
-                  <AcceleratedPanelGraph
-                    scenario={scenarios.accelerated}
-                    regularScenario={scenarios.regular}
-                    currency={amortization.property.currency}
-                    installmentsPerYear={amortization.installments_per_year}
-                  />
-                )}
-
-                {scenarios.lower_payment && (
-                  <LowerPaymentPanelGraph
-                    scenario={scenarios.lower_payment}
-                    regularScenario={scenarios.regular}
-                    currency={amortization.property.currency}
-                    installmentsPerYear={amortization.installments_per_year}
-                  />
-                )}
-
-                {scenarios.new_rate && (
-                  <NewRatePanelGraph
-                    scenario={scenarios.new_rate}
-                    regularScenario={scenarios.regular}
-                    currency={amortization.property.currency}
-                    installmentsPerYear={amortization.installments_per_year}
-                  />
-                )}
-              </div>
+              <Tabs defaultValue="regular" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="regular">{t("scenarios.regular.title", { ns: "mortgages" })}</TabsTrigger>
+                  <TabsTrigger value="accelerated">{t("scenarios.accelerated.title", { ns: "mortgages" })}</TabsTrigger>
+                  <TabsTrigger value="lower_payment">{t("scenarios.lower_payment.title", { ns: "mortgages" })}</TabsTrigger>
+                  <TabsTrigger value="new_rate">{t("scenarios.new_rate.title", { ns: "mortgages" })}</TabsTrigger>
+                </TabsList>
+                <TabsContent value="regular">
+                  {scenarios.regular && (
+                    <RegularPanelGraph
+                      scenario={scenarios.regular}
+                      currency={amortization.property.currency}
+                      installmentsPerYear={amortization.installments_per_year}
+                    />
+                  )}
+                </TabsContent>
+                <TabsContent value="accelerated">
+                  {scenarios.accelerated && (
+                    <AcceleratedPanelGraph
+                      scenario={scenarios.accelerated}
+                      regularScenario={scenarios.regular}
+                      currency={amortization.property.currency}
+                      installmentsPerYear={amortization.installments_per_year}
+                    />
+                  )}
+                </TabsContent>
+                <TabsContent value="lower_payment">
+                  {scenarios.lower_payment && (
+                    <LowerPaymentPanelGraph
+                      scenario={scenarios.lower_payment}
+                      regularScenario={scenarios.regular}
+                      currency={amortization.property.currency}
+                      installmentsPerYear={amortization.installments_per_year}
+                    />
+                  )}
+                </TabsContent>
+                <TabsContent value="new_rate">
+                  {scenarios.new_rate && (
+                    <NewRatePanelGraph
+                      scenario={scenarios.new_rate}
+                      regularScenario={scenarios.regular}
+                      currency={amortization.property.currency}
+                      installmentsPerYear={amortization.installments_per_year}
+                    />
+                  )}
+                </TabsContent>
+              </Tabs>
             )}
 
             {/* <div className="mt-8">
