@@ -187,8 +187,8 @@ const ScenarioPanel = ({
   return (
     
     <div className="">
-      <h3 className="text-lg font-semibold mb-1">{title}</h3>
-      {/* start */}
+      
+   
 
 <div className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
   <div className="flex flex-1 flex-col justify-top gap-2 px-6 py-5 sm:py-6">

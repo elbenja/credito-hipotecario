@@ -249,7 +249,7 @@ export function NewRateForm({
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-medium">Refinancing Options</h3>
+      <h3 className="text-lg font-medium">{t('payment_scenarios.new_rate_form.refinancing_options', 'Refinancing Options', { ns: 'components' })}</h3>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className={className}>
           <div className="space-y-4">
