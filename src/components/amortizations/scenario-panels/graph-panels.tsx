@@ -30,16 +30,6 @@ interface ScenarioPanelProps {
   installmentsPerYear: number
 }
 
-const chartConfig = {
-  principal: {
-    label: "Principal",
-    color: "var(--color-principal)",
-  },
-  interest_insurance: {
-    label: "Interest & Insurance",
-    color: "var(--color-interest_insurance)",
-  },
-} satisfies ChartConfig
 
 // Memoize the data transformation function to avoid recalculating on every render
 const transformPaymentsToChartData = (payments: ExtendedPaymentRow[]) => {
@@ -129,11 +119,11 @@ const ScenarioPanel = ({
   const translatedChartConfig = {
     principal: {
       label: t('scenario_graphs.common.principal', 'Principal', { ns: 'components' }),
-     
+      // color: 'var(--color-principal)'
     },
     interest_insurance: {
       label: t('scenario_graphs.common.interest_insurance', 'Interest & Insurance', { ns: 'components' }),
-    
+      // color: 'var(--color-interest_insurance)'
     }
   } satisfies ChartConfig
 
@@ -143,11 +133,11 @@ const ScenarioPanel = ({
       <h3 className="text-lg font-semibold mb-1">{title}</h3>
       {/* start */}
 
-<div class="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
-  <div class="flex flex-1 flex-col justify-top gap-2 px-6 py-5 sm:py-6">
-    <span class="text-xs text-muted-foreground">{t('scenario_graphs.common.sum_interest_insurance', 'Sum Interest & Insurances', { ns: 'components' })}</span>
-    <div class=" flex items-center gap-2 ">
-      <span class="text-lg font-bold leading-none sm:text-3xl"> {formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}
+<div className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
+  <div className="flex flex-1 flex-col justify-top gap-2 px-6 py-5 sm:py-6">
+    <span className="text-xs text-muted-foreground">{t('scenario_graphs.common.sum_interest_insurance', 'Sum Interest & Insurances', { ns: 'components' })}</span>
+    <div className="flex items-center gap-2">
+      <span className="text-lg font-bold leading-none sm:text-3xl"> {formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}
       </span>
             {showBaseline ? (
               <Badge variant="primary" className="text-sm">
@@ -161,13 +151,13 @@ const ScenarioPanel = ({
   </div>
 
   </div>
-  <div class="flex">
-    <div  class="relative z-30 flex flex-1 flex-col justify-top gap-1 border-t px-6 py-4 text-left even:border-l  sm:border-l sm:border-t-0 sm:px-8 sm:py-6">
-      <span class="text-xs text-muted-foreground">
+  <div className="flex">
+    <div className="relative z-30 flex flex-1 flex-col justify-top gap-1 border-t px-6 py-4 text-left even:border-l  sm:border-l sm:border-t-0 sm:px-8 sm:py-6">
+      <span className="text-xs text-muted-foreground">
       {t('scenario_graphs.common.months', 'Months', { ns: 'components' })}
       </span>
-        <div class=" flex items-center gap-2 "> 
-        <span class="text-lg font-bold leading-none sm:text-3xl">
+        <div className="flex items-center gap-2"> 
+        <span className="text-lg font-bold leading-none sm:text-3xl">
          {scenario.summary.total_months}
         </span>
              {differences.months && !showBaseline && (
@@ -178,12 +168,12 @@ const ScenarioPanel = ({
       </div>
     </div>
 
-    <div  class=" flex flex-1 flex-col justify-top gap-1 border-t px-6 py-4 text-left even:border-l  sm:border-l sm:border-t-0 sm:px-8 sm:py-6">
-      <span class="text-xs text-muted-foreground">
+    <div className="flex flex-1 flex-col justify-top gap-1 border-t px-6 py-4 text-left even:border-l  sm:border-l sm:border-t-0 sm:px-8 sm:py-6">
+      <span className="text-xs text-muted-foreground">
       {t('scenario_graphs.common.monthly_payment', 'Monthly Payment', { ns: 'components' })}
       </span>
-      <div class=" flex items-center gap-2 ">
-        <span class="text-lg font-bold leading-none sm:text-3xl">
+      <div className="flex items-center gap-2">
+        <span className="text-lg font-bold leading-none sm:text-3xl">
         {formatCurrency(scenario.summary.monthly_payment, currency as Currency)}
           </span>
 
@@ -199,12 +189,12 @@ const ScenarioPanel = ({
       {/* end */}
       <div className="space-y-4 ">
         <div className="h-[300px] w-full mt-6">
-          <ChartThemeWrapper cardBackground="black" textColor="white">
+          <ChartThemeWrapper >
             <ChartContainer config={translatedChartConfig}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
                   data={chartData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
                 >
                   <defs>
                     <linearGradient id="principal" x1="0" y1="0" x2="0" y2="1">
@@ -237,7 +227,7 @@ const ScenarioPanel = ({
                                 className="h-3 w-1 rounded-full"
                                 style={{ backgroundColor: entry.color }}
                               />
-                              <span className="text-gray-400">
+                              <span className="text-gray-300">
                                 {translatedChartConfig[entry.name as keyof typeof translatedChartConfig].label}:
                               </span>
                               <span className="font-medium">
