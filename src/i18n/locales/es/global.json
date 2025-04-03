@@ -54,5 +54,32 @@
     "dark": "Oscuro",
     "language": "Idioma",
     "language_description": "Elige tu idioma preferido."
-  }
+  },
+  "auth": {
+    "title": "Iniciar Sesión",
+    "description": "Inicia sesión en tu cuenta para continuar",
+    "brand_name": "CreditoHipotecar.io",
+    "no_credentials_prompt": "¿Aún no tienes credenciales?",
+    "register_prompt": "Solicitar Acceso Anticipado",
+    "clear_and_simple": "Análisis hipotecario claro y simple",
+    "login": {
+      "early_access": "Acceso Anticipado",
+      "credentials_prompt": "Por favor ingresa tus credenciales para continuar",
+      "email": "Correo electrónico",
+      "email_placeholder": "Ingresa tu correo electrónico",
+      "password": "Contraseña",
+      "loading": "Iniciando sesión...",
+      "sign_in": "Iniciar Sesión",
+      "forgot_password": "¿Olvidaste tu contraseña?",
+      "reset_password": "Restablecer Contraseña",
+      "reset_instructions": "Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña",
+      "reset_email_sent": "Correo de restablecimiento enviado",
+      "valid_email_required": "Por favor ingresa un correo electrónico válido",
+      "submitting": "Enviando...",
+      "send_reset_link": "Enviar Enlace",
+      "back_to_login": "Volver al Inicio de Sesión",
+      "success": "Sesión iniciada exitosamente"
+    }
+  },
+  "test_extra_installments": "Prueba de Cuotas Extra"
 } 

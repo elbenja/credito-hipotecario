@@ -55,7 +55,7 @@
     }
   },
   "insurance": {
-    "loan_protection": "Loan Protection Insurance",
+    "loan_protection": "Loan Insurance",
     "individual": "Individual",
     "joint": "Joint",
     "none": "None",

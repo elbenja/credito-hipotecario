@@ -8,26 +8,26 @@ import { LanguageSwitcher } from "@/components/ui/language-switcher"
 import { useTranslation } from "react-i18next"
 
 export default function Settings() {
-  const { t } = useTranslation()
+  const { t } = useTranslation(['global'])
   const { theme, setTheme } = useTheme()
 
   return (
     <DashboardLayout
       header={{
-        title: <h1 className="text-3xl font-bold">{t('settings')}</h1>,
+        title: <h1 className="text-3xl font-bold">{t('settings.title')}</h1>,
       }}
     >
       <div className="container py-6 space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>{t('appearance')}</CardTitle>
+            <CardTitle>{t('settings.appearance')}</CardTitle>
             <CardDescription>
-              {t('appearance_description')}
+              {t('settings.appearance_description')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label>{t('theme')}</Label>
+              <Label>{t('settings.theme')}</Label>
               <div className="flex gap-4">
                 <Button
                   variant={theme === 'light' ? 'default' : 'outline'}
@@ -35,7 +35,7 @@ export default function Settings() {
                   className="gap-2"
                 >
                   <Sun className="h-4 w-4" />
-                  {t('light')}
+                  {t('settings.light')}
                 </Button>
                 <Button
                   variant={theme === 'dark' ? 'default' : 'outline'}
@@ -43,7 +43,7 @@ export default function Settings() {
                   className="gap-2"
                 >
                   <Moon className="h-4 w-4" />
-                  {t('dark')}
+                  {t('settings.dark')}
                 </Button>
               </div>
             </div>
@@ -52,14 +52,14 @@ export default function Settings() {
 
         <Card>
           <CardHeader>
-            <CardTitle>{t('language')}</CardTitle>
+            <CardTitle>{t('settings.language')}</CardTitle>
             <CardDescription>
-              {t('language_description')}
+              {t('settings.language_description')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <Label>{t('display_language')}</Label>
+              <Label>{t('settings.language')}</Label>
               <div>
                 <LanguageSwitcher />
               </div>

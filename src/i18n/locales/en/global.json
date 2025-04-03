@@ -16,7 +16,7 @@
     "submit": "Submit",
     "confirm": "Confirm",
     "log_out": "Log out",
-    "coming": "Coming soon",
+    "coming": "Coming",
     "click_to_edit": "Click to edit",
     "duplicate": "Duplicate"
   },
@@ -54,5 +54,32 @@
     "dark": "Dark",
     "language": "Language",
     "language_description": "Choose your preferred language."
-  }
+  },
+  "auth": {
+    "title": "Sign In",
+    "description": "Sign in to your account to continue",
+    "brand_name": "CreditoHipotecar.io",
+    "no_credentials_prompt": "Don't have credentials yet?",
+    "register_prompt": "Request Early Access",
+    "clear_and_simple": "Clear and simple mortgage analysis",
+    "login": {
+      "early_access": "Early Access",
+      "credentials_prompt": "Please enter your credentials to continue",
+      "email": "Email",
+      "email_placeholder": "Enter your email",
+      "password": "Password",
+      "loading": "Signing in...",
+      "sign_in": "Sign In",
+      "forgot_password": "Forgot Password?",
+      "reset_password": "Reset Password",
+      "reset_instructions": "Enter your email and we'll send you a link to reset your password",
+      "reset_email_sent": "Password reset email sent",
+      "valid_email_required": "Please enter a valid email",
+      "submitting": "Submitting...",
+      "send_reset_link": "Send Reset Link",
+      "back_to_login": "Back to Login",
+      "success": "Successfully signed in"
+    }
+  },
+  "test_extra_installments": "Test Extra Installments"
 } 

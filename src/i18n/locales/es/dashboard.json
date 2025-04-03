@@ -5,12 +5,13 @@
     "dashboard": "Dashboard",
     "properties": "Propiedades",
     "mortgages": "Hipotecas",
-    "rentals": "Alquileres",
+    "rentals": "Rentabilidad",
     "courses": "Cursos",
     "ai_chat": "Chat IA",
     "account": "Cuenta",
     "billing": "Facturación",
-    "notifications": "Notificaciones"
+    "notifications": "Notificaciones",
+    "test_extra_installments": "Prueba de Cuotas Extra"
   },
   "welcome": {
     "title": "Bienvenido a CreditoHipotecar.io",

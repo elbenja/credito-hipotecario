@@ -21,7 +21,7 @@ export function LoginForm() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const { user } = useAuth()
-  const { t } = useTranslation()
+  const { t } = useTranslation('global')
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -44,18 +44,18 @@ export function LoginForm() {
 
       // Success toast
       toast({
-        title: t("success"),
+        title: t("ui.success"),
         description: t("auth.login.success"),
       })
 
       // Explicitly navigate to dashboard after successful login
       navigate('/dashboard', { replace: true })
     } catch (error: any) {
-      setError(error.message || t("error_message"))
+      setError(error.message || t("ui.error"))
       toast({
         variant: "destructive",
-        title: t("error"),
-        description: error.message || t("error_message"),
+        title: t("ui.error"),
+        description: error.message || t("ui.error"),
       })
       console.error("Auth error:", error)
     } finally {
@@ -68,7 +68,7 @@ export function LoginForm() {
     if (!resetEmail || !resetEmail.includes('@')) {
       toast({
         variant: "destructive",
-        title: t("error"),
+        title: t("ui.error"),
         description: t("auth.login.valid_email_required"),
       })
       return
@@ -83,15 +83,15 @@ export function LoginForm() {
       if (error) throw error
 
       toast({
-        title: t("success"),
+        title: t("ui.success"),
         description: t("auth.login.reset_email_sent"),
       })
       setIsResettingPassword(false)
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: t("error"),
-        description: error.message || t("error_message"),
+        title: t("ui.error"),
+        description: error.message || t("ui.error"),
       })
     } finally {
       setIsSubmitting(false)
@@ -190,7 +190,7 @@ export function LoginForm() {
             <Button
               type="button"
               variant="link"
-              className="mx-auto text-blue-500 font-bold"
+              className="w-full  text-blue-500 font-bold"
               onClick={() => setIsResettingPassword(true)}
               disabled={isLoading}
             >

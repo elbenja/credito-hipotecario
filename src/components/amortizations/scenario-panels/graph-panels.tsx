@@ -138,19 +138,17 @@ const ScenarioPanel = ({
   } satisfies ChartConfig
 
   return (
-    <div className="p-1 sm:p-4 border rounded-lg">
+    
+    <div className="">
       <h3 className="text-lg font-semibold mb-1">{title}</h3>
-      
-      <div className="space-y-4 ">
-        <div className="grid grid-flow-col grid-cols-4 grid-rows-2 auto-rows-min gap-0 "> 
-          <div className="col-span-2 px-1 sm:px-3 ">
-            <span className=" text-sm text-muted-foreground">
-              {t('scenario_graphs.common.sum_interest_insurance', 'Sum Interest & Insurances', { ns: 'components' })}
-            </span>
-          </div>
+      {/* start */}
 
-          <div className="col-span-2 flex items-center gap-2 px-2 sm:px-3 ">
-            <span className="text-lg font-medium">{formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}</span>
+<div class="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
+  <div class="flex flex-1 flex-col justify-top gap-2 px-6 py-5 sm:py-6">
+    <span class="text-xs text-muted-foreground">{t('scenario_graphs.common.sum_interest_insurance', 'Sum Interest & Insurances', { ns: 'components' })}</span>
+    <div class=" flex items-center gap-2 ">
+      <span class="text-lg font-bold leading-none sm:text-3xl"> {formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}
+      </span>
             {showBaseline ? (
               <Badge variant="primary" className="text-sm">
                 {t('scenario_graphs.regular.baseline', 'Baseline', { ns: 'components' })}
@@ -160,39 +158,46 @@ const ScenarioPanel = ({
                 {differences.sum < 0 ? '-' : '+'}{formatCurrency(Math.abs(differences.sum), currency as Currency)}
               </Badge>
             )}
-          </div>
+  </div>
 
-          <div className="col-span-1 px-1 sm:px-3  ">
-            <span className=" text-sm text-muted-foreground">
-              {t('scenario_graphs.common.months', 'Months', { ns: 'components' })}
-            </span>
-          </div>
-            
-          <div className="col-span-1 flex items-center gap-2 px-2 sm:px-3 ">
-            <span className="text-lg font-medium">{scenario.summary.total_months}</span>
-            {differences.months && !showBaseline && (
+  </div>
+  <div class="flex">
+    <div  class="relative z-30 flex flex-1 flex-col justify-top gap-1 border-t px-6 py-4 text-left even:border-l  sm:border-l sm:border-t-0 sm:px-8 sm:py-6">
+      <span class="text-xs text-muted-foreground">
+      {t('scenario_graphs.common.months', 'Months', { ns: 'components' })}
+      </span>
+        <div class=" flex items-center gap-2 "> 
+        <span class="text-lg font-bold leading-none sm:text-3xl">
+         {scenario.summary.total_months}
+        </span>
+             {differences.months && !showBaseline && (
               <Badge variant={getBadgeVariant(differences.months, true)} className="text-sm">
                 {formatDifference(differences.months)}
               </Badge>
             )}
-          </div>
+      </div>
+    </div>
 
-          <div className="col-span-1 px-1 sm:px-3 ">
-            <span className=" text-sm text-muted-foreground">
-              {t('scenario_graphs.common.monthly_payment', 'Monthly Payment', { ns: 'components' })}
-            </span>
-          </div>
+    <div  class=" flex flex-1 flex-col justify-top gap-1 border-t px-6 py-4 text-left even:border-l  sm:border-l sm:border-t-0 sm:px-8 sm:py-6">
+      <span class="text-xs text-muted-foreground">
+      {t('scenario_graphs.common.monthly_payment', 'Monthly Payment', { ns: 'components' })}
+      </span>
+      <div class=" flex items-center gap-2 ">
+        <span class="text-lg font-bold leading-none sm:text-3xl">
+        {formatCurrency(scenario.summary.monthly_payment, currency as Currency)}
+          </span>
 
-          <div className="col-span-1 flex items-center gap-2 px-2 sm:px-3 ">
-            <span className="text-lg font-medium">{formatCurrency(scenario.summary.monthly_payment, currency as Currency)}</span>
-            {differences.payment && !showBaseline && (
+          {differences.payment && !showBaseline && (
               <Badge variant={getBadgeVariant(differences.payment)} className="text-sm">
                 {differences.payment < 0 ? '-' : '+'}{formatCurrency(Math.abs(differences.payment), currency as Currency)}
               </Badge>
             )}
-          </div>
-        </div>
-
+      </div>
+    </div>
+  </div>
+</div>
+      {/* end */}
+      <div className="space-y-4 ">
         <div className="h-[300px] w-full mt-6">
           <ChartThemeWrapper cardBackground="black" textColor="white">
             <ChartContainer config={translatedChartConfig}>

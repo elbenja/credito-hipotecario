@@ -5,12 +5,13 @@
     "dashboard": "Dashboard",
     "properties": "Properties",
     "mortgages": "Mortgages",
-    "rentals": "Rentals",
+    "rentals": "Profitability",
     "courses": "Courses",
     "ai_chat": "AI Chat",
     "account": "Account",
     "billing": "Billing",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "test_extra_installments": "Test Extra Installments"
   },
   "welcome": {
     "title": "Welcome to CreditoHipotecar.io",

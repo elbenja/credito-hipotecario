@@ -12,7 +12,7 @@ export default function Auth() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, loading } = useAuth()
-  const { t } = useTranslation()
+  const { t } = useTranslation('global')
 
   useEffect(() => {
     // If we have a user and we're not loading, redirect to dashboard
@@ -27,7 +27,7 @@ export default function Auth() {
       <div className="flex min-h-svh items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-muted-foreground">{t("loading")}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t('messages.loading')}</p>
         </div>
       </div>
     )
@@ -36,14 +36,14 @@ export default function Auth() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <SEO 
-        title={t("auth.title")}
-        description={t("auth.description")}
+        title={t('auth.title')}
+        description={t('auth.description')}
       />
       <div className="flex flex-col gap-4 p-6 md:p-10 min-h-[700px]">
         <div className="flex justify-center gap-2 md:justify-start">
           <a href="/" className="flex items-center gap-2 ">
             <Logo className="h-6 w-6" />
-            {t("auth.brand_name")}
+            <span class="font-bold text-md"> {t('auth.brand_name')}</span>
           </a>
         </div>
         <div className="flex flex-1 items-center justify-center">
@@ -54,13 +54,13 @@ export default function Auth() {
 
         <div className="text-center mt-8">
          <p className="mb-4">
-          {t("auth.no_credentials_prompt")}
+          {t('auth.no_credentials_prompt')} &nbsp;
           
           <a 
             href="http://CreditoHipotecar.io#earlyaccess" 
             className="text-blue-500 font-bold hover:underline"
           >
-            {t("auth.register_prompt")}
+            {t('auth.register_prompt')}
           </a>
         </p>
       </div>
@@ -74,7 +74,7 @@ export default function Auth() {
                     <span className="text-white leading-[70%]">hipotecar.io</span>
                  </h2>
                  <p className="mt-4 text-lg text-slate-200">
-                 {t("auth.clear_and_simple")}
+                 {t('auth.clear_and_simple')}
                 </p>
                 <img 
                   src="/lovable-uploads/amigo-en-beanbag.png" 

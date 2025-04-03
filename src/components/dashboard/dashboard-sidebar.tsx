@@ -166,7 +166,7 @@ function CoursesIcon({ className }: { className?: string }) {
 }
 
 type DashboardSectionKey = 'dashboard' | 'properties' | 'mortgages' | 'rentals' | 'courses' | 'ai_chat' | 'account' | 'billing' | 'notifications'
-type AdminSectionKey = 'title' | 'create_user' | 'test_extra_installments'
+type AdminSectionKey = 'user_management' | 'early_access' | 'test'
 
 type NavItem = {
   title: DashboardSectionKey | AdminSectionKey
@@ -184,22 +184,22 @@ const mainNavItems: NavItem[] = [
     title: "rentals", 
     namespace: "dashboard",
     icon: RentalIcon, 
-    href: "/rentals",
+    href: "/",
     badge: "coming"
   },
   { 
     title: "courses", 
     namespace: "dashboard",
     icon: CoursesIcon, 
-    href: "/courses",
+    href: "/",
     badge: "coming"
   },
 ]
 
 const adminNavItems: NavItem[] = [
-  { title: "title", namespace: "admin", icon: UsersRound, href: "/admin/users" },
-  { title: "create_user", namespace: "admin", icon: UserCog, href: "/admin/early-access" },
-  { title: "test_extra_installments", namespace: "admin", icon: Calculator, href: "/test-extra-installments" },
+  { title: "user_management", namespace: "admin", icon: UsersRound, href: "/admin/users" },
+  { title: "early_access", namespace: "admin", icon: UserCog, href: "/admin/early-access" },
+  { title: "test", namespace: "admin", icon: Calculator, href: "/test-extra-installments" },
 ]
 
 const footerNavItems: NavItem[] = [
@@ -280,6 +280,13 @@ export function DashboardSidebar() {
     navigate("/")
   }
 
+  const getTranslation = (item: NavItem): string => {
+    if (item.namespace === 'dashboard') {
+      return t(`sections.${item.title}`, { ns: 'dashboard' })
+    }
+    return t(item.title, { ns: 'admin' })
+  }
+
   return (
     <Sidebar>
       <SidebarHeader className="border-b">
@@ -298,7 +305,7 @@ export function DashboardSidebar() {
                   <SidebarMenuButton asChild>
                     <Link to={item.href} className="flex items-center gap-2">
                       <item.icon className="h-4 w-4" />
-                      <span>{t(`sections.${item.title}`, { ns: item.namespace })}</span>
+                      <span>{getTranslation(item)}</span>
                       {item.badge && (
                         <Badge variant="outline" className="ml-2 text-xs">{t('ui.coming', { ns: 'global' })}</Badge>
                       )}
@@ -318,7 +325,7 @@ export function DashboardSidebar() {
         
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel>{t('user_management.title', { ns: 'admin' })}</SidebarGroupLabel>
+            <SidebarGroupLabel>{t('title', { ns: 'admin' })}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminNavItems.map((item) => (
@@ -326,7 +333,7 @@ export function DashboardSidebar() {
                     <SidebarMenuButton asChild>
                       <Link to={item.href} className="flex items-center gap-2">
                         <item.icon className="h-4 w-4" />
-                        <span>{t(`user_management.${item.title}`, { ns: item.namespace })}</span>
+                        <span>{getTranslation(item)}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -345,7 +352,7 @@ export function DashboardSidebar() {
                   <SidebarMenuButton asChild>
                     <Link to={item.href} className="flex items-center gap-2">
                       <item.icon className="h-4 w-4" />
-                      <span>{t(`sections.${item.title}`, { ns: item.namespace })}</span>
+                      <span>{t(`sections.${item.title}`, { ns: 'dashboard' })}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
