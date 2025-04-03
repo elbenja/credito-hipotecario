@@ -350,8 +350,8 @@ export default function EditAmortization() {
   }
 
   const handlePropertyUpdate = (updatedProperty: Property) => {
-    // We'll implement this later when we add refetch functionality
-    console.log("Property updated:", updatedProperty)
+    // Invalidate the query to refetch the data
+    queryClient.invalidateQueries({ queryKey: ["amortization", id] })
   }
 
   const [activeTab, setActiveTab] = useState("regular")
