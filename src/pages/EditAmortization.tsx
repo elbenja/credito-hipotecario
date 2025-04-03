@@ -436,7 +436,7 @@ export default function EditAmortization() {
                 onPropertyUpdate={handlePropertyUpdate}
               />
               <Separator className="my-2" />
-              <div className="p-6">
+              <div className="p-1 md:p-2 lg:p-4">
 
               {amortization && (
                 <Form {...amortizationForm}>
@@ -452,7 +452,7 @@ export default function EditAmortization() {
           </div>
 
           {/* Right Container */}
-          <div className="w-full overflow-hidden flex-1 p-1 sm:p-6">
+          <div className="w-full overflow-hidden flex-1 p-1 md:p-2 lg:p-4">
             {/* <h2 className="text-sm mb-6">{t("payment_scenarios_graphs")}</h2> */}
             {(!amortization || !scenarios || isLoadingScenarios) ? (
               <div className="flex items-center justify-center h-64">

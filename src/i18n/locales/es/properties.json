@@ -24,6 +24,7 @@
     "description_placeholder": "Ingresa detalles de la propiedad (dirección, notas, etc.)",
     "property_cost": "Costo",
     "property_insurance": "Seguro del Bien",
+    "property_insurance_short": "Seg. Bien",
     "first_home": "Vivienda MiVivienda",
     "sustainable": "Sostenible"
   },
@@ -36,6 +37,7 @@
   },
   "bonus": {
     "amount": "Monto del Bono",
+    "amount_short": "Bono",
     "amount_currency": "Bono (S/)",
     "eligible": "Elegible para Bono",
     "first_home": "Bono MiVivienda",

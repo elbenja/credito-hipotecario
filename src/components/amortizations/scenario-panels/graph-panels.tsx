@@ -194,14 +194,14 @@ const ScenarioPanel = ({
   <div className="flex flex-1 flex-col justify-top gap-2 px-6 py-5 sm:py-6">
     <span className="text-xs text-muted-foreground">{t('scenario_graphs.common.sum_interest_insurance', 'Sum Interest & Insurances', { ns: 'components' })}</span>
     <div className="flex items-center gap-2">
-      <span className="text-lg font-bold leading-none sm:text-3xl"> {formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}
+      <span className="text-lg font-bold leading-none sm:text-3xl whitespace-nowrap"> {formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}
       </span>
             {showBaseline ? (
-              <Badge variant="primary" className="text-sm">
+              <Badge variant="primary" className="text-sm whitespace-nowrap">
                 {t('scenario_graphs.regular.baseline', 'Baseline', { ns: 'components' })}
               </Badge>
             ) : differences.sum && (
-              <Badge variant={getBadgeVariant(differences.sum)} className="text-sm bg-green-600/10 text-green-600">
+              <Badge variant={getBadgeVariant(differences.sum)} className="text-sm bg-green-600/10 text-green-600 whitespace-nowrap">
                 {differences.sum < 0 ? '-' : '+'}{formatCurrency(Math.abs(differences.sum), currency as Currency)}
               </Badge>
             )}
@@ -226,16 +226,16 @@ const ScenarioPanel = ({
     </div>
 
     <div className="flex flex-1 flex-col justify-top gap-1 border-t px-6 py-4 text-left even:border-l  sm:border-l sm:border-t-0 sm:px-8 sm:py-6">
-      <span className="text-xs text-muted-foreground">
+      <span className="text-xs text-muted-foreground whitespace-nowrap">
       {t('scenario_graphs.common.monthly_payment', 'Monthly Payment', { ns: 'components' })}
       </span>
       <div className="flex items-center gap-2">
-        <span className="text-lg font-bold leading-none sm:text-3xl">
+        <span className="text-lg whitespace-nowrap font-bold leading-none sm:text-3xl">
         {formatCurrency(scenario.summary.monthly_payment, currency as Currency)}
           </span>
 
           {differences.payment && !showBaseline && (
-              <Badge variant={getBadgeVariant(differences.payment)} className="text-sm whitespace-nowrap inline-flex items-center">
+              <Badge variant={getBadgeVariant(differences.payment)} className="text-sm whitespace-nowrap ">
                 {differences.payment < 0 ? '-' : '+'}{formatCurrency(Math.abs(differences.payment), currency as Currency)}
               </Badge>
             )}

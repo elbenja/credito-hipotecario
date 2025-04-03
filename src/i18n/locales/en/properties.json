@@ -24,6 +24,7 @@
     "description_placeholder": "Enter property details (address, notes, etc.)",
     "property_cost": "Cost",
     "property_insurance": "Property Insurance",
+    "property_insurance_short": "Prop Ins.",
     "first_home": "MiVivienda Bonus",
     "sustainable": "Sustainable"
   },
@@ -36,6 +37,7 @@
   },
   "bonus": {
     "amount": "Bonus Amount",
+    "amount_short": "Bonus",
     "amount_currency": "Bonus (S/)",
     "eligible": "Bonus Eligible",
     "first_home": "MiVivienda Bonus",

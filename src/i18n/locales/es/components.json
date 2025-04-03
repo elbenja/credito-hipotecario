@@ -58,7 +58,7 @@
   "scenario_graphs": {
     "regular": {
       "title": " Regular",
-      "baseline": "Línea Base"
+      "baseline": "Base"
     },
     "accelerated": {
       "title": "Amotizaciones a plazo"

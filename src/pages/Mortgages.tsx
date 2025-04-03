@@ -1,4 +1,4 @@
-import { Plus, MoreVertical, Copy, Trash } from "lucide-react"
+import { Plus, MoreVertical, Copy, Trash, MoreHorizontal, Trash2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
@@ -54,7 +54,8 @@ type Amortization = {
 export default function Mortgages() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { t } = useTranslation(['mortgages', 'global'])
+  const { t: tGlobal } = useTranslation('global')
+  const { t: tMortgages } = useTranslation('mortgages')
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -83,7 +84,7 @@ export default function Mortgages() {
     e.stopPropagation()
     try {
       const duplicatedAmortization = {
-        name: `${amortization.name} (${t('global:ui.copy')})`,
+        name: `${amortization.name} (${tGlobal('ui.copy')})`,
         property_id: amortization.property_id,
         user_id: user?.id,
         loan_amount: amortization.loan_amount,
@@ -108,8 +109,8 @@ export default function Mortgages() {
       if (error) throw error
 
       toast({
-        title: t('global:ui.success'),
-        description: t('messages.amortization_duplicated'),
+        title: tGlobal('ui.success'),
+        description: tMortgages('messages.amortization_duplicated'),
       })
 
       // Refresh the data
@@ -118,8 +119,8 @@ export default function Mortgages() {
       console.error("Error duplicating amortization:", error)
       toast({
         variant: "destructive",
-        title: t('global:ui.error'),
-        description: t('messages.error_duplicating_amortization'),
+        title: tGlobal('ui.error'),
+        description: tMortgages('messages.error_duplicating_amortization'),
       })
     }
   }
@@ -135,8 +136,8 @@ export default function Mortgages() {
       if (error) throw error
 
       toast({
-        title: t('global:ui.success'),
-        description: t('messages.success_delete'),
+        title: tGlobal('ui.success'),
+        description: tMortgages('messages.success_delete'),
       })
 
       // Refresh the data
@@ -145,8 +146,8 @@ export default function Mortgages() {
       console.error("Error deleting amortization:", error)
       toast({
         variant: "destructive",
-        title: t('global:ui.error'),
-        description: t('messages.error_delete'),
+        title: tGlobal('ui.error'),
+        description: tMortgages('messages.error_delete'),
       })
     }
   }
@@ -154,14 +155,14 @@ export default function Mortgages() {
   const headerActions = (
     <Button onClick={() => navigate("/mortgages/new")}>
       <Plus className="mr-2 h-4 w-4" />
-      {t('amortization.new')}
+      {tMortgages('amortization.new')}
     </Button>
   )
 
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div>{t('global:ui.loading')}</div>
+        <div>{tGlobal('ui.loading')}</div>
       </DashboardLayout>
     )
   }
@@ -169,13 +170,13 @@ export default function Mortgages() {
   return (
     <DashboardLayout
       header={{
-        title: <h1 className="text-xl font-bold">{t('title')}</h1>,
+        title: <h1 className="text-xl font-bold">{tMortgages('title')}</h1>,
         actions: headerActions
       }}
     >
       <SEO 
-        title={`${t('title')} - CreditoHipotecar.io`}
-        description={t('description')}
+        title={`${tMortgages('title')} - CreditoHipotecar.io`}
+        description={tMortgages('description')}
       />
       <div className="p-8 space-y-8">
         {propertiesWithAmortizations?.map((property) => (
@@ -192,12 +193,12 @@ export default function Mortgages() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[22%]">{t('amortization.name')}</TableHead>
-                    <TableHead className="w-[20%]">{t('amortization.loan_amount')}</TableHead>
-                    <TableHead className="w-[12%]">{t('amortization.down_payment')}</TableHead>
-                    <TableHead className="w-[12%]">{t('amortization.interest_rate')}</TableHead>
-                    <TableHead className="w-[12%]">{t('amortization.term')}</TableHead>
-                    <TableHead className="w-[12%]">{t('amortization.installments_per_year')}</TableHead>
+                    <TableHead className="w-[22%]">{tMortgages('amortization.name')}</TableHead>
+                    <TableHead className="w-[20%]">{tMortgages('amortization.loan_amount')}</TableHead>
+                    <TableHead className="w-[12%]">{tMortgages('amortization.down_payment')}</TableHead>
+                    <TableHead className="w-[12%]">{tMortgages('amortization.interest_rate')}</TableHead>
+                    <TableHead className="w-[12%]">{tMortgages('amortization.term')}</TableHead>
+                    <TableHead className="w-[12%]">{tMortgages('amortization.installments_per_year')}</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -216,7 +217,7 @@ export default function Mortgages() {
                         {formatCurrency(amortization.down_payment, property.currency)}
                       </TableCell>
                       <TableCell className="w-[12%]">{amortization.interest_rate}%</TableCell>
-                      <TableCell className="w-[12%]">{amortization.term_years} {t('amortization.years')}</TableCell>
+                      <TableCell className="w-[12%]">{amortization.term_years} {tMortgages('amortization.years')}</TableCell>
                       <TableCell className="w-[12%]">{amortization.installments_per_year}</TableCell>
                       <TableCell className="w-[50px]">
                         <DropdownMenu>
@@ -226,20 +227,17 @@ export default function Mortgages() {
                             data-touch="true"
                             style={{ touchAction: 'none' }}
                           >
-                            <MoreVertical className="h-4 w-4" />
-                            <span className="sr-only">{t('global:ui.open_menu')}</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">{tGlobal('ui.open_menu')}</span>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" sideOffset={5} className="touch-none">
-                            <DropdownMenuItem onClick={(e) => handleDuplicate(e, amortization)}>
+                            <DropdownMenuItem onClick={() => handleDuplicate(e, amortization)}>
                               <Copy className="mr-2 h-4 w-4" />
-                              <span>{t('global:ui.duplicate')}</span>
+                              <span>{tGlobal('ui.duplicate')}</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={(e) => handleDelete(e, amortization)}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Trash className="mr-2 h-4 w-4" />
-                              <span>{t('global:ui.delete')}</span>
+                            <DropdownMenuItem onClick={(e) => handleDelete(e, amortization)}>
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>{tGlobal('ui.delete')}</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -254,7 +252,7 @@ export default function Mortgages() {
 
         {(!propertiesWithAmortizations || propertiesWithAmortizations.length === 0) && (
           <div className="text-center text-muted-foreground py-8">
-            {t('messages.no_amortizations')}
+            {tMortgages('messages.no_amortizations')}
           </div>
         )}
       </div>

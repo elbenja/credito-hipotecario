@@ -226,12 +226,12 @@ export function PropertyDisplay({
   };
 
   return (
-    <div className="space-y-4 p-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 ">
+      <div className="flex items-center p-2 sm:p-6 justify-between">
         <div>
           <p className="text-sm">{t('property', '', { ns: 'properties' })}</p>
           <h3 className=" font-semibold">{currentProperty?.name}</h3>
-          {/* <p className="text-sm text-gray-500">{currentProperty.description}</p> */}
+         
         </div>
         <Button
           variant="outline"
@@ -242,30 +242,41 @@ export function PropertyDisplay({
           {t('ui.edit', { ns: 'global' })}
         </Button>
       </div>
+{/* start */}
+<div className="flex flex-col items-stretch space-y-0 border-t p-0 sm:flex-row">
+  <div className="justify-top flex flex-1 flex-col gap-2 px-2 py-2 sm:px-4 sm:py-4">
+    
+    <Label className="text-muted-foreground text-xs">{t('form.property_cost', { ns: 'properties' })}</Label>
+    <span className="text-lg leading-none font-bold sm:text-xl">
+      {formatCurrency(cost, currentProperty.currency)}
+    </span>
+  </div>
 
-      <div className="grid grid-cols-7 gap-1">
-        <div className="col-span-3">
-          <Label className="text-xs font-normal">{t('form.property_cost', { ns: 'properties' })}</Label>
-          <div className=" font-medium">
-            {formatCurrency(cost, currentProperty.currency)}
-          </div>
-        </div>
-        <div className="col-span-2">
-        <Label className="text-xs font-normal">{t('bonus.amount', '', { ns: 'properties' })}</Label>
-          <div className="font-medium">
-            {bonus ? formatCurrency(bonus, currentProperty.currency) : t('bonus.no_bonus', '', { ns: 'properties' })}
-          </div>
-        </div>
+  <div className="flex">
+    <div className="justify-top relative z-30 flex flex-1 flex-col gap-1 border-t px-2 py-2 text-left even:border-l sm:border-t-0 sm:border-l sm:px-4 sm:py-4">
+      <span className="text-muted-foreground text-xs">
+        {t('bonus.amount_short', '', { ns: 'properties' })}
+      </span>
+      <Label className="text-xs font-normal"></Label>
+      <span className="text-lg leading-none font-bold sm:text-xl">
+        {bonus ? formatCurrency(bonus, currentProperty.currency) : t('bonus.no_bonus', '', { ns: 'properties' })}
+      </span>
+    </div>
 
-        <div className="col-span-2">
-        <Label className="text-xs font-normal">{t('form.property_insurance', '', { ns: 'properties' })}</Label>
-          <div className=" font-medium">
-            {currentProperty.property_insurance !== null
+    <div className="justify-top flex flex-1 flex-col gap-1 border-t px-2 py-2 text-left even:border-l sm:border-t-0 sm:border-l sm:px-4 sm:py-4">
+      <span className="text-muted-foreground text-xs whitespace-nowrap">
+      <Label className="text-xs font-normal">{t('form.property_insurance_short', '', { ns: 'properties' })}</Label>
+      </span>
+      <span className="text-lg leading-none font-bold sm:text-xl">
+      {currentProperty.property_insurance !== null
               ? formatCurrency(currentProperty.property_insurance, currentProperty.currency)
               : t('bonus.no_bonus', '', { ns: 'properties' })}
-          </div>
-        </div>
-      </div>
+      </span>
+    </div>
+  </div>
+</div>
+{/* end */}
+
 
       <PropertyEditSheet
         property={currentProperty}

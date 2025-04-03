@@ -18,7 +18,8 @@
     "log_out": "Log out",
     "coming": "Coming",
     "click_to_edit": "Click to edit",
-    "duplicate": "Duplicate"
+    "duplicate": "Duplicate",
+    "open_menu": "Open menu"
   },
   "components": {
     "calendar": {
