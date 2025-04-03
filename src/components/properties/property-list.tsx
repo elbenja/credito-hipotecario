@@ -17,7 +17,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useTranslation } from "react-i18next"
-import { MoreVertical, Copy, Trash } from "lucide-react"
+import { MoreVertical, Copy, Trash, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 
 type Property = {
@@ -98,19 +98,21 @@ export function PropertyList({
 
   const getSortIcon = (key: keyof Property) => {
     if (sortConfig?.key === key) {
-      return sortConfig.direction === 'asc' ? t('ui.sort_ascending', { ns: 'global' }) : t('ui.sort_descending', { ns: 'global' })
+      return sortConfig.direction === 'asc' 
+        ? <ArrowUp className="inline h-4 w-4 ml-1" /> 
+        : <ArrowDown className="inline h-4 w-4 ml-1" />
     }
-    return null
+    return <ChevronsUpDown className="inline h-4 w-4 ml-1 text-muted-foreground opacity-50" />
   }
 
   const handleDuplicate = async (e: React.MouseEvent, property: Property) => {
     e.stopPropagation()
     try {
-      if (!user) throw new Error(t('messages.no_user_found', { ns: 'global' }))
+      if (!user) throw new Error(t('messages.no_user_found', 'No user found', { ns: 'global' }))
 
       const duplicatedProperty = {
         ...property,
-        name: `${property.name} (${t('ui.copy', { ns: 'global' })})`,
+        name: `${property.name} (${t('ui.copy', 'Copy', { ns: 'global' })})`,
         user_id: user.id,
       }
       delete (duplicatedProperty as any).id
@@ -124,8 +126,8 @@ export function PropertyList({
       if (error) throw error
 
       toast({
-        title: t('ui.success', { ns: 'global' }),
-        description: t('messages.property_duplicated', { ns: 'properties' }),
+        title: t('ui.success', 'Success', { ns: 'global' }),
+        description: t('messages.property_duplicated', 'Property duplicated successfully', { ns: 'properties' }),
       })
 
       if (data) {
@@ -135,8 +137,8 @@ export function PropertyList({
       console.error("Error duplicating property:", error)
       toast({
         variant: "destructive",
-        title: t('ui.error', { ns: 'global' }),
-        description: t('messages.error_duplicating_property', { ns: 'properties' }),
+        title: t('ui.error', 'Error', { ns: 'global' }),
+        description: t('messages.error_duplicating_property', 'Error duplicating property', { ns: 'properties' }),
       })
     }
   }
@@ -152,8 +154,8 @@ export function PropertyList({
       if (error) throw error
 
       toast({
-        title: t('ui.success', { ns: 'global' }),
-        description: t('messages.property_deleted', { ns: 'properties' }),
+        title: t('ui.success', 'Success', { ns: 'global' }),
+        description: t('messages.property_deleted', 'Property deleted successfully', { ns: 'properties' }),
       })
 
       onPropertyUpdate(property, true)
@@ -161,8 +163,8 @@ export function PropertyList({
       console.error("Error deleting property:", error)
       toast({
         variant: "destructive",
-        title: t('ui.error', { ns: 'global' }),
-        description: t('messages.error_deleting_property', { ns: 'properties' }),
+        title: t('ui.error', 'Error', { ns: 'global' }),
+        description: t('messages.error_deleting_property', 'Error deleting property', { ns: 'properties' }),
       })
     }
   }
@@ -175,16 +177,16 @@ export function PropertyList({
             className="cursor-pointer hover:bg-muted/50"
             onClick={() => onSort('name')}
           >
-            {t('form.property_name', { ns: 'properties' })} {getSortIcon('name')}
+            {t('form.property_name', 'Property Name', { ns: 'properties' })} {getSortIcon('name')}
           </TableHead>
           <TableHead 
             className="cursor-pointer hover:bg-muted/50"
             onClick={() => onSort('price_cost')}
           >
-            {t('form.property_cost', { ns: 'properties' })} {getSortIcon('price_cost')}
+            {t('form.property_cost', 'Property Cost', { ns: 'properties' })} {getSortIcon('price_cost')}
           </TableHead>
-          <TableHead>{t('form.property_insurance', { ns: 'properties' })}</TableHead>
-          <TableHead>{t('bonus.amount_currency', { ns: 'properties' })}</TableHead>
+          <TableHead>{t('form.property_insurance', 'Property Insurance', { ns: 'properties' })}</TableHead>
+          <TableHead>{t('bonus.amount_currency', 'Bonus Amount', { ns: 'properties' })}</TableHead>
           <TableHead className="w-[50px]"></TableHead>
         </TableRow>
       </TableHeader>
@@ -192,7 +194,7 @@ export function PropertyList({
         {properties.length === 0 ? (
           <TableRow>
             <TableCell colSpan={5} className="text-center py-4">
-              {t('messages.no_properties', { ns: 'properties' })}
+              {t('messages.no_properties', 'No properties found', { ns: 'properties' })}
             </TableCell>
           </TableRow>
         ) : (
@@ -203,7 +205,7 @@ export function PropertyList({
                 key={property.id}
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => onPropertySelect(property)}
-                title={t('ui.click_to_edit', { ns: 'global' })}
+                title={t('ui.click_to_edit', 'Click to edit', { ns: 'global' })}
               >
                 <TableCell>{property.name}</TableCell>
                 <TableCell>
@@ -212,11 +214,11 @@ export function PropertyList({
                 <TableCell>
                   {formatCurrency(property.property_insurance || 0, property.currency)}
                   <span className="text-xs text-muted-foreground ml-1">
-                    ({t(`insurance.${property.property_insurance_type}`, { ns: 'properties' })})
+                    ({t(`insurance.${property.property_insurance_type}`, property.property_insurance_type === 'auto' ? 'Automatic' : 'Manual', { ns: 'properties' })})
                   </span>
                 </TableCell>
                 <TableCell>
-                  {bonusAmount ? formatCurrency(bonusAmount, 'PEN') : t('bonus.no_bonus', { ns: 'properties' })}
+                  {bonusAmount ? formatCurrency(bonusAmount, 'PEN') : t('bonus.no_bonus', 'No bonus', { ns: 'properties' })}
                 </TableCell>
                 <TableCell className="w-[50px]">
                   <DropdownMenu>
@@ -227,19 +229,19 @@ export function PropertyList({
                       style={{ touchAction: 'none' }}
                     >
                       <MoreVertical className="h-4 w-4" />
-                      <span className="sr-only">{t('ui.open_menu', { ns: 'global' })}</span>
+                      <span className="sr-only">{t('ui.open_menu', 'Open menu', { ns: 'global' })}</span>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" sideOffset={5} className="touch-none">
                       <DropdownMenuItem onClick={(e) => handleDuplicate(e, property)}>
                         <Copy className="mr-2 h-4 w-4" />
-                        <span>{t('ui.duplicate', { ns: 'global' })}</span>
+                        <span>{t('ui.duplicate', 'Duplicate', { ns: 'global' })}</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={(e) => handleDelete(e, property)}
                         className="text-red-600 focus:text-red-600"
                       >
                         <Trash className="mr-2 h-4 w-4" />
-                        <span>{t('ui.delete', { ns: 'global' })}</span>
+                        <span>{t('ui.delete', 'Delete', { ns: 'global' })}</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

@@ -354,6 +354,8 @@ export default function EditAmortization() {
     console.log("Property updated:", updatedProperty)
   }
 
+  const [activeTab, setActiveTab] = useState("regular")
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -458,7 +460,11 @@ export default function EditAmortization() {
                 <div className="text-muted-foreground">{t("ui.loading", { ns: "global" })}</div>
               </div>
             ) : (
-              <Tabs defaultValue="regular" className="w-full">
+              <Tabs 
+                defaultValue="regular" 
+                className="w-full"
+                onValueChange={setActiveTab}
+              >
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="regular">{t("scenarios.regular.title", { ns: "mortgages" })}</TabsTrigger>
                   <TabsTrigger value="accelerated">{t("scenarios.accelerated.title", { ns: "mortgages" })}</TabsTrigger>
@@ -476,62 +482,78 @@ export default function EditAmortization() {
                 </TabsContent>
                 <TabsContent value="accelerated">
                   {scenarios.accelerated && (
-                    <AcceleratedPanelGraph
-                      scenario={scenarios.accelerated}
-                      regularScenario={scenarios.regular}
-                      currency={amortization.property.currency}
-                      installmentsPerYear={amortization.installments_per_year}
-                    />
+                    <>
+                      <AcceleratedPanelGraph
+                        scenario={scenarios.accelerated}
+                        regularScenario={scenarios.regular}
+                        currency={amortization.property.currency}
+                        installmentsPerYear={amortization.installments_per_year}
+                      />
+                      <div className="mt-8">
+                        <ExtraInstallmentsSection
+                          amortizationId={id || ""}
+                          currency={amortization.property.currency}
+                          loanAmount={amortization.loan_amount}
+                          onInstallmentsChange={() => {
+                            queryClient.invalidateQueries({
+                              queryKey: ["scenarios", id]
+                            })
+                          }}
+                        />
+                      </div>
+                    </>
                   )}
                 </TabsContent>
                 <TabsContent value="lower_payment">
                   {scenarios.lower_payment && (
-                    <LowerPaymentPanelGraph
-                      scenario={scenarios.lower_payment}
-                      regularScenario={scenarios.regular}
-                      currency={amortization.property.currency}
-                      installmentsPerYear={amortization.installments_per_year}
-                    />
+                    <>
+                      <LowerPaymentPanelGraph
+                        scenario={scenarios.lower_payment}
+                        regularScenario={scenarios.regular}
+                        currency={amortization.property.currency}
+                        installmentsPerYear={amortization.installments_per_year}
+                      />
+                      <div className="mt-8">
+                        <ExtraInstallmentsSection
+                          amortizationId={id || ""}
+                          currency={amortization.property.currency}
+                          loanAmount={amortization.loan_amount}
+                          onInstallmentsChange={() => {
+                            queryClient.invalidateQueries({
+                              queryKey: ["scenarios", id]
+                            })
+                          }}
+                        />
+                      </div>
+                    </>
                   )}
                 </TabsContent>
                 <TabsContent value="new_rate">
                   {scenarios.new_rate && (
-                    <NewRatePanelGraph
-                      scenario={scenarios.new_rate}
-                      regularScenario={scenarios.regular}
-                      currency={amortization.property.currency}
-                      installmentsPerYear={amortization.installments_per_year}
-                    />
+                    <>
+                      <NewRatePanelGraph
+                        scenario={scenarios.new_rate}
+                        regularScenario={scenarios.regular}
+                        currency={amortization.property.currency}
+                        installmentsPerYear={amortization.installments_per_year}
+                      />
+                      <div className="mt-8">
+                        <NewRateForm
+                          amortizationId={id || ""}
+                          onSuccess={() => {
+                            queryClient.invalidateQueries({
+                              queryKey: ["scenarios", id]
+                            })
+                          }}
+                          className="space-y-4"
+                          firstInstallmentDate={amortization.first_installment_date ? new Date(amortization.first_installment_date) : undefined}
+                        />
+                      </div>
+                    </>
                   )}
                 </TabsContent>
               </Tabs>
             )}
-
-            {/* <div className="mt-8">
-              <ExtraInstallmentsSection
-                amortizationId={id || ""}
-                currency={amortization.property.currency}
-                loanAmount={amortization.loan_amount}
-                onInstallmentsChange={() => {
-                  queryClient.invalidateQueries({
-                    queryKey: ["scenarios", id]
-                  })
-                }}
-              />
-            </div>
-
-            <div className="mt-8">
-              <NewRateForm
-                amortizationId={id || ""}
-                onSuccess={() => {
-                  queryClient.invalidateQueries({
-                    queryKey: ["scenarios", id]
-                  })
-                }}
-                className="space-y-4"
-                firstInstallmentDate={amortization.first_installment_date ? new Date(amortization.first_installment_date) : undefined}
-              />
-            </div> */}
           </div>
         </div>
       </div>
