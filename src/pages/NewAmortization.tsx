@@ -54,6 +54,33 @@ export default function NewAmortization() {
     mode: "onChange"
   })
 
+  // Add loan protection type watcher effect
+  useEffect(() => {
+    const type = form.watch("loan_protection_type");
+    
+    switch (type) {
+      case "individual":
+        form.setValue("loan_protection_insurance", "0.028", {
+          shouldValidate: true,
+          shouldDirty: true
+        });
+        break;
+      case "joint":
+        form.setValue("loan_protection_insurance", "0.052", {
+          shouldValidate: true,
+          shouldDirty: true
+        });
+        break;
+      case "none":
+        form.setValue("loan_protection_insurance", "0", {
+          shouldValidate: true,
+          shouldDirty: true
+        });
+        break;
+      // For custom type, don't override the value
+    }
+  }, [form.watch("loan_protection_type"), form]);
+
   // Watch for name changes to update breadcrumb
   const amortizationName = form.watch("name")
 
