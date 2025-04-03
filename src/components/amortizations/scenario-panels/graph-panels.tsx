@@ -235,7 +235,7 @@ const ScenarioPanel = ({
           </span>
 
           {differences.payment && !showBaseline && (
-              <Badge variant={getBadgeVariant(differences.payment)} className="text-sm">
+              <Badge variant={getBadgeVariant(differences.payment)} className="text-sm whitespace-nowrap inline-flex items-center">
                 {differences.payment < 0 ? '-' : '+'}{formatCurrency(Math.abs(differences.payment), currency as Currency)}
               </Badge>
             )}
