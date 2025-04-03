@@ -58,11 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session: currentSession } } = await supabase.auth.getSession()
         
         if (mounted) {
-          console.log('Auth initialized:', { 
-            hasSession: !!currentSession,
-            userEmail: currentSession?.user?.email,
-            currentPath: location.pathname
-          })
+  
 
           setSession(currentSession)
           setUser(currentSession?.user ?? null)

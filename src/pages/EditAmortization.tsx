@@ -495,7 +495,7 @@ export default function EditAmortization() {
               </div>
             )}
 
-            <div className="mt-8">
+            {/* <div className="mt-8">
               <ExtraInstallmentsSection
                 amortizationId={id || ""}
                 currency={amortization.property.currency}
@@ -519,7 +519,7 @@ export default function EditAmortization() {
                 className="space-y-4"
                 firstInstallmentDate={amortization.first_installment_date ? new Date(amortization.first_installment_date) : undefined}
               />
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

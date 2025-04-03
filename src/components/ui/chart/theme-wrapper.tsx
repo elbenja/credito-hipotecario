@@ -20,7 +20,7 @@ export function ChartThemeWrapper({
 
   const chartThemeStyles = {
     '--color-principal': principalColor || "hsl(var(--brand))",
-    '--color-interest_insurance': interestColor || `hsl(${theme === 'light' ? '215.3 19.3% 34.5%' : '215.4 16.3% 46.9%'})`,
+    '--color-interest_insurance': interestColor || `hsl(${theme === 'light' ? '215.3 19.3% 60%' : '215.4 16.3% 46.9%'})`,
     '--background': cardBackground || "var(--card)", /*shit*/
     '--foreground': textColor || "var(--card-foreground)",/*shit*/
     '--card': cardBackground || "var(--primary)",/*shit*/

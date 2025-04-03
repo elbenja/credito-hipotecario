@@ -32,21 +32,71 @@ interface ScenarioPanelProps {
 
 
 // Memoize the data transformation function to avoid recalculating on every render
-const transformPaymentsToChartData = (payments: ExtendedPaymentRow[]) => {
+const transformPaymentsToChartData = (payments: ExtendedPaymentRow[], totalMonths: number) => {
   if (!payments?.length) return [];
   
-  return payments.map((payment) => {
-    // Calculate total interest and insurances
-    const totalInterestAndInsurances = (payment.monthly_interest || payment.interest || 0) + 
-                                     (payment.property_insurance || 0) + 
-                                     (payment.monthly_loan_insurance || payment.loan_insurance || 0)
+  type ChartDataPoint = {
+    date: string;
+    principal: number;
+    interest_insurance: number;
+  };
+  
+  // Create an array of the full payment period
+  const result: ChartDataPoint[] = Array(totalMonths).fill(null).map((_, index) => ({
+    date: "",  // Use empty string instead of null
+    principal: 0,
+    interest_insurance: 0,
+  }));
+  
+  // Fill in actual payment data where available
+  payments.forEach((payment, index) => {
+    if (index < totalMonths && payment.payment_date) {
+      // Calculate total interest and insurances
+      const totalInterestAndInsurances = (payment.monthly_interest || payment.interest || 0) + 
+                                       (payment.property_insurance || 0) + 
+                                       (payment.monthly_loan_insurance || payment.loan_insurance || 0);
 
-    return {
-      date: payment.payment_date,
-      principal: payment.principal || payment.capital || 0,
-      interest_insurance: totalInterestAndInsurances,
+      result[index] = {
+        date: typeof payment.payment_date === 'string' ? payment.payment_date : payment.payment_date.toISOString(),
+        principal: payment.principal || payment.capital || 0,
+        interest_insurance: totalInterestAndInsurances,
+      };
     }
-  })
+  });
+  
+  // Ensure all dates are set, extrapolating from existing dates if needed
+  if (result.length > 0) {
+    // Find the first date with a value
+    const itemWithDate = result.find(item => item.date);
+    
+    if (itemWithDate && itemWithDate.date) {
+      const firstDate = new Date(itemWithDate.date);
+      
+      // Estimate payment frequency (in milliseconds)
+      let paymentFrequency = 0;
+      for (let i = 0; i < result.length - 1; i++) {
+        if (result[i].date && result[i+1].date) {
+          paymentFrequency = new Date(result[i+1].date).getTime() - new Date(result[i].date).getTime();
+          break;
+        }
+      }
+      
+      // If we couldn't detect frequency from data, assume monthly (30 days)
+      if (paymentFrequency <= 0) {
+        paymentFrequency = 30 * 24 * 60 * 60 * 1000;
+      }
+      
+      // Fill in missing dates
+      for (let i = 0; i < result.length; i++) {
+        if (!result[i].date) {
+          const newDate = new Date(firstDate.getTime() + i * paymentFrequency);
+          result[i].date = newDate.toISOString();
+        }
+      }
+    }
+  }
+  
+  return result;
 }
 
 const ScenarioPanel = ({ 
@@ -60,11 +110,18 @@ const ScenarioPanel = ({
   
   if (!scenario?.summary) return null;
 
+  // Determine the total months to display
+  // For regular scenario (showBaseline=true), use its own length
+  // For other scenarios, use regular scenario length or fallback to 360
+  const totalMonthsToDisplay = showBaseline
+    ? scenario.summary.total_months
+    : (regularScenario?.summary?.total_months || 360);
+
   // Memoize chart data to prevent unnecessary recalculations
   const chartData = useMemo(() => {
     if (!scenario?.payments?.length) return [];
-    return transformPaymentsToChartData(scenario.payments);
-  }, [scenario.payments]);
+    return transformPaymentsToChartData(scenario.payments, totalMonthsToDisplay);
+  }, [scenario.payments, totalMonthsToDisplay]);
 
   // Bail early if we don't have chart data
   if (!chartData.length) return null;
@@ -119,11 +176,11 @@ const ScenarioPanel = ({
   const translatedChartConfig = {
     principal: {
       label: t('scenario_graphs.common.principal', 'Principal', { ns: 'components' }),
-      // color: 'var(--color-principal)'
+      color: 'hsl(41 89% 61%)'
     },
     interest_insurance: {
       label: t('scenario_graphs.common.interest_insurance', 'Interest & Insurance', { ns: 'components' }),
-      // color: 'var(--color-interest_insurance)'
+      color: `hsl('light' ? '215.3 19.3% 7%' : '215.4 16.3% 46.9%'})`
     }
   } satisfies ChartConfig
 
