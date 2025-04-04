@@ -17,8 +17,9 @@ import { useToast } from "@/components/ui/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useTranslation } from "react-i18next"
-import { MoreVertical, Copy, Trash, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react"
+import { MoreVertical, Copy, Trash, ArrowUp, ArrowDown, ChevronsUpDown, Home } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
+import { useNavigate } from "react-router-dom"
 
 type Property = {
   id: string
@@ -74,6 +75,7 @@ export function PropertyList({
   const { toast } = useToast()
   const { data: exchangeRate } = useExchangeRate()
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   const convertToPEN = (amount: number, currency: string): number => {
     if (currency === 'PEN') return amount
@@ -103,6 +105,11 @@ export function PropertyList({
         : <ArrowDown className="inline h-4 w-4 ml-1" />
     }
     return <ChevronsUpDown className="inline h-4 w-4 ml-1 text-muted-foreground opacity-50" />
+  }
+
+  const handleAddMortgage = (e: React.MouseEvent, property: Property) => {
+    e.stopPropagation()
+    navigate(`/mortgages/new?propertyId=${property.id}`)
   }
 
   const handleDuplicate = async (e: React.MouseEvent, property: Property) => {
@@ -232,6 +239,10 @@ export function PropertyList({
                       <span className="sr-only">{t('ui.open_menu', 'Open menu', { ns: 'global' })}</span>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" sideOffset={5} className="touch-none">
+                      <DropdownMenuItem onClick={(e) => handleAddMortgage(e, property)}>
+                        <Home className="mr-2 h-4 w-4" />
+                        <span>{t('ui.add_mortgage', 'Add Mortgage', { ns: 'global' })}</span>
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={(e) => handleDuplicate(e, property)}>
                         <Copy className="mr-2 h-4 w-4" />
                         <span>{t('ui.duplicate', 'Duplicate', { ns: 'global' })}</span>

@@ -1,5 +1,5 @@
-import { Link, useNavigate } from "react-router-dom"
-import { useState, useEffect } from "react"
+import { Link, useNavigate, useLocation } from "react-router-dom"
+import { useState, useEffect, useCallback } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { useAuth } from "@/context/auth-context"
@@ -38,9 +38,16 @@ import type { ScenarioResult } from "@/services/amortization/types/common"
 
 export default function NewAmortization() {
   const { t } = useTranslation(['mortgages', 'dashboard', 'global'])
+  const { t: tMortgages } = useTranslation('mortgages')
   const { user } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const location = useLocation()
+  
+  // Extract propertyId from URL query parameters
+  const queryParams = new URLSearchParams(location.search)
+  const propertyIdFromUrl = queryParams.get('propertyId')
+  
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [regularScenario, setRegularScenario] = useState<ScenarioResult | null>(null)
   const [interestRateLimits] = useState({
@@ -50,7 +57,10 @@ export default function NewAmortization() {
 
   const form = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
-    defaultValues,
+    defaultValues: {
+      ...defaultValues,
+      property_id: propertyIdFromUrl || ""
+    },
     mode: "onChange"
   })
 
@@ -154,14 +164,53 @@ export default function NewAmortization() {
   }, [form, selectedProperty])
 
   // Handle property selection
-  const handlePropertyChange = (property: Property | null) => {
+  const handlePropertyChange = useCallback((property: Property | null) => {
     setSelectedProperty(property)
     if (property) {
       form.setValue("property_id", property.id, { shouldValidate: true })
     } else {
       form.setValue("property_id", "", { shouldValidate: true })
     }
-  }
+  }, [form])
+  
+  // Fetch property if propertyId is provided in URL
+  useEffect(() => {
+    const fetchPropertyFromUrl = async () => {
+      if (!propertyIdFromUrl || !user) return
+      
+      try {
+        const { data, error } = await supabase
+          .from("properties")
+          .select(`
+            id,
+            name,
+            description,
+            currency,
+            price_cost,
+            is_first_home,
+            is_sustainable,
+            property_insurance,
+            property_insurance_type
+          `)
+          .eq("id", propertyIdFromUrl)
+          .single()
+          
+        if (error) throw error
+        if (data) {
+          // Set the selected property
+          handlePropertyChange(data as unknown as Property)
+          
+          // Set a default name for the mortgage based on the property name
+          const defaultMortgageName = `${data.name} Mortgage`
+          form.setValue("name", defaultMortgageName, { shouldValidate: true })
+        }
+      } catch (error) {
+        console.error("Error fetching property:", error)
+      }
+    }
+    
+    fetchPropertyFromUrl()
+  }, [propertyIdFromUrl, user, form, handlePropertyChange])
 
   return (
     <DashboardLayout

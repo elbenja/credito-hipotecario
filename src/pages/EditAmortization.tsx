@@ -1,4 +1,4 @@
-import { useNavigate, useParams, Link } from "react-router-dom"
+import { useNavigate, useParams, Link, useLocation } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
@@ -42,15 +42,84 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 export default function EditAmortization() {
   const { t } = useTranslation()
+  const { t: tMortgages } = useTranslation('mortgages')
   const navigate = useNavigate()
   const { id } = useParams()
   const { user } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const location = useLocation()
+  
+  // Extract propertyId from URL query parameters
+  const queryParams = new URLSearchParams(location.search)
+  const propertyIdFromUrl = queryParams.get('propertyId')
+  const [selectedPropertyFromUrl, setSelectedPropertyFromUrl] = useState<Property | null>(null)
+  const [isCreatingNew, setIsCreatingNew] = useState(!id)
 
   const amortizationForm = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
+    // Set initial values for new amortization if we have property from URL
+    defaultValues: {
+      property_id: propertyIdFromUrl || "",
+      name: "",
+      down_payment: "",
+      interest_rate: "",
+      term_years: "30",
+      installments_per_year: "12",
+      first_installment_date: new Date(),
+      loan_protection_type: "none",
+      loan_protection_insurance: "0",
+    }
   })
+
+  // Handle property update callback
+  const handlePropertyUpdate = useCallback((updatedProperty: Property) => {
+    // Invalidate the query to refetch the data
+    queryClient.invalidateQueries({ queryKey: ["amortization", id] })
+  }, [queryClient, id])
+
+  // Fetch property if propertyId is provided in URL
+  useEffect(() => {
+    const fetchPropertyFromUrl = async () => {
+      if (!propertyIdFromUrl || !user) return
+      
+      try {
+        const { data, error } = await supabase
+          .from("properties")
+          .select(`
+            id,
+            name,
+            description,
+            currency,
+            price_cost,
+            is_first_home,
+            is_sustainable,
+            property_insurance,
+            property_insurance_type
+          `)
+          .eq("id", propertyIdFromUrl)
+          .single()
+          
+        if (error) throw error
+        if (data) {
+          setSelectedPropertyFromUrl(data as unknown as Property)
+          
+          // Update form with property information
+          amortizationForm.setValue("property_id", data.id, { shouldValidate: true })
+          
+          // Set a default name for the mortgage based on the property name
+          const defaultMortgageName = `${data.name} Mortgage`
+          amortizationForm.setValue("name", defaultMortgageName, { shouldValidate: true })
+        }
+      } catch (error) {
+        console.error("Error fetching property:", error)
+      }
+    }
+    
+    if (isCreatingNew) {
+      fetchPropertyFromUrl()
+    }
+  }, [propertyIdFromUrl, user, amortizationForm, isCreatingNew, tMortgages])
 
   // Initial state for scenario inputs
   const [scenarioInputs, setScenarioInputs] = useState({
@@ -253,92 +322,193 @@ export default function EditAmortization() {
 
   const onUpdateAmortization = async (values: AmortizationFormValues) => {
     try {
-      if (!amortization) {
-        throw new Error("No amortization selected")
-      }
+      // Different handling for new amortization vs editing existing one
+      if (isCreatingNew) {
+        if (!selectedPropertyFromUrl) {
+          throw new Error("No property selected")
+        }
 
-      // Parse numeric values safely
-      const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, ""))
-      const interestRate = parseFloat(values.interest_rate)
-      const termYears = parseInt(values.term_years)
-      const installmentsPerYear = parseInt(values.installments_per_year)
-      
-      // Handle loan protection insurance based on type
-      let loanProtectionInsurance = null;
-      const loanProtectionType = values.loan_protection_type;
-      
-      switch (loanProtectionType) {
-        case "individual":
-          loanProtectionInsurance = 0.028;
-          break;
-        case "joint":
-          loanProtectionInsurance = 0.052;
-          break;
-        case "custom":
-          const rawValue = parseFloat(values.loan_protection_insurance || "0");
-          if (isNaN(rawValue) || rawValue < 0 || rawValue > 1) {
-            throw new Error("Invalid loan protection insurance amount (must be between 0 and 1)");
-          }
-          loanProtectionInsurance = rawValue;
-          break;
-        case "none":
-          loanProtectionInsurance = 0;
-          break;
-        default:
-          throw new Error("Invalid loan protection type");
-      }
+        // Parse numeric values safely
+        const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, ""))
+        const interestRate = parseFloat(values.interest_rate)
+        const termYears = parseInt(values.term_years)
+        const installmentsPerYear = parseInt(values.installments_per_year)
+        
+        // Handle loan protection insurance based on type
+        let loanProtectionInsurance = null;
+        const loanProtectionType = values.loan_protection_type;
+        
+        switch (loanProtectionType) {
+          case "individual":
+            loanProtectionInsurance = 0.028;
+            break;
+          case "joint":
+            loanProtectionInsurance = 0.052;
+            break;
+          case "custom":
+            const rawValue = parseFloat(values.loan_protection_insurance || "0");
+            if (isNaN(rawValue) || rawValue < 0 || rawValue > 1) {
+              throw new Error("Invalid loan protection insurance amount (must be between 0 and 1)");
+            }
+            loanProtectionInsurance = rawValue;
+            break;
+          case "none":
+            loanProtectionInsurance = 0;
+            break;
+          default:
+            throw new Error("Invalid loan protection type");
+        }
 
-      // Validate numeric values
-      if (isNaN(downPayment) || downPayment < 0) {
-        throw new Error("Invalid down payment amount")
-      }
-      if (isNaN(interestRate) || interestRate < 0) {
-        throw new Error("Invalid interest rate")
-      }
-      if (isNaN(termYears) || termYears < 1) {
-        throw new Error("Invalid term years")
-      }
-      if (![12, 14].includes(installmentsPerYear)) {
-        throw new Error("Invalid installments per year")
-      }
+        // Validate numeric values
+        if (isNaN(downPayment) || downPayment < 0) {
+          throw new Error("Invalid down payment amount")
+        }
+        if (isNaN(interestRate) || interestRate < 0) {
+          throw new Error("Invalid interest rate")
+        }
+        if (isNaN(termYears) || termYears < 1) {
+          throw new Error("Invalid term years")
+        }
+        if (![12, 14].includes(installmentsPerYear)) {
+          throw new Error("Invalid installments per year")
+        }
 
-      // Calculate loan amount
-      const loanAmount = amortization.property.price_cost - downPayment
+        // Calculate loan amount
+        const loanAmount = selectedPropertyFromUrl.price_cost - downPayment
 
-      // Validate loan amount
-      if (loanAmount <= 0) {
-        throw new Error("Down payment cannot be greater than property cost")
+        // Validate loan amount
+        if (loanAmount <= 0) {
+          throw new Error("Down payment cannot be greater than property cost")
+        }
+
+        // Create a proper ISO date string preserving the exact date
+        const inputDate = new Date(values.first_installment_date);
+        const dateString = `${inputDate.getFullYear()}-${String(inputDate.getMonth() + 1).padStart(2, '0')}-${String(inputDate.getDate()).padStart(2, '0')}`;
+        
+        // Prepare amortization data
+        const amortizationData = {
+          name: values.name || selectedPropertyFromUrl.name,
+          property_id: selectedPropertyFromUrl.id,
+          user_id: user?.id,
+          down_payment: downPayment,
+          interest_rate: interestRate,
+          term_years: termYears,
+          installments_per_year: installmentsPerYear,
+          first_installment_date: dateString,
+          loan_amount: loanAmount,
+          loan_protection_type: values.loan_protection_type,
+          loan_protection_insurance: loanProtectionInsurance,
+        }
+
+        // Create new amortization in Supabase
+        const { data, error } = await supabase
+          .from("amortizations")
+          .insert(amortizationData)
+          .select()
+          .single()
+
+        if (error) throw error
+
+        toast({
+          title: t("ui.success", { ns: "global" }),
+          description: t("messages.success_create", "Mortgage created successfully", { ns: "mortgages" }),
+        })
+
+        // Navigate to the edit page for the new amortization
+        if (data && data.id) {
+          navigate(`/mortgages/${data.id}`)
+        } else {
+          navigate("/mortgages")
+        }
+      } else {
+        // Original update logic for existing amortization
+        if (!amortization) {
+          throw new Error("No amortization selected")
+        }
+
+        // Parse numeric values safely
+        const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, ""))
+        const interestRate = parseFloat(values.interest_rate)
+        const termYears = parseInt(values.term_years)
+        const installmentsPerYear = parseInt(values.installments_per_year)
+        
+        // Handle loan protection insurance based on type
+        let loanProtectionInsurance = null;
+        const loanProtectionType = values.loan_protection_type;
+        
+        switch (loanProtectionType) {
+          case "individual":
+            loanProtectionInsurance = 0.028;
+            break;
+          case "joint":
+            loanProtectionInsurance = 0.052;
+            break;
+          case "custom":
+            const rawValue = parseFloat(values.loan_protection_insurance || "0");
+            if (isNaN(rawValue) || rawValue < 0 || rawValue > 1) {
+              throw new Error("Invalid loan protection insurance amount (must be between 0 and 1)");
+            }
+            loanProtectionInsurance = rawValue;
+            break;
+          case "none":
+            loanProtectionInsurance = 0;
+            break;
+          default:
+            throw new Error("Invalid loan protection type");
+        }
+
+        // Validate numeric values
+        if (isNaN(downPayment) || downPayment < 0) {
+          throw new Error("Invalid down payment amount")
+        }
+        if (isNaN(interestRate) || interestRate < 0) {
+          throw new Error("Invalid interest rate")
+        }
+        if (isNaN(termYears) || termYears < 1) {
+          throw new Error("Invalid term years")
+        }
+        if (![12, 14].includes(installmentsPerYear)) {
+          throw new Error("Invalid installments per year")
+        }
+
+        // Calculate loan amount
+        const loanAmount = amortization.property.price_cost - downPayment
+
+        // Validate loan amount
+        if (loanAmount <= 0) {
+          throw new Error("Down payment cannot be greater than property cost")
+        }
+
+        // Create a proper ISO date string preserving the exact date
+        const inputDate = new Date(values.first_installment_date);
+        const dateString = `${inputDate.getFullYear()}-${String(inputDate.getMonth() + 1).padStart(2, '0')}-${String(inputDate.getDate()).padStart(2, '0')}`;
+        
+        // Prepare amortization data
+        const amortizationData = {
+          name: values.name,
+          down_payment: downPayment,
+          interest_rate: interestRate,
+          term_years: termYears,
+          installments_per_year: installmentsPerYear,
+          first_installment_date: dateString,
+          loan_amount: loanAmount,
+          loan_protection_type: values.loan_protection_type,
+          loan_protection_insurance: loanProtectionInsurance,
+        }
+
+        // Update amortization in Supabase
+        const { error: updateError } = await supabase
+          .from("amortizations")
+          .update(amortizationData)
+          .eq('id', id)
+
+        if (updateError) throw updateError
+
+        toast({
+          title: t("ui.success", { ns: "global" }),
+          description: t("messages.success_update", { ns: "mortgages" }),
+        })
       }
-
-      // Create a proper ISO date string preserving the exact date
-      const inputDate = new Date(values.first_installment_date);
-      const dateString = `${inputDate.getFullYear()}-${String(inputDate.getMonth() + 1).padStart(2, '0')}-${String(inputDate.getDate()).padStart(2, '0')}`;
-      
-      // Prepare amortization data
-      const amortizationData = {
-        name: values.name,
-        down_payment: downPayment,
-        interest_rate: interestRate,
-        term_years: termYears,
-        installments_per_year: installmentsPerYear,
-        first_installment_date: dateString,
-        loan_amount: loanAmount,
-        loan_protection_type: values.loan_protection_type,
-        loan_protection_insurance: loanProtectionInsurance,
-      }
-
-      // Update amortization in Supabase
-      const { error: updateError } = await supabase
-        .from("amortizations")
-        .update(amortizationData)
-        .eq('id', id)
-
-      if (updateError) throw updateError
-
-      toast({
-        title: t("ui.success", { ns: "global" }),
-        description: t("messages.success_update", { ns: "mortgages" }),
-      })
     } catch (error) {
       console.error("Error updating amortization:", error)
       toast({
@@ -347,11 +517,6 @@ export default function EditAmortization() {
         description: error instanceof Error ? error.message : t("messages.error_update", { ns: "mortgages" })
       })
     }
-  }
-
-  const handlePropertyUpdate = (updatedProperty: Property) => {
-    // Invalidate the query to refetch the data
-    queryClient.invalidateQueries({ queryKey: ["amortization", id] })
   }
 
   const [activeTab, setActiveTab] = useState("regular")
@@ -401,24 +566,30 @@ export default function EditAmortization() {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <EditableHeading 
-                  value={amortization.name} 
-                  onChange={async (newName) => {
-                    try {
-                      const { error } = await supabase
-                        .from("amortizations")
-                        .update({ name: newName })
-                        .eq("id", id)
+                {isCreatingNew ? (
+                  <span className="text-foreground">
+                    {t("ui.new", "New", { ns: "global" })} {t("sections.mortgage", "Mortgage", { ns: "dashboard" })}
+                  </span>
+                ) : (
+                  <EditableHeading 
+                    value={amortization?.name || ""} 
+                    onChange={async (newName) => {
+                      try {
+                        const { error } = await supabase
+                          .from("amortizations")
+                          .update({ name: newName })
+                          .eq("id", id)
 
-                      if (error) throw error
-                    } catch (error) {
-                      console.error("Error updating name:", error)
-                    }
-                  }}
-                  size="breadcrumb"
-                  as="span"
-                  className="text-foreground"
-                />
+                        if (error) throw error
+                      } catch (error) {
+                        console.error("Error updating name:", error)
+                      }
+                    }}
+                    size="breadcrumb"
+                    as="span"
+                    className="text-foreground"
+                  />
+                )}
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -431,20 +602,31 @@ export default function EditAmortization() {
           <div className="sm:w-full md:w-[30%] md:min-w-[320px] md:max-w-[540px] relative flex-shrink-0">
             <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-border"></div>
             
-              <PropertyDisplay 
-                property={amortization.property}
-                onPropertyUpdate={handlePropertyUpdate}
-              />
+              {isCreatingNew ? (
+                selectedPropertyFromUrl ? (
+                  <PropertyDisplay 
+                    property={selectedPropertyFromUrl}
+                    onPropertyUpdate={handlePropertyUpdate}
+                  />
+                ) : null
+              ) : (
+                amortization ? (
+                  <PropertyDisplay 
+                    property={amortization.property}
+                    onPropertyUpdate={handlePropertyUpdate}
+                  />
+                ) : null
+              )}
               <Separator className="my-2" />
               <div className="p-1 md:p-2 lg:p-4">
 
-              {amortization && (
+              {((isCreatingNew && selectedPropertyFromUrl) || (!isCreatingNew && amortization)) && (
                 <Form {...amortizationForm}>
                   <AmortizationDetailsForm
                     form={amortizationForm}
-                    selectedProperty={amortization.property}
+                    selectedProperty={isCreatingNew ? selectedPropertyFromUrl as Property : amortization?.property}
                     onSubmit={onUpdateAmortization}
-                    submitLabel={t("ui.update", { ns: "global" })}
+                    submitLabel={isCreatingNew ? t("ui.create", "Create", { ns: "global" }) : t("ui.update", { ns: "global" })}
                   />
                 </Form>
               )}
@@ -452,109 +634,111 @@ export default function EditAmortization() {
           </div>
 
           {/* Right Container */}
-          <div className="w-full overflow-hidden flex-1 p-1 md:p-2 lg:p-4">
-            {/* <h2 className="text-sm mb-6">{t("payment_scenarios_graphs")}</h2> */}
-            {(!amortization || !scenarios || isLoadingScenarios) ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-2"></div>
-                <div className="text-muted-foreground">{t("ui.loading", { ns: "global" })}</div>
-              </div>
-            ) : (
-              <Tabs 
-                defaultValue="regular" 
-                className="w-full"
-                onValueChange={setActiveTab}
-              >
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="regular">{t("scenarios.regular.title", { ns: "mortgages" })}</TabsTrigger>
-                  <TabsTrigger value="accelerated">{t("scenarios.accelerated.title", { ns: "mortgages" })}</TabsTrigger>
-                  <TabsTrigger value="lower_payment">{t("scenarios.lower_payment.title", { ns: "mortgages" })}</TabsTrigger>
-                  <TabsTrigger value="new_rate">{t("scenarios.new_rate.title", { ns: "mortgages" })}</TabsTrigger>
-                </TabsList>
-                <TabsContent value="regular">
-                  {scenarios.regular && (
-                    <RegularPanelGraph
-                      scenario={scenarios.regular}
-                      currency={amortization.property.currency}
-                      installmentsPerYear={amortization.installments_per_year}
-                    />
-                  )}
-                </TabsContent>
-                <TabsContent value="accelerated">
-                  {scenarios.accelerated && (
-                    <>
-                      <AcceleratedPanelGraph
-                        scenario={scenarios.accelerated}
-                        regularScenario={scenarios.regular}
+          {!isCreatingNew && (
+            <div className="w-full overflow-hidden flex-1 p-1 md:p-2 lg:p-4">
+              {/* <h2 className="text-sm mb-6">{t("payment_scenarios_graphs")}</h2> */}
+              {(!amortization || !scenarios || isLoadingScenarios) ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-2"></div>
+                  <div className="text-muted-foreground">{t("ui.loading", { ns: "global" })}</div>
+                </div>
+              ) : (
+                <Tabs 
+                  defaultValue="regular" 
+                  className="w-full"
+                  onValueChange={setActiveTab}
+                >
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="regular">{t("scenarios.regular.title", { ns: "mortgages" })}</TabsTrigger>
+                    <TabsTrigger value="accelerated">{t("scenarios.accelerated.title", { ns: "mortgages" })}</TabsTrigger>
+                    <TabsTrigger value="lower_payment">{t("scenarios.lower_payment.title", { ns: "mortgages" })}</TabsTrigger>
+                    <TabsTrigger value="new_rate">{t("scenarios.new_rate.title", { ns: "mortgages" })}</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="regular">
+                    {scenarios.regular && (
+                      <RegularPanelGraph
+                        scenario={scenarios.regular}
                         currency={amortization.property.currency}
                         installmentsPerYear={amortization.installments_per_year}
                       />
-                      <div className="mt-8">
-                        <ExtraInstallmentsSection
-                          amortizationId={id || ""}
+                    )}
+                  </TabsContent>
+                  <TabsContent value="accelerated">
+                    {scenarios.accelerated && (
+                      <>
+                        <AcceleratedPanelGraph
+                          scenario={scenarios.accelerated}
+                          regularScenario={scenarios.regular}
                           currency={amortization.property.currency}
-                          loanAmount={amortization.loan_amount}
-                          onInstallmentsChange={() => {
-                            queryClient.invalidateQueries({
-                              queryKey: ["scenarios", id]
-                            })
-                          }}
+                          installmentsPerYear={amortization.installments_per_year}
                         />
-                      </div>
-                    </>
-                  )}
-                </TabsContent>
-                <TabsContent value="lower_payment">
-                  {scenarios.lower_payment && (
-                    <>
-                      <LowerPaymentPanelGraph
-                        scenario={scenarios.lower_payment}
-                        regularScenario={scenarios.regular}
-                        currency={amortization.property.currency}
-                        installmentsPerYear={amortization.installments_per_year}
-                      />
-                      <div className="mt-8">
-                        <ExtraInstallmentsSection
-                          amortizationId={id || ""}
+                        <div className="mt-8">
+                          <ExtraInstallmentsSection
+                            amortizationId={id || ""}
+                            currency={amortization.property.currency}
+                            loanAmount={amortization.loan_amount}
+                            onInstallmentsChange={() => {
+                              queryClient.invalidateQueries({
+                                queryKey: ["scenarios", id]
+                              })
+                            }}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="lower_payment">
+                    {scenarios.lower_payment && (
+                      <>
+                        <LowerPaymentPanelGraph
+                          scenario={scenarios.lower_payment}
+                          regularScenario={scenarios.regular}
                           currency={amortization.property.currency}
-                          loanAmount={amortization.loan_amount}
-                          onInstallmentsChange={() => {
-                            queryClient.invalidateQueries({
-                              queryKey: ["scenarios", id]
-                            })
-                          }}
+                          installmentsPerYear={amortization.installments_per_year}
                         />
-                      </div>
-                    </>
-                  )}
-                </TabsContent>
-                <TabsContent value="new_rate">
-                  {scenarios.new_rate && (
-                    <>
-                      <NewRatePanelGraph
-                        scenario={scenarios.new_rate}
-                        regularScenario={scenarios.regular}
-                        currency={amortization.property.currency}
-                        installmentsPerYear={amortization.installments_per_year}
-                      />
-                      <div className="mt-8">
-                        <NewRateForm
-                          amortizationId={id || ""}
-                          onSuccess={() => {
-                            queryClient.invalidateQueries({
-                              queryKey: ["scenarios", id]
-                            })
-                          }}
-                          className="space-y-4"
-                          firstInstallmentDate={amortization.first_installment_date ? new Date(amortization.first_installment_date) : undefined}
+                        <div className="mt-8">
+                          <ExtraInstallmentsSection
+                            amortizationId={id || ""}
+                            currency={amortization.property.currency}
+                            loanAmount={amortization.loan_amount}
+                            onInstallmentsChange={() => {
+                              queryClient.invalidateQueries({
+                                queryKey: ["scenarios", id]
+                              })
+                            }}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="new_rate">
+                    {scenarios.new_rate && (
+                      <>
+                        <NewRatePanelGraph
+                          scenario={scenarios.new_rate}
+                          regularScenario={scenarios.regular}
+                          currency={amortization.property.currency}
+                          installmentsPerYear={amortization.installments_per_year}
                         />
-                      </div>
-                    </>
-                  )}
-                </TabsContent>
-              </Tabs>
-            )}
-          </div>
+                        <div className="mt-8">
+                          <NewRateForm
+                            amortizationId={id || ""}
+                            onSuccess={() => {
+                              queryClient.invalidateQueries({
+                                queryKey: ["scenarios", id]
+                              })
+                            }}
+                            className="space-y-4"
+                            firstInstallmentDate={amortization.first_installment_date ? new Date(amortization.first_installment_date) : undefined}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
