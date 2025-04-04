@@ -15,6 +15,7 @@ import {
   format,
 } from "date-fns";
 import { es } from 'date-fns/locale';
+import type { Locale } from 'date-fns';
 import { toDate, formatInTimeZone } from "date-fns-tz";
 import { DateRange } from "react-day-picker";
 import { cva, VariantProps } from "class-variance-authority";
@@ -101,7 +102,7 @@ export const CalendarDatePicker = React.forwardRef<
 
     // Get month names based on locale
     const months = Array.from({ length: 12 }, (_, i) => 
-      format(new Date(2024, i, 1), 'LLLL', { locale: currentLocale })
+      format(new Date(2024, i, 1), 'LLLL', { locale: currentLocale as Locale | undefined })
     ).map(month => month.charAt(0).toUpperCase() + month.slice(1));
 
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
@@ -395,6 +396,19 @@ export const CalendarDatePicker = React.forwardRef<
     const formatWithTz = (date: Date, fmt: string) =>
       formatInTimeZone(date, timeZone, fmt);
 
+    const handleDisabledDate = React.useMemo(() => {
+      if (typeof disabled === 'function') {
+        return disabled;
+      } else if (disabled && (disabled.before || disabled.after)) {
+        return (date: Date) => {
+          if (disabled.before && date < disabled.before) return true;
+          if (disabled.after && date > disabled.after) return true;
+          return false;
+        };
+      }
+      return undefined;
+    }, [disabled]);
+
     return (
       <>
         <style>
@@ -548,7 +562,7 @@ export const CalendarDatePicker = React.forwardRef<
           </PopoverTrigger>
           {isPopoverOpen && (
             <PopoverContent
-              className="w-auto"
+              className="w-auto p-0"
               align="center"
               avoidCollisions={false}
               onInteractOutside={handleClose}
@@ -556,6 +570,8 @@ export const CalendarDatePicker = React.forwardRef<
               style={{
                 maxHeight: "var(--radix-popover-content-available-height)",
                 overflowY: "auto",
+                width: "fit-content",
+                maxWidth: "100%",
               }}
             >
               <div className="flex">
@@ -584,7 +600,7 @@ export const CalendarDatePicker = React.forwardRef<
                     ))}
                   </div>
                 )}
-                <div className="flex flex-col">
+                <div className="flex flex-col p-4">
                   <div className="flex items-center gap-4">
                     <div className="flex gap-2 ml-3">
                       <Select
@@ -597,7 +613,7 @@ export const CalendarDatePicker = React.forwardRef<
                         }
                       >
                         <SelectTrigger className="hidden sm:flex w-[122px] focus:ring-0 focus:ring-offset-0 font-medium hover:bg-accent hover:text-accent-foreground">
-                          <SelectValue placeholder={i18n.t("calendar.month")} />
+                          <SelectValue placeholder="Month" />
                         </SelectTrigger>
                         <SelectContent>
                           {months.map((month, idx) => (
@@ -615,7 +631,7 @@ export const CalendarDatePicker = React.forwardRef<
                         value={yearFrom ? yearFrom.toString() : undefined}
                       >
                         <SelectTrigger className="hidden sm:flex w-[122px] focus:ring-0 focus:ring-offset-0 font-medium hover:bg-accent hover:text-accent-foreground">
-                          <SelectValue placeholder={i18n.t("calendar.year")} />
+                          <SelectValue placeholder="Year" />
                         </SelectTrigger>
                         <SelectContent>
                           {years.map((year, idx) => (
@@ -638,7 +654,7 @@ export const CalendarDatePicker = React.forwardRef<
                           }
                         >
                           <SelectTrigger className="hidden sm:flex w-[122px] focus:ring-0 focus:ring-offset-0 font-medium hover:bg-accent hover:text-accent-foreground">
-                            <SelectValue placeholder={i18n.t("calendar.month")} />
+                            <SelectValue placeholder="Month" />
                           </SelectTrigger>
                           <SelectContent>
                             {months.map((month, idx) => (
@@ -656,7 +672,7 @@ export const CalendarDatePicker = React.forwardRef<
                           value={yearTo ? yearTo.toString() : undefined}
                         >
                           <SelectTrigger className="hidden sm:flex w-[122px] focus:ring-0 focus:ring-offset-0 font-medium hover:bg-accent hover:text-accent-foreground">
-                            <SelectValue placeholder={i18n.t("calendar.year")} />
+                            <SelectValue placeholder="Year" />
                           </SelectTrigger>
                           <SelectContent>
                             {years.map((year, idx) => (
@@ -676,11 +692,11 @@ export const CalendarDatePicker = React.forwardRef<
                       selected={date}
                       onSelect={handleDateSelect}
                       numberOfMonths={numberOfMonths}
-                      disabled={disabled}
-                      locale={currentLocale}
+                      disabled={handleDisabledDate}
+                      locale={currentLocale as Locale}
                       className={cn(
                         "rounded-md border",
-                        numberOfMonths === 2 ? "md:w-[850px]" : "md:w-[400px]"
+                        numberOfMonths === 2 ? "md:w-[650px]" : "w-full max-w-[300px]"
                       )}
                       classNames={{
                         months: "flex flex-col md:flex-row space-y-4 md:space-x-4 md:space-y-0",
