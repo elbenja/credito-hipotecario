@@ -84,11 +84,11 @@ export default function UpdatePassword() {
         // If no valid token or session found
         console.error("No valid token or session found")
         setValidRecoveryToken(false)
-        toast.error("Invalid or expired recovery link")
+        toast.error(t("update_password_page.invalid_or_expired_link", { ns: "global" }))
       } catch (error: any) {
         console.error("Error validating recovery token:", error)
         setValidRecoveryToken(false)
-        toast.error(error.message || "Invalid or expired recovery link")
+        toast.error(error.message || t("update_password_page.invalid_or_expired_link", { ns: "global" }))
       }
     }
     
@@ -99,12 +99,12 @@ export default function UpdatePassword() {
     e.preventDefault()
     
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match")
+      toast.error(t("update_password_page.passwords_dont_match", { ns: "global" }))
       return
     }
 
     if (password.length < 6) {
-      toast.error("Password must be at least 6 characters")
+      toast.error(t("update_password_page.password_too_short", { ns: "global" }))
       return
     }
 
@@ -119,10 +119,10 @@ export default function UpdatePassword() {
         throw error
       }
 
-      toast.success("Password updated successfully")
+      toast.success(t("update_password_page.password_updated", { ns: "global" }))
       navigate("/dashboard")
     } catch (error: any) {
-      toast.error(error.message || "Error updating password")
+      toast.error(error.message || t("update_password_page.error_updating_password", { ns: "global" }))
     } finally {
       setLoading(false)
     }
@@ -132,7 +132,7 @@ export default function UpdatePassword() {
   if (validRecoveryToken === null) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg">Loading...</p>
+        <p className="text-lg">{t("update_password_page.loading", { ns: "global" })}...</p>
       </div>
     )
   }
@@ -141,10 +141,10 @@ export default function UpdatePassword() {
   if (validRecoveryToken === false) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <h1 className="text-2xl font-bold mb-4">Invalid Link</h1>
-        <p className="mb-4 text-center">The password recovery link is invalid or has expired</p>
+        <h1 className="text-2xl font-bold mb-4">{t("update_password_page.invalid_link", { ns: "global" })}</h1>
+        <p className="mb-4 text-center">{t("update_password_page.recovery_link_invalid_or_expired", { ns: "global" })}</p>
         <Button onClick={() => navigate("/")}>
-          Back to Home
+          {t("update_password_page.back_to_home", { ns: "global" })}
         </Button>
       </div>
     )
@@ -155,16 +155,16 @@ export default function UpdatePassword() {
       <div className="w-full max-w-md space-y-8 p-8 border rounded-lg shadow-sm">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold">
-            Update Your Password
+            {t("update_password_page.update_your_password", { ns: "global" })}
           </h1>
           <p>
-            Create a new password for your account
+            {t("update_password_page.create_new_password_prompt", { ns: "global" })}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="password">New Password</Label>
+            <Label htmlFor="password">{t("update_password_page.new_password", { ns: "global" })}</Label>
             <Input
               id="password"
               type="password"
@@ -177,7 +177,7 @@ export default function UpdatePassword() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">{t("update_password_page.confirm_password", { ns: "global" })}</Label>
             <Input
               id="confirmPassword"
               type="password"
@@ -190,7 +190,7 @@ export default function UpdatePassword() {
           </div>
 
           <Button className="w-full" type="submit" disabled={loading}>
-            {loading ? "Updating..." : "Update Password"}
+            {loading ? t("update_password_page.updating", { ns: "global" }) : t("update_password_page.update_password", { ns: "global" })}
           </Button>
         </form>
       </div>

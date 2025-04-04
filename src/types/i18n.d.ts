@@ -36,6 +36,23 @@ declare module 'i18next' {
           language: string;
           language_description: string;
         };
+        update_password_page: {
+          loading: string;
+          invalid_link: string;
+          recovery_link_invalid_or_expired: string;
+          back_to_home: string;
+          update_your_password: string;
+          create_new_password_prompt: string;
+          new_password: string;
+          confirm_password: string;
+          updating: string;
+          update_password: string;
+          passwords_dont_match: string;
+          password_too_short: string;
+          password_updated: string;
+          error_updating_password: string;
+          invalid_or_expired_link: string;
+        };
       };
       dashboard: {
         sections: {
