@@ -82,5 +82,22 @@
       "success": "Successfully signed in"
     }
   },
-  "test_extra_installments": "Test Extra Installments"
+  "test_extra_installments": "Test Extra Installments",
+  "update_password_page": {
+    "loading": "Loading",
+    "invalid_link": "Invalid Link",
+    "recovery_link_invalid_or_expired": "The password recovery link is invalid or has expired",
+    "back_to_home": "Back to Home",
+    "update_your_password": "Update Your Password",
+    "create_new_password_prompt": "Create a new password for your account",
+    "new_password": "New Password",
+    "confirm_password": "Confirm Password",
+    "updating": "Updating...",
+    "update_password": "Update Password",
+    "passwords_dont_match": "Passwords do not match",
+    "password_too_short": "Password must be at least 6 characters",
+    "password_updated": "Password updated successfully",
+    "error_updating_password": "Error updating password",
+    "invalid_or_expired_link": "Invalid or expired recovery link"
+  }
 } 

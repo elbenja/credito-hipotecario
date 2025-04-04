@@ -81,5 +81,22 @@
       "success": "Sesión iniciada exitosamente"
     }
   },
-  "test_extra_installments": "Prueba de Cuotas Extra"
+  "test_extra_installments": "Prueba de Cuotas Extra",
+  "update_password_page": {
+    "loading": "Cargando",
+    "invalid_link": "Enlace Inválido",
+    "recovery_link_invalid_or_expired": "El enlace de recuperación de contraseña es inválido o ha expirado",
+    "back_to_home": "Volver al Inicio",
+    "update_your_password": "Actualiza tu Contraseña",
+    "create_new_password_prompt": "Crea una nueva contraseña para tu cuenta",
+    "new_password": "Nueva Contraseña",
+    "confirm_password": "Confirmar Contraseña",
+    "updating": "Actualizando...",
+    "update_password": "Actualizar Contraseña",
+    "passwords_dont_match": "Las contraseñas no coinciden",
+    "password_too_short": "La contraseña debe tener al menos 6 caracteres",
+    "password_updated": "Contraseña actualizada con éxito",
+    "error_updating_password": "Error al actualizar la contraseña",
+    "invalid_or_expired_link": "Enlace de recuperación inválido o expirado"
+  }
 } 
