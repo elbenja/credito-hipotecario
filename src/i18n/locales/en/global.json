@@ -19,7 +19,8 @@
     "coming": "Coming",
     "click_to_edit": "Click to edit",
     "duplicate": "Duplicate",
-    "open_menu": "Open menu"
+    "open_menu": "Open menu",
+    "add_mortgage": "Add Mortgage"
   },
   "components": {
     "calendar": {

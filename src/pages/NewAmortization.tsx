@@ -25,7 +25,15 @@ import {
 } from "@/components/ui/breadcrumb"
 import { PropertySelect, type Property } from "@/components/amortizations/property-select"
 import { AmortizationDetailsForm } from "@/components/amortizations/amortization-details-form"
-import { RegularPanelGraph } from '@/components/amortizations/scenario-panels/graph-panels'
+import { 
+  RegularPanelGraph, 
+  AcceleratedPanelGraph, 
+  LowerPaymentPanelGraph, 
+  NewRatePanelGraph 
+} from '@/components/amortizations/scenario-panels/graph-panels'
+import { ExtraInstallmentsSection } from '@/components/amortizations/extra-installments-section'
+import { NewRateForm } from '@/components/amortizations/new-rate-form'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { 
   amortizationFormSchema, 
   defaultValues, 
@@ -53,6 +61,19 @@ export default function NewAmortization() {
   const [interestRateLimits] = useState({
     min_rate: 4,
     max_rate: 18
+  })
+  const [activeTab, setActiveTab] = useState("regular")
+  const [isLoadingScenarios, setIsLoadingScenarios] = useState(false)
+  const [scenarios, setScenarios] = useState<{
+    regular: ScenarioResult | null;
+    accelerated: ScenarioResult | null;
+    lower_payment: ScenarioResult | null;
+    new_rate: ScenarioResult | null;
+  }>({
+    regular: null,
+    accelerated: null,
+    lower_payment: null,
+    new_rate: null
   })
 
   const form = useForm<AmortizationFormValues>({
@@ -96,10 +117,17 @@ export default function NewAmortization() {
 
   const loanCalculator = new LoanCalculator()
 
-  const calculateRegularScenario = (values: Partial<AmortizationFormValues>) => {
+  const calculateScenarios = (values: Partial<AmortizationFormValues>) => {
     if (!selectedProperty || !values.down_payment || !values.interest_rate || !values.term_years || !values.installments_per_year || !values.first_installment_date) {
-      return null
+      return {
+        regular: null,
+        accelerated: null,
+        lower_payment: null,
+        new_rate: null
+      }
     }
+
+    setIsLoadingScenarios(true)
 
     const mockProperty = {
       id: selectedProperty.id,
@@ -126,16 +154,149 @@ export default function NewAmortization() {
       loan_protection_insurance: parseFloat(values.loan_protection_insurance || "0")
     }
 
-    const results = loanCalculator.calculateResults(mockProperty, baseValues)
+    // Regular scenario
+    const regularResults = loanCalculator.calculateResults(mockProperty, baseValues)
+    const regular = transformToScenarioResult(regularResults) as ScenarioResult
     
-    // Transform results into the format expected by RegularPanelGraph
+    // Accelerated scenario - higher payments (15% increase)
+    // We need to simulate accelerated payments by increasing the monthly payment
+    const acceleratedBaseValues = { ...baseValues }
+    const acceleratedMultiplier = 1.15 // 15% higher payments
+    const regularBasePayment = regularResults.base_monthly_payment
+    const acceleratedBasePayment = regularBasePayment * acceleratedMultiplier
+    const acceleratedResults = simulateAcceleratedPayments(
+      regularResults.loan_amount, 
+      acceleratedBasePayment, 
+      baseValues, 
+      mockProperty
+    )
+    const accelerated = transformToScenarioResult(acceleratedResults) as ScenarioResult
+    
+    // Lower payment scenario - longer term (5 years more)
+    const lowerPaymentBaseValues = { 
+      ...baseValues,
+      term_years: Math.min(baseValues.term_years + 5, 40) // Add 5 years but don't exceed 40
+    }
+    const lowerPaymentResults = loanCalculator.calculateResults(mockProperty, lowerPaymentBaseValues)
+    const lower_payment = transformToScenarioResult(lowerPaymentResults) as ScenarioResult
+    
+    // New rate scenario - 1% higher rate
+    const newRateBaseValues = { 
+      ...baseValues,
+      interest_rate: baseValues.interest_rate + 1 // 1% higher rate
+    }
+    const newRateResults = loanCalculator.calculateResults(mockProperty, newRateBaseValues)
+    const new_rate = transformToScenarioResult(newRateResults) as ScenarioResult
+
+    setIsLoadingScenarios(false)
+    
+    return {
+      regular,
+      accelerated,
+      lower_payment,
+      new_rate
+    }
+  }
+
+  // Helper function to simulate accelerated payments
+  const simulateAcceleratedPayments = (
+    loanAmount: number,
+    acceleratedPayment: number,
+    baseValues: any,
+    property: any
+  ): any => {
+    // Clone the loan calculator results structure but with accelerated payments
+    // This is a simplified simulation for the UI demo
+    const monthlyRate = Math.pow(1 + baseValues.interest_rate/100, 1/12) - 1
+    const originalSchedule = loanCalculator.generatePaymentSchedule(loanAmount, baseValues, property)
+    const schedule: any[] = []
+    
+    let remainingBalance = loanAmount
+    let currentDate = new Date(baseValues.first_installment_date)
+    let paymentNumber = 1
+    
+    // Continue until balance is effectively zero
+    while (remainingBalance > 0.01 && paymentNumber <= 600) { // 50 years max
+      const isDoublePayment = baseValues.installments_per_year === 14 && 
+        (currentDate.getMonth() === 6 || currentDate.getMonth() === 11)
+      
+      // Base payment without insurance
+      const currentBasePayment = isDoublePayment ? acceleratedPayment * 2 : acceleratedPayment
+      
+      // Insurance amounts (monthly)
+      const monthlyPropertyInsurance = Number(property.property_insurance || 0)
+      const monthlyLoanProtection = Number(baseValues.loan_protection_insurance || 0)
+      
+      // Double the insurance for double payment months
+      const currentPropertyInsurance = isDoublePayment ? monthlyPropertyInsurance * 2 : monthlyPropertyInsurance
+      const currentLoanProtection = isDoublePayment ? monthlyLoanProtection * 2 : monthlyLoanProtection
+      
+      const interestPayment = remainingBalance * monthlyRate
+      let principalPayment = currentBasePayment - interestPayment
+      
+      // Adjust final payment to match remaining balance
+      if (principalPayment > remainingBalance) {
+        principalPayment = remainingBalance
+      }
+      
+      const endingBalance = Math.max(0, remainingBalance - principalPayment)
+      
+      // Total payment includes base payment plus both insurances
+      const totalPayment = principalPayment + interestPayment + currentPropertyInsurance + currentLoanProtection
+      
+      const payment = {
+        date: new Date(currentDate),
+        payment_number: paymentNumber,
+        beginning_balance: remainingBalance,
+        scheduled_payment: totalPayment,
+        extra_payment: 0,
+        total_payment: totalPayment,
+        principal: principalPayment,
+        interest: interestPayment,
+        ending_balance: endingBalance,
+        property_insurance: currentPropertyInsurance,
+        loan_protection_insurance: currentLoanProtection,
+        is_extra_payment: false,
+        is_double_payment: isDoublePayment
+      }
+      
+      schedule.push(payment)
+      remainingBalance = endingBalance
+      
+      // Move to next payment date
+      currentDate.setMonth(currentDate.getMonth() + 1)
+      paymentNumber++
+      
+      // Exit if we've paid off the loan
+      if (endingBalance <= 0) break
+    }
+    
+    // Calculate total interest and insurance
+    const totalInterestAndInsurance = schedule.reduce((sum, payment) => 
+      sum + payment.interest + payment.property_insurance + payment.loan_protection_insurance, 0
+    )
+    
+    return {
+      loan_amount: loanAmount,
+      total_interest_and_insurance: totalInterestAndInsurance,
+      total_months: schedule.length,
+      base_monthly_payment: acceleratedPayment,
+      monthly_payment: acceleratedPayment + 
+        Number(property.property_insurance || 0) + 
+        Number(baseValues.loan_protection_insurance || 0),
+      payment_schedule: schedule
+    }
+  }
+
+  // Helper function to transform results to the format expected by ScenarioResult
+  const transformToScenarioResult = (results: any): ScenarioResult => {
     return {
       summary: {
         total_interest_and_insurance: results.total_interest_and_insurance,
         total_months: results.total_months,
         monthly_payment: results.monthly_payment
       },
-      payments: results.payment_schedule.map(payment => ({
+      payments: results.payment_schedule.map((payment: any) => ({
         payment_date: payment.date,
         capital: payment.principal,
         interest: payment.interest,
@@ -149,12 +310,13 @@ export default function NewAmortization() {
     }
   }
 
-  // Update scenario when form values change
+  // Update scenarios when form values change
   const handleFormChange = () => {
     const values = form.getValues()
-    const scenario = calculateRegularScenario(values)
-    setRegularScenario(scenario)
-    console.log('Regular scenario updated:', { scenario, selectedProperty })
+    const calculatedScenarios = calculateScenarios(values)
+    setScenarios(calculatedScenarios)
+    setRegularScenario(calculatedScenarios.regular)
+    console.log('Scenarios updated:', { calculatedScenarios, selectedProperty })
   }
 
   // Subscribe to form changes
@@ -389,14 +551,107 @@ export default function NewAmortization() {
             </div>
 
             {/* Right Container */}
-            <div className="w-full overflow-hidden flex-1 px-2 sm:px-8 pt-2 sm:pt-6">
-              {selectedProperty && regularScenario && (
-                <div className="space-y-4">
-                  <RegularPanelGraph
-                    scenario={regularScenario}
-                    currency={selectedProperty.currency}
-                    installmentsPerYear={parseInt(form.getValues("installments_per_year"))}
-                  />
+            <div className="w-full overflow-hidden flex-1 p-1 md:p-2 lg:p-4">
+              {selectedProperty ? (
+                (!regularScenario || isLoadingScenarios) ? (
+                  <div className="flex items-center justify-center h-64">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-2"></div>
+                    <div className="text-muted-foreground">{t("ui.loading", { ns: "global" })}</div>
+                  </div>
+                ) : (
+                  <Tabs 
+                    defaultValue="regular" 
+                    className="w-full"
+                    onValueChange={setActiveTab}
+                  >
+                    <TabsList className="grid w-full grid-cols-4">
+                      <TabsTrigger value="regular">{t("scenarios.regular.title", { ns: "mortgages" })}</TabsTrigger>
+                      <TabsTrigger value="accelerated">{t("scenarios.accelerated.title", { ns: "mortgages" })}</TabsTrigger>
+                      <TabsTrigger value="lower_payment">{t("scenarios.lower_payment.title", { ns: "mortgages" })}</TabsTrigger>
+                      <TabsTrigger value="new_rate">{t("scenarios.new_rate.title", { ns: "mortgages" })}</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="regular">
+                      {scenarios.regular && (
+                        <>
+                          <RegularPanelGraph
+                            scenario={scenarios.regular}
+                            currency={selectedProperty.currency}
+                            installmentsPerYear={parseInt(form.getValues("installments_per_year"))}
+                          />
+                          <div className="mt-8">
+                            <div className="p-4 rounded-md border border-blue-100 bg-blue-50">
+                              <p className="text-sm text-blue-800">
+                                {t("messages.save_to_access_all_features", "Save this amortization to access all scenario features such as extra payments and refinancing options", { ns: "mortgages" })}
+                              </p>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </TabsContent>
+                    <TabsContent value="accelerated">
+                      {scenarios.accelerated && scenarios.regular && (
+                        <>
+                          <AcceleratedPanelGraph
+                            scenario={scenarios.accelerated}
+                            regularScenario={scenarios.regular}
+                            currency={selectedProperty.currency}
+                            installmentsPerYear={parseInt(form.getValues("installments_per_year"))}
+                          />
+                          <div className="mt-8">
+                            <div className="p-4 rounded-md border border-amber-200 bg-amber-50 mb-6">
+                              <p className="text-sm text-amber-800">
+                                {t("messages.save_first_to_add_extra_payments", "Save this amortization first to add extra payments", { ns: "mortgages" })}
+                              </p>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </TabsContent>
+                    <TabsContent value="lower_payment">
+                      {scenarios.lower_payment && scenarios.regular && (
+                        <>
+                          <LowerPaymentPanelGraph
+                            scenario={scenarios.lower_payment}
+                            regularScenario={scenarios.regular}
+                            currency={selectedProperty.currency}
+                            installmentsPerYear={parseInt(form.getValues("installments_per_year"))}
+                          />
+                          <div className="mt-8">
+                            <div className="p-4 rounded-md border border-amber-200 bg-amber-50 mb-6">
+                              <p className="text-sm text-amber-800">
+                                {t("messages.save_first_to_add_extra_payments", "Save this amortization first to add extra payments", { ns: "mortgages" })}
+                              </p>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </TabsContent>
+                    <TabsContent value="new_rate">
+                      {scenarios.new_rate && scenarios.regular && (
+                        <>
+                          <NewRatePanelGraph
+                            scenario={scenarios.new_rate}
+                            regularScenario={scenarios.regular}
+                            currency={selectedProperty.currency}
+                            installmentsPerYear={parseInt(form.getValues("installments_per_year"))}
+                          />
+                          <div className="mt-8">
+                            <div className="p-4 rounded-md border border-amber-200 bg-amber-50 mb-6">
+                              <p className="text-sm text-amber-800">
+                                {t("messages.save_first_to_add_refinancing", "Save this amortization first to add refinancing options", { ns: "mortgages" })}
+                              </p>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                )
+              ) : (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-muted-foreground">
+                    {t("messages.select_property_to_see_amortization", "Select a property to see amortization scenarios", { ns: "mortgages" })}
+                  </div>
                 </div>
               )}
             </div>

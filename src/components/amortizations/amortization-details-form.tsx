@@ -139,7 +139,10 @@ export function AmortizationDetailsForm({
               name="down_payment"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('amortization.down_payment', { ns: 'mortgages' })}</FormLabel>
+                  <FormLabel>
+                    {t('amortization.down_payment', { ns: 'mortgages' })} 
+                    {selectedProperty?.currency === 'USD' ? ' $' : ' S/'}
+                  </FormLabel>
                   <FormControl>
                     <Input {...field} onChange={(e) => {
                       field.onChange(e)

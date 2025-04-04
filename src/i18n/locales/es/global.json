@@ -18,7 +18,9 @@
     "log_out": "Cerrar sesión",
     "coming": "Pronto",
     "click_to_edit": "Click para editar",
-    "duplicate": "Duplicar"
+    "duplicate": "Duplicar",
+    "open_menu": "Abrir menú",
+    "add_mortgage": "Agregar Hipoteca"
   },
   "components": {
     "calendar": {
