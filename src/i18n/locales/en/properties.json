@@ -22,7 +22,7 @@
     "status": "Status",
     "description": "Description",
     "description_placeholder": "Enter property details (address, notes, etc.)",
-    "property_cost": "Cost",
+    "property_cost": "Property Cost",
     "property_insurance": "Property Insurance",
     "property_insurance_short": "Prop Ins.",
     "first_home": "MiVivienda Bonus",
@@ -33,7 +33,7 @@
     "auto": "Auto",
     "manual": "Manual",
     "auto_rate": "Auto ({{rate}}%)",
-    "amount": "Amount"
+    "amount": "Insurance Amount"
   },
   "bonus": {
     "amount": "Bonus Amount",

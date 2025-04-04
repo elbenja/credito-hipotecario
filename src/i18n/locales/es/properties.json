@@ -22,7 +22,7 @@
     "status": "Estado",
     "description": "Descripción",
     "description_placeholder": "Ingresa detalles de la propiedad (dirección, notas, etc.)",
-    "property_cost": "Costo",
+    "property_cost": "Costo de la Propiedad",
     "property_insurance": "Seguro del Bien",
     "property_insurance_short": "Seg. Bien",
     "first_home": "Vivienda MiVivienda",
@@ -33,7 +33,7 @@
     "auto": "Automático",
     "manual": "Manual",
     "auto_rate": "Automático ({{rate}}%)",
-    "amount": "Monto"
+    "amount": "Monto del Seguro"
   },
   "bonus": {
     "amount": "Monto del Bono",
