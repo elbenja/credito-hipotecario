@@ -66,7 +66,7 @@ export default function UserManagement() {
       const { data: { user }, error } = await supabase.auth.getUser()
       
       if (error || !user) {
-        toast.error(t('please_login'))
+        toast.error(t('admin:messages.please_login'))
         navigate('/')
         return
       }
@@ -78,13 +78,13 @@ export default function UserManagement() {
         .single()
 
       if (profileError) {
-        toast.error(t('error_fetching_profile'))
+        toast.error(t('admin:messages.error_fetching_profile'))
         navigate('/')
         return
       }
 
       if (!profile.is_admin) {
-        toast.error(t('admin_only'))
+        toast.error(t('admin:messages.admin_only'))
         navigate('/')
         return
       }
@@ -92,7 +92,7 @@ export default function UserManagement() {
       setIsAdmin(true)
       fetchUsers()
     } catch (error) {
-      toast.error(t('error_checking_admin'))
+      toast.error(t('admin:messages.error_checking_admin'))
       navigate('/')
     } finally {
       setLoading(false)
@@ -231,6 +231,7 @@ export default function UserManagement() {
     try {
       // Try using admin API via Supabase Edge Function first
       try {
+        console.log("Attempting to delete user via Edge Function:", user.id)
         const { data, error } = await supabase.functions.invoke('delete-user', {
           body: { userId: user.id }
         })
@@ -244,20 +245,28 @@ export default function UserManagement() {
       } catch (edgeFunctionError) {
         console.error("Edge function error:", edgeFunctionError)
         
-        // If Edge Function fails, try direct database deletion
-        toast.info("Trying alternative method to delete user...")
+        // If Edge Function fails, display a more informative error
+        toast.error(`Failed to delete user via Edge Function. This is likely because the user exists in the auth system but can't be deleted through the application interface.`)
+        toast.info(`Please use the Supabase dashboard to delete this user: ${user.email}`)
         
-        // Delete from profiles table
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .delete()
-          .eq('id', user.id)
+        // We'll still try to delete from profiles table to keep things clean
+        try {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', user.id)
 
-        if (profileError) throw profileError
-
-        toast.success(`User ${user.email} deleted from profiles`)
-        fetchUsers() // Refresh the user list
-        setUserToDelete(null) // Close the modal
+          if (profileError) {
+            console.error("Profile deletion error:", profileError)
+            toast.error(`Also failed to delete user profile: ${profileError.message}`)
+          } else {
+            toast.info(`User profile data was removed, but the auth account remains.`)
+          }
+        } catch (profileDeleteError) {
+          console.error("Profile deletion error:", profileDeleteError)
+        }
+        
+        setUserToDelete(null) // Close the modal regardless
       }
     } catch (error: any) {
       toast.error(`Failed to delete user: ${error.message || "Unknown error"}`)
@@ -271,7 +280,7 @@ export default function UserManagement() {
   if (isAdmin === null || !isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg">{t("loading")}...</p>
+        <p className="text-lg">{t("ui.loading")}...</p>
       </div>
     )
   }
@@ -288,27 +297,27 @@ export default function UserManagement() {
   return (
     <DashboardLayout
       header={{
-        title: <h1 className="text-3xl font-bold">{t("user_management")}</h1>,
+        title: <h1 className="text-3xl font-bold">{t("admin:user_management")}</h1>,
       }}
     >
       <div className="container mx-auto py-4 px-2 sm:py-10 sm:px-10">
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">{t("user_management")}  
+            <h1 className="text-2xl font-bold">{t("admin:user_management")}  
             <span className="text-sm"> {filteredUsers.length}</span></h1>
           </div>
           <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <UserPlus className="mr-2 h-4 w-4" />
-                {t("create_user")}
+                {t("admin:create_user")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{t("create_new_user")}</DialogTitle>
+                <DialogTitle>{t("admin:create_new_user")}</DialogTitle>
                 <DialogDescription>
-                  {t("create_user_description")}
+                  {t("admin:create_user_description")}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
