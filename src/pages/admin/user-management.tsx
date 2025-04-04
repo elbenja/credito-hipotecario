@@ -322,7 +322,7 @@ export default function UserManagement() {
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">{t("email")}</Label>
+                  <Label htmlFor="email">{t("admin:email")}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -332,24 +332,24 @@ export default function UserManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="role">{t("role")}</Label>
+                  <Label htmlFor="role">{t("admin:role")}</Label>
                   <Select value={newUserRole} onValueChange={setNewUserRole}>
                     <SelectTrigger id="role">
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="user">{t("user")}</SelectItem>
-                      <SelectItem value="admin">{t("admin")}</SelectItem>
+                      <SelectItem value="user">{t("admin:user")}</SelectItem>
+                      <SelectItem value="admin">{t("admin:admin")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                  {t("cancel")}
+                  {t("admin:cancel")}
                 </Button>
                 <Button onClick={createUser} disabled={creatingUser || !newUserEmail}>
-                  {creatingUser ? t("creating") : t("create")}
+                  {creatingUser ? t("admin:creating") : t("admin:create")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -360,7 +360,7 @@ export default function UserManagement() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder={t("search_by_email")}
+              placeholder={t("admin:search_by_email")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -371,12 +371,12 @@ export default function UserManagement() {
             onValueChange={(value) => setRoleFilter(value)}
           >
             <SelectTrigger className="w-40">
-              <SelectValue placeholder={t("filter_by_role")} />
+              <SelectValue placeholder={t("admin:filter_by_role")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t("all")}</SelectItem>
-              <SelectItem value="user">{t("user")}</SelectItem>
-              <SelectItem value="admin">{t("admin")}</SelectItem>
+              <SelectItem value="all">{t("admin:all")}</SelectItem>
+              <SelectItem value="user">{t("admin:user")}</SelectItem>
+              <SelectItem value="admin">{t("admin:admin")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -385,24 +385,24 @@ export default function UserManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("email")}</TableHead>
-                <TableHead className="hidden sm:table-cell">{t("role")}</TableHead>
-                <TableHead>{t("created_at")}</TableHead>
-                <TableHead className="hidden sm:table-cell">{t("last_sign_in")}</TableHead>
-                <TableHead>{t("actions")}</TableHead>
+                <TableHead>{t("admin:email")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("admin:role")}</TableHead>
+                <TableHead>{t("admin:created_at")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("admin:last_sign_in")}</TableHead>
+                <TableHead>{t("admin:actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center">
-                    {t("loading")}...
+                    {t("admin:loading")}...
                   </TableCell>
                 </TableRow>
               ) : filteredUsers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center">
-                    {t("no_users_found")}
+                    {t("admin:no_users_found")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -416,7 +416,7 @@ export default function UserManagement() {
                     <TableCell className="hidden sm:table-cell">
                       {user.last_sign_in_at
                         ? new Date(user.last_sign_in_at).toLocaleString()
-                        : t("never")}
+                        : t("admin:never")}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
@@ -427,7 +427,7 @@ export default function UserManagement() {
                           disabled={sendingResetEmail[user.id]}
                         >
                           <Mail className="mr-2 h-4 w-4" />
-                          {sendingResetEmail[user.id] ? t("sending") : t("send_reset_email")}
+                          {sendingResetEmail[user.id] ? t("admin:sending") : t("admin:send_reset_email")}
                         </Button>
                         <Button
                           variant="destructive"
@@ -449,12 +449,12 @@ export default function UserManagement() {
         <Dialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{t("confirm_delete_user")}</DialogTitle>
+              <DialogTitle>{t("admin:confirm_delete_user")}</DialogTitle>
               <DialogDescription>
-                {t("delete_user_description", { email: userToDelete?.email })}
+                {t("admin:delete_user_description", { email: userToDelete?.email })}
                 {userToDelete?.role === 'admin' && (
                   <p className="mt-2 text-destructive">
-                    {t("warning_deleting_admin")}
+                    {t("admin:warning_deleting_admin")}
                   </p>
                 )}
               </DialogDescription>
@@ -465,14 +465,14 @@ export default function UserManagement() {
                 onClick={() => setUserToDelete(null)}
                 disabled={isDeleting}
               >
-                {t("cancel")}
+                {t("admin:cancel")}
               </Button>
               <Button
                 variant="destructive"
                 onClick={() => userToDelete && deleteUser(userToDelete)}
                 disabled={isDeleting}
               >
-                {isDeleting ? t("deleting") : t("delete")}
+                {isDeleting ? t("admin:deleting") : t("admin:delete")}
               </Button>
             </DialogFooter>
           </DialogContent>
