@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
 import {
   Select,
   SelectContent,
@@ -34,15 +33,21 @@ const extraInstallmentSchema = z.object({
       return !isNaN(amount) && amount > 0
     }, "extra_installments_section.form.amount_positive"),
   frequency: z.enum(["monthly", "one-time"]),
-  start_date: z.date({
-    required_error: "extra_installments_section.form.start_date_required",
+  month: z.string({
+    required_error: "extra_installments_section.form.month_required",
+  }),
+  day: z.string({
+    required_error: "extra_installments_section.form.day_required",
+  }),
+  year: z.string({
+    required_error: "extra_installments_section.form.year_required",
   }),
 })
 
 type ExtraInstallmentFormValues = z.infer<typeof extraInstallmentSchema>
 
 interface ExtraInstallmentFormProps {
-  onSubmit: (values: ExtraInstallmentFormValues) => void
+  onSubmit: (values: any) => void
   isLoading?: boolean
   loanAmount: number
   currency: "USD" | "PEN"
@@ -86,55 +91,71 @@ export function ExtraInstallmentForm({
     );
   };
 
+  const initialDate = getInitialDate();
+
+  // Generate month options
+  const months = [
+    { value: "1", label: "Jan" },
+    { value: "2", label: "Feb" },
+    { value: "3", label: "Mar" },
+    { value: "4", label: "Apr" },
+    { value: "5", label: "May" },
+    { value: "6", label: "Jun" },
+    { value: "7", label: "Jul" },
+    { value: "8", label: "Aug" },
+    { value: "9", label: "Sep" },
+    { value: "10", label: "Oct" },
+    { value: "11", label: "Nov" },
+    { value: "12", label: "Dec" },
+  ];
+
+  // Generate days options (1-31)
+  const days = Array.from({ length: 31 }, (_, i) => ({ 
+    value: String(i + 1), 
+    label: String(i + 1) 
+  }));
+
+  // Calculate years range
+  const currentYear = new Date().getFullYear();
+  const startYear = currentYear - 15;
+  const endYear = currentYear + 20;
+  const years = Array.from(
+    { length: endYear - startYear + 1 }, 
+    (_, i) => ({ 
+      value: String(startYear + i), 
+      label: String(startYear + i) 
+    })
+  );
+
   const form = useForm<ExtraInstallmentFormValues>({
     resolver: zodResolver(extraInstallmentSchema),
     defaultValues: {
       amount: "",
       frequency: "one-time",
-      start_date: getInitialDate(),
+      month: String(initialDate.getMonth() + 1),
+      day: String(initialDate.getDate()),
+      year: String(initialDate.getFullYear()),
     },
-  })
-
-  // Get the date boundaries
-  const fifteenYearsAgo = startOfDay(subYears(new Date(), 15));
-  const twentyYearsFromNow = startOfDay(addYears(new Date(), 20));
-
-  // Calculate years range
-  const startYear = fifteenYearsAgo.getFullYear();
-  const endYear = twentyYearsFromNow.getFullYear();
-  const yearsRange = endYear - startYear + 1;
-
-  // Function to determine if a date should be disabled
-  const isDateDisabled = (date: Date) => {
-    const startOfDate = startOfDay(date);
-    return (
-      isBefore(startOfDate, fifteenYearsAgo) || 
-      isAfter(startOfDate, twentyYearsFromNow) ||
-      isSameDay(startOfDate, fifteenYearsAgo) || 
-      isSameDay(startOfDate, twentyYearsFromNow)
-    );
-  };
+  });
 
   const handleSubmit = (values: ExtraInstallmentFormValues) => {
-    // IMPROVED approach to preserve date without timezone issues
-    // Extract date components from the selected date
-    const selectedDate = values.start_date;
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth();
-    const day = selectedDate.getDate();
+    // Convert the month, day, year to a Date object
+    const month = parseInt(values.month) - 1; // Months are 0-indexed in JS
+    const day = parseInt(values.day);
+    const year = parseInt(values.year);
     
-    // Create a new date with noon time to avoid timezone issues
-    const normalizedDate = new Date(year, month, day, 12, 0, 0, 0);
+    // Create a date object with noon time to avoid timezone issues
+    const date = new Date(year, month, day, 12, 0, 0, 0);
     
     // Log dates for debugging
-    console.log('Extra installment form - Original date:', selectedDate);
     console.log('Extra installment form - Date components:', { year, month: month + 1, day });
-    console.log('Extra installment form - Normalized date:', normalizedDate);
+    console.log('Extra installment form - Constructed date:', date);
     
-    // Pass the normalized date to parent
+    // Pass to the parent component
     onSubmit({
-      ...values,
-      start_date: normalizedDate
+      amount: values.amount,
+      frequency: values.frequency,
+      start_date: date
     });
     
     form.reset();
@@ -143,58 +164,86 @@ export function ExtraInstallmentForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <div className="grid grid-cols-[1fr_1fr_1fr_100px] gap-4">
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('extra_installments_section.form.amount', 'Amount', { ns: 'components' })}</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Input 
-                      placeholder={t('extra_installments_section.form.amount_placeholder', 'Enter amount', { ns: 'components' })}
-                      className="pl-8"
-                      {...field}
-                      onChange={(e) => {
-                        // Remove any non-numeric characters except decimal point
-                        const value = e.target.value.replace(/[^0-9.]/g, "")
-                        // Ensure only one decimal point
-                        const parts = value.split('.')
-                        const formattedValue = parts.length > 1 
-                          ? `${parts[0]}.${parts.slice(1).join('')}`
-                          : value
-                        field.onChange(formattedValue)
-                      }}
-                    />
-                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
-                      {currency === "USD" ? "$" : "S/"}
-                    </div>
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('extra_installments_section.form.amount', 'Amount', { ns: 'components' })}</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input 
+                    placeholder={t('extra_installments_section.form.amount_placeholder', 'Enter amount', { ns: 'components' })}
+                    className="pl-8"
+                    {...field}
+                    onChange={(e) => {
+                      // Remove any non-numeric characters except decimal point
+                      const value = e.target.value.replace(/[^0-9.]/g, "")
+                      // Ensure only one decimal point
+                      const parts = value.split('.')
+                      const formattedValue = parts.length > 1 
+                        ? `${parts[0]}.${parts.slice(1).join('')}`
+                        : value
+                      field.onChange(formattedValue)
+                    }}
+                  />
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
+                    {currency === "USD" ? "$" : "S/"}
                   </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
+        <FormField
+          control={form.control}
+          name="frequency"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('extra_installments_section.form.frequency', 'Frequency', { ns: 'components' })}</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={(value: "monthly" | "one-time") => field.onChange(value)}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('extra_installments_section.form.frequency_placeholder', 'Select frequency', { ns: 'components' })} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="monthly">{t('extra_installments_section.form.frequency_monthly', 'Monthly', { ns: 'components' })}</SelectItem>
+                  <SelectItem value="one-time">{t('extra_installments_section.form.frequency_one_time', 'One-time', { ns: 'components' })}</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-3 gap-4">
           <FormField
             control={form.control}
-            name="frequency"
+            name="month"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('extra_installments_section.form.frequency', 'Frequency', { ns: 'components' })}</FormLabel>
+                <FormLabel>{t('extra_installments_section.form.month', 'Month', { ns: 'components' })}</FormLabel>
                 <Select
                   value={field.value}
-                  onValueChange={(value: "monthly" | "one-time") => field.onChange(value)}
+                  onValueChange={field.onChange}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder={t('extra_installments_section.form.frequency_placeholder', 'Select frequency', { ns: 'components' })} />
+                      <SelectValue />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="monthly">{t('extra_installments_section.form.frequency_monthly', 'Monthly', { ns: 'components' })}</SelectItem>
-                    <SelectItem value="one-time">{t('extra_installments_section.form.frequency_one_time', 'One-time', { ns: 'components' })}</SelectItem>
+                    {months.map((month) => (
+                      <SelectItem key={month.value} value={month.value}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -204,67 +253,68 @@ export function ExtraInstallmentForm({
 
           <FormField
             control={form.control}
-            name="start_date"
+            name="day"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('extra_installments_section.form.first_date', 'First Date', { ns: 'components' })}</FormLabel>
-                <FormControl>
-                  <CalendarDatePicker
-                    date={{
-                      from: field.value || null,
-                      to: field.value || null
-                    }}
-                    onDateSelect={({ from }) => field.onChange(from)}
-                    variant="outline"
-                    numberOfMonths={1}
-                    yearsRange={yearsRange}
-                    fromYear={startYear}
-                    disabled={isDateDisabled}
-                    className={cn(
-                      "w-full justify-start text-left font-normal form-control-focus",
-                      !field.value && "text-muted-foreground"
-                    )}
-                    classNames={{
-                      caption: "text-sm font-medium",
-                      caption_label: "text-sm font-medium",
-                      nav: "space-x-1 flex items-center",
-                      nav_button: cn(
-                        "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-                      ),
-                      nav_button_previous: "absolute left-1",
-                      nav_button_next: "absolute right-1",
-                      table: "w-full border-collapse space-y-1",
-                      head_row: "flex",
-                      head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-                      row: "flex w-full mt-2",
-                      cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                      day: cn(
-                        "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
-                      ),
-                      day_selected:
-                        "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                      day_today: "bg-accent text-accent-foreground",
-                      day_outside: "text-muted-foreground opacity-50",
-                      day_disabled: "text-muted-foreground opacity-50",
-                      day_range_middle:
-                        "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                      day_hidden: "invisible",
-                    }}
-                  />
-                </FormControl>
+                <FormLabel>{t('extra_installments_section.form.day', 'Day', { ns: 'components' })}</FormLabel>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {days.map((day) => (
+                      <SelectItem key={day.value} value={day.value}>
+                        {day.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
 
+          <FormField
+            control={form.control}
+            name="year"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('extra_installments_section.form.year', 'Year', { ns: 'components' })}</FormLabel>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {years.map((year) => (
+                      <SelectItem key={year.value} value={year.value}>
+                        {year.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex justify-end">
           <Button 
             type="submit" 
             disabled={isLoading}
-            variant="outline"
-            className="self-end px-3 w-[100px]"
+            className="w-full"
           >
-            <Plus className="h-4 w-4 opacity-50" />
-            <span>{t('extra_installments_section.form.add_button', 'Add', { ns: 'components' })}</span>
+            {t('ui.confirm', 'Confirm', { ns: 'global' })}
           </Button>
         </div>
       </form>

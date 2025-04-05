@@ -5,6 +5,9 @@ import { ExtraInstallmentForm } from "./extra-installment-form"
 import { ExtraInstallmentsTable } from "./extra-installments-table"
 import { useTranslation } from "react-i18next"
 import { useQueryClient, useQuery } from "@tanstack/react-query"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
 
 interface ExtraInstallmentFormValues {
   start_date: Date
@@ -176,12 +179,23 @@ export function ExtraInstallmentsSection({
         <h3 className="text-lg font-medium">{t('extra_installments_section.title', 'Extra Installments', { ns: 'components' })}</h3>
       </div>
 
-      <ExtraInstallmentForm
-        onSubmit={handleSubmit}
-        isLoading={isLoading}
-        loanAmount={loanAmount}
-        currency={currency}
-      />
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            {t('ui.add', 'Add', { ns: 'global' })}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-4" align="start">
+          {/* <h3 className="text-lg font-medium mb-4">{t('extra_installments_section.popover_title', 'Extra Instalments', { ns: 'components' })}</h3> */}
+          <ExtraInstallmentForm
+            onSubmit={handleSubmit}
+            isLoading={isLoading}
+            loanAmount={loanAmount}
+            currency={currency}
+          />
+        </PopoverContent>
+      </Popover>
 
       <ExtraInstallmentsTable
         installments={installments}
