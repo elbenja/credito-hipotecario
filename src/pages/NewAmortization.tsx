@@ -364,7 +364,7 @@ export default function NewAmortization() {
           handlePropertyChange(data as unknown as Property)
           
           // Set a default name for the mortgage based on the property name
-          const defaultMortgageName = `${data.name} Mortgage`
+          const defaultMortgageName = `${data.name} ${t("amortization.name", { ns: "mortgages" })}`
           form.setValue("name", defaultMortgageName, { shouldValidate: true })
         }
       } catch (error) {
@@ -373,7 +373,7 @@ export default function NewAmortization() {
     }
     
     fetchPropertyFromUrl()
-  }, [propertyIdFromUrl, user, form, handlePropertyChange])
+  }, [propertyIdFromUrl, user, form, handlePropertyChange, t])
 
   return (
     <DashboardLayout
@@ -416,7 +416,7 @@ export default function NewAmortization() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("amortization.name", { ns: "mortgages" })}</FormLabel>
+                      <FormLabel>{t("amortization.label", { ns: "mortgages" })}</FormLabel>
                       <FormControl>
                         <Input placeholder={t("amortization.name", { ns: "mortgages" })} {...field} />
                       </FormControl>

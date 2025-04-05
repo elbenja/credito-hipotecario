@@ -35,6 +35,7 @@
   },
   "payment_scenarios": {
     "new_rate_form": {
+      "refinancing_options": "Opciones de Compra de Deuda",
       "success_title": "Éxito",
       "success_message": "Tasa actualizada exitosamente",
       "error_title": "Error",

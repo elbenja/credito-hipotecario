@@ -35,6 +35,7 @@
   },
   "payment_scenarios": {
     "new_rate_form": {
+      "refinancing_options": "Refinancing Options",
       "success_title": "Success",
       "success_message": "Rate updated successfully",
       "error_title": "Error",
