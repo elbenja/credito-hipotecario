@@ -55,6 +55,8 @@ export default function EditAmortization() {
   const propertyIdFromUrl = queryParams.get('propertyId')
   const [selectedPropertyFromUrl, setSelectedPropertyFromUrl] = useState<Property | null>(null)
   const [isCreatingNew, setIsCreatingNew] = useState(!id)
+  // Add state to track if extra installments exist
+  const [hasExtraInstallments, setHasExtraInstallments] = useState(false)
 
   const amortizationForm = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
@@ -521,6 +523,58 @@ export default function EditAmortization() {
 
   const [activeTab, setActiveTab] = useState("regular")
 
+  // Add effect to fetch and update extra installments state
+  useEffect(() => {
+    const fetchExtraInstallments = async () => {
+      if (!id || !user) return
+      
+      try {
+        const { data, error } = await supabase
+          .from("extra_installments")
+          .select("id")
+          .eq("amortization_id", id)
+          .limit(1)
+          
+        if (error) throw error
+        
+        // Update state based on whether any installments exist
+        setHasExtraInstallments(data.length > 0)
+      } catch (error) {
+        console.error("Error fetching extra installments:", error)
+      }
+    }
+    
+    if (!isCreatingNew) {
+      fetchExtraInstallments()
+    }
+  }, [id, user, isCreatingNew])
+
+  // Update the onInstallmentsChange callback to also update the hasExtraInstallments state
+  const handleInstallmentsChange = useCallback(async () => {
+    // First invalidate the queries
+    queryClient.invalidateQueries({
+      queryKey: ["scenarios", id]
+    })
+    
+    // Then check if any installments still exist
+    if (!id || !user) return
+    
+    try {
+      const { data, error } = await supabase
+        .from("extra_installments")
+        .select("id")
+        .eq("amortization_id", id)
+        .limit(1)
+        
+      if (error) throw error
+      
+      // Update state based on whether any installments exist
+      setHasExtraInstallments(data.length > 0)
+    } catch (error) {
+      console.error("Error checking extra installments:", error)
+    }
+  }, [queryClient, id, user])
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -666,22 +720,20 @@ export default function EditAmortization() {
                   <TabsContent value="accelerated">
                     {scenarios.accelerated && (
                       <>
-                        <AcceleratedPanelGraph
-                          scenario={scenarios.accelerated}
-                          regularScenario={scenarios.regular}
-                          currency={amortization.property.currency}
-                          installmentsPerYear={amortization.installments_per_year}
-                        />
+                        {hasExtraInstallments ? (
+                          <AcceleratedPanelGraph
+                            scenario={scenarios.accelerated}
+                            regularScenario={scenarios.regular}
+                            currency={amortization.property.currency}
+                            installmentsPerYear={amortization.installments_per_year}
+                          />
+                        ) : null}
                         <div className="mt-8">
                           <ExtraInstallmentsSection
                             amortizationId={id || ""}
                             currency={amortization.property.currency}
                             loanAmount={amortization.loan_amount}
-                            onInstallmentsChange={() => {
-                              queryClient.invalidateQueries({
-                                queryKey: ["scenarios", id]
-                              })
-                            }}
+                            onInstallmentsChange={handleInstallmentsChange}
                           />
                         </div>
                       </>
@@ -690,22 +742,20 @@ export default function EditAmortization() {
                   <TabsContent value="lower_payment">
                     {scenarios.lower_payment && (
                       <>
-                        <LowerPaymentPanelGraph
-                          scenario={scenarios.lower_payment}
-                          regularScenario={scenarios.regular}
-                          currency={amortization.property.currency}
-                          installmentsPerYear={amortization.installments_per_year}
-                        />
+                        {hasExtraInstallments ? (
+                          <LowerPaymentPanelGraph
+                            scenario={scenarios.lower_payment}
+                            regularScenario={scenarios.regular}
+                            currency={amortization.property.currency}
+                            installmentsPerYear={amortization.installments_per_year}
+                          />
+                        ) : null}
                         <div className="mt-8">
                           <ExtraInstallmentsSection
                             amortizationId={id || ""}
                             currency={amortization.property.currency}
                             loanAmount={amortization.loan_amount}
-                            onInstallmentsChange={() => {
-                              queryClient.invalidateQueries({
-                                queryKey: ["scenarios", id]
-                              })
-                            }}
+                            onInstallmentsChange={handleInstallmentsChange}
                           />
                         </div>
                       </>
