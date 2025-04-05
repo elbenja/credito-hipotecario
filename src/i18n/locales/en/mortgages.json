@@ -10,6 +10,7 @@
     "loan_amount": "Loan Amount",
     "loan_amount_formula": "= Property Cost - First Home Bonus - Down Payment",
     "down_payment": "Down Payment in ",
+    "amount_in": "Amount in",
     "property_percentage": "Property %",
     "interest_rate": "Interest Rate - EAR",
     "term": "Term",
@@ -26,7 +27,8 @@
       "double": "Double"
     },
     "insurance": {
-      "manual": "Manual"
+      "manual": "Manual",
+      "type": "Type"
     }
   },
   "scenarios": {

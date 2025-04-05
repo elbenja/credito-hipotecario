@@ -60,7 +60,8 @@ export default function NewAmortization() {
   const [regularScenario, setRegularScenario] = useState<ScenarioResult | null>(null)
   const [interestRateLimits] = useState({
     min_rate: 4,
-    max_rate: 18
+    max_rate: 18,
+    by_default: 8.5
   })
   const [activeTab, setActiveTab] = useState("regular")
   const [isLoadingScenarios, setIsLoadingScenarios] = useState(false)

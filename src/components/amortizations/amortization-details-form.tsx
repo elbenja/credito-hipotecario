@@ -135,13 +135,70 @@ export function AmortizationDetailsForm({
         <div className="space-y-4">
         <h4 className="font-medium mb-4"> {t('amortization.down_payment', { ns: 'mortgages' })}   </h4>
           <div className="grid grid-col-1 sm:grid-cols-[_1fr_16px_1fr] ">
+         
             <FormField
+              control={form.control}
+              name="property_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('amortization.property_percentage', 'Property %', { ns: 'mortgages' })}</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input 
+                        type="number" 
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        placeholder="0.00"
+                        className="pr-8"
+                        value={form.watch("down_payment") ? 
+                          Number(((parseFloat(form.watch("down_payment")) / selectedProperty.price_cost) * 100).toFixed(2)) : 
+                          ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          // Allow empty input
+                          if (value === "") {
+                            form.setValue("down_payment", "0", { shouldValidate: true })
+                            return
+                          }
+                          
+                          // Parse the percentage input and calculate down payment
+                          const percentage = parseFloat(value)
+                          if (!isNaN(percentage)) {
+                            const downPayment = (percentage / 100 * selectedProperty.price_cost).toFixed(2)
+                            form.setValue("down_payment", downPayment, { shouldValidate: true })
+                          }
+                        }}
+                        onBlur={(e) => {
+                          // Format to 2 decimal places when leaving the field
+                          const value = e.target.value
+                          if (value) {
+                            const percentage = parseFloat(value)
+                            if (!isNaN(percentage)) {
+                              e.target.value = percentage.toFixed(2)
+                              const downPayment = (percentage / 100 * selectedProperty.price_cost).toFixed(2)
+                              form.setValue("down_payment", downPayment, { shouldValidate: true })
+                            }
+                          }
+                        }}
+                      />
+                      <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted-foreground">
+                        %
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="h-8 sm:h-16 inline-flex justify-center items-end ">    =  </div>
+               <FormField
               control={form.control}
               name="down_payment"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Amount in
+                    {t('amortization.amount_in', { ns: 'mortgages' })}
                     {selectedProperty?.currency === 'USD' ? ' $' : ' S/'}
                   </FormLabel>
                   <FormControl>
@@ -154,56 +211,7 @@ export function AmortizationDetailsForm({
                 </FormItem>
               )}
             />
-             <div className="h-8 sm:h-16 inline-flex justify-center items-end ">    =  </div>
-            <FormField
-              control={form.control}
-              name="property_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('amortization.property_percentage', 'Property %', { ns: 'mortgages' })}</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      placeholder="0.00"
-                      value={form.watch("down_payment") ? 
-                        Number(((parseFloat(form.watch("down_payment")) / selectedProperty.price_cost) * 100).toFixed(2)) : 
-                        ""}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        // Allow empty input
-                        if (value === "") {
-                          form.setValue("down_payment", "0", { shouldValidate: true })
-                          return
-                        }
-                        
-                        // Parse the percentage input and calculate down payment
-                        const percentage = parseFloat(value)
-                        if (!isNaN(percentage)) {
-                          const downPayment = (percentage / 100 * selectedProperty.price_cost).toFixed(2)
-                          form.setValue("down_payment", downPayment, { shouldValidate: true })
-                        }
-                      }}
-                      onBlur={(e) => {
-                        // Format to 2 decimal places when leaving the field
-                        const value = e.target.value
-                        if (value) {
-                          const percentage = parseFloat(value)
-                          if (!isNaN(percentage)) {
-                            e.target.value = percentage.toFixed(2)
-                            const downPayment = (percentage / 100 * selectedProperty.price_cost).toFixed(2)
-                            form.setValue("down_payment", downPayment, { shouldValidate: true })
-                          }
-                        }
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+             
           </div>
           <h4 className="font-medium mt-4 mb-4"> {t('insurance.loan_protection', { ns: 'mortgages' })}  </h4>
           <div className="grid grid-col-1 sm:grid-cols-[_1fr_16px_1fr] "> 
@@ -212,7 +220,7 @@ export function AmortizationDetailsForm({
               name="loan_protection_type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Type </FormLabel>
+                  <FormLabel>{t('amortization.insurance.type', { ns: 'mortgages' })}</FormLabel>
                   <Select onValueChange={(value) => {
                     field.onChange(value)
                     form.trigger("loan_protection_type")
@@ -280,10 +288,20 @@ export function AmortizationDetailsForm({
                 <FormItem>
                   <FormLabel>{t('amortization.interest_rate', { ns: 'mortgages' })}</FormLabel>
                   <FormControl>
-                    <Input {...field} type="number" step="0.01" onChange={(e) => {
-                      field.onChange(e)
-                      form.trigger("interest_rate")
-                    }} />
+                    <div className="relative">
+                      <Input {...field} 
+                        type="number" 
+                        step="0.01" 
+                        className="pr-8"
+                        onChange={(e) => {
+                          field.onChange(e)
+                          form.trigger("interest_rate")
+                        }} 
+                      />
+                      <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted-foreground">
+                        %
+                      </div>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

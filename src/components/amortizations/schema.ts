@@ -45,12 +45,12 @@ export const defaultValues: AmortizationFormValues = {
   name: "",
   property_id: "",
   down_payment: "0",
-  interest_rate: "4",
+  interest_rate: "8.5",
   term_years: "20",
   installments_per_year: "12",
   first_installment_date: normalizeDate(startOfMonth(addMonths(new Date(), 1))),
-  loan_protection_type: "none",
-  loan_protection_insurance: "0",
+  loan_protection_type: "individual",
+  loan_protection_insurance: "0.028",
 }
 
 export type AmortizationFormValues = z.infer<typeof amortizationFormSchema>
