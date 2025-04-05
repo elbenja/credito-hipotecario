@@ -131,16 +131,17 @@ export function AmortizationDetailsForm({
       <Separator />
 
       <div>
-        <h4 className="font-medium mb-4">{t('amortization.title', { ns: 'mortgages' })}</h4>
+        {/* <h4 className="font-medium mb-4">{t('amortization.title', { ns: 'mortgages' })}</h4> */}
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <h4 className="font-medium mb-4"> {t('amortization.down_payment', { ns: 'mortgages' })}   </h4>
+          <div className="grid grid-col-1 sm:grid-cols-[_1fr_16px_1fr] ">
             <FormField
               control={form.control}
               name="down_payment"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    {t('amortization.down_payment', { ns: 'mortgages' })} 
+                    Amount in
                     {selectedProperty?.currency === 'USD' ? ' $' : ' S/'}
                   </FormLabel>
                   <FormControl>
@@ -153,7 +154,7 @@ export function AmortizationDetailsForm({
                 </FormItem>
               )}
             />
-            
+             <div className="h-8 sm:h-16 inline-flex justify-center items-end ">    =  </div>
             <FormField
               control={form.control}
               name="property_id"
@@ -204,14 +205,14 @@ export function AmortizationDetailsForm({
               )}
             />
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h4 className="font-medium mt-4 mb-4"> {t('insurance.loan_protection', { ns: 'mortgages' })}  </h4>
+          <div className="grid grid-col-1 sm:grid-cols-[_1fr_16px_1fr] "> 
             <FormField
               control={form.control}
               name="loan_protection_type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('insurance.loan_protection', { ns: 'mortgages' })} </FormLabel>
+                  <FormLabel>Type </FormLabel>
                   <Select onValueChange={(value) => {
                     field.onChange(value)
                     form.trigger("loan_protection_type")
@@ -232,6 +233,7 @@ export function AmortizationDetailsForm({
                 </FormItem>
               )}
             />
+             <div className="h-8 sm:h-16 inline-flex justify-center items-end ">    =  </div>
             <FormField
               control={form.control}
               name="loan_protection_insurance"

@@ -10,7 +10,8 @@
     "loan_amount": "Monto del Préstamo",
     "loan_amount_formula": "= Costo de Propiedad - Bono MiVivienda - Cuota Inicial",
     "down_payment": "Cuota Inicial en ",
-    "property_percentage": "Porcentaje de la Propiedad",
+    "amount_in": "Monto en",
+    "property_percentage": "% de la Propiedad",
     "interest_rate": "Interés - TEA",
     "term": "Plazo",
     "installments_per_year": "Cuotas/Año",
@@ -25,7 +26,8 @@
       "double": "Doble"
     },
     "insurance": {
-      "manual": "Manual"
+      "manual": "Manual",
+      "type": "Tipo"
     }
   },
   "scenarios": {
