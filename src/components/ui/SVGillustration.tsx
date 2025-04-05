@@ -6,7 +6,7 @@ interface SVGillustrationProps {
   className?: string;
 }
 
-const SVGillustration: React.FC<SVGillustrationProps> = ({ variant, className = 'w-36 h-80' }) => {
+const SVGillustration: React.FC<SVGillustrationProps> = ({ variant, className = 'size-120' }) => {
   const { theme } = useTheme();
 
   const svgVariants = {

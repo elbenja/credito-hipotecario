@@ -61,6 +61,16 @@ export default {
           rock800: "hsl(var(--rock-800))",
 
       },
+      size: {
+        '80': '20rem',
+        '120': '30rem',
+      },
+      width: {
+        '360': '90rem',
+      },
+      height: {
+        '400': '100rem',
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

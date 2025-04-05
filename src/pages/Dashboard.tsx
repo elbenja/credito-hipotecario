@@ -66,7 +66,9 @@ export default function Dashboard() {
   </div>
 
   <div className="w-full  max-w-xs  flex-col justify-center items-center gap-4"> 
-    <SVGillustration variant="ladyDog" className = 'size-100 sm:h-200 sm:w-160'/> 
+    <div className="flex items-center justify-center">
+      <SVGillustration variant="ladyDog" className = 'size-80 sm:h-96 sm:w-60'/> 
+    </div>
   </div>
 
 </div>
