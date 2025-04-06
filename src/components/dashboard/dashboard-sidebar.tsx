@@ -166,7 +166,7 @@ function CoursesIcon({ className }: { className?: string }) {
 }
 
 type DashboardSectionKey = 'dashboard' | 'properties' | 'mortgages' | 'rentals' | 'courses' | 'ai_chat' | 'account' | 'billing' | 'notifications'
-type AdminSectionKey = 'user_management' | 'early_access' | 'test'
+type AdminSectionKey = 'user_management' | 'early_access' | 'test' | 'subscription_plans'
 
 type NavItem = {
   title: DashboardSectionKey | AdminSectionKey
@@ -198,6 +198,7 @@ const mainNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
   { title: "user_management", namespace: "admin", icon: UsersRound, href: "/admin/users" },
+  { title: "subscription_plans", namespace: "admin", icon: CreditCard, href: "/admin/subscription-plans" },
   { title: "early_access", namespace: "admin", icon: UserCog, href: "/admin/early-access" },
   { title: "test", namespace: "admin", icon: Calculator, href: "/test-extra-installments" },
 ]

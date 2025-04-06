@@ -23,6 +23,7 @@ import ComingSoon from "./pages/coming-soon"
 import EarlyAccessAdmin from "./pages/admin/early-access"
 import UserManagement from "./pages/admin/user-management"
 import UpdatePassword from "./pages/update-password"
+import SubscriptionPlansManagement from "./pages/admin/subscription-plans"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,6 +67,14 @@ const App = () => (
                   element={
                     <ProtectedRoute>
                       <UserManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/subscription-plans"
+                  element={
+                    <ProtectedRoute>
+                      <SubscriptionPlansManagement />
                     </ProtectedRoute>
                   }
                 />

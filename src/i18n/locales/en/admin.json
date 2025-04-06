@@ -3,6 +3,7 @@
   "user_management": "User Management",
   "early_access": "Early Access",
   "test": "Test Extra Installments",
+  "subscription_plans": "Subscription Plans",
   "messages": {
     "admin_only": "Admin access only",
     "please_login": "Please log in",
