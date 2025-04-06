@@ -235,7 +235,8 @@ export default function Mortgages() {
                               <Copy className="mr-2 h-4 w-4" />
                               <span>{tGlobal('ui.duplicate')}</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => handleDelete(e, amortization)}>
+                            <DropdownMenuItem onClick={(e) => handleDelete(e, amortization)}
+                                className="text-red-600 focus:text-red-600">
                               <Trash2 className="mr-2 h-4 w-4" />
                               <span>{tGlobal('ui.delete')}</span>
                             </DropdownMenuItem>
