@@ -27,12 +27,19 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Download, Search, UserPlus, Mail, UserCog, Trash2, CreditCard } from "lucide-react"
+import { Download, Search, UserPlus, Mail, UserCog, Trash2, CreditCard, EllipsisVertical } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { Label } from "@/components/ui/label"
 import { PlanWithFeatures } from "@/types/subscription"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 type User = {
   id: string
@@ -556,24 +563,25 @@ export default function UserManagement() {
                       </Select>
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => sendPasswordResetEmail(user.email)}
-                          disabled={sendingResetEmail[user.id]}
-                        >
-                          <Mail className="mr-2 h-4 w-4" />
-                          {sendingResetEmail[user.id] ? t("admin:sending") : t("admin:send_reset_email")}
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => setUserToDelete(user)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <EllipsisVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => sendPasswordResetEmail(user.email)} disabled={sendingResetEmail[user.id]}>
+                            <Mail className="mr-2 h-4 w-4" />
+                            {sendingResetEmail[user.id] ? t("admin:sending") : t("admin:send_reset_email")}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => setUserToDelete(user)} className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {t("ui.delete")}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))

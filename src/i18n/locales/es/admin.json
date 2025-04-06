@@ -29,7 +29,7 @@
   "no_users_found": "No se encontraron usuarios",
   "never": "Nunca",
   "sending": "Enviando...",
-  "send_reset_email": "Enviar Correo de Restablecimiento",
+  "send_reset_email": "Enviar   Restablecimiento",
   "confirm_delete_user": "Confirmar Eliminación de Usuario",
   "delete_user_description": "¿Estás seguro de que deseas eliminar a {{email}}? Esta acción no se puede deshacer.",
   "warning_deleting_admin": "¡Advertencia: Estás eliminando un usuario administrador!",
