@@ -84,7 +84,7 @@ export function ExtraInstallmentsTable({
           ))}
           {installments.length === 0 && (
             <tr>
-              <td colSpan={5} className="p-2 text-sm text-center text-muted-foreground">
+              <td colSpan={5} className="p-4  text-center">
                 {t('extra_installments_section.table.no_installments', 'No extra installments added yet', { ns: 'components' })}
               </td>
             </tr>
