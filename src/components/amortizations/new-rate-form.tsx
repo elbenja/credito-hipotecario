@@ -26,6 +26,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { cn, formatDate, createLocalDate } from "@/lib/utils"
 import { newRateSchema, type NewRateFormValues } from "./new-rate-schema"
 
@@ -250,133 +255,165 @@ export function NewRateForm({
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-medium">{t('payment_scenarios.new_rate_form.refinancing_options', 'Refinancing Options', { ns: 'components' })}</h3>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className={className}>
-          <div className="space-y-4">
-            <div className="grid grid-cols-[1fr_1fr_1fr_100px] gap-4">
-              <FormField
-                control={form.control}
-                name="new_interest_rate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('payment_scenarios.new_rate_form.new_interest_rate', 'New Interest Rate', { ns: 'components' })}</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input 
-                          placeholder="" 
-                          {...field}
-                          type="number"
-                          step="0.1"
-                          min={4}
-                          max={18}
-                          className="pl-8"
-                          value={field.value || ""}
-                        />
-                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
-                          %
+      
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            {t('payment_scenarios.new_rate_form.add_button', 'Add', { ns: 'components' })}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-4" align="start">
+          {/* <h3 className="text-lg font-medium mb-4">{t('payment_scenarios.new_rate_form.new_rate_options', 'New Rate Options', { ns: 'components' })}</h3> */}
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className={className}>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="new_interest_rate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('payment_scenarios.new_rate_form.new_interest_rate', 'New Interest Rate', { ns: 'components' })}</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input 
+                            placeholder="" 
+                            {...field}
+                            type="number"
+                            step="0.1"
+                            min={4}
+                            max={18}
+                            className="pl-8"
+                            value={field.value || ""}
+                          />
+                          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
+                            %
+                          </div>
                         </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="new_term_years"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('payment_scenarios.new_rate_form.new_term', 'New Term', { ns: 'components' })}</FormLabel>
+                      <FormControl>
+                        <Select 
+                          onValueChange={(value) => field.onChange(value === "remaining" ? null : parseInt(value))}
+                          value={field.value?.toString() || "remaining"}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="10" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="remaining">{t('payment_scenarios.new_rate_form.remaining', 'Remaining Term', { ns: 'components' })}</SelectItem>
+                            {[5, 10, 15, 20, 25, 30].map((years) => (
+                              <SelectItem key={years} value={years.toString()}>
+                                {t('payment_scenarios.new_rate_form.years', '{{value}} years', { ns: 'components', value: years })}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="effective_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('payment_scenarios.new_rate_form.start_date', 'Start Date', { ns: 'components' })}</FormLabel>
+                      <div className="grid grid-cols-3 gap-2">
+                        <Select
+                          onValueChange={(month) => {
+                            const currentDate = field.value || new Date();
+                            const newDate = new Date(currentDate);
+                            newDate.setMonth(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(month));
+                            field.onChange(newDate);
+                          }}
+                          value={format(field.value || new Date(), "MMM")}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Month" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((month) => (
+                              <SelectItem key={month} value={month}>
+                                {month}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        
+                        <Select
+                          onValueChange={(day) => {
+                            const currentDate = field.value || new Date();
+                            const newDate = new Date(currentDate);
+                            newDate.setDate(parseInt(day));
+                            field.onChange(newDate);
+                          }}
+                          value={format(field.value || new Date(), "d")}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Day" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                              <SelectItem key={day} value={day.toString()}>
+                                {day}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        
+                        <Select
+                          onValueChange={(year) => {
+                            const currentDate = field.value || new Date();
+                            const newDate = new Date(currentDate);
+                            newDate.setFullYear(parseInt(year));
+                            field.onChange(newDate);
+                          }}
+                          value={format(field.value || new Date(), "yyyy")}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Year" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: yearsRange }, (_, i) => startYear + i).map((year) => (
+                              <SelectItem key={year} value={year.toString()}>
+                                {year}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="new_term_years"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('payment_scenarios.new_rate_form.new_term', 'New Term', { ns: 'components' })}</FormLabel>
-                    <FormControl>
-                      <Select 
-                        onValueChange={(value) => field.onChange(value === "remaining" ? null : parseInt(value))}
-                        value={field.value?.toString() || "remaining"}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="10" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="remaining">{t('payment_scenarios.new_rate_form.remaining', 'Remaining Term', { ns: 'components' })}</SelectItem>
-                          {[5, 10, 15, 20, 25, 30].map((years) => (
-                            <SelectItem key={years} value={years.toString()}>
-                              {t('payment_scenarios.new_rate_form.years', '{{value}} years', { ns: 'components', value: years })}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="effective_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('payment_scenarios.new_rate_form.start_date', 'Start Date', { ns: 'components' })}</FormLabel>
-                    <FormControl>
-                      <CalendarDatePicker
-                        date={{ from: field.value || null, to: field.value || null }}
-                        onDateSelect={({ from }) => field.onChange(from)}
-                        numberOfMonths={1}
-                        closeOnSelect={true}
-                        variant="outline"
-                        yearsRange={yearsRange}
-                        fromYear={startYear}
-                        disabled={isDateDisabled}
-                        className={cn(
-                          "w-full justify-start text-left font-normal form-control-focus",
-                          !field.value && "text-muted-foreground"
-                        )}
-                        classNames={{
-                          caption: "text-sm font-medium",
-                          caption_label: "text-sm font-medium",
-                          nav: "space-x-1 flex items-center",
-                          nav_button: cn(
-                            "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-                          ),
-                          nav_button_previous: "absolute left-1",
-                          nav_button_next: "absolute right-1",
-                          table: "w-full border-collapse space-y-1",
-                          head_row: "flex",
-                          head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-                          row: "flex w-full mt-2",
-                          cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                          day: cn(
-                            "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
-                          ),
-                          day_selected:
-                            "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                          day_today: "bg-accent text-accent-foreground",
-                          day_outside: "text-muted-foreground opacity-50",
-                          day_disabled: "text-muted-foreground opacity-50",
-                          day_range_middle:
-                            "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                          day_hidden: "invisible",
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button 
-                type="submit"
-                variant="outline"
-                className="self-end px-3 w-[100px]"
-                disabled={isSubmitting}
-              >
-                <Plus className="h-4 w-4 opacity-50" />
-                <span>{t('payment_scenarios.new_rate_form.add_button', 'Add', { ns: 'components' })}</span>
-              </Button>
-            </div>
-          </div>
-        </form>
-      </Form>
+                <Button 
+                  type="submit"
+                  className="w-full mt-2"
+                  disabled={isSubmitting}
+                >
+                
+                  {t('ui.confirm', 'Confirm', { ns: 'global' })}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </PopoverContent>
+      </Popover>
 
       <div className="rounded-md border">
         <table className="w-full">

@@ -549,6 +549,35 @@ export default function EditAmortization() {
     }
   }, [id, user, isCreatingNew])
 
+  // Add state to track if new rates exist
+  const [hasNewRates, setHasNewRates] = useState(false)
+  
+  // Add effect to fetch and update new rates state
+  useEffect(() => {
+    const fetchNewRates = async () => {
+      if (!id || !user) return
+      
+      try {
+        const { data, error } = await supabase
+          .from("new_rates")
+          .select("id")
+          .eq("amortization_id", id)
+          .limit(1)
+          
+        if (error) throw error
+        
+        // Update state based on whether any new rates exist
+        setHasNewRates(data.length > 0)
+      } catch (error) {
+        console.error("Error fetching new rates:", error)
+      }
+    }
+    
+    if (!isCreatingNew) {
+      fetchNewRates()
+    }
+  }, [id, user, isCreatingNew])
+
   // Update the onInstallmentsChange callback to also update the hasExtraInstallments state
   const handleInstallmentsChange = useCallback(async () => {
     // First invalidate the queries
@@ -764,19 +793,41 @@ export default function EditAmortization() {
                   <TabsContent value="new_rate">
                     {scenarios.new_rate && (
                       <>
-                        <NewRatePanelGraph
-                          scenario={scenarios.new_rate}
-                          regularScenario={scenarios.regular}
-                          currency={amortization.property.currency}
-                          installmentsPerYear={amortization.installments_per_year}
-                        />
+                        {hasNewRates ? (
+                          <NewRatePanelGraph
+                            scenario={scenarios.new_rate}
+                            regularScenario={scenarios.regular}
+                            currency={amortization.property.currency}
+                            installmentsPerYear={amortization.installments_per_year}
+                          />
+                        ) : null}
                         <div className="mt-8">
                           <NewRateForm
                             amortizationId={id || ""}
                             onSuccess={() => {
                               queryClient.invalidateQueries({
                                 queryKey: ["scenarios", id]
-                              })
+                              });
+                              
+                              // Check if any new rates exist after adding/deleting
+                              const checkNewRates = async () => {
+                                try {
+                                  const { data, error } = await supabase
+                                    .from("new_rates")
+                                    .select("id")
+                                    .eq("amortization_id", id)
+                                    .limit(1);
+                                    
+                                  if (error) throw error;
+                                  
+                                  // Update state based on whether any new rates exist
+                                  setHasNewRates(data.length > 0);
+                                } catch (error) {
+                                  console.error("Error checking new rates:", error);
+                                }
+                              };
+                              
+                              checkNewRates();
                             }}
                             className="space-y-4"
                             firstInstallmentDate={amortization.first_installment_date ? new Date(amortization.first_installment_date) : undefined}
