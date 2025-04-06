@@ -254,8 +254,12 @@ export function NewRateForm({
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-medium">{t('payment_scenarios.new_rate_form.refinancing_options', 'Refinancing Options', { ns: 'components' })}</h3>
+
+      <div className=" p-2 inline-flex justify-start items-center gap-8">
+          
       
+        <h3 className="text-lg font-medium">{t('payment_scenarios.new_rate_form.refinancing_options', 'Refinancing Options', { ns: 'components' })}</h3>
+        
       <Popover>
         <PopoverTrigger asChild>
           <Button size="sm"  className="flex items-center gap-2">
@@ -414,7 +418,7 @@ export function NewRateForm({
           </Form>
         </PopoverContent>
       </Popover>
-
+    </div>
       <div className="rounded-md border">
         <table className="w-full">
           <thead>

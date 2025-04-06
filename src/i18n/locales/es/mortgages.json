@@ -4,9 +4,10 @@
   "amortization": {
     "title": "Básico",
     "description": "Calcula tu amortización hipotecaria",
-    "new": "Nueva Amortización",
-    "edit": "Editar Amortización",
-    "name": "- Hipoteca",
+    "new": "Nueva Hipoteca",
+    "edit": "Editar Hipoteca",
+    "name": "Nombre",
+    "new_name": "- nueva hipoteca",
     "label": "Nombre de la Hipoteca",
     "loan_amount": "Monto del Préstamo",
     "loan_amount_formula": "= Costo de Propiedad - Bono MiVivienda - Cuota Inicial",

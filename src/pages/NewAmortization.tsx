@@ -364,7 +364,7 @@ export default function NewAmortization() {
           handlePropertyChange(data as unknown as Property)
           
           // Set a default name for the mortgage based on the property name
-          const defaultMortgageName = `${data.name} ${t("amortization.name", { ns: "mortgages" })}`
+          const defaultMortgageName = `${data.name} ${t("amortization.new_name")}`
           form.setValue("name", defaultMortgageName, { shouldValidate: true })
         }
       } catch (error) {

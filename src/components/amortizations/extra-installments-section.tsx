@@ -175,9 +175,9 @@ export function ExtraInstallmentsSection({
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className=" p-2 inline-flex justify-start items-center gap-8">
         <h3 className="text-lg font-medium">{t('extra_installments_section.title', 'Extra Installments', { ns: 'components' })}</h3>
-      </div>
+    
 
       <Popover>
         <PopoverTrigger asChild>
@@ -196,6 +196,7 @@ export function ExtraInstallmentsSection({
           />
         </PopoverContent>
       </Popover>
+    </div>
 
       <ExtraInstallmentsTable
         installments={installments}

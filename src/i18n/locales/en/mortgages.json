@@ -4,9 +4,10 @@
   "amortization": {
     "title": "Basics",
     "description": "Calculate your mortgage amortization",
-    "new": "New Amortization",
-    "edit": "Edit Amortization",
-    "name": "- Mortgage",
+    "new": "New Mortgage",
+    "edit": "Edit Mortgage",
+    "name": "Name",
+    "new_name": "- new mortgage",
     "label": "Mortgage Name",
     "loan_amount": "Loan Amount",
     "loan_amount_formula": "= Property Cost - First Home Bonus - Down Payment",
