@@ -1,4 +1,4 @@
-import { Building, Calculator, LayoutDashboard, MessageSquare, User, CreditCard, Bell, Settings, LogOut, ChevronsUpDown, UserCog, UsersRound } from "lucide-react"
+import { Building, Calculator, LayoutDashboard, MessageSquare, User, CreditCard, Bell, Settings, LogOut, ChevronsUpDown, UserCog, UsersRound, Sun, Moon } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -208,84 +208,89 @@ const footerNavItems: NavItem[] = [
 ]
 
 export function DashboardSidebar() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const navigate = useNavigate()
-  const { t } = useTranslation(['dashboard', 'admin', 'global'])
-  const { theme } = useTheme()
+  const { theme, setTheme } = useTheme()
+  const { t: tDashboard } = useTranslation('dashboard')
+  const { t: tAdmin } = useTranslation('admin')
+  const { t: tGlobal } = useTranslation('global')
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    if (user) {
-      // Check if user is admin
-      const checkAdminStatus = async () => {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single()
-        
-        if (data && !error) {
-          setIsAdmin(!!data.is_admin)
+    const checkIfAdmin = async () => {
+      try {
+        const { data: { is_admin }, error } = await supabase.rpc('is_admin')
+        if (error) {
+          console.error('Error checking admin status:', error)
+          return
         }
+        setIsAdmin(is_admin)
+      } catch (error) {
+        console.error('Error checking admin status:', error)
       }
-      
-      checkAdminStatus()
     }
-  }, [user])
 
-  const { data: propertiesWithAmortizations } = useQuery({
-    queryKey: ["properties-with-amortizations", user?.id],
-    queryFn: async () => {
-      if (!user) return []
-
-      const { data: properties, error: propertiesError } = await supabase
-        .from("properties")
-        .select(`
-          id,
-          name,
-          currency,
-          price_cost,
-          amortizations (
-            id,
-            name,
-            loan_amount,
-            down_payment,
-            interest_rate,
-            term_years,
-            installments_per_year,
-            installment_amount,
-            total_interest,
-            total_payment
-          )
-        `)
-        .eq("user_id", user.id)
-
-      if (propertiesError) {
-        console.error("Error fetching properties:", propertiesError)
-        return []
-      }
-
-      return properties || []
-    },
-    enabled: !!user,
-  })
-
-  const propertiesCount = propertiesWithAmortizations?.length || 0
-  const amortizationsCount = propertiesWithAmortizations?.reduce(
-    (acc, property) => acc + (property.amortizations?.length || 0),
-    0
-  ) || 0
+    checkIfAdmin()
+  }, [])
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    navigate("/")
+    try {
+      await signOut()
+      navigate('/')
+    } catch (error) {
+      console.error('Error logging out:', error)
+    }
   }
+
+  const { data: propertiesCount = 0 } = useQuery({
+    queryKey: ['properties-count'],
+    queryFn: async () => {
+      try {
+        const { count, error } = await supabase
+          .from('properties')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user?.id)
+
+        if (error) {
+          console.error('Error fetching properties:', error)
+          return 0
+        }
+
+        return count || 0
+      } catch (error) {
+        console.error('Error fetching properties:', error)
+        return 0
+      }
+    },
+  })
+
+  const { data: amortizationsCount = 0 } = useQuery({
+    queryKey: ['amortizations-count'],
+    queryFn: async () => {
+      try {
+        const { count, error } = await supabase
+          .from('amortizations')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user?.id)
+
+        if (error) {
+          console.error('Error fetching amortizations:', error)
+          return 0
+        }
+
+        return count || 0
+      } catch (error) {
+        console.error('Error fetching amortizations:', error)
+        return 0
+      }
+    },
+  })
 
   const getTranslation = (item: NavItem): string => {
     if (item.namespace === 'dashboard') {
-      return t(`sections.${item.title}`, { ns: 'dashboard' })
+      return tDashboard(`sections.${item.title}`)
     }
-    return t(item.title, { ns: 'admin' })
+    return tAdmin(item.title)
   }
 
   return (
@@ -298,7 +303,7 @@ export function DashboardSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{t('sections.main', { ns: 'dashboard' })}</SidebarGroupLabel>
+          <SidebarGroupLabel>{tDashboard('sections.main')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => (
@@ -308,7 +313,7 @@ export function DashboardSidebar() {
                       <item.icon className="h-4 w-4" />
                       <span>{getTranslation(item)}</span>
                       {item.badge && (
-                        <Badge variant="outline" className="ml-2 text-xs">{t('ui.coming', { ns: 'global' })}</Badge>
+                        <Badge variant="outline" className="ml-2 text-xs">{tGlobal('ui.coming')}</Badge>
                       )}
                       {item.title === "properties" && propertiesCount > 0 && (
                         <SidebarMenuBadge>{propertiesCount}</SidebarMenuBadge>
@@ -326,7 +331,7 @@ export function DashboardSidebar() {
         
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel>{t('title', { ns: 'admin' })}</SidebarGroupLabel>
+            <SidebarGroupLabel>{tAdmin('title')}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminNavItems.map((item) => (
@@ -353,11 +358,26 @@ export function DashboardSidebar() {
                   <SidebarMenuButton asChild>
                     <Link to={item.href} className="flex items-center gap-2">
                       <item.icon className="h-4 w-4" />
-                      <span>{t(`sections.${item.title}`, { ns: 'dashboard' })}</span>
+                      <span>{tDashboard(`sections.${item.title}`)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                  className="w-full justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    {theme === 'light' ? (
+                      <Sun className="h-4 w-4" />
+                    ) : (
+                      <Moon className="h-4 w-4" />
+                    )}
+                    <span>{tGlobal(theme === 'light' ? 'settings.light' : 'settings.dark')}</span>
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -373,31 +393,31 @@ export function DashboardSidebar() {
                     <DropdownMenuItem asChild>
                       <Link to="/profile" className="flex items-center">
                         <User className="mr-2 h-4 w-4" />
-                        <span>{t('sections.account', { ns: 'dashboard' })}</span>
+                        <span>{tDashboard('sections.account')}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/billing" className="flex items-center">
                         <CreditCard className="mr-2 h-4 w-4" />
-                        <span>{t('sections.billing', { ns: 'dashboard' })}</span>
+                        <span>{tDashboard('sections.billing')}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/notifications" className="flex items-center">
                         <Bell className="mr-2 h-4 w-4" />
-                        <span>{t('sections.notifications', { ns: 'dashboard' })}</span>
+                        <span>{tDashboard('sections.notifications')}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/settings" className="flex items-center">
                         <Settings className="mr-2 h-4 w-4" />
-                        <span>{t('settings.title', { ns: 'global' })}</span>
+                        <span>{tGlobal('settings.title')}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="flex items-center text-red-500 focus:text-red-500">
                       <LogOut className="mr-2 h-4 w-4" />
-                      <span>{t('ui.log_out', { ns: 'global' })}</span>
+                      <span>{tGlobal('ui.log_out')}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
