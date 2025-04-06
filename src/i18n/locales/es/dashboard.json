@@ -11,11 +11,14 @@
     "account": "Cuenta",
     "billing": "Facturación",
     "notifications": "Notificaciones",
-    "test_extra_installments": "Prueba de Cuotas Extra"
+    "test_extra_installments": "Probar Cuotas Extra",
+    "step_one": "Configura tus propiedades",
+    "step_two": "Prueba diferentes hipotecas y escenarios",
+    "step_three": "Elige la mejor opción y ahorra dinero"
   },
   "welcome": {
     "title": "Bienvenido a CreditoHipotecar.io",
-    "description": "Analiza diferentes escenarios y comprende claramente tu crédito.",
+    "description": "Analiza diferentes escenarios y entiende claramente tu crédito.",
     "get_started": "Comenzar"
   },
   "stats": {

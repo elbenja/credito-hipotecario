@@ -66,6 +66,10 @@ declare module 'i18next' {
           account: string;
           billing: string;
           notifications: string;
+          test_extra_installments: string;
+          step_one: string;
+          step_two: string;
+          step_three: string;
         };
       };
       admin: {

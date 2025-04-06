@@ -48,19 +48,19 @@ export default function Dashboard() {
       <div className="flex items-center space-x-4">
         <div className="text-2xl font-black flex size-16 sm:size-20 flex-none rounded-full bg-muted text-primary  items-center justify-center">01</div>   
         <Link to="/properties">
-          <p className="text-md sm:text-xl leading-none hover:text-brand">Set up your properties</p>
+          <p className="text-md sm:text-xl leading-none hover:text-brand">{t("sections.step_one")}</p>
         </Link>
       </div>
       <div className="flex items-center space-x-4">
           <div className="text-2xl font-black flex size-16 sm:size-20 flex-none rounded-full bg-muted text-primary items-center justify-center">02</div>   
           <Link to="/mortgages">
-            <p className="text-md sm:text-xl leading-none hover:text-brand">Try different mortgages and scenarios</p>
+            <p className="text-md sm:text-xl leading-none hover:text-brand">{t("sections.step_two")}</p>
           </Link>
         </div>
         <div className="flex items-center space-x-4">
           <div className="text-2xl font-black flex size-16 sm:size-20 flex-none rounded-full bg-muted text-primary  items-center justify-center">03
           </div>   
-          <p className="text-md sm:text-xl leading-none">Choose the best option and save money</p>
+          <p className="text-md sm:text-xl leading-none">{t("sections.step_three")}</p>
         </div>
 
   </div>

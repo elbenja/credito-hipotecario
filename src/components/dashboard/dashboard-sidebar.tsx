@@ -219,12 +219,25 @@ export function DashboardSidebar() {
   useEffect(() => {
     const checkIfAdmin = async () => {
       try {
-        const { data: { is_admin }, error } = await supabase.rpc('is_admin')
-        if (error) {
-          console.error('Error checking admin status:', error)
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        
+        if (authError || !user) {
+          console.error('Error checking admin status:', authError)
           return
         }
-        setIsAdmin(is_admin)
+
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single()
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError)
+          return
+        }
+
+        setIsAdmin(!!profile?.is_admin)
       } catch (error) {
         console.error('Error checking admin status:', error)
       }
