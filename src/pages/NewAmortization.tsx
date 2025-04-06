@@ -256,7 +256,7 @@ export default function NewAmortization() {
         interest: interestPayment,
         ending_balance: endingBalance,
         property_insurance: currentPropertyInsurance,
-        loan_protection_insurance: currentLoanProtection,
+        loan_insurance: currentLoanProtection,
         is_extra_payment: false,
         is_double_payment: isDoublePayment
       }
@@ -274,7 +274,7 @@ export default function NewAmortization() {
     
     // Calculate total interest and insurance
     const totalInterestAndInsurance = schedule.reduce((sum, payment) => 
-      sum + payment.interest + payment.property_insurance + payment.loan_protection_insurance, 0
+      sum + payment.interest + payment.property_insurance + payment.loan_insurance, 0
     )
     
     return {
@@ -302,7 +302,7 @@ export default function NewAmortization() {
         capital: payment.principal,
         interest: payment.interest,
         property_insurance: payment.property_insurance,
-        loan_insurance: payment.loan_protection_insurance,
+        loan_insurance: payment.loan_insurance,
         monthly_payment: payment.total_payment,
         is_different_from_base: false,
         beginning_balance: payment.beginning_balance,
@@ -534,7 +534,7 @@ export default function NewAmortization() {
                             description: t("messages.amortization_created", { ns: "mortgages" }),
                           })
 
-                          navigate("/mortgages")
+                          navigate(`/mortgages/${data.id}`)
                         } catch (error) {
                           console.error("Error saving amortization:", error)
                           toast({
@@ -553,108 +553,136 @@ export default function NewAmortization() {
 
             {/* Right Container */}
             <div className="w-full overflow-hidden flex-1 p-1 md:p-2 lg:p-4">
-              {selectedProperty ? (
-                (!regularScenario || isLoadingScenarios) ? (
-                  <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-2"></div>
-                    <div className="text-muted-foreground">{t("ui.loading", { ns: "global" })}</div>
-                  </div>
-                ) : (
-                  <Tabs 
-                    defaultValue="regular" 
-                    className="w-full"
-                    onValueChange={setActiveTab}
-                  >
-                    <TabsList className="grid w-full grid-cols-4">
-                      <TabsTrigger value="regular">{t("scenarios.regular.title", { ns: "mortgages" })}</TabsTrigger>
-                      <TabsTrigger value="accelerated">{t("scenarios.accelerated.title", { ns: "mortgages" })}</TabsTrigger>
-                      <TabsTrigger value="lower_payment">{t("scenarios.lower_payment.title", { ns: "mortgages" })}</TabsTrigger>
-                      <TabsTrigger value="new_rate">{t("scenarios.new_rate.title", { ns: "mortgages" })}</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="regular">
-                      {scenarios.regular && (
-                        <>
-                          <RegularPanelGraph
-                            scenario={scenarios.regular}
-                            currency={selectedProperty.currency}
-                            installmentsPerYear={parseInt(form.getValues("installments_per_year"))}
-                          />
-                          <div className="mt-8">
-                            <div className="p-4 rounded-md border border-blue-100 bg-blue-50">
-                              <p className="text-sm text-blue-800">
-                                {t("messages.save_to_access_all_features", "Save this amortization to access all scenario features such as extra payments and refinancing options", { ns: "mortgages" })}
-                              </p>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </TabsContent>
-                    <TabsContent value="accelerated">
-                      {scenarios.accelerated && scenarios.regular && (
-                        <>
-                          <AcceleratedPanelGraph
-                            scenario={scenarios.accelerated}
-                            regularScenario={scenarios.regular}
-                            currency={selectedProperty.currency}
-                            installmentsPerYear={parseInt(form.getValues("installments_per_year"))}
-                          />
-                          <div className="mt-8">
-                            <div className="p-4 rounded-md border border-amber-200 bg-amber-50 mb-6">
-                              <p className="text-sm text-amber-800">
-                                {t("messages.save_first_to_add_extra_payments", "Save this amortization first to add extra payments", { ns: "mortgages" })}
-                              </p>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </TabsContent>
-                    <TabsContent value="lower_payment">
-                      {scenarios.lower_payment && scenarios.regular && (
-                        <>
-                          <LowerPaymentPanelGraph
-                            scenario={scenarios.lower_payment}
-                            regularScenario={scenarios.regular}
-                            currency={selectedProperty.currency}
-                            installmentsPerYear={parseInt(form.getValues("installments_per_year"))}
-                          />
-                          <div className="mt-8">
-                            <div className="p-4 rounded-md border border-amber-200 bg-amber-50 mb-6">
-                              <p className="text-sm text-amber-800">
-                                {t("messages.save_first_to_add_extra_payments", "Save this amortization first to add extra payments", { ns: "mortgages" })}
-                              </p>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </TabsContent>
-                    <TabsContent value="new_rate">
-                      {scenarios.new_rate && scenarios.regular && (
-                        <>
-                          <NewRatePanelGraph
-                            scenario={scenarios.new_rate}
-                            regularScenario={scenarios.regular}
-                            currency={selectedProperty.currency}
-                            installmentsPerYear={parseInt(form.getValues("installments_per_year"))}
-                          />
-                          <div className="mt-8">
-                            <div className="p-4 rounded-md border border-amber-200 bg-amber-50 mb-6">
-                              <p className="text-sm text-amber-800">
-                                {t("messages.save_first_to_add_refinancing", "Save this amortization first to add refinancing options", { ns: "mortgages" })}
-                              </p>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </TabsContent>
-                  </Tabs>
-                )
-              ) : (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-muted-foreground">
-                    {t("messages.select_property_to_see_amortization", "Select a property to see amortization scenarios", { ns: "mortgages" })}
-                  </div>
-                </div>
-              )}
+              <div className="flex w-full flex-1 p-1 md:p-2 lg:p-4 items-center justify-center h-full">
+                <div className="flex flex-col gap-4 p-4 rounded-md border border-amber-400/10 bg-amber-500/5 ">
+                        <Button 
+                          variant="outline" size="lg"
+                          className="w-auto"
+                          onClick={async () => {
+                            try {
+                              if (!selectedProperty || !regularScenario) {
+                                toast({
+                                  variant: "destructive",
+                                  title: t("ui.error", { ns: "global" }),
+                                  description: t("messages.please_complete_all_fields", { ns: "mortgages" }),
+                                })
+                                return
+                              }
+
+                              const values = form.getValues();
+                              
+                              // Parse numeric values safely
+                              const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, ""))
+                              const interestRate = parseFloat(values.interest_rate)
+                              const termYears = parseInt(values.term_years)
+                              const installmentsPerYear = parseInt(values.installments_per_year)
+                              
+                              // Handle loan protection insurance based on type
+                              let loanProtectionInsurance = null;
+                              const loanProtectionType = values.loan_protection_type;
+                              
+                              switch (loanProtectionType) {
+                                case "individual":
+                                  loanProtectionInsurance = 0.028;
+                                  break;
+                                case "joint":
+                                  loanProtectionInsurance = 0.052;
+                                  break;
+                                case "custom":
+                                  const rawValue = parseFloat(values.loan_protection_insurance || "0");
+                                  if (isNaN(rawValue) || rawValue < 0 || rawValue > 1) {
+                                    throw new Error("Invalid loan protection insurance amount (must be between 0 and 1)");
+                                  }
+                                  loanProtectionInsurance = rawValue;
+                                  break;
+                                case "none":
+                                  loanProtectionInsurance = 0;
+                                  break;
+                                default:
+                                  throw new Error("Invalid loan protection type");
+                              }
+
+                              // Validate numeric values
+                              if (isNaN(downPayment) || downPayment < 0) {
+                                throw new Error("Invalid down payment amount")
+                              }
+                              if (isNaN(interestRate) || interestRate < 0) {
+                                throw new Error("Invalid interest rate")
+                              }
+                              if (isNaN(termYears) || termYears < 1) {
+                                throw new Error("Invalid term years")
+                              }
+                              if (![12, 14].includes(installmentsPerYear)) {
+                                throw new Error("Invalid installments per year")
+                              }
+
+                              // Calculate loan amount
+                              const loanAmount = selectedProperty.price_cost - downPayment
+
+                              // Validate loan amount
+                              if (loanAmount <= 0) {
+                                throw new Error("Down payment cannot be greater than property cost")
+                              }
+
+                              // Create a proper ISO date string preserving the exact date
+                              const inputDate = new Date(values.first_installment_date);
+                              const dateString = `${inputDate.getFullYear()}-${String(inputDate.getMonth() + 1).padStart(2, '0')}-${String(inputDate.getDate()).padStart(2, '0')}`;
+
+                              const amortizationData = {
+                                name: values.name,
+                                property_id: selectedProperty.id,
+                                user_id: user?.id,
+                                loan_amount: loanAmount,
+                                down_payment: downPayment,
+                                interest_rate: interestRate,
+                                term_years: termYears,
+                                installments_per_year: installmentsPerYear,
+                                installment_amount: regularScenario.summary.monthly_payment || 0,
+                                total_interest: regularScenario.summary.total_interest_and_insurance || 0,
+                                total_payment: regularScenario.summary.monthly_payment * regularScenario.summary.total_months || 0,
+                                loan_protection_type: values.loan_protection_type,
+                                loan_protection_insurance: loanProtectionInsurance,
+                                first_installment_date: dateString,
+                              }
+
+                              console.log('Saving amortization data:', amortizationData)
+                              const { data, error } = await supabase
+                                .from("amortizations")
+                                .insert(amortizationData)
+                                .select()
+                                .single()
+
+                              if (error) {
+                                console.error('Supabase error details:', error)
+                                throw error
+                              }
+
+                              toast({
+                                title: t("ui.success", { ns: "global" }),
+                                description: t("messages.amortization_created", { ns: "mortgages" }),
+                              })
+
+                              // Navigate to the edit page with the new ID
+                              navigate(`/mortgages/${data.id}`)
+                            } catch (error) {
+                              console.error("Error saving amortization:", error)
+                              toast({
+                                variant: "destructive",
+                                title: t("ui.error", { ns: "global" }),
+                                description: error instanceof Error ? error.message : t("messages.error_creating_amortization", { ns: "mortgages" }),
+                              })
+                            }
+                          }}
+                        >
+                        {t("ui.save", "Save", { ns: "global" })}
+                      </Button>
+                      <div className="text-sm text-amber-600">
+                        {t("messages.save_to_access_all_features", { ns: "mortgages" })}
+                      </div>
+                    </div>
+              </div>
+                
+           
             </div>
           </div>
         </div>

@@ -91,6 +91,7 @@
     "amortization_created": "Amortización creada exitosamente",
     "error_creating_amortization": "Hubo un error al crear la amortización",
     "amortization_duplicated": "Amortización duplicada exitosamente",
-    "error_duplicating_amortization": "Hubo un error al duplicar la amortización"
+    "error_duplicating_amortization": "Hubo un error al duplicar la amortización",
+    "save_to_access_all_features": "Guarda esta amortización para acceder a todas las funciones de escenarios como Amortizaciones Extra y Compra de Deuda"
   }
 } 

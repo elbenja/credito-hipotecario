@@ -92,6 +92,7 @@
     "amortization_created": "Amortization created successfully",
     "error_creating_amortization": "There was an error creating the amortization",
     "amortization_duplicated": "Amortization duplicated successfully",
-    "error_duplicating_amortization": "There was an error duplicating the amortization"
+    "error_duplicating_amortization": "There was an error duplicating the amortization",
+    "save_to_access_all_features": "Save this amortization to access all scenario features such as extra payments and refinancing options"
   }
 } 
