@@ -30,7 +30,7 @@
       "frequency": "Frequency",
       "date": "Date",
       "delete_tooltip": "Delete installment",
-      "no_installments": "No extra installments added yet"
+      "no_installments": "+ Add an extra installment"
     }
   },
   "payment_scenarios": {
@@ -53,7 +53,7 @@
         "start_date": "Start Date",
         "delete_tooltip": "Delete rate"
       },
-      "no_options": "No refinancing options added yet"
+      "no_options": "+ Add refinancing options"
     }
   }
 } 

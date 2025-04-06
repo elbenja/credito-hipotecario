@@ -258,7 +258,7 @@ export function NewRateForm({
       
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button size="sm"  className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             {t('payment_scenarios.new_rate_form.add_button', 'Add', { ns: 'components' })}
           </Button>
@@ -429,7 +429,7 @@ export function NewRateForm({
           <tbody>
             {refinancingOptions.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-2 text-center text-sm text-muted-foreground">
+                <td colSpan={5} className="p-4 text-center ">
                   {t('payment_scenarios.new_rate_form.no_options', 'No refinancing options added yet', { ns: 'components' })}
                 </td>
               </tr>

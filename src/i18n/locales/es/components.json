@@ -30,7 +30,7 @@
       "frequency": "Frecuencia",
       "date": "Fecha",
       "delete_tooltip": "Eliminar Amortización",
-      "no_installments": "Aún no hay Amortizaciones Extra"
+      "no_installments": "+ Agrega Amortizaciones Extra"
     }
   },
   "payment_scenarios": {
@@ -53,7 +53,7 @@
         "start_date": "Fecha de Inicio",
         "delete_tooltip": "Eliminar tasa"
       },
-      "no_options": "Aún no hay opciones de refinanciamiento"
+      "no_options": "+ Agrega una compra de deuda"
     }
   },
   "scenario_graphs": {

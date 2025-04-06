@@ -181,7 +181,7 @@ export function ExtraInstallmentsSection({
 
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button size="sm" className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             {t('ui.add', 'Add', { ns: 'global' })}
           </Button>

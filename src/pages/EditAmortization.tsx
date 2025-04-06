@@ -718,7 +718,7 @@ export default function EditAmortization() {
 
           {/* Right Container */}
           {!isCreatingNew && (
-            <div className="w-full overflow-hidden flex-1 p-1 md:p-2 lg:p-4">
+            <div className="w-screen sm:w-full overflow-hidden flex-1 pt-6 sm:pt-1 p-1 md:p-2 lg:p-4">
               {/* <h2 className="text-sm mb-6">{t("payment_scenarios_graphs")}</h2> */}
               {(!amortization || !scenarios || isLoadingScenarios) ? (
                 <div className="flex items-center justify-center h-64">
@@ -731,11 +731,11 @@ export default function EditAmortization() {
                   className="w-full"
                   onValueChange={setActiveTab}
                 >
-                  <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="regular">{t("scenarios.regular.title", { ns: "mortgages" })}</TabsTrigger>
-                    <TabsTrigger value="accelerated">{t("scenarios.accelerated.title", { ns: "mortgages" })}</TabsTrigger>
-                    <TabsTrigger value="lower_payment">{t("scenarios.lower_payment.title", { ns: "mortgages" })}</TabsTrigger>
-                    <TabsTrigger value="new_rate">{t("scenarios.new_rate.title", { ns: "mortgages" })}</TabsTrigger>
+                  <TabsList className="w-screen sm:w-auto flex inline-flex overflow-x-auto">
+                    <TabsTrigger className="flex-shrink-0 px-5" value="regular">{t("scenarios.regular.title", { ns: "mortgages" })}</TabsTrigger>
+                    <TabsTrigger className="flex-shrink-0 px-5" value="accelerated">{t("scenarios.accelerated.title", { ns: "mortgages" })}</TabsTrigger>
+                    <TabsTrigger className="flex-shrink-0 px-5" value="lower_payment">{t("scenarios.lower_payment.title", { ns: "mortgages" })}</TabsTrigger>
+                    <TabsTrigger className="flex-shrink-0 px-5" value="new_rate">{t("scenarios.new_rate.title", { ns: "mortgages" })}</TabsTrigger>
                   </TabsList>
                   <TabsContent value="regular">
                     {scenarios.regular && (
