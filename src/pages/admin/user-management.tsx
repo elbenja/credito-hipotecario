@@ -27,11 +27,12 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Download, Search, UserPlus, Mail, UserCog, Trash2 } from "lucide-react"
+import { Download, Search, UserPlus, Mail, UserCog, Trash2, CreditCard } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { Label } from "@/components/ui/label"
+import { PlanWithFeatures } from "@/types/subscription"
 
 type User = {
   id: string
@@ -39,6 +40,11 @@ type User = {
   created_at: string
   last_sign_in_at: string | null
   role: string
+  subscription?: {
+    id: string
+    plan_id: string
+    plan_name?: string
+  } | null
 }
 
 export default function UserManagement() {
@@ -56,6 +62,8 @@ export default function UserManagement() {
   const [sendingResetEmail, setSendingResetEmail] = useState<{[key: string]: boolean}>({})
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [subscriptionPlans, setSubscriptionPlans] = useState<PlanWithFeatures[]>([])
+  const [changingSubscription, setChangingSubscription] = useState<{[key: string]: boolean}>({})
 
   useEffect(() => {
     checkAdminStatus()
@@ -91,6 +99,7 @@ export default function UserManagement() {
 
       setIsAdmin(true)
       fetchUsers()
+      fetchSubscriptionPlans()
     } catch (error) {
       toast.error(t('admin:messages.error_checking_admin'))
       navigate('/')
@@ -99,14 +108,60 @@ export default function UserManagement() {
     }
   }
 
+  // Fetch available subscription plans
+  async function fetchSubscriptionPlans() {
+    try {
+      const { data, error } = await supabase
+        .from('subscription_plans')
+        .select('*, features:plan_features(*)')
+        .eq('is_active', true)
+        .order('price_monthly', { ascending: true });
+        
+      if (error) {
+        throw error;
+      }
+      
+      setSubscriptionPlans(data as PlanWithFeatures[]);
+    } catch (error) {
+      console.error("Error fetching subscription plans:", error)
+      toast.error("Failed to fetch subscription plans")
+    }
+  }
+
   async function fetchUsers() {
     try {
       // First try to get all users from auth.users using the RPC function
       try {
         const { data, error } = await supabase.rpc('get_all_users')
-        if (!error) {
-          setUsers(data || [])
-          return
+        
+        if (!error && data) {
+          // Fetch subscription data for all users
+          const userIds = data.map((user: User) => user.id);
+          const { data: subscriptions, error: subscriptionError } = await supabase
+            .from('user_subscriptions')
+            .select('id, user_id, plan_id, plan:plan_id(name)')
+            .in('user_id', userIds)
+            .eq('status', 'active');
+            
+          if (subscriptionError) {
+            console.error("Error fetching subscriptions:", subscriptionError);
+          }
+          
+          // Map subscriptions to users
+          const usersWithSubscriptions = data.map((user: User) => {
+            const userSubscription = subscriptions?.find(s => s.user_id === user.id);
+            return {
+              ...user,
+              subscription: userSubscription ? {
+                id: userSubscription.id,
+                plan_id: userSubscription.plan_id,
+                plan_name: userSubscription.plan?.name
+              } : null
+            };
+          });
+          
+          setUsers(usersWithSubscriptions);
+          return;
         }
         console.error("RPC error:", error)
       } catch (rpcError) {
@@ -131,7 +186,8 @@ export default function UserManagement() {
         email: profile.email || 'No email',
         role: profile.is_admin ? 'admin' : 'user',
         created_at: profile.created_at,
-        last_sign_in_at: null // We don't have this info in profiles table
+        last_sign_in_at: null, // We don't have this info in profiles table
+        subscription: null
       }))
       
       setUsers(transformedUsers)
@@ -276,6 +332,66 @@ export default function UserManagement() {
     }
   }
 
+  // Handle subscription plan change
+  async function changeSubscriptionPlan(userId: string, planId: string) {
+    setChangingSubscription({...changingSubscription, [userId]: true});
+    
+    try {
+      const today = new Date();
+      const nextMonth = new Date();
+      nextMonth.setMonth(today.getMonth() + 1);
+      
+      // Check if user already has a subscription
+      const { data: existingSubscription, error: checkError } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+      
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is the "no rows returned" error
+        throw checkError;
+      }
+      
+      if (existingSubscription) {
+        // Update existing subscription
+        const { error } = await supabase
+          .from('user_subscriptions')
+          .update({
+            plan_id: planId,
+            current_period_start: today.toISOString(),
+            current_period_end: nextMonth.toISOString(),
+            status: 'active',
+            cancel_at_period_end: false
+          })
+          .eq('id', existingSubscription.id);
+          
+        if (error) throw error;
+      } else {
+        // Create new subscription
+        const { error } = await supabase
+          .from('user_subscriptions')
+          .insert({
+            user_id: userId,
+            plan_id: planId,
+            status: 'active',
+            current_period_start: today.toISOString(),
+            current_period_end: nextMonth.toISOString()
+          });
+          
+        if (error) throw error;
+      }
+      
+      toast.success('Subscription plan updated successfully');
+      fetchUsers(); // Refresh the user list
+    } catch (error: any) {
+      console.error('Error changing subscription plan:', error);
+      toast.error(`Failed to update subscription: ${error.message || "Unknown error"}`);
+    } finally {
+      setChangingSubscription({...changingSubscription, [userId]: false});
+    }
+  }
+
   // If still checking admin status or not an admin, show loading
   if (isAdmin === null || !isAdmin) {
     return (
@@ -389,19 +505,20 @@ export default function UserManagement() {
                 <TableHead className="hidden sm:table-cell">{t("admin:role")}</TableHead>
                 <TableHead>{t("admin:created_at")}</TableHead>
                 <TableHead className="hidden sm:table-cell">{t("admin:last_sign_in")}</TableHead>
+                <TableHead className="hidden md:table-cell">Plan</TableHead>
                 <TableHead>{t("admin:actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
+                  <TableCell colSpan={6} className="text-center">
                     {t("admin:loading")}...
                   </TableCell>
                 </TableRow>
               ) : filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
+                  <TableCell colSpan={6} className="text-center">
                     {t("admin:no_users_found")}
                   </TableCell>
                 </TableRow>
@@ -417,6 +534,26 @@ export default function UserManagement() {
                       {user.last_sign_in_at
                         ? new Date(user.last_sign_in_at).toLocaleString()
                         : t("admin:never")}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Select 
+                        value={user.subscription?.plan_id || ''}
+                        onValueChange={(value) => changeSubscriptionPlan(user.id, value)}
+                        disabled={changingSubscription[user.id]}
+                      >
+                        <SelectTrigger className="w-40">
+                          <SelectValue placeholder="Select plan">
+                            {user.subscription?.plan_name || 'No plan'}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {subscriptionPlans.map((plan) => (
+                            <SelectItem key={plan.id} value={plan.id}>
+                              {plan.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">

@@ -483,6 +483,105 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          price_monthly: number
+          price_yearly: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          price_monthly: number
+          price_yearly: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          price_monthly?: number
+          price_yearly?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      plan_features: {
+        Row: {
+          id: string
+          plan_id: string
+          feature_name: string
+          feature_limit: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          plan_id: string
+          feature_name: string
+          feature_limit: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          plan_id?: string
+          feature_name?: string
+          feature_limit?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      user_subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          plan_id: string
+          status: string
+          current_period_start: string
+          current_period_end: string
+          cancel_at_period_end: boolean
+          payment_provider: string | null
+          payment_provider_subscription_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          plan_id: string
+          status?: string
+          current_period_start: string
+          current_period_end: string
+          cancel_at_period_end?: boolean
+          payment_provider?: string | null
+          payment_provider_subscription_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          plan_id?: string
+          status?: string
+          current_period_start?: string
+          current_period_end?: string
+          cancel_at_period_end?: boolean
+          payment_provider?: string | null
+          payment_provider_subscription_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
