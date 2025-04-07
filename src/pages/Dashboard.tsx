@@ -9,10 +9,13 @@ import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
 import { Separator } from "@radix-ui/react-separator"
 import { FeatureCounts } from "@/components/dashboard/feature-counts"
+import { PropertyCards } from "@/components/properties/property-cards"
+import { useState } from "react"
 
 export default function Dashboard() {
   const { t } = useTranslation(['dashboard', 'properties', 'mortgages'])
   const { user } = useAuth()
+  const [hasProperties, setHasProperties] = useState(false)
 
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription'],
@@ -43,47 +46,40 @@ export default function Dashboard() {
 {/* container start */}
 <div className="min-h-svh p-2 sm:p-6 flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 overflow-hidden">
   
-<div className="mb-10 inline-flex justify-start items-start gap-4 flex-wrap content-start">
+<div className="mb-10 items-start gap-4 content-start flex flex-wrap justify-start">
       <FeatureCounts />
-
-      <div className=" flex justify-start items-center gap-4">
+      <PropertyCards 
+        onPropertySelect={() => {}} 
+        onPropertiesLoaded={setHasProperties}
+      />
+      {!hasProperties && (
+        <div className="flex justify-start items-center gap-4">
           <div className="w-64 flex flex-col justify-start items-start gap-8 relative ml-12">
                <div className="flex items-center space-x-4">
-                <div className="text-xl font-black flex size-16  flex-none rounded-full bg-muted text-primary  items-center justify-center">01</div>   
+                <div className="text-lg font-black flex size-16  flex-none rounded-full bg-muted text-primary  items-center justify-center">01</div>   
                 <Link to="/properties">
-                  <p className="text-md sm:text-lg leading-none hover:text-brand">{t("sections.step_one")}</p>
+                  <p className="text-md  leading-none hover:text-brand">{t("sections.step_one")}</p>
                 </Link>
               </div>
               <div className="flex items-center space-x-4">
-                  <div className="text-xl font-black flex size-16  flex-none rounded-full bg-muted text-primary items-center justify-center">02</div>   
+                  <div className="text-lg font-black flex size-16  flex-none rounded-full bg-muted text-primary items-center justify-center">02</div>   
                   <Link to="/mortgages">
-                    <p className="text-md sm:text-lg leading-none hover:text-brand">{t("sections.step_two")}</p>
+                    <p className="text-md  leading-none hover:text-brand">{t("sections.step_two")}</p>
                   </Link>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <div className="text-xl font-black flex size-16  flex-none rounded-full bg-muted text-primary  items-center justify-center">03
+                  <div className="text-lg font-black flex size-16  flex-none rounded-full bg-muted text-primary  items-center justify-center">03
                   </div>   
-                  <p className="text-md sm:text-lg leading-none">{t("sections.step_three")}</p>
+                  <p className="text-md leading-none">{t("sections.step_three")}</p>
                 </div>
-
           </div>
           <div className="w-52 h-80 relative">
-            <SVGillustration variant="ladyDog" className = 'sm:h-80 sm:w-52'/> 
+            <SVGillustration variant="ladyDog" className="sm:h-80 sm:w-52"/> 
           </div>
-
-      </div> 
- 
-    
+        </div>
+      )}
    </div>
-
- 
-
- 
-
 </div>
-
-
-
     </DashboardLayout>
   )
 }

@@ -10,6 +10,7 @@ import { Property } from "./types";
 
 type PropertyCardsProps = {
   onPropertySelect?: (property: Property) => void;
+  onPropertiesLoaded?: (hasProperties: boolean) => void;
 }
 
 const formatCurrency = (amount: number, currency: string) => {
@@ -24,7 +25,7 @@ const formatCurrency = (amount: number, currency: string) => {
   return currency === 'PEN' ? formatted.replace('PEN', 'S/') : formatted;
 }
 
-export function PropertyCards({ onPropertySelect }: PropertyCardsProps) {
+export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: PropertyCardsProps) {
   const { t } = useTranslation(['properties', 'global']);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -46,6 +47,7 @@ export function PropertyCards({ onPropertySelect }: PropertyCardsProps) {
       if (error) throw error;
       
       setProperties(data || []);
+      onPropertiesLoaded?.(data?.length > 0);
       
       // Fetch mortgage counts for each property
       const counts: Record<string, number> = {};
@@ -110,22 +112,11 @@ export function PropertyCards({ onPropertySelect }: PropertyCardsProps) {
   }
 
   if (properties.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-60">
-        <p className="text-muted-foreground mb-4">{t('messages.no_properties', { ns: 'properties' })}</p>
-        <button 
-          className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground"
-          onClick={() => navigate('/properties')}
-        >
-          <Plus className="h-4 w-4" />
-          {t('actions.add_property', { ns: 'properties' })}
-        </button>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="flex gap-4 flex-wrap content-start">
+    <>
       {properties.map((property, index) => (
         <div 
           key={property.id} 
@@ -169,6 +160,6 @@ export function PropertyCards({ onPropertySelect }: PropertyCardsProps) {
           </div>
         </div>
       ))}
-    </div>
+    </>
   );
 } 
