@@ -6,7 +6,7 @@
   "new_property": "New Property",
   "property": "Property",
   "actions": {
-    "add_property": "Add Property",
+    "add_property": "Create Property",
     "edit_property": "Edit Property",
     "delete_property": "Delete Property"
   },

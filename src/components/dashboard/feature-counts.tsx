@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { FeatureName } from "@/types/subscription"
+import { Trash2, Plus } from "lucide-react"
 
 export interface FeatureCountsProps {
   className?: string
@@ -106,15 +107,16 @@ export function FeatureCounts({
 
   return (
     <div className={cn(
-      "w-32 h-80 relative rounded-3xl flex flex-col items-start p-4 gap-6",
+      "w-32 h-80 relative rounded-3xl flex flex-col justify-between items-start p-4 gap-6",
+   
       containerStyles[variant],
       className
     )}>
-      <Badge variant="plan" className="text-xs">
-        {subscriptionData?.subscription_plan?.name || 'Free'}
-      </Badge>
+       <div className="self-stretch flex flex-col justify-start items-start gap-6">
+          <Badge variant="plan" className="text-xs">
+            {subscriptionData?.subscription_plan?.name || 'Free'}
+          </Badge>
       
-      <div className="self-stretch flex flex-col justify-start items-start gap-1">
         <div className="self-stretch flex flex-col justify-start items-start gap-5">
           <FeatureCounter 
             count={propertiesCount} 
@@ -135,7 +137,16 @@ export function FeatureCounts({
           />
         </div>
       </div>
-<button>add</button>
+<button className="text-xs h-8 flex  gap-2">
+  
+<div className="flex-1 text-right text-sm font-medium leading-none">
+  Create property
+  </div>
+  <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center ">
+  <Plus className="h-4 w-4" />
+  </div>
+  
+  </button>
 
     </div>
   )

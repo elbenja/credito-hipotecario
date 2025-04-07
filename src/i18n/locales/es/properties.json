@@ -6,7 +6,7 @@
   "new_property": "Nueva Propiedad",
   "property": "Propiedad",
   "actions": {
-    "add_property": "Agregar Propiedad",
+    "add_property": "Crear Propiedad",
     "edit_property": "Editar Propiedad",
     "delete_property": "Eliminar Propiedad"
   },

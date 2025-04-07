@@ -51,7 +51,7 @@ export function FeatureCounter({
   const percentage = maxLimit > 0 ? Math.min(Math.round((count / maxLimit) * 100), 100) : 0
   
   return (
-    <div className="space-y-2 w-full">
+    <div className="space-y-1 w-full">
       <div className={`relative h-1 w-full overflow-hidden rounded-[99px] ${progressBgColor}`}>
         <div 
           className={`h-full flex-1 ${progressColor} transition-all`}

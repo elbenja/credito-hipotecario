@@ -4,7 +4,7 @@
   "amortization": {
     "title": "Básico",
     "description": "Calcula tu amortización hipotecaria",
-    "new": "Nueva Hipoteca",
+    "new": "Crear Hipoteca",
     "edit": "Editar Hipoteca",
     "name": "Nombre",
     "new_name": "- nueva hipoteca",
