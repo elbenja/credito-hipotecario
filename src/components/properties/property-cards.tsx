@@ -7,10 +7,69 @@ import { Plus, Pencil } from "lucide-react";
 import SVGillustration from "@/components/ui/SVGillustration";
 import { useNavigate } from "react-router-dom";
 import { Property } from "./types";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { PropertyForm } from "@/components/properties/property-form";
 
 type PropertyCardsProps = {
   onPropertySelect?: (property: Property) => void;
   onPropertiesLoaded?: (hasProperties: boolean) => void;
+}
+
+interface PropertyEditSheetProps {
+  property: Property;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onPropertyUpdate?: (property: Property) => void;
+}
+
+function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: PropertyEditSheetProps) {
+  const { t } = useTranslation(['global', 'properties', 'dashboard']);
+  const [bonusRules, setBonusRules] = useState<any[]>([]);
+
+  const handlePropertyUpdate = async () => {
+    const { data, error } = await supabase
+      .from("properties")
+      .select("*")
+      .eq('id', property.id)
+      .single();
+
+    if (error) {
+      console.error("Error fetching updated property:", error);
+      return;
+    }
+
+    onOpenChange(false);
+    if (onPropertyUpdate) {
+      onPropertyUpdate(data);
+    }
+  };
+
+  if (!property) {
+    return null;
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-full sm:max-w-xl overflow-y-auto" side="right">
+        <SheetHeader>
+          <SheetTitle>{t("ui.edit", { ns: "global" })}</SheetTitle>
+        </SheetHeader>
+        <div className="mt-8">
+          <PropertyForm
+            onSuccess={handlePropertyUpdate}
+            onClose={() => onOpenChange(false)}
+            selectedProperty={property}
+            bonusRules={bonusRules}
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
 }
 
 const formatCurrency = (amount: number, currency: string) => {
@@ -33,6 +92,8 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [mortgageCounts, setMortgageCounts] = useState<Record<string, number>>({});
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [propertyEditSheetOpen, setPropertyEditSheetOpen] = useState(false);
 
   const loadProperties = async () => {
     setIsLoading(true);
@@ -74,9 +135,15 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
 
   const handleEditProperty = (e: React.MouseEvent, property: Property) => {
     e.stopPropagation();
-    if (onPropertySelect) {
-      onPropertySelect(property);
-    }
+    setEditingProperty(property);
+    setPropertyEditSheetOpen(true);
+  };
+
+  const handlePropertyUpdate = (updatedProperty: Property) => {
+    setProperties(properties.map(p => 
+      p.id === updatedProperty.id ? updatedProperty : p
+    ));
+    loadProperties(); // Refresh the list
   };
 
   const handleAddMortgage = (e: React.MouseEvent, property: Property) => {
@@ -160,6 +227,17 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
           </div>
         </div>
       ))}
+      {editingProperty && (
+        <PropertyEditSheet
+          property={editingProperty}
+          open={propertyEditSheetOpen}
+          onOpenChange={(open) => {
+            setPropertyEditSheetOpen(open);
+            if (!open) setEditingProperty(null);
+          }}
+          onPropertyUpdate={handlePropertyUpdate}
+        />
+      )}
     </>
   );
 } 
