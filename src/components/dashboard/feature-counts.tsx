@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
@@ -28,6 +28,7 @@ export function FeatureCounts({
   const { t } = useTranslation(['dashboard', 'properties', 'mortgages'])
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
+  const queryClient = useQueryClient()
 
   // Fetch user subscription with plan and feature limits
   const { data: subscriptionData } = useQuery({
@@ -49,7 +50,9 @@ export function FeatureCounts({
       if (error) throw error
       return data
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000 // 10 minutes
   })
   
   // Fetch properties count
@@ -64,7 +67,9 @@ export function FeatureCounts({
       if (error) throw error
       return count || 0
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 2 * 60 * 1000 // 2 minutes
   })
 
   // Fetch mortgages count
@@ -79,7 +84,9 @@ export function FeatureCounts({
       if (error) throw error
       return count || 0
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 2 * 60 * 1000 // 2 minutes
   })
   
   // Container background and text color based on variant
@@ -109,8 +116,11 @@ export function FeatureCounts({
   const propertyLimit = getFeatureLimit('properties')
   const mortgageLimit = getFeatureLimit('mortgages')
 
-  const handlePropertyAdded = () => {
-    refetchPropertiesCount()
+  const handlePropertyAdded = async () => {
+    // Invalidate and refetch to ensure fresh data
+    await queryClient.invalidateQueries({ queryKey: ['properties-count', user?.id] })
+    // Close the sheet after successful property creation
+    setOpen(false)
   }
 
   return (
