@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
 import { Separator } from "@radix-ui/react-separator"
+import { FeatureCounts } from "@/components/dashboard/feature-counts"
 
 export default function Dashboard() {
   const { t } = useTranslation(['dashboard', 'properties', 'mortgages'])
@@ -43,40 +44,7 @@ export default function Dashboard() {
 <div className="min-h-svh p-2 sm:p-6 flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 overflow-hidden">
   
 <div className="mb-10 inline-flex justify-start items-start gap-4 flex-wrap content-start">
-      <div className="w-32 h-80 relative bg-primary rounded-3xl flex flex-col items-start p-6">
-        <Badge variant="plan" className="text-sm ">
-          {subscription?.subscription_plan?.name || 'Free'}
-        </Badge>
-<Separator className="w-full bg-background/40 my-4"></Separator>
-
-        <div className="self-stretch flex flex-col justify-start items-start gap-1">
-          <div className="progress-component self-stretch h-1 bg-slate-700 rounded-[99px] inline-flex justify-start items-center gap-0.5">
-            <div className="w-14 h-1 bg-amber-300 rounded-[99px]"></div>
-          </div>
-          <div className="self-stretch flex flex-col justify-center items-start gap-0.5">
-            <div className="counter text-right justify-start text-white text-xl font-semibold font-['Inter'] leading-tight">1</div>
-            <div className="counter-label justify-start text-white text-xs font-normal font-['Inter'] leading-none">Properties</div>
-          </div>
-      </div>
-
-      </div>
-
-      {/*  <Card className="w-32 h-80 relative bg-black rounded-3xl gap-4">
-       <CardHeader>
-          <CardTitle> 
-             <Badge variant="plan" className="text-sm">
-          {subscription?.subscription_plan?.name || 'Free'}
-        </Badge>
-        </CardTitle>
-     
-        </CardHeader>
-       {/*   <CardContent>
-          <p>Card Content</p>
-        </CardContent>
-        <CardFooter>
-          <p>Card Footer</p>
-        </CardFooter> 
-      </Card>*/}
+      <FeatureCounts />
 
       <div className=" flex justify-start items-center gap-4">
           <div className="w-64 flex flex-col justify-start items-start gap-8 relative ml-12">

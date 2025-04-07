@@ -317,7 +317,7 @@ export default function NewAmortization() {
     const calculatedScenarios = calculateScenarios(values)
     setScenarios(calculatedScenarios)
     setRegularScenario(calculatedScenarios.regular)
-    console.log('Scenarios updated:', { calculatedScenarios, selectedProperty })
+    // console.log('Scenarios updated:', { calculatedScenarios, selectedProperty })
   }
 
   // Subscribe to form changes
@@ -555,7 +555,7 @@ export default function NewAmortization() {
             <div className="w-full overflow-hidden flex-1 p-1 md:p-2 lg:p-4">
               <div className="flex w-full flex-1 p-1 md:p-2 lg:p-4 items-center justify-center h-full">
                 <div className="flex flex-col gap-4 p-4 rounded-md border border-amber-400/10 bg-amber-500/5 ">
-                        <Button 
+                        {/* <Button 
                           variant="outline" size="lg"
                           className="w-auto"
                           onClick={async () => {
@@ -675,7 +675,7 @@ export default function NewAmortization() {
                           }}
                         >
                         {t("ui.save", "Save", { ns: "global" })}
-                      </Button>
+                      </Button> */}
                       <div className="text-sm text-amber-600">
                         {t("messages.save_to_access_all_features", { ns: "mortgages" })}
                       </div>
