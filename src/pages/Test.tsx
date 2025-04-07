@@ -14,6 +14,10 @@ import { cn } from "@/lib/utils";
 import { addYears, subYears, startOfDay, isBefore, isAfter, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import { useTranslation } from "react-i18next";
+import SVGillustration from "@/components/ui/SVGillustration";
+import { Plus, Pencil } from "lucide-react";
+import { PropertyCards } from "@/components/properties/property-cards";
+
 
 type FormValues = {
   datePicker: DateRange;
@@ -54,15 +58,20 @@ export default function Test() {
   const locale = i18n.language === 'es' ? es : undefined;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Form {...form}>
+    <div className="min-h-screen  items-center justify-start bg-background flex gap-4 flex-wrap content-center p-6">
+   
+
+          <PropertyCards />
+
+
+      {/* <Form {...form}>
         <FormField
           control={form.control}
           name="datePicker"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-md font-normal">
-                {t("select_date")}
+                {t("ui.select")}
               </FormLabel>
               <FormControl>
                 <CalendarDatePicker
@@ -112,7 +121,8 @@ export default function Test() {
             </FormItem>
           )}
         />
-      </Form>
+      </Form> */}
+
     </div>
   );
 }
