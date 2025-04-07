@@ -80,7 +80,7 @@ export function EditableHeading({
       <Component className={cn(sizeClasses[size])}>
         {value}
       </Component>
-      <Pencil className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 absolute -right-6 top-1/2 -translate-y-1/2 transition-opacity" />
+      <Pencil className="w-4 h-4 text-foreground opacity-40 group-hover:opacity-100 absolute -right-6 top-1/2 -translate-y-1/2 transition-opacity" />
     </div>
   )
 }

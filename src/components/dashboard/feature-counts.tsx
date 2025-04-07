@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { FeatureName } from "@/types/subscription"
 import { Trash2, Plus } from "lucide-react"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { PropertyForm } from "@/components/properties/property-form"
+import { useState } from "react"
 
 export interface FeatureCountsProps {
   className?: string
@@ -24,6 +27,7 @@ export function FeatureCounts({
 }: FeatureCountsProps) {
   const { t } = useTranslation(['dashboard', 'properties', 'mortgages'])
   const { user } = useAuth()
+  const [open, setOpen] = useState(false)
 
   // Fetch user subscription with plan and feature limits
   const { data: subscriptionData } = useQuery({
@@ -49,7 +53,7 @@ export function FeatureCounts({
   })
   
   // Fetch properties count
-  const { data: propertiesCount = 0 } = useQuery({
+  const { data: propertiesCount = 0, refetch: refetchPropertiesCount } = useQuery({
     queryKey: ['properties-count', user?.id],
     queryFn: async () => {
       const { count, error } = await supabase
@@ -105,6 +109,10 @@ export function FeatureCounts({
   const propertyLimit = getFeatureLimit('properties')
   const mortgageLimit = getFeatureLimit('mortgages')
 
+  const handlePropertyAdded = () => {
+    refetchPropertiesCount()
+  }
+
   return (
     <div className={cn(
       "w-32 h-80 relative rounded-3xl flex flex-col justify-between items-start p-4 gap-6",
@@ -137,17 +145,34 @@ export function FeatureCounts({
           />
         </div>
       </div>
-<button className="text-xs h-8 flex  gap-2">
-  
-<div className="flex-1 text-right text-sm font-medium leading-none">
-  Create property
-  </div>
-  <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center ">
-  <Plus className="h-4 w-4" />
-  </div>
-  
-  </button>
-
+    
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <button className="text-xs h-8 flex gap-2">  
+          <div className="flex-1 text-right text-sm font-medium leading-none">
+            Create property
+          </div>
+          <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
+            <Plus className="h-4 w-4" />
+          </div>
+        </button>
+      </SheetTrigger>
+      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>
+            {t('actions.add_property', { ns: 'properties' })}
+          </SheetTitle>
+        </SheetHeader>
+        <div className="mt-8">
+          <PropertyForm
+            onSuccess={handlePropertyAdded}
+            onClose={() => setOpen(false)}
+            selectedProperty={null}
+            bonusRules={[]}
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
     </div>
   )
 } 

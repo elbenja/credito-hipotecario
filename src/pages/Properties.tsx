@@ -142,9 +142,7 @@ export default function Properties() {
           <SheetTitle>
             {selectedProperty ? t('actions.edit_property', { ns: 'properties' }) : t('actions.add_property', { ns: 'properties' })}
           </SheetTitle>
-          {/* <p id="property-form-description" className="text-sm text-muted-foreground"> 
-            {selectedProperty ? t('edit_property_description', { ns: 'properties' }) : t('add_property_description', { ns: 'properties' })}
-          </p> */}
+     
         </SheetHeader>
         <div className="mt-8">
           <PropertyForm
