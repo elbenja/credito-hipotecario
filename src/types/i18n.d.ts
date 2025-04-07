@@ -25,6 +25,10 @@ declare module 'i18next' {
           view: string;
           coming: string;
           log_out: string;
+          click_to_edit: string;
+          duplicate: string;
+          open_menu: string;
+          add: string;
         };
         settings: {
           title: string;
