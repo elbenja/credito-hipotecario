@@ -119,6 +119,15 @@ export function FeatureCounts({
   const handlePropertyAdded = async () => {
     // Invalidate and refetch to ensure fresh data
     await queryClient.invalidateQueries({ queryKey: ['properties-count', user?.id] })
+    
+    // Broadcast property created message
+    const channel = supabase.channel('property-updates');
+    channel.send({
+      type: 'broadcast',
+      event: 'property-created',
+      payload: { action: 'create', userId: user?.id },
+    });
+    
     // Close the sheet after successful property creation
     setOpen(false)
   }

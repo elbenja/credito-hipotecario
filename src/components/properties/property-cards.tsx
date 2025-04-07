@@ -14,6 +14,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { PropertyForm } from "@/components/properties/property-form";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 type PropertyCardsProps = {
   onPropertySelect?: (property: Property) => void;
@@ -29,7 +30,9 @@ interface PropertyEditSheetProps {
 
 function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: PropertyEditSheetProps) {
   const { t } = useTranslation(['global', 'properties', 'dashboard']);
+  const { user } = useAuth();
   const [bonusRules, setBonusRules] = useState<any[]>([]);
+  const queryClient = useQueryClient();
 
   const handlePropertyUpdate = async () => {
     const { data, error } = await supabase
@@ -47,6 +50,18 @@ function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: P
     if (onPropertyUpdate) {
       onPropertyUpdate(data);
     }
+    
+    // Broadcast property update message
+    const channel = supabase.channel('property-updates');
+    channel.send({
+      type: 'broadcast',
+      event: 'property-updated',
+      payload: { action: 'update', userId: user?.id },
+    });
+    
+    // Invalidate queries
+    queryClient.invalidateQueries({ queryKey: ['properties'] });
+    queryClient.invalidateQueries({ queryKey: ['properties-count'] });
   };
 
   if (!property) {
@@ -85,53 +100,81 @@ const formatCurrency = (amount: number, currency: string) => {
 }
 
 export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: PropertyCardsProps) {
-  const { t } = useTranslation(['properties', 'global']);
+  const { t } = useTranslation(['properties', 'global', 'dashboard']);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [mortgageCounts, setMortgageCounts] = useState<Record<string, number>>({});
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [propertyEditSheetOpen, setPropertyEditSheetOpen] = useState(false);
 
-  const loadProperties = async () => {
-    setIsLoading(true);
-    try {
-      if (!user) return;
-
+  // Use React Query to fetch properties
+  const { data: properties = [], isLoading, refetch } = useQuery({
+    queryKey: ['properties', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
       const { data, error } = await supabase
         .from('properties')
         .select('*')
         .eq('user_id', user.id);
 
       if (error) throw error;
-      
-      setProperties(data || []);
-      onPropertiesLoaded?.(data?.length > 0);
-      
-      // Fetch mortgage counts for each property
+      return data || [];
+    },
+    enabled: !!user?.id,
+    staleTime: 10 * 1000, // 10 seconds
+    gcTime: 2 * 60 * 1000 // 2 minutes
+  });
+
+  // Update mortgage counts and onPropertiesLoaded callback
+  useEffect(() => {
+    onPropertiesLoaded?.(properties.length > 0);
+    
+    const fetchMortgageCounts = async () => {
       const counts: Record<string, number> = {};
-      for (const property of data || []) {
+      for (const property of properties) {
         counts[property.id] = await getPropertyMortgagesCount(property.id);
       }
       setMortgageCounts(counts);
-      
-    } catch (error) {
-      console.error('Error loading properties:', error);
-      toast({
-        variant: "destructive",
-        title: t('global:ui.error'),
-        description: t('properties:messages.error_loading_properties'),
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+    
+    fetchMortgageCounts();
+  }, [properties, onPropertiesLoaded]);
 
+  // Subscribe to broadcast messages for property updates
   useEffect(() => {
-    loadProperties();
-  }, [user]);
+    if (!user) return;
+
+    // Set up the realtime subscription
+    const channel = supabase
+      .channel('property-updates')
+      .on('broadcast', { event: 'property-created' }, (payload) => {
+        console.log('Property created broadcast received:', payload);
+        if (payload.payload?.userId === user.id) {
+          refetch(); // Refresh properties list
+        }
+      })
+      .on('broadcast', { event: 'property-updated' }, (payload) => {
+        console.log('Property updated broadcast received:', payload);
+        if (payload.payload?.userId === user.id) {
+          refetch(); // Refresh properties list
+        }
+      })
+      .on('broadcast', { event: 'property-deleted' }, (payload) => {
+        console.log('Property deleted broadcast received:', payload);
+        if (payload.payload?.userId === user.id) {
+          refetch(); // Refresh properties list
+        }
+      })
+      .subscribe();
+
+    // Clean up subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, refetch]);
 
   const handleEditProperty = (e: React.MouseEvent, property: Property) => {
     e.stopPropagation();
@@ -140,10 +183,9 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
   };
 
   const handlePropertyUpdate = (updatedProperty: Property) => {
-    setProperties(properties.map(p => 
-      p.id === updatedProperty.id ? updatedProperty : p
-    ));
-    loadProperties(); // Refresh the list
+    // Broadcast will handle notifying other components
+    queryClient.invalidateQueries({ queryKey: ['properties'] });
+    queryClient.invalidateQueries({ queryKey: ['properties-count'] });
   };
 
   const handleAddMortgage = (e: React.MouseEvent, property: Property) => {
