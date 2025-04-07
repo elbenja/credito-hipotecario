@@ -215,7 +215,7 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
                 {mortgageCounts[property.id] || 0}
               </div>
               <div className="justify-start text-sm font-normal leading-none">
-                {t('ui.mortgages', 'Mortgages', { ns: 'properties' })}
+                {t('sections.mortgages', { ns: 'dashboard' })}
               </div>
             </div>
             <button 

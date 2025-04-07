@@ -150,7 +150,7 @@ export function FeatureCounts({
       <SheetTrigger asChild>
         <button className="text-xs h-8 flex gap-2">  
           <div className="flex-1 text-right text-sm font-medium leading-none">
-            Create property
+            {t('actions.add_property', { ns: 'properties' })}
           </div>
           <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
             <Plus className="h-4 w-4" />
