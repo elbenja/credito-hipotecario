@@ -772,7 +772,7 @@ export default function EditMortgage() {
                             currency={mortgage.property.currency}
                             loanAmount={mortgage.loan_amount}
                             onInstallmentsChange={handleInstallmentsChange}
-                            firstInstallmentDate={mortgage.first_installment_date ? new Date(mortgage.first_installment_date) : undefined}
+                            firstInstallmentDate={mortgage.first_installment_date ? createLocalDate(mortgage.first_installment_date) : undefined}
                           />
                         </div>
                       </>
@@ -795,7 +795,7 @@ export default function EditMortgage() {
                             currency={mortgage.property.currency}
                             loanAmount={mortgage.loan_amount}
                             onInstallmentsChange={handleInstallmentsChange}
-                            firstInstallmentDate={mortgage.first_installment_date ? new Date(mortgage.first_installment_date) : undefined}
+                            firstInstallmentDate={mortgage.first_installment_date ? createLocalDate(mortgage.first_installment_date) : undefined}
                           />
                         </div>
                       </>
@@ -841,7 +841,7 @@ export default function EditMortgage() {
                               checkNewRates();
                             }}
                             className="space-y-4"
-                            firstInstallmentDate={mortgage.first_installment_date ? new Date(mortgage.first_installment_date) : undefined}
+                            firstInstallmentDate={mortgage.first_installment_date ? createLocalDate(mortgage.first_installment_date) : undefined}
                           />
                         </div>
                       </>

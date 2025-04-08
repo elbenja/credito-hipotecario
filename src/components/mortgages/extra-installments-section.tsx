@@ -8,6 +8,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
+import { normalizeDate } from "@/lib/utils"
 
 interface ExtraInstallmentFormValues {
   start_date: Date
@@ -49,6 +50,36 @@ export function ExtraInstallmentsSection({
   const [isLoading, setIsLoading] = useState(false)
   const queryClient = useQueryClient()
 
+  // Debug information for firstInstallmentDate
+  useEffect(() => {
+    if (firstInstallmentDate) {
+      console.log('Extra installments section - Original firstInstallmentDate:', firstInstallmentDate);
+      console.log('Extra installments section - firstInstallmentDate components:', {
+        year: firstInstallmentDate.getFullYear(),
+        month: firstInstallmentDate.getMonth() + 1, // 1-based for readability
+        day: firstInstallmentDate.getDate(),
+        hours: firstInstallmentDate.getHours(),
+        minutes: firstInstallmentDate.getMinutes(),
+        timezone: firstInstallmentDate.getTimezoneOffset() / -60, // Convert to hours and invert sign
+        isoString: firstInstallmentDate.toISOString(),
+        localString: firstInstallmentDate.toLocaleString(),
+      });
+      
+      // Try to normalize the date to see if that helps
+      const normalized = normalizeDate(firstInstallmentDate);
+      console.log('Extra installments section - Normalized firstInstallmentDate:', normalized);
+      console.log('Extra installments section - Normalized components:', {
+        year: normalized.getFullYear(),
+        month: normalized.getMonth() + 1, // 1-based
+        day: normalized.getDate(),
+        hours: normalized.getHours(),
+        minutes: normalized.getMinutes(),
+      });
+    } else {
+      console.log('Extra installments section - firstInstallmentDate is undefined');
+    }
+  }, [firstInstallmentDate]);
+
   // Use React Query for installments
   const { data: installments = [] } = useQuery({
     queryKey: ["extra-installments", mortgageId],
@@ -74,6 +105,9 @@ export function ExtraInstallmentsSection({
   const handleSubmit = async (values: ExtraInstallmentFormValues) => {
     try {
       setIsLoading(true)
+      
+      // Log the received date from the form component
+      console.log('Extra installments section - Received date from form:', values.start_date);
       
       // IMPROVED APPROACH: Create a date string in YYYY-MM-DD format
       // 1. Extract components from the date object
@@ -194,7 +228,8 @@ export function ExtraInstallmentsSection({
             isLoading={isLoading}
             loanAmount={loanAmount}
             currency={currency}
-            firstInstallmentDate={firstInstallmentDate}
+            // Make sure we're passing a normalized date to avoid timezone issues
+            firstInstallmentDate={firstInstallmentDate ? normalizeDate(firstInstallmentDate) : undefined}
           />
         </PopoverContent>
       </Popover>

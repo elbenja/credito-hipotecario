@@ -1,9 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Plus } from "lucide-react"
-import { addYears, subWeeks, startOfDay, isBefore, isAfter, isSameDay, subYears } from "date-fns"
+import { addYears, subWeeks, startOfDay, isBefore, isAfter, isSameDay, subYears, lastDayOfMonth } from "date-fns"
 import { useTranslation } from "react-i18next"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 
 import {
   Form,
@@ -42,23 +42,23 @@ const createExtraInstallmentSchema = (firstInstallmentDate?: Date, t?: any) => {
     month: z.string({
       required_error: t ? t('extra_installments_section.form.month_required', 'Month is required', { ns: 'components' }) : 'Month is required',
     }),
-    day: z.string({
-      required_error: t ? t('extra_installments_section.form.day_required', 'Day is required', { ns: 'components' }) : 'Day is required',
-    }),
     year: z.string({
       required_error: t ? t('extra_installments_section.form.year_required', 'Year is required', { ns: 'components' }) : 'Year is required',
     }),
   }).superRefine((data, ctx) => {
     if (!firstInstallmentDate) return true;
     
-    const selectedDate = new Date(
-      parseInt(data.year),
-      parseInt(data.month) - 1,
-      parseInt(data.day),
-      12, 0, 0, 0
-    );
+    const selectedYear = parseInt(data.year);
+    const selectedMonth = parseInt(data.month) - 1;
+
+    let checkDay = 1;
+    if (selectedYear === firstInstallmentDate.getFullYear() && selectedMonth === firstInstallmentDate.getMonth()) {
+      checkDay = firstInstallmentDate.getDate();
+    }
     
-    if (isBefore(selectedDate, firstInstallmentDate)) {
+    const provisionalSelectedDate = new Date(selectedYear, selectedMonth, checkDay, 12, 0, 0, 0);
+
+    if (isBefore(provisionalSelectedDate, firstInstallmentDate)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: t ? t('extra_installments_section.form.date_before_first_installment', 'Date cannot be before first installment date', { ns: 'components' }) : 'Date cannot be before first installment date',
@@ -145,12 +145,6 @@ export function ExtraInstallmentForm({
     { value: "12", label: "Dec" },
   ];
 
-  // Generate days options (1-31)
-  const days = Array.from({ length: 31 }, (_, i) => ({ 
-    value: String(i + 1), 
-    label: String(i + 1) 
-  }));
-
   // Calculate years range
   const currentYear = new Date().getFullYear();
   const startYear = currentYear - 15;
@@ -172,24 +166,17 @@ export function ExtraInstallmentForm({
       amount: "",
       frequency: "one-time",
       month: String(initialDate.getMonth() + 1),
-      day: String(initialDate.getDate()),
       year: String(initialDate.getFullYear()),
     },
   });
 
-  // Function to check if a date would be before the firstInstallmentDate
-  const isDateBeforeFirstInstallment = (year: number, month: number, day: number) => {
-    if (!firstInstallmentDate) return false;
+  // Filter available years based on firstInstallmentDate
+  const availableYears = useMemo(() => {
+    if (!firstInstallmentDate) return years; // Return all years if no restriction
     
-    const date = new Date(year, month - 1, day, 12, 0, 0, 0);
-    return isBefore(date, firstInstallmentDate);
-  };
-
-  // Year validation - should disable years before firstInstallmentDate year
-  const isYearDisabled = (yearValue: string) => {
-    if (!firstInstallmentDate) return false;
-    return parseInt(yearValue) < firstInstallmentDate.getFullYear();
-  };
+    const firstInstallmentYear = firstInstallmentDate.getFullYear();
+    return years.filter(year => parseInt(year.value) >= firstInstallmentYear);
+  }, [years, firstInstallmentDate]);
 
   // Month validation - should disable months that would result in a date before firstInstallmentDate
   const isMonthDisabled = (monthValue: string) => {
@@ -211,86 +198,76 @@ export function ExtraInstallmentForm({
     return false;
   };
 
-  // Day validation - should disable days that would result in a date before firstInstallmentDate
-  const isDayDisabled = (dayValue: string) => {
-    if (!firstInstallmentDate) return false;
-    
-    const selectedYear = parseInt(form.watch('year'));
-    const selectedMonth = parseInt(form.watch('month'));
-    const dayNumber = parseInt(dayValue);
-    
-    // If selected year & month match firstInstallmentDate year & month,
-    // disable days before firstInstallmentDate day
-    if (selectedYear === firstInstallmentDate.getFullYear() && 
-        selectedMonth === (firstInstallmentDate.getMonth() + 1)) {
-      return dayNumber < firstInstallmentDate.getDate();
-    }
-    
-    // For other months/years, check if the date is valid
-    // This is a redundant check as year/month validation should prevent this case
-    return isDateBeforeFirstInstallment(selectedYear, selectedMonth, dayNumber);
-  };
-
   useEffect(() => {
     if (firstInstallmentDate && form) {
-      // When the year changes, validate the month and day
-      const yearSubscription = form.watch((value, { name }) => {
+      // When the year or month changes, re-validate related fields
+      const subscription = form.watch((value, { name }) => {
         if (name === 'year' || name === 'month') {
-          // Revalidate fields that depend on this
-          form.trigger(['month', 'day']);
+          // Revalidate fields that depend on year/month (e.g., the superRefine check)
+          form.trigger(['month', 'year']); 
         }
       });
       
-      return () => yearSubscription.unsubscribe();
+      return () => subscription.unsubscribe();
     }
   }, [form, firstInstallmentDate]);
 
   const handleSubmit = (values: ExtraInstallmentFormValues) => {
-    // Convert the month, day, year to a Date object
+    if (!firstInstallmentDate && form.getValues('frequency') === 'one-time') {
+      console.warn("First installment date is missing, defaulting day to 1.");
+    }
+
+    // Get the target day from the firstInstallmentDate
+    const targetDay = firstInstallmentDate ? firstInstallmentDate.getDate() : 1;
     const month = parseInt(values.month) - 1; // Months are 0-indexed in JS
-    const day = parseInt(values.day);
     const year = parseInt(values.year);
     
-    // Create a date object with noon time to avoid timezone issues
-    const date = new Date(year, month, day, 12, 0, 0, 0);
+    // Attempt to create the date with the target day
+    let date = new Date(year, month, targetDay, 12, 0, 0, 0);
+    
+    // Check if the month rolled over (e.g., Feb 31 became Mar 2/3)
+    if (date.getMonth() !== month) {
+      // If month rolled over, the targetDay is invalid for the selected month.
+      // Get the last valid day of the *intended* month.
+      const lastDay = lastDayOfMonth(new Date(year, month, 1, 12, 0, 0, 0));
+      // Create the date using the last valid day
+      date = new Date(year, month, lastDay.getDate(), 12, 0, 0, 0);
+    }
+
+    // Normalize the date to handle timezone issues - use the utility function
+    const normalizedDate = normalizeDate(date);
+    
+    // For debugging
+  
     
     // Final validation check before submission
-    if (firstInstallmentDate && isBefore(date, firstInstallmentDate)) {
-      form.setError("year", { 
+    if (firstInstallmentDate && isBefore(normalizedDate, firstInstallmentDate)) {
+      form.setError("year", {
         type: "custom", 
-        message: t('extra_installments_section.form.date_before_first_installment', 'Date cannot be before first installment date', { ns: 'components' }) 
+        message: t('extra_installments_section.form.date_before_first_installment', 'Calculated date cannot be before first installment date', { ns: 'components' }) 
       });
       return;
     }
     
-    // Log dates for debugging
-    console.log('Extra installment form - Date components:', { year, month: month + 1, day });
-    console.log('Extra installment form - Constructed date:', date);
-    
-    // Pass to the parent component
+    // Pass to the parent component with the normalized date
     onSubmit({
       amount: values.amount,
       frequency: values.frequency,
-      start_date: date
+      start_date: normalizedDate
     });
     
-    form.reset();
+    // Reset form
+    form.reset({
+      amount: "",
+      frequency: "one-time",
+      month: values.month,
+      year: values.year,
+    }); 
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        {firstInstallmentDate && (
-          <div className="text-sm text-muted-foreground mb-2">
-            {t('extra_installments_section.form.min_date_notice', 
-               'Date must be on or after {{date}}', 
-               { 
-                 date: formatDate(firstInstallmentDate),
-                 ns: 'components' 
-               }
-            )}
-          </div>
-        )}
         <FormField
           control={form.control}
           name="amount"
@@ -335,7 +312,7 @@ export function ExtraInstallmentForm({
           )}
         />
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="month"
@@ -370,38 +347,6 @@ export function ExtraInstallmentForm({
 
           <FormField
             control={form.control}
-            name="day"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('extra_installments_section.form.day', 'Day', { ns: 'components' })}</FormLabel>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {days.map((day) => (
-                      <SelectItem 
-                        key={day.value} 
-                        value={day.value}
-                        disabled={isDayDisabled(day.value)}
-                      >
-                        {day.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
             name="year"
             render={({ field }) => (
               <FormItem>
@@ -416,11 +361,10 @@ export function ExtraInstallmentForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {years.map((year) => (
+                    {availableYears.map((year) => (
                       <SelectItem 
                         key={year.value} 
                         value={year.value} 
-                        disabled={isYearDisabled(year.value)}
                       >
                         {year.label}
                       </SelectItem>
