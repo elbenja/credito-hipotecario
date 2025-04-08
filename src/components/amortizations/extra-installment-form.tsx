@@ -21,9 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
+import { cn, normalizeDate } from "@/lib/utils"
+import { CurrencyInput } from "@/components/ui/currency-input"
 
 import { z } from "zod"
-import { formatCurrency, cn, formatDate } from "@/lib/utils"
+import { formatCurrency, formatDate } from "@/lib/utils"
 
 const extraInstallmentSchema = z.object({
   amount: z.string()
@@ -171,26 +174,12 @@ export function ExtraInstallmentForm({
             <FormItem>
               <FormLabel>{t('extra_installments_section.form.amount', 'Amount', { ns: 'components' })}</FormLabel>
               <FormControl>
-                <div className="relative">
-                  <Input 
-                    placeholder={t('extra_installments_section.form.amount_placeholder', 'Enter amount', { ns: 'components' })}
-                    className="pl-8"
-                    {...field}
-                    onChange={(e) => {
-                      // Remove any non-numeric characters except decimal point
-                      const value = e.target.value.replace(/[^0-9.]/g, "")
-                      // Ensure only one decimal point
-                      const parts = value.split('.')
-                      const formattedValue = parts.length > 1 
-                        ? `${parts[0]}.${parts.slice(1).join('')}`
-                        : value
-                      field.onChange(formattedValue)
-                    }}
-                  />
-                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
-                    {currency === "USD" ? "$" : "S/"}
-                  </div>
-                </div>
+                <CurrencyInput 
+                  value={field.value || ''}
+                  onChange={field.onChange}
+                  currency={currency}
+                  placeholder={t('extra_installments_section.form.amount_placeholder', 'Enter amount', { ns: 'components' })}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
