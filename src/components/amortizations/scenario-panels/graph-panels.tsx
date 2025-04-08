@@ -160,10 +160,8 @@ const ScenarioPanel = ({
 
   const getBadgeVariant = (difference: number | null, isMonths = false): "default" | "destructive" | "primary" | "outline" | "blue" | "green" => {
     if (difference === null || showBaseline) return "primary"
-    if (isMonths) {
-      return difference < 0 ? "blue" : "outline"
-    }
-    return difference < 0 ? "blue" : "outline"
+
+    return difference < 0 ? "green" : "outline"
   }
 
   const formatDifference = (difference: number | null) => {
@@ -201,7 +199,7 @@ const ScenarioPanel = ({
                 {t('scenario_graphs.regular.baseline', 'Baseline', { ns: 'components' })}
               </Badge>
             ) : differences.sum && (
-              <Badge variant={getBadgeVariant(differences.sum)} className="text-sm bg-green-600/10 text-green-600 whitespace-nowrap">
+              <Badge variant={getBadgeVariant(differences.sum)} className="text-sm whitespace-nowrap">
                 {differences.sum < 0 ? '-' : '+'}{formatCurrency(Math.abs(differences.sum), currency as Currency)}
               </Badge>
             )}
