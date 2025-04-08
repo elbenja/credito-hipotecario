@@ -29,6 +29,21 @@ const formatValue = (value: string, currency: string) => {
   return currency === 'PEN' ? formatted.replace('PEN', 'S/') : formatted
 }
 
+const formatNumberWithCommas = (value: string) => {
+  // Handle empty input
+  if (!value) return ''
+  
+  // Split into integer and decimal parts
+  const parts = value.split('.')
+  const integerPart = parts[0]
+  const decimalPart = parts.length > 1 ? '.' + parts[1] : ''
+  
+  // Add commas to integer part
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  
+  return formattedInteger + decimalPart
+}
+
 const unformatValue = (value: string) => {
   return value.replace(/[^\d.]/g, '')
 }
@@ -37,16 +52,29 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
   function CurrencyInput({ value, onChange, currency, ...props }, ref) {
     const [displayValue, setDisplayValue] = React.useState('')
     const [isFocused, setIsFocused] = React.useState(false)
+    const inputRef = React.useRef<HTMLInputElement | null>(null)
+    
+    // Combine refs
+    React.useImperativeHandle(ref, () => inputRef.current as HTMLInputElement)
     
     // Update display value when the external value changes
     React.useEffect(() => {
       if (!isFocused) {
         setDisplayValue(value ? formatValue(value, currency) : '')
+      } else {
+        // When focused, show with commas but no currency symbol
+        setDisplayValue(value ? formatNumberWithCommas(value) : '')
       }
     }, [value, currency, isFocused])
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = e.target.value
+      const cursorPosition = e.target.selectionStart || 0
+      
+      // Count commas before cursor position to adjust later
+      const commasBefore = (rawValue.substring(0, cursorPosition).match(/,/g) || []).length
+      
+      // Remove commas and non-numeric characters (except decimal)
       const numericValue = rawValue.replace(/[^\d.]/g, '')
       
       // Allow only one decimal point
@@ -56,26 +84,41 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
       const parts = numericValue.split('.')
       if (parts[1] && parts[1].length > 2) return
 
-      setDisplayValue(rawValue)
+      // Format with commas for display
+      const formattedValue = formatNumberWithCommas(numericValue)
+      
+      // Update state and notify parent
+      setDisplayValue(formattedValue)
       onChange(numericValue)
+      
+      // Calculate new cursor position after formatting
+      setTimeout(() => {
+        if (inputRef.current) {
+          const newCommasBefore = (formattedValue.substring(0, cursorPosition).match(/,/g) || []).length
+          const cursorOffset = newCommasBefore - commasBefore
+          const newPosition = cursorPosition + cursorOffset
+          inputRef.current.setSelectionRange(newPosition, newPosition)
+        }
+      }, 0)
     }
 
     const handleFocus = () => {
       setIsFocused(true)
-      // Show unformatted value when focused
-      setDisplayValue(unformatValue(value))
+      // Show with commas but no currency symbol when focused
+      const formattedValue = formatNumberWithCommas(unformatValue(value))
+      setDisplayValue(formattedValue)
     }
 
     const handleBlur = () => {
       setIsFocused(false)
-      // Show formatted value when blurred
+      // Show fully formatted value when blurred
       setDisplayValue(value ? formatValue(value, currency) : '')
     }
 
     return (
       <Input
         {...props}
-        ref={ref}
+        ref={inputRef}
         value={displayValue}
         onChange={handleChange}
         onFocus={handleFocus}

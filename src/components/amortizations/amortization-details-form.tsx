@@ -26,6 +26,7 @@ import { Separator } from "@/components/ui/separator"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useState, useEffect, useMemo } from "react"
 import { supabase } from "@/integrations/supabase/client"
+import { CurrencyInput } from "@/components/ui/currency-input"
 
 type BonusRule = {
   min_value: number
@@ -202,10 +203,14 @@ export function AmortizationDetailsForm({
                     {selectedProperty?.currency === 'USD' ? ' $' : ' S/'}
                   </FormLabel>
                   <FormControl>
-                    <Input {...field} onChange={(e) => {
-                      field.onChange(e)
-                      form.trigger("down_payment")
-                    }} />
+                    <CurrencyInput 
+                      value={field.value || ''}
+                      onChange={(value) => {
+                        field.onChange(value)
+                        form.trigger("down_payment")
+                      }}
+                      currency={selectedProperty?.currency || 'PEN'}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
