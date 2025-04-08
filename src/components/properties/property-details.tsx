@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
 import { useTranslation } from "react-i18next"
 import * as z from "zod"
+import { Input } from "@/components/ui/input"
 
 const formSchema = z.object({
   name: z.string().min(1, {
@@ -72,10 +73,18 @@ export function PropertyDetails({ form, isNewProperty = false }: PropertyDetails
 
   return (
     <>
-      <EditableHeading 
-        value={currentName}
-        onChange={handleNameChange}
-        className="mb-6"
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('form.name')}</FormLabel>
+            <FormControl>
+              <Input {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
       />
       <FormField
         control={form.control}

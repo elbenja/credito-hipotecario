@@ -13,8 +13,8 @@ import NotFound from "./pages/NotFound"
 import Dashboard from "./pages/Dashboard"
 import Properties from "./pages/Properties"
 import Mortgages from "./pages/Mortgages"
-import NewAmortization from "./pages/NewAmortization"
-import EditAmortization from "./pages/EditAmortization"
+import NewMortgage from "./pages/NewMortgage"
+import EditMortgage from "./pages/EditMortgage"
 import Settings from "./pages/Settings"
 import Test from "./pages/Test"
 import TestCalculator from "./pages/TestCalculator"
@@ -106,7 +106,7 @@ const App = () => (
                   path="/mortgages/new"
                   element={
                     <ProtectedRoute>
-                      <NewAmortization />
+                      <NewMortgage />
                     </ProtectedRoute>
                   }
                 />
@@ -114,7 +114,7 @@ const App = () => (
                   path="/mortgages/:id"
                   element={
                     <ProtectedRoute>
-                      <EditAmortization />
+                      <EditMortgage />
                     </ProtectedRoute>
                   }
                 />

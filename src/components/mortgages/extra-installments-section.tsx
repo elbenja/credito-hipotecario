@@ -23,24 +23,26 @@ interface ExtraInstallment {
 }
 
 interface ExtraInstallmentData {
-  amortization_id: string
+  mortgage_id: string
   amount: number
   frequency: "monthly" | "one-time"
   start_date: string
 }
 
 interface ExtraInstallmentsSectionProps {
-  amortizationId: string
+  mortgageId: string
   currency: "USD" | "PEN"
   loanAmount: number
   onInstallmentsChange: () => void
+  firstInstallmentDate?: Date
 }
 
 export function ExtraInstallmentsSection({
-  amortizationId,
+  mortgageId,
   currency,
   loanAmount,
-  onInstallmentsChange
+  onInstallmentsChange,
+  firstInstallmentDate
 }: ExtraInstallmentsSectionProps) {
   const { toast } = useToast()
   const { t } = useTranslation(['components'])
@@ -49,12 +51,12 @@ export function ExtraInstallmentsSection({
 
   // Use React Query for installments
   const { data: installments = [] } = useQuery({
-    queryKey: ["extra-installments", amortizationId],
+    queryKey: ["extra-installments", mortgageId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("extra_installments")
         .select("id, amount, frequency, start_date")
-        .eq("amortization_id", amortizationId)
+        .eq("mortgage_id", mortgageId)
         .order("start_date", { ascending: true })
 
       if (error) throw error
@@ -90,7 +92,7 @@ export function ExtraInstallmentsSection({
       console.log('- Formatted date string:', dateString);
       
       const installmentData = {
-        amortization_id: amortizationId,
+        mortgage_id: mortgageId,
         start_date: dateString, // Use the YYYY-MM-DD string
         amount: parseFloat(values.amount),
         frequency: values.frequency
@@ -111,10 +113,10 @@ export function ExtraInstallmentsSection({
       // Invalidate both queries to trigger recalculation
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["extra-installments", amortizationId]
+          queryKey: ["extra-installments", mortgageId]
         }),
         queryClient.invalidateQueries({
-          queryKey: ["scenarios", amortizationId]
+          queryKey: ["scenarios", mortgageId]
         })
       ])
       
@@ -149,10 +151,10 @@ export function ExtraInstallmentsSection({
       // Invalidate both queries to trigger recalculation
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["extra-installments", amortizationId]
+          queryKey: ["extra-installments", mortgageId]
         }),
         queryClient.invalidateQueries({
-          queryKey: ["scenarios", amortizationId]
+          queryKey: ["scenarios", mortgageId]
         })
       ])
 
@@ -183,16 +185,16 @@ export function ExtraInstallmentsSection({
         <PopoverTrigger asChild>
           <Button size="sm" className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            {t('ui.add', 'Add', { ns: 'global' })}
+            {t('extra_installments_section.add_button', 'Add Extra Installment', { ns: 'components' })}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-4" align="start">
-          {/* <h3 className="text-lg font-medium mb-4">{t('extra_installments_section.popover_title', 'Extra Instalments', { ns: 'components' })}</h3> */}
           <ExtraInstallmentForm
             onSubmit={handleSubmit}
             isLoading={isLoading}
             loanAmount={loanAmount}
             currency={currency}
+            firstInstallmentDate={firstInstallmentDate}
           />
         </PopoverContent>
       </Popover>

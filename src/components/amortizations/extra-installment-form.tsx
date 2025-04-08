@@ -28,26 +28,43 @@ import { CurrencyInput } from "@/components/ui/currency-input"
 import { z } from "zod"
 import { formatCurrency, formatDate } from "@/lib/utils"
 
-const extraInstallmentSchema = z.object({
-  amount: z.string()
-    .min(1, "extra_installments_section.form.amount_required")
-    .refine((val) => {
-      const amount = parseFloat(val.replace(/[^0-9.]/g, ""))
-      return !isNaN(amount) && amount > 0
-    }, "extra_installments_section.form.amount_positive"),
-  frequency: z.enum(["monthly", "one-time"]),
-  month: z.string({
-    required_error: "extra_installments_section.form.month_required",
-  }),
-  day: z.string({
-    required_error: "extra_installments_section.form.day_required",
-  }),
-  year: z.string({
-    required_error: "extra_installments_section.form.year_required",
-  }),
-})
+// Create a function to generate the schema with dynamic validation based on firstInstallmentDate
+const createExtraInstallmentSchema = (firstInstallmentDate?: Date) => {
+  return z.object({
+    amount: z.string()
+      .min(1, "extra_installments_section.form.amount_required")
+      .refine((val) => {
+        const amount = parseFloat(val.replace(/[^0-9.]/g, ""))
+        return !isNaN(amount) && amount > 0
+      }, "extra_installments_section.form.amount_positive"),
+    frequency: z.enum(["monthly", "one-time"]),
+    month: z.string({
+      required_error: "extra_installments_section.form.month_required",
+    }),
+    day: z.string({
+      required_error: "extra_installments_section.form.day_required",
+    }),
+    year: z.string({
+      required_error: "extra_installments_section.form.year_required",
+    }),
+  }).refine((data) => {
+    if (!firstInstallmentDate) return true;
+    
+    const selectedDate = new Date(
+      parseInt(data.year),
+      parseInt(data.month) - 1,
+      parseInt(data.day),
+      12, 0, 0, 0
+    );
+    
+    return !isBefore(selectedDate, firstInstallmentDate);
+  }, {
+    message: "extra_installments_section.form.date_before_first_installment",
+    path: ["year"] // This will show the error on the year field
+  });
+};
 
-type ExtraInstallmentFormValues = z.infer<typeof extraInstallmentSchema>
+type ExtraInstallmentFormValues = z.infer<ReturnType<typeof createExtraInstallmentSchema>>;
 
 interface ExtraInstallmentFormProps {
   onSubmit: (values: any) => void
@@ -130,6 +147,9 @@ export function ExtraInstallmentForm({
     })
   );
 
+  // Create the schema with the firstInstallmentDate
+  const extraInstallmentSchema = createExtraInstallmentSchema(firstInstallmentDate);
+
   const form = useForm<ExtraInstallmentFormValues>({
     resolver: zodResolver(extraInstallmentSchema),
     defaultValues: {
@@ -140,6 +160,14 @@ export function ExtraInstallmentForm({
       year: String(initialDate.getFullYear()),
     },
   });
+
+  // Function to check if a date would be before the firstInstallmentDate
+  const isDateBeforeFirstInstallment = (year: number, month: number, day: number) => {
+    if (!firstInstallmentDate) return false;
+    
+    const date = new Date(year, month - 1, day, 12, 0, 0, 0);
+    return isBefore(date, firstInstallmentDate);
+  };
 
   const handleSubmit = (values: ExtraInstallmentFormValues) => {
     // Convert the month, day, year to a Date object
@@ -228,11 +256,23 @@ export function ExtraInstallmentForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {months.map((month) => (
-                      <SelectItem key={month.value} value={month.value}>
-                        {month.label}
-                      </SelectItem>
-                    ))}
+                    {months.map((month) => {
+                      // Disable months that would create a date before firstInstallmentDate
+                      // This is a simplified check - a more accurate one would consider year and day too
+                      const isDisabled = firstInstallmentDate && 
+                        form.watch('year') === String(firstInstallmentDate.getFullYear()) && 
+                        parseInt(month.value) < (firstInstallmentDate.getMonth() + 1);
+                      
+                      return (
+                        <SelectItem 
+                          key={month.value} 
+                          value={month.value}
+                          disabled={isDisabled}
+                        >
+                          {month.label}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -256,11 +296,23 @@ export function ExtraInstallmentForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {days.map((day) => (
-                      <SelectItem key={day.value} value={day.value}>
-                        {day.label}
-                      </SelectItem>
-                    ))}
+                    {days.map((day) => {
+                      // Disable days that would create a date before firstInstallmentDate
+                      const isDisabled = firstInstallmentDate &&
+                        form.watch('year') === String(firstInstallmentDate.getFullYear()) &&
+                        parseInt(form.watch('month')) === (firstInstallmentDate.getMonth() + 1) &&
+                        parseInt(day.value) < firstInstallmentDate.getDate();
+                      
+                      return (
+                        <SelectItem 
+                          key={day.value} 
+                          value={day.value}
+                          disabled={isDisabled}
+                        >
+                          {day.label}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -284,11 +336,21 @@ export function ExtraInstallmentForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {years.map((year) => (
-                      <SelectItem key={year.value} value={year.value}>
-                        {year.label}
-                      </SelectItem>
-                    ))}
+                    {years.map((year) => {
+                      // Disable years before the firstInstallmentDate year
+                      const isDisabled = firstInstallmentDate && 
+                        parseInt(year.value) < firstInstallmentDate.getFullYear();
+                      
+                      return (
+                        <SelectItem 
+                          key={year.value} 
+                          value={year.value} 
+                          disabled={isDisabled}
+                        >
+                          {year.label}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
                 <FormMessage />

@@ -31,10 +31,10 @@ type Property = {
   name: string
   currency: "USD" | "PEN"
   price_cost: number
-  amortizations: Amortization[]
+  mortgages: Mortgage[]
 }
 
-type Amortization = {
+type Mortgage = {
   id: string
   name: string
   loan_amount: number
@@ -59,14 +59,14 @@ export default function Mortgages() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  const { data: propertiesWithAmortizations, isLoading } = useQuery({
-    queryKey: ["properties-with-amortizations", user?.id],
+  const { data: propertiesWithMortgages, isLoading } = useQuery({
+    queryKey: ["properties-with-mortgages", user?.id],
     queryFn: async () => {
       if (!user) return []
 
       const { data: properties, error: propertiesError } = await supabase
         .from("properties")
-        .select("*, amortizations(*)")
+        .select("*, mortgages(*)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
 
@@ -80,29 +80,29 @@ export default function Mortgages() {
     enabled: !!user,
   })
 
-  const handleDuplicate = async (e: React.MouseEvent, amortization: Amortization) => {
+  const handleDuplicate = async (e: React.MouseEvent, mortgage: Mortgage) => {
     e.stopPropagation()
     try {
-      const duplicatedAmortization = {
-        name: `${amortization.name} (${tGlobal('ui.copy')})`,
-        property_id: amortization.property_id,
+      const duplicatedMortgage = {
+        name: `${mortgage.name} (${tGlobal('ui.copy')})`,
+        property_id: mortgage.property_id,
         user_id: user?.id,
-        loan_amount: amortization.loan_amount,
-        down_payment: amortization.down_payment,
-        interest_rate: amortization.interest_rate,
-        term_years: amortization.term_years,
-        installments_per_year: amortization.installments_per_year,
-        installment_amount: amortization.installment_amount,
-        total_interest: amortization.total_interest,
-        total_payment: amortization.total_payment,
-        loan_protection_type: amortization.loan_protection_type,
-        loan_protection_insurance: amortization.loan_protection_insurance,
-        first_installment_date: amortization.first_installment_date,
+        loan_amount: mortgage.loan_amount,
+        down_payment: mortgage.down_payment,
+        interest_rate: mortgage.interest_rate,
+        term_years: mortgage.term_years,
+        installments_per_year: mortgage.installments_per_year,
+        installment_amount: mortgage.installment_amount,
+        total_interest: mortgage.total_interest,
+        total_payment: mortgage.total_payment,
+        loan_protection_type: mortgage.loan_protection_type,
+        loan_protection_insurance: mortgage.loan_protection_insurance,
+        first_installment_date: mortgage.first_installment_date,
       }
 
       const { data, error } = await supabase
-        .from("amortizations")
-        .insert(duplicatedAmortization)
+        .from("mortgages")
+        .insert(duplicatedMortgage)
         .select()
         .single()
 
@@ -114,9 +114,9 @@ export default function Mortgages() {
       })
 
       // Refresh the data
-      queryClient.invalidateQueries({ queryKey: ["properties-with-amortizations"] })
+      queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
     } catch (error) {
-      console.error("Error duplicating amortization:", error)
+      console.error("Error duplicating mortgage:", error)
       toast({
         variant: "destructive",
         title: tGlobal('ui.error'),
@@ -125,13 +125,13 @@ export default function Mortgages() {
     }
   }
 
-  const handleDelete = async (e: React.MouseEvent, amortization: Amortization) => {
+  const handleDelete = async (e: React.MouseEvent, mortgage: Mortgage) => {
     e.stopPropagation()
     try {
       const { error } = await supabase
-        .from("amortizations")
+        .from("mortgages")
         .delete()
-        .eq('id', amortization.id)
+        .eq('id', mortgage.id)
 
       if (error) throw error
 
@@ -141,9 +141,9 @@ export default function Mortgages() {
       })
 
       // Refresh the data
-      queryClient.invalidateQueries({ queryKey: ["properties-with-amortizations"] })
+      queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
     } catch (error) {
-      console.error("Error deleting amortization:", error)
+      console.error("Error deleting mortgage:", error)
       toast({
         variant: "destructive",
         title: tGlobal('ui.error'),
@@ -179,8 +179,8 @@ export default function Mortgages() {
         description={tMortgages('description')}
       />
       <div className="p-8 space-y-8">
-        {propertiesWithAmortizations?.map((property) => (
-          property.amortizations.length > 0 && (
+        {propertiesWithMortgages?.map((property) => (
+          property.mortgages.length > 0 && (
             <div key={property.id} className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">{property.name}</h2>
@@ -203,22 +203,22 @@ export default function Mortgages() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {property.amortizations.map((amortization) => (
+                  {property.mortgages.map((mortgage) => (
                     <TableRow 
-                      key={amortization.id}
+                      key={mortgage.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/mortgages/${amortization.id}`)}
+                      onClick={() => navigate(`/mortgages/${mortgage.id}`)}
                     >
-                      <TableCell className="w-[22%]">{amortization.name}</TableCell>
+                      <TableCell className="w-[22%]">{mortgage.name}</TableCell>
                       <TableCell className="w-[20%]">
-                        {formatCurrency(amortization.loan_amount, property.currency)}
+                        {formatCurrency(mortgage.loan_amount, property.currency)}
                       </TableCell>
                       <TableCell className="w-[12%]">
-                        {formatCurrency(amortization.down_payment, property.currency)}
+                        {formatCurrency(mortgage.down_payment, property.currency)}
                       </TableCell>
-                      <TableCell className="w-[12%]">{amortization.interest_rate}%</TableCell>
-                      <TableCell className="w-[12%]">{amortization.term_years} {tMortgages('amortization.years')}</TableCell>
-                      <TableCell className="w-[12%]">{amortization.installments_per_year}</TableCell>
+                      <TableCell className="w-[12%]">{mortgage.interest_rate}%</TableCell>
+                      <TableCell className="w-[12%]">{mortgage.term_years} {tMortgages('amortization.years')}</TableCell>
+                      <TableCell className="w-[12%]">{mortgage.installments_per_year}</TableCell>
                       <TableCell className="w-[50px]">
                         <DropdownMenu>
                           <DropdownMenuTrigger
@@ -231,11 +231,11 @@ export default function Mortgages() {
                             <span className="sr-only">{tGlobal('ui.open_menu')}</span>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" sideOffset={5} className="touch-none">
-                            <DropdownMenuItem onClick={() => handleDuplicate(e, amortization)}>
+                            <DropdownMenuItem onClick={(e) => handleDuplicate(e, mortgage)}>
                               <Copy className="mr-2 h-4 w-4" />
                               <span>{tGlobal('ui.duplicate')}</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => handleDelete(e, amortization)}
+                            <DropdownMenuItem onClick={(e) => handleDelete(e, mortgage)}
                                 className="text-red-600 focus:text-red-600">
                               <Trash2 className="mr-2 h-4 w-4" />
                               <span>{tGlobal('ui.delete')}</span>
@@ -251,7 +251,7 @@ export default function Mortgages() {
           )
         ))}
 
-        {(!propertiesWithAmortizations || propertiesWithAmortizations.length === 0) && (
+        {(!propertiesWithMortgages || propertiesWithMortgages.length === 0) && (
           <div className="text-center text-muted-foreground py-8">
             {tMortgages('messages.no_amortizations')}
           </div>

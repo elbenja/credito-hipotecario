@@ -34,7 +34,8 @@ interface AmortizationInput {
 }
 
 export interface UseScenarioCalculationsProps {
-  amortizationId: string
+  amortizationId?: string  // Keep for backward compatibility
+  mortgageId?: string      // New property for mortgage ID
   loanAmount: number
   interestRate: number
   termYears: number
@@ -46,6 +47,7 @@ export interface UseScenarioCalculationsProps {
 
 export function useScenarioCalculations({
   amortizationId,
+  mortgageId,
   loanAmount,
   interestRate,
   termYears,
@@ -56,87 +58,57 @@ export function useScenarioCalculations({
 }: UseScenarioCalculationsProps) {
   const queryClient = useQueryClient();
   
+  // Use mortgageId with fallback to amortizationId for backward compatibility
+  const id = mortgageId || amortizationId;
+  
   // Set up a subscription to changes in the new_rates table
   useEffect(() => {
-    if (!amortizationId) return;
+    if (!id) return;
     
     // Create a subscription to the new_rates table
     const channel = supabase
-      .channel(`scenario_new_rates_${amortizationId}`)
+      .channel(`scenario_new_rates_${id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'new_rates',
-          filter: `amortization_id=eq.${amortizationId}`
+          filter: `amortization_id=eq.${id}`
         },
         (payload) => {
           // When there's a change, invalidate the scenario query
           queryClient.invalidateQueries({
-            queryKey: ["scenarios", amortizationId]
+            queryKey: ["scenarios", id]
           });
         }
       )
       .subscribe();
     
-    // Clean up subscription when the component unmounts or amortizationId changes
+    // Clean up subscription when the component unmounts or id changes
     return () => {
       channel.unsubscribe();
     };
-  }, [amortizationId, queryClient]);
+  }, [id, queryClient]);
   
-  // Batch all inputs into a single object for debouncing
-  // This reduces the number of re-renders and recalculations
-  const inputs = useMemo(() => ({
-    loanAmount,
-    interestRate,
-    termYears,
-    installmentsPerYear,
-    firstInstallmentDate,
-    propertyInsurance,
-    loanInsurance
-  }), [
-    loanAmount,
-    interestRate,
-    termYears,
-    installmentsPerYear,
-    firstInstallmentDate,
-    propertyInsurance,
-    loanInsurance
-  ]);
-  
-  // Debounce the entire inputs object at once
-  const debouncedInputs = useDebounce(inputs, 500);
-  
-  // Extract values from debounced inputs for easier use
-  const {
-    loanAmount: debouncedLoanAmount,
-    interestRate: debouncedInterestRate,
-    termYears: debouncedTermYears,
-    installmentsPerYear: debouncedInstallmentsPerYear,
-    firstInstallmentDate: debouncedFirstInstallmentDate,
-    propertyInsurance: debouncedPropertyInsurance,
-    loanInsurance: debouncedLoanInsurance
-  } = debouncedInputs;
+  // Create debounced values to prevent excessive calculations
+  const debouncedLoanAmount = useDebounce(loanAmount, 500)
+  const debouncedInterestRate = useDebounce(interestRate, 500)
+  const debouncedTermYears = useDebounce(termYears, 500)
+  const debouncedInstallmentsPerYear = useDebounce(installmentsPerYear, 500)
+  const debouncedFirstInstallmentDate = useDebounce(firstInstallmentDate, 500)
+  const debouncedPropertyInsurance = useDebounce(propertyInsurance, 500)
+  const debouncedLoanInsurance = useDebounce(loanInsurance, 500)
 
-  // Ensure we have a valid date before calling toISOString
-  const firstInstallmentDateString = useMemo(() => {
-    if (!(debouncedFirstInstallmentDate instanceof Date)) {
-      return new Date().toISOString();
-    }
-    return debouncedFirstInstallmentDate.toISOString();
-  }, [debouncedFirstInstallmentDate]);
-
-  return useQuery({
+  return useQuery<Scenarios, Error>({
     queryKey: [
-      "scenarios",
-      amortizationId,
-      debouncedLoanAmount,
-      debouncedInterestRate,
-      debouncedTermYears,
-      debouncedInstallmentsPerYear,
-      firstInstallmentDateString,
+      "scenarios", 
+      id, 
+      debouncedLoanAmount, 
+      debouncedInterestRate, 
+      debouncedTermYears, 
+      debouncedInstallmentsPerYear, 
+      debouncedFirstInstallmentDate?.toISOString(), 
       debouncedPropertyInsurance,
       debouncedLoanInsurance
     ],
@@ -147,12 +119,12 @@ export function useScenarioCalculations({
         supabase
           .from("extra_installments")
           .select("*")
-          .eq("amortization_id", amortizationId)
+          .eq("mortgage_id", id)
           .order("start_date", { ascending: true }),
         supabase
           .from("new_rates")
           .select("*")
-          .eq("amortization_id", amortizationId)
+          .eq("mortgage_id", id)
           .order("effective_date", { ascending: true })
       ])
 
@@ -218,7 +190,7 @@ export function useScenarioCalculations({
         
         return {
           id: rc.id,
-          amortization_id: rc.amortization_id,
+          mortgage_id: rc.mortgage_id || rc.amortization_id, // Support both old and new field names
           new_interest_rate: rc.new_interest_rate,
           new_term_years: rc.new_term_years,
           effective_date: effectiveDate,
@@ -265,6 +237,6 @@ export function useScenarioCalculations({
     gcTime: 300000, // Increase gcTime to keep data in cache longer
     refetchOnMount: true,
     refetchOnWindowFocus: false, // Disable refetch on window focus to reduce unnecessary calls
-    enabled: !!amortizationId
+    enabled: !!id
   })
 } 

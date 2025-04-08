@@ -1,6 +1,7 @@
 {
   "extra_installments_section": {
     "title": "Extra Installments",
+    "add_button": "Add",
     "success": {
       "title": "Success",
       "add": "Extra installment added successfully",
@@ -22,6 +23,14 @@
       "frequency_one_time": "One-time",
       "first_date": "First Date",
       "start_date_required": "Start date is required",
+      "date_before_first_installment": "Early date",
+      "min_date_notice": "Date must be on or after {{date}}",
+      "month": "Month",
+      "day": "Day",
+      "year": "Year",
+      "month_required": "Month is required",
+      "day_required": "Day is required",
+      "year_required": "Year is required",
       "add_button": "Add"
     },
     "table": {
@@ -53,7 +62,18 @@
         "start_date": "Start Date",
         "delete_tooltip": "Delete rate"
       },
-      "no_options": "+ Add refinancing options"
+      "no_options": "+ Add refinancing options",
+      "errors": {
+        "interest_rate_required": "Interest rate is required",
+        "interest_rate_invalid": "Interest rate must be a valid number",
+        "interest_rate_min": "Interest rate must be at least 4%",
+        "interest_rate_max": "Interest rate cannot exceed 18%",
+        "date_required": "Start date is required",
+        "date_invalid": "Invalid start date",
+        "term_invalid": "Term must be a valid number",
+        "term_min": "Term must be at least 1 year",
+        "term_max": "Term cannot exceed 50 years"
+      }
     }
   }
 } 

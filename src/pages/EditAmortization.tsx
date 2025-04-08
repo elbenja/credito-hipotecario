@@ -714,6 +714,7 @@ export default function EditAmortization() {
                 </Form>
               )}
             </div>
+            hello , i'm the old page
           </div>
 
           {/* Right Container */}

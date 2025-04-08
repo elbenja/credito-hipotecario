@@ -52,7 +52,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty, bonusRules 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      if (!user) throw new Error(tGlobal('messages.no_user_found'))
+      if (!user) throw new Error(tGlobal('messages.no_user_found', 'User not found', { ns: 'properties' }))
 
       const propertyData = {
         name: values.name,

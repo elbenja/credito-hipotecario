@@ -1,6 +1,7 @@
 {
   "extra_installments_section": {
     "title": "Amortizaciones Extra",
+    "add_button": "Agregar",
     "success": {
       "title": "Éxito",
       "add": "Amortizaciones Extra agregado exitosamente",
@@ -22,6 +23,14 @@
       "frequency_one_time": "Una vez",
       "first_date": "Fecha de Inicio",
       "start_date_required": "La fecha de inicio es requerida",
+      "date_before_first_installment": "Fecha muy anterior",
+      "min_date_notice": "La fecha debe ser igual o posterior a {{date}}",
+      "month": "Mes",
+      "day": "Día",
+      "year": "Año",
+      "month_required": "El mes es requerido",
+      "day_required": "El día es requerido",
+      "year_required": "El año es requerido",
       "add_button": "Agregar"
     },
     "table": {
@@ -53,7 +62,18 @@
         "start_date": "Fecha de Inicio",
         "delete_tooltip": "Eliminar tasa"
       },
-      "no_options": "+ Agrega una compra de deuda"
+      "no_options": "+ Agrega una compra de deuda",
+      "errors": {
+        "interest_rate_required": "La tasa de interés es requerida",
+        "interest_rate_invalid": "La tasa de interés debe ser un número válido",
+        "interest_rate_min": "La tasa de interés debe ser al menos 4%",
+        "interest_rate_max": "La tasa de interés no puede exceder 18%",
+        "date_required": "La fecha de inicio es requerida",
+        "date_invalid": "Fecha de inicio inválida",
+        "term_invalid": "El plazo debe ser un número válido",
+        "term_min": "El plazo debe ser al menos 1 año",
+        "term_max": "El plazo no puede exceder 50 años"
+      }
     }
   },
   "scenario_graphs": {

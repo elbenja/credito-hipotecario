@@ -26,7 +26,8 @@
     "property_insurance": "Property Insurance",
     "property_insurance_short": "Prop Ins.",
     "first_home": "MiVivienda Bonus",
-    "sustainable": "Sustainable"
+    "sustainable": "Sustainable",
+    "name": "Property Name"
   },
   "insurance": {
     "type": "Insurance Type",
@@ -56,6 +57,7 @@
     "error_loading_bonus_rules": "Could not load bonus rules",
     "property_updated": "Property updated successfully",
     "property_added": "Property added successfully",
-    "error_saving": "There was an error saving the property"
+    "error_saving": "There was an error saving the property",
+    "no_user_found": "User not found"
   }
 } 

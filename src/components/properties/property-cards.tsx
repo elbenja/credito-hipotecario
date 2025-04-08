@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/auth-context";
 import { useTranslation } from "react-i18next";
@@ -108,6 +108,7 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
   const [mortgageCounts, setMortgageCounts] = useState<Record<string, number>>({});
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [propertyEditSheetOpen, setPropertyEditSheetOpen] = useState(false);
+  const fetchedPropertyIds = useRef<Set<string>>(new Set());
 
   // Use React Query to fetch properties
   const { data: properties = [], isLoading, refetch } = useQuery({
@@ -133,11 +134,22 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
     onPropertiesLoaded?.(properties.length > 0);
     
     const fetchMortgageCounts = async () => {
-      const counts: Record<string, number> = {};
+      if (properties.length === 0) return;
+      
+      const newCounts = { ...mortgageCounts };
+      let hasUpdates = false;
+      
       for (const property of properties) {
-        counts[property.id] = await getPropertyMortgagesCount(property.id);
+        if (!fetchedPropertyIds.current.has(property.id)) {
+          newCounts[property.id] = await getPropertyMortgagesCount(property.id);
+          fetchedPropertyIds.current.add(property.id);
+          hasUpdates = true;
+        }
       }
-      setMortgageCounts(counts);
+      
+      if (hasUpdates) {
+        setMortgageCounts(newCounts);
+      }
     };
     
     fetchMortgageCounts();
@@ -147,25 +159,32 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
   useEffect(() => {
     if (!user) return;
 
+    // Define a function to handle property updates that require refetching
+    const handlePropertyUpdate = () => {
+      // Clear cached property IDs to force a refresh of mortgage counts
+      fetchedPropertyIds.current.clear();
+      refetch(); // Refresh properties list
+    };
+
     // Set up the realtime subscription
     const channel = supabase
       .channel('property-updates')
       .on('broadcast', { event: 'property-created' }, (payload) => {
         console.log('Property created broadcast received:', payload);
         if (payload.payload?.userId === user.id) {
-          refetch(); // Refresh properties list
+          handlePropertyUpdate();
         }
       })
       .on('broadcast', { event: 'property-updated' }, (payload) => {
         console.log('Property updated broadcast received:', payload);
         if (payload.payload?.userId === user.id) {
-          refetch(); // Refresh properties list
+          handlePropertyUpdate();
         }
       })
       .on('broadcast', { event: 'property-deleted' }, (payload) => {
         console.log('Property deleted broadcast received:', payload);
         if (payload.payload?.userId === user.id) {
-          refetch(); // Refresh properties list
+          handlePropertyUpdate();
         }
       })
       .subscribe();
@@ -183,6 +202,9 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
   };
 
   const handlePropertyUpdate = (updatedProperty: Property) => {
+    // Clear cached property IDs to force a refresh of mortgage counts when properties are updated
+    fetchedPropertyIds.current.clear();
+    
     // Broadcast will handle notifying other components
     queryClient.invalidateQueries({ queryKey: ['properties'] });
     queryClient.invalidateQueries({ queryKey: ['properties-count'] });

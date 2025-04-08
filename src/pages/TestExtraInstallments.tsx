@@ -17,13 +17,13 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn, formatCurrency, formatDate, normalizeDate, createLocalDate } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
-import { ExtraInstallmentsSection } from "@/components/amortizations/extra-installments-section"
+import { ExtraInstallmentsSection } from "@/components/mortgages/extra-installments-section"
 import { ScenarioTable } from "@/components/amortizations/scenario-table"
 import { LoanCalculator } from "@/services/amortization/calculations/loan"
 import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
 import type { Database } from "@/types/supabase"
 import { CollapsibleScenarioPanel } from "@/components/amortizations/collapsible-scenario-panel"
-import { NewRateForm } from "@/components/amortizations/new-rate-form"
+import { NewRateForm } from "@/components/mortgages/new-rate-form"
 import { useTranslation } from "react-i18next"
 import {
   RegularScenarioPanel,
@@ -485,7 +485,7 @@ export default function TestExtraInstallments() {
           <>
             <div className="mt-8">
               <ExtraInstallmentsSection
-                amortizationId={selectedAmortization.id}
+                mortgageId={selectedAmortization.id}
                 currency={selectedProperty.currency}
                 loanAmount={selectedAmortization.loan_amount}
                 onInstallmentsChange={() => {
@@ -496,12 +496,13 @@ export default function TestExtraInstallments() {
                     queryKey: ["scenarios", selectedAmortization.id]
                   })
                 }}
+                firstInstallmentDate={selectedAmortization.first_installment_date ? new Date(selectedAmortization.first_installment_date) : undefined}
               />
             </div>
 
             <div className="mt-8">
               <NewRateForm
-                amortizationId={selectedAmortization.id}
+                mortgageId={selectedAmortization.id}
                 onSuccess={() => {
                   queryClient.invalidateQueries({
                     queryKey: ["linked-amortizations", selectedProperty.id]
@@ -511,6 +512,7 @@ export default function TestExtraInstallments() {
                   })
                 }}
                 className="space-y-4"
+                firstInstallmentDate={selectedAmortization.first_installment_date ? new Date(selectedAmortization.first_installment_date) : undefined}
               />
             </div>
 

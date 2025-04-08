@@ -553,6 +553,7 @@ export default function NewAmortization() {
 
             {/* Right Container */}
             <div className="w-full overflow-hidden flex-1 p-1 md:p-2 lg:p-4">
+              this is old 
               <div className="flex w-full flex-1 p-1 md:p-2 lg:p-4 items-center justify-center h-full">
                 <div className="flex flex-col gap-4 p-4 rounded-md border border-amber-400/10 bg-amber-500/5 ">
                         {/* <Button 
