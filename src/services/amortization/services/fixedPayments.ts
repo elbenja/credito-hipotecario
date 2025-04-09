@@ -113,8 +113,8 @@ export class FixedPaymentsService {
         (currentMonth === 6 || currentMonth === 11);
 
       // Calculate regular payment components
-      const monthlyInterest = balance * monthlyInterestRate
-      const monthlyLoanInsurance = balance * (loan_protection_insurance / 100)
+      const monthlyInterest = balance * monthlyInterestRate;
+      const monthlyLoanInsurance = balance * (loan_protection_insurance / 100);
       
       // Apply double payment if needed
       const basePayment = isDoublePayment ? base_installment * 2 : base_installment;
@@ -157,26 +157,30 @@ export class FixedPaymentsService {
         }
       }
       
+      // Apply extra payments directly to balance
+      const originalBalance = balance;
       if (extraAmount > 0) {
-        totalPayment += extraAmount;
+        // Directly reduce the balance by the extra amount
+        balance -= extraAmount;
       }
 
       const availableForPrincipal = totalPayment - monthlyInterest - currentPropertyInsurance - currentLoanInsurance;
+      const finalEndingBalance = balance - availableForPrincipal;
       
       const row: PaymentRow = {
         payment_date: currentDate,
-        beginning_balance: balance,
+        beginning_balance: originalBalance, // Original balance before extra payment
         monthly_payment: totalPayment,
         monthly_interest: monthlyInterest,
         property_insurance: currentPropertyInsurance,
         monthly_loan_insurance: currentLoanInsurance,
-        principal: availableForPrincipal,
-        ending_balance: balance - availableForPrincipal,
+        principal: availableForPrincipal, // Don't add extra amount to reported principal payment
+        ending_balance: finalEndingBalance,
         is_different_from_base: extraAmount > 0 || isDoublePayment
       };
 
       schedule.push(row);
-      balance = row.ending_balance;
+      balance = finalEndingBalance;
       months++;
     }
 

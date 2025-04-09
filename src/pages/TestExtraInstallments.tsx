@@ -305,15 +305,15 @@ export default function TestExtraInstallments() {
       // This avoids all timezone issues by omitting the time portion
       const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       
-      console.log('Updating amortization with date string:', dateString);
+      console.log('Updating mortgage with date string:', dateString);
       console.log('Original date components:', {
         year: year,
         month: month + 1, // Display 1-based for logging
         day: day
       });
       
-      // Prepare amortization data
-      const amortizationData = {
+      // Prepare mortgage data
+      const mortgageData = {
         name: values.name,
         down_payment: downPayment,
         interest_rate: interestRate,
@@ -328,14 +328,14 @@ export default function TestExtraInstallments() {
         installment_amount: 0 // Will be calculated by the service
       }
 
-      // Update amortization in Supabase
+      // Update mortgage in Supabase
       const { error: updateError } = await supabase
-        .from("amortizations")
-        .update(amortizationData)
+        .from("mortgages")
+        .update(mortgageData)
         .eq('id', selectedAmortization.id)
 
       if (updateError) {
-        console.error("Supabase update error:", updateError)
+        console.error("Error updating mortgage:", updateError)
         throw new Error(updateError.message)
       }
 
@@ -349,16 +349,16 @@ export default function TestExtraInstallments() {
 
       toast({
         title: "Success",
-        description: "Amortization updated successfully",
+        description: "Mortgage updated successfully",
       })
     } catch (error) {
-      console.error("Error updating amortization:", error)
+      console.error("Error updating mortgage:", error)
       toast({
         variant: "destructive",
         title: "Error",
         description: error instanceof Error 
           ? error.message 
-          : "There was an error updating the amortization"
+          : "There was an error updating the mortgage"
       })
     }
   }
@@ -430,13 +430,13 @@ export default function TestExtraInstallments() {
 
         {selectedProperty && (
           <div className="mt-8">
-            <h2 className="text-2xl font-bold mb-6">Amortizations</h2>
+            <h2 className="text-2xl font-bold mb-6">Mortgages</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h3 className="text-xl font-semibold mb-4">Linked Amortizations</h3>
+                <h3 className="text-xl font-semibold mb-4">Linked Mortgages</h3>
                 <div className="space-y-4">
                   {isLoadingAmortizations ? (
-                    <p className="text-muted-foreground">Loading amortizations...</p>
+                    <p className="text-muted-foreground">Loading mortgages...</p>
                   ) : linkedAmortizations.length > 0 ? (
                     linkedAmortizations.map((amortization) => (
                       <div
@@ -455,13 +455,13 @@ export default function TestExtraInstallments() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-muted-foreground">No amortizations found for this property.</p>
+                    <p className="text-muted-foreground">No mortgages found for this property.</p>
                   )}
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-xl font-semibold mb-4">Amortization Details</h3>
+                <h3 className="text-xl font-semibold mb-4">Mortgage Details</h3>
                 <div className="p-6 border rounded-lg">
                   {selectedAmortization ? (
                     <Form {...amortizationForm}>
@@ -473,7 +473,7 @@ export default function TestExtraInstallments() {
                       />
                     </Form>
                   ) : (
-                    <p className="text-muted-foreground">Select an amortization to view details</p>
+                    <p className="text-muted-foreground">Select a mortgage to view details</p>
                   )}
                 </div>
               </div>
@@ -556,7 +556,7 @@ function ScenarioCalculationsSection({
       const { data, error } = await supabase
         .from("new_rates")
         .select("*")
-        .eq("amortization_id", amortization.id)
+        .eq("mortgage_id", amortization.id)
         .order("effective_date", { ascending: true });
         
       if (error) {
@@ -574,16 +574,16 @@ function ScenarioCalculationsSection({
   useEffect(() => {
     if (!amortization?.id) return;
     
-    // Subscribe to changes to new_rates table for this amortization
+    // Subscribe to changes to new_rates table for this mortgage
     const channel = supabase
-      .channel(`new_rates_${amortization.id}_changes`)
+      .channel(`new_rates_mortgage_${amortization.id}_changes`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'new_rates',
-          filter: `amortization_id=eq.${amortization.id}`
+          filter: `mortgage_id=eq.${amortization.id}`
         },
         (payload) => {
           // Force a refetch of scenarios when rates change
@@ -599,7 +599,7 @@ function ScenarioCalculationsSection({
             const { data, error } = await supabase
               .from("new_rates")
               .select("*")
-              .eq("amortization_id", amortization.id)
+              .eq("mortgage_id", amortization.id)
               .order("effective_date", { ascending: true });
               
             if (error) {
@@ -715,7 +715,7 @@ function ScenarioCalculationsSection({
   // Use the useScenarioCalculations hook with the tracked form values
   // Include rateChangeKey as part of the dependencies to force refresh when rates change
   const { data: scenarios, isLoading, error } = useScenarioCalculations({
-    amortizationId: amortization.id,
+    mortgageId: amortization.id,
     loanAmount: formValues.loanAmount,
     interestRate: formValues.interestRate,
     termYears: formValues.termYears,

@@ -150,7 +150,7 @@ export function PropertyDisplay({
 
   // Debug logs for state changes
   useEffect(() => {
-    console.log('PropertyDisplay - Sheet Open State:', propertyEditSheetOpen);
+    // console.log('PropertyDisplay - Sheet Open State:', propertyEditSheetOpen);
   }, [propertyEditSheetOpen]);
 
   // Helper function to convert currency to PEN
