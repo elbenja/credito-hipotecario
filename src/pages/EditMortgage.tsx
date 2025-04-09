@@ -34,7 +34,7 @@ import {
   AcceleratedPanelGraph,
   LowerPaymentPanelGraph,
   NewRatePanelGraph 
-} from '@/components/amortizations/scenario-panels/graph-panels'
+} from '@/components/mortgages/scenario-panels/graph-panels'
 import { ExtraInstallmentsSection } from '@/components/mortgages/extra-installments-section'
 import { NewRateForm } from '@/components/mortgages/new-rate-form'
 import { useMemo, useCallback, useEffect, useState } from "react"
