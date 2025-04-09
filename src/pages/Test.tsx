@@ -74,6 +74,7 @@ export default function Test() {
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Two Buttons Solution</h3>
               <div className="flex items-center gap-4">
+
                 {isButtonOn ? (
                   <button 
                     className="ON p-2 border rounded-lg bg-card"
@@ -89,6 +90,7 @@ export default function Test() {
                     Content OFF <Calendar className="h-4 w-4 inline" />
                   </button>
                 )}
+                
               </div>
             </div>
 

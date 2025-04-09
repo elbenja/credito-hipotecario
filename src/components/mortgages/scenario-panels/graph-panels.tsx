@@ -8,6 +8,7 @@ import { format } from "date-fns"
 import { PaymentRow, ScenarioResult } from "@/services/amortization/types/common"
 import { useTranslation } from "react-i18next"
 import { Calendar } from "lucide-react"
+import { useState } from "react";
 
 type Currency = "USD" | "PEN"
 
@@ -30,7 +31,6 @@ interface ScenarioPanelProps {
   currency: string
   installmentsPerYear: number
 }
-
 
 // Memoize the data transformation function to avoid recalculating on every render
 const transformPaymentsToChartData = (payments: ExtendedPaymentRow[], totalMonths: number) => {
@@ -108,6 +108,8 @@ const ScenarioPanel = ({
   showBaseline = false
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
   const { t } = useTranslation()
+  // Add state for the toggle button inside the component
+  const [isButtonOn, setIsButtonOn] = useState(false);
   
   if (!scenario?.summary) return null;
 
@@ -209,48 +211,60 @@ const ScenarioPanel = ({
 
   <div className="flex">
      {/* fauxtoggle start*/}
-    <button className="flex justify-top gap-4 border-t px-6 py-4 text-left even:border-l  sm:border-l sm:border-t-0 sm:px-8 sm:py-6">
-     
-    <div className="  flex-col justify-start items-start gap-1">
-      <span className="text-xs text-muted-foreground">
-        {t('scenario_graphs.common.months', 'Months', { ns: 'components' })}
-        </span>
-          <div className="flex items-center gap-2"> 
-          <span className="text-lg font-bold leading-none sm:text-3xl">
-          {scenario.summary.total_months}
-          </span>
-              {differences.months && !showBaseline && (
-                <Badge variant={getBadgeVariant(differences.months, true)} className="text-sm">
-                  {formatDifference(differences.months)}
-                </Badge>
-              )}
-        </div>
-     </div>
-      <div className="self-stretch pt-5 flex justify-center items-center">
-       <Calendar className="size-4 text-muted-foreground" />
-    </div>
-    </button>
-      <button className="flex justify-top gap-4 border-t px-6 py-4 text-left even:border-l  sm:border-l sm:border-t-0 sm:px-8 sm:py-6">
-      
-      <div className="  flex-col justify-start items-start gap-1">
-        <span className="text-xs text-muted-foreground">
-          Years
-          </span>
-            <div className="flex items-center gap-2"> 
-            <span className="text-lg font-bold leading-none sm:text-3xl">
-                {(scenario.summary.total_months / 12).toFixed(1)}
-            </span>
-                {differences.months && !showBaseline && (
-                  <Badge variant={getBadgeVariant(differences.months, true)} className="text-sm">
-                    {differences.months ? `${differences.months < 0 ? '-' : '+'}${(Math.abs(differences.months/12)).toFixed(1)}` : ''}
-                  </Badge>
+
+               {isButtonOn ? (
+                 <button 
+                   className="flex justify-top gap-4 border-t px-6 py-4 text-left even:border-l sm:border-l sm:border-t-0 sm:px-8 sm:py-6 bg-secondary/20"
+                   onClick={() => setIsButtonOn(false)}
+                 >
+                 <div className="flex-col justify-start items-start gap-1">
+                   <span className="text-xs text-muted-foreground">
+                     {t('scenario_graphs.common.months', 'Months', { ns: 'components' })}
+                     </span>
+                       <div className="flex items-center gap-2"> 
+                       <span className="text-lg font-bold leading-none sm:text-3xl">
+                       {scenario.summary.total_months}
+                       </span>
+                           {differences.months && !showBaseline && (
+                             <Badge variant={getBadgeVariant(differences.months, true)} className="text-sm">
+                               {formatDifference(differences.months)}
+                             </Badge>
+                           )}
+                     </div>
+                  </div>
+                   <div className="self-stretch pt-5 flex justify-center items-center">
+                    <Calendar className="size-4 text-muted-foreground" />
+                 </div>
+                 </button>
+                ) : (
+                  <button 
+                    className="flex justify-top gap-4 border-t px-6 py-4 text-left even:border-l sm:border-l sm:border-t-0 sm:px-8 sm:py-6"
+                    onClick={() => setIsButtonOn(true)}
+                  >
+                 
+                 <div className="flex-col justify-start items-start gap-1">
+                   <span className="text-xs text-muted-foreground">
+                     Years
+                     </span>
+                       <div className="flex items-center gap-2"> 
+                       <span className="text-lg font-bold leading-none sm:text-3xl">
+                           {(scenario.summary.total_months / 12).toFixed(1)}
+                       </span>
+                           {differences.months && !showBaseline && (
+                             <Badge variant={getBadgeVariant(differences.months, true)} className="text-sm">
+                               {differences.months ? `${differences.months < 0 ? '-' : '+'}${(Math.abs(differences.months/12)).toFixed(1)}` : ''}
+                             </Badge>
+                           )}
+                     </div>
+                   </div>
+                   <div className="self-stretch pt-5 flex justify-center items-center">
+                     <Calendar className="size-4 text-muted-foreground" />
+                 </div>
+                 </button>
                 )}
-          </div>
-        </div>
-        <div className="self-stretch pt-5 flex justify-center items-center">
-          <Calendar className="size-4 text-muted-foreground" />
-      </div>
-      </button>
+
+
+
    {/* fauxtoggle end*/}
 
     <div className="flex flex-1 flex-col justify-top gap-1 border-t px-6 py-4 text-left even:border-l  sm:border-l sm:border-t-0 sm:px-8 sm:py-6">

@@ -53,30 +53,13 @@ export function ExtraInstallmentsSection({
   // Debug information for firstInstallmentDate
   useEffect(() => {
     if (firstInstallmentDate) {
-      console.log('Extra installments section - Original firstInstallmentDate:', firstInstallmentDate);
-      console.log('Extra installments section - firstInstallmentDate components:', {
-        year: firstInstallmentDate.getFullYear(),
-        month: firstInstallmentDate.getMonth() + 1, // 1-based for readability
-        day: firstInstallmentDate.getDate(),
-        hours: firstInstallmentDate.getHours(),
-        minutes: firstInstallmentDate.getMinutes(),
-        timezone: firstInstallmentDate.getTimezoneOffset() / -60, // Convert to hours and invert sign
-        isoString: firstInstallmentDate.toISOString(),
-        localString: firstInstallmentDate.toLocaleString(),
-      });
+
       
       // Try to normalize the date to see if that helps
       const normalized = normalizeDate(firstInstallmentDate);
-      console.log('Extra installments section - Normalized firstInstallmentDate:', normalized);
-      console.log('Extra installments section - Normalized components:', {
-        year: normalized.getFullYear(),
-        month: normalized.getMonth() + 1, // 1-based
-        day: normalized.getDate(),
-        hours: normalized.getHours(),
-        minutes: normalized.getMinutes(),
-      });
+
     } else {
-      console.log('Extra installments section - firstInstallmentDate is undefined');
+     
     }
   }, [firstInstallmentDate]);
 
