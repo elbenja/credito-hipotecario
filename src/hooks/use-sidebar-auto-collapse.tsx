@@ -1,7 +1,7 @@
 import * as React from "react"
 import { useSidebar } from "@/components/ui/sidebar"
 
-const SIDEBAR_AUTOCOLLAPSE_BREAKPOINT = 1320
+const SIDEBAR_AUTOCOLLAPSE_BREAKPOINT = 1380
 
 export function useSidebarAutoCollapse() {
   const { setOpen } = useSidebar()

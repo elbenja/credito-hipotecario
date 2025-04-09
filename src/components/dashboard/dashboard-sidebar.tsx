@@ -307,7 +307,7 @@ export function DashboardSidebar() {
   }
 
   return (
-    <Sidebar>
+    <Sidebar className="bg-background">
       <SidebarHeader className="border-b">
         <Link to="/dashboard" className="flex items-center gap-2 px-3 py-3">
           <Logo />

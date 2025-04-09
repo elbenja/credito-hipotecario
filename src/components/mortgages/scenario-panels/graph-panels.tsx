@@ -210,7 +210,7 @@ const ScenarioPanel = ({
   </div>
 
   <div className="flex">
-     {/* fauxtoggle start*/}
+
 
                {isButtonOn ? (
                  <button 
@@ -263,10 +263,6 @@ const ScenarioPanel = ({
                  </button>
                 )}
 
-
-
-   {/* fauxtoggle end*/}
-
     <div className="flex flex-1 flex-col justify-top gap-1 border-t px-6 py-4 text-left even:border-l  sm:border-l sm:border-t-0 sm:px-8 sm:py-6">
       <span className="text-xs text-muted-foreground whitespace-nowrap">
       {t('scenario_graphs.common.monthly_payment', 'Monthly Payment', { ns: 'components' })}
@@ -285,7 +281,7 @@ const ScenarioPanel = ({
     </div>
   </div>
 </div>
-      {/* end */}
+ 
       <div className="space-y-4 ">
         <div className="h-[300px] w-full mt-6">
           <ChartThemeWrapper >
@@ -308,8 +304,18 @@ const ScenarioPanel = ({
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis 
                     dataKey="date"
-                    tickFormatter={(value) => format(new Date(value), 'yy')}
-                    interval={24}  // Show every 12th tick
+                    tickFormatter={(value) => {
+                      // Get the payment month index from the chart data
+                      const valueIndex = chartData.findIndex(item => item.date === value);
+                      if (valueIndex === -1) return '';
+                      
+                      // Calculate year position (0-based)
+                      const yearPosition = Math.floor(valueIndex / 12);
+                      
+                      // Only show even year numbers
+                      return yearPosition % 2 === 0 ? yearPosition.toString() : '';
+                    }}
+                    interval={12}  // Show tick for each year
                     className="text-muted-foreground text-xs"
                   />
                   <ChartTooltip
