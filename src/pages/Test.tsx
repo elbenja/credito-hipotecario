@@ -15,8 +15,11 @@ import { addYears, subYears, startOfDay, isBefore, isAfter, isSameDay } from "da
 import { es } from 'date-fns/locale';
 import { useTranslation } from "react-i18next";
 import SVGillustration from "@/components/ui/SVGillustration";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Bold, Calendar } from "lucide-react";
 import { PropertyCards } from "@/components/properties/property-cards";
+import { Toggle } from "@/components/ui/toggle";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 
 type FormValues = {
@@ -33,6 +36,10 @@ export default function Test() {
       },
     },
   });
+
+
+  // Add a state for the button toggle
+  const [isButtonOn, setIsButtonOn] = useState(false);
 
   // Get the date boundaries
   const fifteenYearsAgo = startOfDay(subYears(new Date(), 15));
@@ -59,11 +66,34 @@ export default function Test() {
 
   return (
     <div className="min-h-screen  items-center justify-start bg-background flex gap-4 flex-wrap content-center p-6">
-   
+   this is a space to try ideas and prototype and build
+          {/* <PropertyCards /> */}
+          
+          <div className="flex flex-col gap-8 w-full max-w-md">
 
-          <PropertyCards />
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Two Buttons Solution</h3>
+              <div className="flex items-center gap-4">
+                {isButtonOn ? (
+                  <button 
+                    className="ON p-2 border rounded-lg bg-card"
+                    onClick={() => setIsButtonOn(false)}
+                  >
+                    Content ON <Calendar className="h-4 w-4 inline" />
+                  </button>
+                ) : (
+                  <button 
+                    className="OFF p-2 border rounded-lg"
+                    onClick={() => setIsButtonOn(true)}
+                  >
+                    Content OFF <Calendar className="h-4 w-4 inline" />
+                  </button>
+                )}
+              </div>
+            </div>
 
-
+            
+          </div>
       {/* <Form {...form}>
         <FormField
           control={form.control}
