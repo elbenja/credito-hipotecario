@@ -27,7 +27,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { amortizationFormSchema, type AmortizationFormValues } from "@/components/amortizations/schema"
 import { useToast } from "@/components/ui/use-toast"
-import { createLocalDate } from "@/lib/utils"
+import { createLocalDate, normalizeDate } from "@/lib/utils"
 import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
 import { 
   RegularPanelGraph,
@@ -217,7 +217,7 @@ export default function EditMortgage() {
         interest_rate: data.interest_rate?.toString() || "",
         term_years: data.term_years?.toString() || "",
         installments_per_year: data.installments_per_year?.toString() || "",
-        first_installment_date: createLocalDate(data.first_installment_date),
+        first_installment_date: normalizeDate(new Date(data.first_installment_date)),
         loan_protection_type: data.loan_protection_type as "none" | "custom" | "individual" | "joint",
         loan_protection_insurance: data.loan_protection_insurance?.toString() || "",
       })
@@ -239,7 +239,7 @@ export default function EditMortgage() {
         interestRate: mortgage.interest_rate || 0,
         termYears: mortgage.term_years || 0,
         installmentsPerYear: mortgage.installments_per_year || 12,
-        firstInstallmentDate: mortgage.first_installment_date ? new Date(mortgage.first_installment_date) : undefined,
+        firstInstallmentDate: mortgage.first_installment_date ? normalizeDate(new Date(mortgage.first_installment_date)) : undefined,
         propertyInsurance: mortgage.property?.property_insurance || 0,
         loanInsurance: mortgage.loan_protection_insurance || 0
       });
@@ -283,13 +283,7 @@ export default function EditMortgage() {
       // Handle date properly to preserve the day of month
       let firstInstallmentDate;
       if (values.first_installment_date) {
-        const tempDate = new Date(values.first_installment_date);
-        firstInstallmentDate = new Date(
-          tempDate.getFullYear(),
-          tempDate.getMonth(),
-          tempDate.getDate(),
-          12, 0, 0, 0
-        );
+        firstInstallmentDate = normalizeDate(new Date(values.first_installment_date));
       }
 
       setScenarioInputs({
@@ -392,9 +386,16 @@ export default function EditMortgage() {
           throw new Error("Down payment cannot be greater than property cost")
         }
 
+        // Handle date properly to preserve the day of month
+        let firstInstallmentDate;
+        if (values.first_installment_date) {
+          firstInstallmentDate = normalizeDate(new Date(values.first_installment_date));
+        }
+
         // Create a proper ISO date string preserving the exact date
-        const inputDate = new Date(values.first_installment_date);
-        const dateString = `${inputDate.getFullYear()}-${String(inputDate.getMonth() + 1).padStart(2, '0')}-${String(inputDate.getDate()).padStart(2, '0')}`;
+        const dateString = firstInstallmentDate 
+          ? `${firstInstallmentDate.getFullYear()}-${String(firstInstallmentDate.getMonth() + 1).padStart(2, '0')}-${String(firstInstallmentDate.getDate()).padStart(2, '0')}`
+          : '';
         
         // Prepare mortgage data
         const mortgageData = {
@@ -490,9 +491,16 @@ export default function EditMortgage() {
           throw new Error("Down payment cannot be greater than property cost")
         }
 
+        // Handle date properly to preserve the day of month
+        let firstInstallmentDate;
+        if (values.first_installment_date) {
+          firstInstallmentDate = normalizeDate(new Date(values.first_installment_date));
+        }
+
         // Create a proper ISO date string preserving the exact date
-        const inputDate = new Date(values.first_installment_date);
-        const dateString = `${inputDate.getFullYear()}-${String(inputDate.getMonth() + 1).padStart(2, '0')}-${String(inputDate.getDate()).padStart(2, '0')}`;
+        const dateString = firstInstallmentDate 
+          ? `${firstInstallmentDate.getFullYear()}-${String(firstInstallmentDate.getMonth() + 1).padStart(2, '0')}-${String(firstInstallmentDate.getDate()).padStart(2, '0')}`
+          : '';
         
         // Prepare mortgage data
         const mortgageData = {
@@ -709,7 +717,7 @@ export default function EditMortgage() {
                   />
                 ) : null
               )}
-              <Separator className="my-2" />
+              <Separator className="" />
               <div className="p-1 md:p-2 lg:p-4">
 
               {((isCreatingNew && selectedPropertyFromUrl) || (!isCreatingNew && mortgage)) && (
@@ -772,7 +780,7 @@ export default function EditMortgage() {
                             currency={mortgage.property.currency}
                             loanAmount={mortgage.loan_amount}
                             onInstallmentsChange={handleInstallmentsChange}
-                            firstInstallmentDate={mortgage.first_installment_date ? createLocalDate(mortgage.first_installment_date) : undefined}
+                            firstInstallmentDate={mortgage.first_installment_date ? normalizeDate(new Date(mortgage.first_installment_date)) : undefined}
                           />
                         </div>
                       </>
@@ -795,7 +803,7 @@ export default function EditMortgage() {
                             currency={mortgage.property.currency}
                             loanAmount={mortgage.loan_amount}
                             onInstallmentsChange={handleInstallmentsChange}
-                            firstInstallmentDate={mortgage.first_installment_date ? createLocalDate(mortgage.first_installment_date) : undefined}
+                            firstInstallmentDate={mortgage.first_installment_date ? normalizeDate(new Date(mortgage.first_installment_date)) : undefined}
                           />
                         </div>
                       </>
@@ -841,7 +849,7 @@ export default function EditMortgage() {
                               checkNewRates();
                             }}
                             className="space-y-4"
-                            firstInstallmentDate={mortgage.first_installment_date ? createLocalDate(mortgage.first_installment_date) : undefined}
+                            firstInstallmentDate={mortgage.first_installment_date ? normalizeDate(new Date(mortgage.first_installment_date)) : undefined}
                           />
                         </div>
                       </>
