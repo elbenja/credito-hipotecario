@@ -42,6 +42,29 @@
       "no_installments": "+ Agrega Amortizaciones Extra"
     }
   },
+  "scenario_graphs": {
+    "common": {
+      "sum_interest_insurance": "Suma de Intereses y Seguros",
+      "months": "Meses",
+      "years": "Años",
+      "monthly_payment": "Pago Mensual",
+      "principal": "Principal",
+      "interest_insurance": "Intereses y Seguros"
+    },
+    "regular": {
+      "title": " Regular",
+      "baseline": "Base"
+    },
+    "accelerated": {
+      "title": "Amotizaciones a plazo"
+    },
+    "lower_payment": {
+      "title": "Amotizaciones a cuotas"
+    },
+    "new_rate": {
+      "title": "Compra de deuda"
+    }
+  },
   "payment_scenarios": {
     "new_rate_form": {
       "refinancing_options": "Opciones de Compra de Deuda",
@@ -74,28 +97,6 @@
         "term_min": "El plazo debe ser al menos 1 año",
         "term_max": "El plazo no puede exceder 50 años"
       }
-    }
-  },
-  "scenario_graphs": {
-    "regular": {
-      "title": " Regular",
-      "baseline": "Base"
-    },
-    "accelerated": {
-      "title": "Amotizaciones a plazo"
-    },
-    "lower_payment": {
-      "title": "Amotizaciones a cuotas"
-    },
-    "new_rate": {
-      "title": "Compra de deuda"
-    },
-    "common": {
-      "sum_interest_insurance": "Suma de Intereses y Seguros",
-      "months": "Meses",
-      "monthly_payment": "Pago Mensual",
-      "principal": "Principal",
-      "interest_insurance": "Intereses y Seguros"
     }
   }
 } 

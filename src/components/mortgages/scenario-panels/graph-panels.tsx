@@ -244,7 +244,7 @@ const ScenarioPanel = ({
                  
                  <div className="flex-col justify-start items-start gap-1">
                    <span className="text-xs text-muted-foreground">
-                     Years
+                     {t('scenario_graphs.common.years', 'Years', { ns: 'components' })}
                      </span>
                        <div className="flex items-center gap-2"> 
                        <span className="text-lg font-bold leading-none sm:text-3xl">

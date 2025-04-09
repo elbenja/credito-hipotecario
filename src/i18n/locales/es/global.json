@@ -32,6 +32,29 @@
       "previous_year": "Año anterior",
       "next_year": "Año siguiente"
     },
+    "scenario_graphs": {
+      "common": {
+        "sum_interest_insurance": "Suma de Intereses y Seguros",
+        "months": "Meses",
+        "years": "Años",
+        "monthly_payment": "Pago Mensual",
+        "principal": "Capital",
+        "interest_insurance": "Intereses y Seguros"
+      },
+      "regular": {
+        "title": "Regular",
+        "baseline": "Base"
+      },
+      "accelerated": {
+        "title": "Amotizaciones a plazo"
+      },
+      "lower_payment": {
+        "title": "Amotizaciones a cuotas"
+      },
+      "new_rate": {
+        "title": "NCompra de deuda"
+      }
+    },
     "property_form": {
       "name": "Nombre",
       "type": "Tipo",

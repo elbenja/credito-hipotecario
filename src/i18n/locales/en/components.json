@@ -42,6 +42,29 @@
       "no_installments": "+ Add an extra installment"
     }
   },
+  "scenario_graphs": {
+    "common": {
+      "sum_interest_insurance": "Sum Interest & Insurances",
+      "months": "Months",
+      "years": "Years",
+      "monthly_payment": "Monthly Payment",
+      "principal": "Principal",
+      "interest_insurance": "Interest & Insurance"
+    },
+    "regular": {
+      "title": "Regular Scenario",
+      "baseline": "Baseline"
+    },
+    "accelerated": {
+      "title": "Accelerated Scenario"
+    },
+    "lower_payment": {
+      "title": "Lower Payment Scenario"
+    },
+    "new_rate": {
+      "title": "New Rate Scenario"
+    }
+  },
   "payment_scenarios": {
     "new_rate_form": {
       "refinancing_options": "Refinancing Options",
