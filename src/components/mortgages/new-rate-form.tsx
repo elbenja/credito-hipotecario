@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Trash2 } from "lucide-react"
-import { format, addYears, subWeeks, startOfDay, isBefore, isAfter, isSameDay } from "date-fns"
+import { format, addYears, subWeeks, startOfDay, isBefore, isAfter, isSameDay, isValid } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useState, useEffect, useMemo } from "react"
@@ -152,16 +152,30 @@ export function NewRateForm({
   const getInitialDate = () => {
     // 1. Last chronological date from refinancing options
     if (refinancingOptions.length > 0) {
-      const lastDate = refinancingOptions
-        .map(option => createLocalDate(option.effective_date))
-        .sort((a, b) => b.getTime() - a.getTime())[0];
-      
-      return lastDate;
+      try {
+        const lastDate = refinancingOptions
+          .map(option => createLocalDate(option.effective_date))
+          .filter(date => isValid(date))
+          .sort((a, b) => b.getTime() - a.getTime())[0];
+        
+        if (lastDate && isValid(lastDate)) {
+          return lastDate;
+        }
+      } catch (error) {
+        console.error("Error parsing dates from refinancing options:", error);
+      }
     }
     
     // 2. First installment date if available
-    if (firstInstallmentDate) {
-      return createLocalDate(firstInstallmentDate.toISOString().split('T')[0]);
+    if (firstInstallmentDate && isValid(firstInstallmentDate)) {
+      try {
+        const date = createLocalDate(firstInstallmentDate.toISOString().split('T')[0]);
+        if (isValid(date)) {
+          return date;
+        }
+      } catch (error) {
+        console.error("Error using firstInstallmentDate:", error);
+      }
     }
     
     // 3. Today's date as fallback
@@ -264,254 +278,260 @@ export function NewRateForm({
 
   return (
     <div className="space-y-6">
-
-      <div className=" p-2 inline-flex justify-start items-center gap-8">
-          
+      <div className="p-2 inline-flex justify-start items-center gap-8">
         <h3 className="text-lg font-medium">{t('payment_scenarios.new_rate_form.refinancing_options', 'Refinancing Options', { ns: 'components' })}</h3>
         
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button size="sm"  className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            {t('payment_scenarios.new_rate_form.add_button', 'Add', { ns: 'components' })}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-4" align="start">
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className={className}>
-              <div className="space-y-4"> 
-                <FormField
-                  control={form.control}
-                  name="new_interest_rate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('payment_scenarios.new_rate_form.new_interest_rate', 'New Interest Rate', { ns: 'components' })}</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input 
-                            placeholder="" 
-                            {...field}
-                            type="number"
-                            step="0.1"
-                            min={4}
-                            max={18}
-                            className="pl-8"
-                            value={field.value === undefined ? "" : field.value}
-                            onChange={e => {
-                              const value = e.target.value;
-                              field.onChange(value === "" ? undefined : parseFloat(value));
-                            }}
-                          />
-                          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
-                            %
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="sm" className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              {t('payment_scenarios.new_rate_form.add_button', 'Add', { ns: 'components' })}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-4" align="start">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className={className}>
+                <div className="space-y-4"> 
+                  <FormField
+                    control={form.control}
+                    name="new_interest_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('payment_scenarios.new_rate_form.new_interest_rate', 'New Interest Rate', { ns: 'components' })}</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input 
+                              placeholder="" 
+                              {...field}
+                              type="number"
+                              step="0.1"
+                              min={4}
+                              max={18}
+                              className="pl-8"
+                              value={field.value === undefined ? "" : field.value}
+                              onChange={e => {
+                                const value = e.target.value;
+                                field.onChange(value === "" ? undefined : parseFloat(value));
+                              }}
+                            />
+                            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
+                              %
+                            </div>
                           </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="new_term_years"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('payment_scenarios.new_rate_form.new_term', 'New Term', { ns: 'components' })}</FormLabel>
+                        <FormControl>
+                          <Select 
+                            onValueChange={(value) => field.onChange(value === "remaining" ? null : parseInt(value))}
+                            value={field.value?.toString() || "remaining"}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="10" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="remaining">{t('payment_scenarios.new_rate_form.remaining', 'Remaining Term', { ns: 'components' })}</SelectItem>
+                              {[5, 10, 15, 20, 25, 30].map((years) => (
+                                <SelectItem key={years} value={years.toString()}>
+                                  {t('payment_scenarios.new_rate_form.years', '{{value}} years', { ns: 'components', value: years })}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="effective_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('payment_scenarios.new_rate_form.start_date', 'Start Date', { ns: 'components' })}</FormLabel>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Select
+                            onValueChange={(month) => {
+                              try {
+                                const currentDate = field.value || new Date();
+                                if (!isValid(currentDate)) {
+                                  // If current date is invalid, use today
+                                  const today = new Date();
+                                  field.onChange(today);
+                                  return;
+                                }
+                                
+                                const targetMonth = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(month);
+                                const currentYear = currentDate.getFullYear();
+                                
+                                // Get the target day from firstInstallmentDate or current date
+                                const targetDay = firstInstallmentDate && isValid(firstInstallmentDate) 
+                                  ? firstInstallmentDate.getDate() 
+                                  : currentDate.getDate();
+                                
+                                // Create a date with the target day, handling month length issues
+                                let newDate = new Date(currentYear, targetMonth, targetDay, 12, 0, 0, 0);
+                                
+                                // Check if the month rolled over (e.g., trying to set Feb 31 would become Mar 3)
+                                if (newDate.getMonth() !== targetMonth) {
+                                  // Get the last day of the intended month
+                                  const lastDayOfMonth = new Date(currentYear, targetMonth + 1, 0).getDate();
+                                  newDate = new Date(currentYear, targetMonth, lastDayOfMonth, 12, 0, 0, 0);
+                                }
+                                
+                                // Ensure the date is valid
+                                if (!isValid(newDate)) {
+                                  console.error("Generated invalid date with month:", month);
+                                  return;
+                                }
+                                
+                                // Check if this would create a date before firstInstallmentDate
+                                if (firstInstallmentDate && isValid(firstInstallmentDate) && isBefore(newDate, firstInstallmentDate)) {
+                                  // Use firstInstallmentDate instead
+                                  field.onChange(firstInstallmentDate);
+                                  return;
+                                }
+                                
+                                field.onChange(newDate);
+                              } catch (error) {
+                                console.error("Error changing month:", error);
+                              }
+                            }}
+                            value={field.value && isValid(field.value) 
+                              ? format(field.value, "MMM") 
+                              : format(new Date(), "MMM")}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Month" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((month) => {
+                                // Disable months that would create a date before firstInstallmentDate
+                                const isDisabled = firstInstallmentDate &&
+                                  format(field.value || new Date(), "yyyy") === format(firstInstallmentDate, "yyyy") &&
+                                  ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(month) < firstInstallmentDate.getMonth();
+                                
+                                return (
+                                  <SelectItem 
+                                    key={month} 
+                                    value={month}
+                                    disabled={isDisabled}
+                                  >
+                                    {month}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                          
+                          <Select
+                            onValueChange={(year) => {
+                              try {
+                                const currentDate = field.value || new Date();
+                                if (!isValid(currentDate)) {
+                                  // If current date is invalid, use today
+                                  const today = new Date();
+                                  field.onChange(today);
+                                  return;
+                                }
+                                
+                                const currentMonth = currentDate.getMonth();
+                                
+                                // Get the target day from firstInstallmentDate or current date
+                                const targetDay = firstInstallmentDate && isValid(firstInstallmentDate) 
+                                  ? firstInstallmentDate.getDate() 
+                                  : currentDate.getDate();
+                                
+                                // Create a date with the target day, handling month length issues
+                                let newDate = new Date(parseInt(year), currentMonth, targetDay, 12, 0, 0, 0);
+                                
+                                // Check if the month rolled over (e.g., trying to set Feb 31 would become Mar 3)
+                                if (newDate.getMonth() !== currentMonth) {
+                                  // Get the last day of the intended month
+                                  const lastDayOfMonth = new Date(parseInt(year), currentMonth + 1, 0).getDate();
+                                  newDate = new Date(parseInt(year), currentMonth, lastDayOfMonth, 12, 0, 0, 0);
+                                }
+                                
+                                // Ensure the date is valid
+                                if (!isValid(newDate)) {
+                                  console.error("Generated invalid date with year:", year);
+                                  return;
+                                }
+                                
+                                // Check if this would create a date before firstInstallmentDate
+                                if (firstInstallmentDate && isValid(firstInstallmentDate) && isBefore(newDate, firstInstallmentDate)) {
+                                  // Use firstInstallmentDate instead
+                                  field.onChange(firstInstallmentDate);
+                                  return;
+                                }
+                                
+                                field.onChange(newDate);
+                              } catch (error) {
+                                console.error("Error changing year:", error);
+                              }
+                            }}
+                            value={field.value && isValid(field.value) 
+                              ? format(field.value, "yyyy") 
+                              : format(new Date(), "yyyy")}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Year" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: yearsRange }, (_, i) => startYear + i).map((year) => {
+                                // Disable years before the firstInstallmentDate year
+                                const isDisabled = firstInstallmentDate && year < firstInstallmentDate.getFullYear();
+                                
+                                return (
+                                  <SelectItem 
+                                    key={year} 
+                                    value={year.toString()}
+                                    disabled={isDisabled}
+                                  >
+                                    {year}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
                         </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {firstInstallmentDate && isValid(firstInstallmentDate)
+                            ? t('payment_scenarios.new_rate_form.day_info', 'Day will match installment day ({{day}})', { 
+                                ns: 'components', 
+                                day: firstInstallmentDate.getDate() 
+                              })
+                            : t('payment_scenarios.new_rate_form.default_day_info', 'Using current day', { ns: 'components' })}
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="new_term_years"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('payment_scenarios.new_rate_form.new_term', 'New Term', { ns: 'components' })}</FormLabel>
-                      <FormControl>
-                        <Select 
-                          onValueChange={(value) => field.onChange(value === "remaining" ? null : parseInt(value))}
-                          value={field.value?.toString() || "remaining"}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="10" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="remaining">{t('payment_scenarios.new_rate_form.remaining', 'Remaining Term', { ns: 'components' })}</SelectItem>
-                            {[5, 10, 15, 20, 25, 30].map((years) => (
-                              <SelectItem key={years} value={years.toString()}>
-                                {t('payment_scenarios.new_rate_form.years', '{{value}} years', { ns: 'components', value: years })}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="effective_date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('payment_scenarios.new_rate_form.start_date', 'Start Date', { ns: 'components' })}</FormLabel>
-                      <div className="grid grid-cols-3 gap-2">
-                        <Select
-                          onValueChange={(month) => {
-                            const currentDate = field.value || new Date();
-                            const newDate = new Date(currentDate);
-                            newDate.setMonth(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(month));
-                            
-                            // Check if this would create a date before firstInstallmentDate
-                            if (firstInstallmentDate) {
-                              const normalizedFirstInstallmentDate = createLocalDate(firstInstallmentDate.toISOString().split('T')[0]);
-                              const year = newDate.getFullYear();
-                              const day = newDate.getDate();
-                              const monthIndex = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(month);
-                              
-                              const proposedDate = new Date(year, monthIndex, day, 12, 0, 0, 0);
-                              
-                              if (isBefore(proposedDate, normalizedFirstInstallmentDate)) {
-                                // Use firstInstallmentDate instead
-                                field.onChange(normalizedFirstInstallmentDate);
-                                return;
-                              }
-                            }
-                            
-                            field.onChange(newDate);
-                          }}
-                          value={format(field.value || new Date(), "MMM")}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Month" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((month) => {
-                              // Disable months that would create a date before firstInstallmentDate
-                              const isDisabled = firstInstallmentDate &&
-                                format(field.value || new Date(), "yyyy") === format(firstInstallmentDate, "yyyy") &&
-                                ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(month) < firstInstallmentDate.getMonth();
-                              
-                              return (
-                                <SelectItem 
-                                  key={month} 
-                                  value={month}
-                                  disabled={isDisabled}
-                                >
-                                  {month}
-                                </SelectItem>
-                              );
-                            })}
-                          </SelectContent>
-                        </Select>
-                        
-                        <Select
-                          onValueChange={(day) => {
-                            const currentDate = field.value || new Date();
-                            const newDate = new Date(currentDate);
-                            newDate.setDate(parseInt(day));
-                            
-                            // Check if this would create a date before firstInstallmentDate
-                            if (firstInstallmentDate) {
-                              const normalizedFirstInstallmentDate = createLocalDate(firstInstallmentDate.toISOString().split('T')[0]);
-                              const year = newDate.getFullYear();
-                              const month = newDate.getMonth();
-                              
-                              const proposedDate = new Date(year, month, parseInt(day), 12, 0, 0, 0);
-                              
-                              if (isBefore(proposedDate, normalizedFirstInstallmentDate)) {
-                                // Use firstInstallmentDate instead
-                                field.onChange(normalizedFirstInstallmentDate);
-                                return;
-                              }
-                            }
-                            
-                            field.onChange(newDate);
-                          }}
-                          value={format(field.value || new Date(), "d")}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Day" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
-                              // Disable days that would create a date before firstInstallmentDate
-                              const isDisabled = firstInstallmentDate &&
-                                format(field.value || new Date(), "yyyy") === format(firstInstallmentDate, "yyyy") &&
-                                format(field.value || new Date(), "MMM") === format(firstInstallmentDate, "MMM") &&
-                                day < firstInstallmentDate.getDate();
-                              
-                              return (
-                                <SelectItem 
-                                  key={day} 
-                                  value={day.toString()}
-                                  disabled={isDisabled}
-                                >
-                                  {day}
-                                </SelectItem>
-                              );
-                            })}
-                          </SelectContent>
-                        </Select>
-                        
-                        <Select
-                          onValueChange={(year) => {
-                            const currentDate = field.value || new Date();
-                            const newDate = new Date(currentDate);
-                            newDate.setFullYear(parseInt(year));
-                            
-                            // Check if this would create a date before firstInstallmentDate
-                            if (firstInstallmentDate) {
-                              const normalizedFirstInstallmentDate = createLocalDate(firstInstallmentDate.toISOString().split('T')[0]);
-                              const month = newDate.getMonth();
-                              const day = newDate.getDate();
-                              
-                              const proposedDate = new Date(parseInt(year), month, day, 12, 0, 0, 0);
-                              
-                              if (isBefore(proposedDate, normalizedFirstInstallmentDate)) {
-                                // Use firstInstallmentDate instead
-                                field.onChange(normalizedFirstInstallmentDate);
-                                return;
-                              }
-                            }
-                            
-                            field.onChange(newDate);
-                          }}
-                          value={format(field.value || new Date(), "yyyy")}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Year" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Array.from({ length: yearsRange }, (_, i) => startYear + i).map((year) => {
-                              // Disable years before the firstInstallmentDate year
-                              const isDisabled = firstInstallmentDate && year < firstInstallmentDate.getFullYear();
-                              
-                              return (
-                                <SelectItem 
-                                  key={year} 
-                                  value={year.toString()}
-                                  disabled={isDisabled}
-                                >
-                                  {year}
-                                </SelectItem>
-                              );
-                            })}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button 
-                  type="submit"
-                  className="w-full mt-2"
-                  disabled={isSubmitting}
-                >
-                
-                  {t('ui.confirm', 'Confirm', { ns: 'global' })}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </PopoverContent>
-      </Popover>
-    </div>
+                  <Button 
+                    type="submit"
+                    className="w-full mt-2"
+                    disabled={isSubmitting}
+                  >
+                    {t('ui.confirm', 'Confirm', { ns: 'global' })}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </PopoverContent>
+        </Popover>
+      </div>
+      
       <div className="rounded-md border">
         <table className="w-full">
           <thead>
@@ -540,7 +560,17 @@ export function NewRateForm({
                       ? t('payment_scenarios.new_rate_form.years', '{{value}} years', { ns: 'components', value: option.new_term_years })
                       : t('payment_scenarios.new_rate_form.remaining', 'Remaining Term', { ns: 'components' })}
                   </td>
-                  <td className="p-2 text-sm">{formatDate(createLocalDate(option.effective_date))}</td>
+                  <td className="p-2 text-sm">
+                    {(() => {
+                      try {
+                        const date = createLocalDate(option.effective_date);
+                        return isValid(date) ? formatDate(date) : option.effective_date;
+                      } catch (error) {
+                        console.error("Error formatting date:", error);
+                        return option.effective_date;
+                      }
+                    })()}
+                  </td>
                   <td className="p-2">
                     <Button
                       variant="ghost"
