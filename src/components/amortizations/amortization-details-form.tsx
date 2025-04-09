@@ -413,7 +413,7 @@ export function AmortizationDetailsForm({
           </div>
         </div>
       </div>
-      <div className="mb-16 h-80">
+      <div className=" sm:mb-16 sm:h-80" >
       <Button type="submit" className="w-full ">
         {submitLabel === 'update' ? t('ui.update', { ns: 'global' }) : submitLabel}
       </Button>
