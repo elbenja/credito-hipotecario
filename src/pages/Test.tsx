@@ -15,12 +15,43 @@ import { addYears, subYears, startOfDay, isBefore, isAfter, isSameDay } from "da
 import { es } from 'date-fns/locale';
 import { useTranslation } from "react-i18next";
 import SVGillustration from "@/components/ui/SVGillustration";
-import { Plus, Pencil, Bold, Calendar } from "lucide-react";
+import { Plus, Pencil, Bold, Calendar, TrendingUp } from "lucide-react";
 import { PropertyCards } from "@/components/properties/property-cards";
 import { Toggle } from "@/components/ui/toggle";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Label as UILabel } from "@/components/ui/label";
+import { CartesianGrid, Label, LabelList, Line, LineChart, ReferenceDot, ReferenceLine, XAxis, YAxis } from "recharts";
 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+
+const chartData = [
+  { name: "Jan", visitors: 275 },
+  { name: "Feb", visitors: 200 },
+  { name: "Mar", visitors: 187 },
+  { name: "Apr", visitors: 230, breakEven: true },
+  { name: "May", visitors: 120 },
+  { name: "Jun", visitors: 190 },
+];
+
+const chartConfig = {
+  visitors: {
+    label: "Visitors",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig;
 
 type FormValues = {
   datePicker: DateRange;
@@ -37,7 +68,75 @@ export default function Test() {
     },
   });
 
-
+  function LineChartComponent() {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Line Chart - Custom Label</CardTitle>
+          <CardDescription>January - June 2024</CardDescription>
+        </CardHeader>
+        <CardContent className="relative">
+          <div className="absolute top-1/3 left-1/2 -translate-x-6 -translate-y-8 text-xs">
+            Break-even point
+          </div>
+          <ChartContainer config={chartConfig}>
+            <LineChart
+              accessibilityLayer
+              data={chartData}
+              margin={{
+                top: 70,
+                left: 24,
+                right: 24,
+                bottom: 24
+              }}
+              width={500}
+              height={350}
+            >
+              <CartesianGrid vertical={false} />
+              <ChartTooltip
+                cursor={false}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const data = payload[0].payload;
+                  
+                  return (
+                    <div className="rounded-md bg-black text-white px-3 py-2 shadow-md">
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-sm font-medium">{data.browser.charAt(0).toUpperCase() + data.browser.slice(1)}</span>
+                        <span className="text-sm font-medium">{data.visitors}</span>
+                      </div>
+                    </div>
+                  );
+                }}
+              />
+              <Line
+                dataKey="visitors"
+                type="monotone"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+                dot={{
+                  fill: "hsl(var(--primary))",
+                  r: 4
+                }}
+                activeDot={{
+                  r: 6,
+                }}
+              />
+            </LineChart>
+          </ChartContainer>
+        </CardContent>
+        <CardFooter className="flex-col items-start gap-2 text-sm">
+          <div className="flex gap-2 font-medium leading-none">
+            Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
+          </div>
+          <div className="leading-none text-muted-foreground">
+            Showing total visitors for the last 6 months
+          </div>
+        </CardFooter>
+      </Card>
+    );
+  }
+  
   // Add a state for the button toggle
   const [isButtonOn, setIsButtonOn] = useState(false);
 
@@ -65,97 +164,132 @@ export default function Test() {
   const locale = i18n.language === 'es' ? es : undefined;
 
   return (
-    <div className="min-h-screen  items-center justify-start bg-background flex gap-4 flex-wrap content-center p-6">
-   this is a space to try ideas and prototype and build
-          {/* <PropertyCards /> */}
-          
-          <div className="flex flex-col gap-8 w-full max-w-md">
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Two Buttons Solution</h3>
-              <div className="flex items-center gap-4">
-
-                {isButtonOn ? (
-                  <button 
-                    className="ON p-2 border rounded-lg bg-card"
-                    onClick={() => setIsButtonOn(false)}
-                  >
-                    Content ON <Calendar className="h-4 w-4 inline" />
-                  </button>
-                ) : (
-                  <button 
-                    className="OFF p-2 border rounded-lg"
-                    onClick={() => setIsButtonOn(true)}
-                  >
-                    Content OFF <Calendar className="h-4 w-4 inline" />
-                  </button>
-                )}
-                
-              </div>
-            </div>
-
-            
-          </div>
-      {/* <Form {...form}>
-        <FormField
-          control={form.control}
-          name="datePicker"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-md font-normal">
-                {t("ui.select")}
-              </FormLabel>
-              <FormControl>
-                <CalendarDatePicker
-                  date={field.value}
-                  onDateSelect={({ from, to }) => {
-                    form.setValue("datePicker", { from, to });
+    <div className="min-h-screen items-center justify-start bg-background flex gap-4 flex-wrap content-center p-6">
+      <h2>This is a space to try ideas and prototype and build</h2>
+      {/* <PropertyCards /> */}
+      
+      <div className="flex flex-col gap-8 w-full max-w-md">
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Line Chart - Custom Label</CardTitle>
+            <CardDescription>January - June 2024</CardDescription>
+          </CardHeader>
+          <CardContent className="relative" style={{
+            "--color-chrome": "hsl(var(--primary))",
+            "--color-safari": "hsl(var(--primary))",
+            "--color-firefox": "hsl(var(--primary))",
+            "--color-edge": "hsl(var(--primary))",
+            "--color-other": "hsl(var(--primary))",
+            "--color-visitors": "hsl(var(--primary))"
+          } as React.CSSProperties}>
+            <ChartContainer config={{
+              visitors: {
+                label: "Visitors",
+                color: "hsl(var(--primary))",
+              },
+              chrome: {
+                label: "Chrome",
+                color: "hsl(var(--primary))",
+              },
+              safari: {
+                label: "Safari",
+                color: "hsl(var(--primary))",
+              },
+              firefox: {
+                label: "Firefox",
+                color: "hsl(var(--primary))",
+              },
+              edge: {
+                label: "Edge",
+                color: "hsl(var(--primary))",
+              },
+              other: {
+                label: "Other",
+                color: "hsl(var(--primary))",
+              },
+            }}>
+              <LineChart
+                accessibilityLayer
+                data={[
+                  { browser: "chrome", visitors: 275, fill: "hsl(var(--primary))" },
+                  { browser: "safari", visitors: 200, fill: "hsl(var(--primary))" },
+                  { browser: "firefox", visitors: 187, fill: "hsl(var(--primary))" },
+                  { browser: "edge", visitors: 173, fill: "hsl(var(--primary))" },
+                  { browser: "other", visitors: 90, fill: "hsl(var(--primary))" },
+                ]}
+                margin={{
+                  top: 24,
+                  left: 24,
+                  right: 24,
+                  bottom: 24
+                }}
+                width={500}
+                height={300}
+              >
+                <CartesianGrid vertical={false} />
+                <ChartTooltip
+                  cursor={false}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const data = payload[0].payload;
+                    
+                    return (
+                      <div className="rounded-md bg-black text-white px-3 py-2 shadow-md">
+                        <div className="flex items-center justify-between gap-4">
+                          <span className="text-sm font-medium">{data.browser.charAt(0).toUpperCase() + data.browser.slice(1)}</span>
+                          <span className="text-sm font-medium">{data.visitors}</span>
+                        </div>
+                      </div>
+                    );
                   }}
-                  variant="outline"
-                  numberOfMonths={1}
-                  yearsRange={yearsRange}
-                  fromYear={startYear}
-                  disabled={isDateDisabled}
-                  locale={locale}
-                  classNames={{
-                    caption: "text-sm font-medium",
-                    caption_label: "text-sm font-medium",
-                    nav: "space-x-1 flex items-center",
-                    nav_button: cn(
-                      "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-                    ),
-                    nav_button_previous: "absolute left-1",
-                    nav_button_next: "absolute right-1",
-                    table: "w-full border-collapse space-y-1",
-                    head_row: "flex",
-                    head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-                    row: "flex w-full mt-2",
-                    cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                    day: cn(
-                      "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
-                    ),
-                    day_selected:
-                      "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                    day_today: "bg-accent text-accent-foreground",
-                    day_outside: "text-muted-foreground opacity-50",
-                    day_disabled: "text-muted-foreground opacity-50",
-                    day_range_middle:
-                      "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                    day_hidden: "invisible",
-                  }}
-                  className={cn(
-                    "w-full justify-start text-left font-normal form-control-focus",
-                    !field.value && "text-muted-foreground"
-                  )}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </Form> */}
-
+                <Line
+                  dataKey="visitors"
+                  type="monotone"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={{
+                    fill: "hsl(var(--primary))",
+                    r: 4
+                  }}
+                  activeDot={{
+                    r: 6,
+                  }}
+                >
+                  <LabelList
+                    position="top"
+                    offset={12}
+                    className="fill-foreground"
+                    fontSize={12}
+                    dataKey="browser"
+                    formatter={(value: string) => {
+                      const labels: Record<string, string> = {
+                        chrome: "Chrome", 
+                        safari: "Safari", 
+                        firefox: "Firefox", 
+                        edge: "Edge", 
+                        other: "Other"
+                      };
+                      return labels[value] || value;
+                    }}
+                  />
+                </Line>
+              </LineChart>
+            </ChartContainer>
+          </CardContent>
+          <CardFooter className="flex-col items-start gap-2 text-sm">
+            <div className="flex gap-2 font-medium leading-none">
+              Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
+            </div>
+            <div className="leading-none text-muted-foreground">
+              Showing total visitors for the last 6 months
+            </div>
+          </CardFooter>
+        </Card>
+        
+        {/* <LineChartComponent /> */}
+      </div>
     </div>
   );
-}
- 
+} 
