@@ -226,7 +226,7 @@ export function PropertyDisplay({
   };
 
   return (
-    <div className="space-y-4 ">
+    <div className="space-y-0 ">
       <div className="flex items-center p-2 sm:p-4 justify-between">
         <div>
           <p className="text-sm">{t('property', '', { ns: 'properties' })}</p>
