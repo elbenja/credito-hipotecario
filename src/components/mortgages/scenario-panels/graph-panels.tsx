@@ -1,7 +1,7 @@
 import React, { useMemo } from "react"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts"
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, ReferenceDot, Label } from "recharts"
 import { ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart"
 import { ChartThemeWrapper } from "@/components/ui/chart/theme-wrapper"
 import { format } from "date-fns"
@@ -40,6 +40,7 @@ const transformPaymentsToChartData = (payments: ExtendedPaymentRow[], totalMonth
     date: string;
     principal: number;
     interest_insurance: number;
+    breakEven?: boolean;
   };
   
   // Create an array of the full payment period
@@ -95,6 +96,26 @@ const transformPaymentsToChartData = (payments: ExtendedPaymentRow[], totalMonth
         }
       }
     }
+  }
+
+  // Find the break-even point where principal >= interest_insurance
+  // We're looking for the crossing point where the trend changes
+  let breakEvenIndex = -1;
+  for (let i = 0; i < result.length - 1; i++) {
+    // Check if this is the crossing point (one value goes from less to greater)
+    if (
+      (result[i].principal <= result[i].interest_insurance && 
+       result[i+1].principal >= result[i+1].interest_insurance) ||
+      (Math.abs(result[i].principal - result[i].interest_insurance) < 0.01)
+    ) {
+      breakEvenIndex = i;
+      break;
+    }
+  }
+
+  // Mark the break-even point
+  if (breakEvenIndex >= 0) {
+    result[breakEvenIndex].breakEven = true;
   }
   
   return result;
@@ -184,6 +205,11 @@ const ScenarioPanel = ({
       color: `hsl('light' ? '215.3 19.3% 7%' : '215.4 16.3% 46.9%'})`
     }
   } satisfies ChartConfig
+
+  // Find the break-even data point
+  const breakEvenPoint = useMemo(() => {
+    return chartData.find(point => point.breakEven);
+  }, [chartData]);
 
   return (
     
@@ -283,7 +309,7 @@ const ScenarioPanel = ({
 </div>
  
       <div className="space-y-4 ">
-        <div className="h-[300px] w-full mt-6">
+        <div className="h-[300px] w-full mt-6 relative">
           <ChartThemeWrapper >
             <ChartContainer config={translatedChartConfig}>
               <ResponsiveContainer width="100%" height="100%">
@@ -358,6 +384,27 @@ const ScenarioPanel = ({
                     fillOpacity={1}
                     fill="url(#interest)"
                   />
+                  
+                  {/* Break-even point marker with integrated label */}
+                  {breakEvenPoint && (
+                    <ReferenceDot
+                      x={breakEvenPoint.date}
+                      y={(breakEvenPoint.principal + breakEvenPoint.interest_insurance) / 2}
+                      r={4}
+                      fill="#fff"
+                      stroke="var(--color-principal)"
+                      strokeWidth={2}
+                    >
+                      <Label
+                        value={t('scenario_graphs.common.break_even_point', 'Break-even point', { ns: 'components' })}
+                        position="top"
+                        offset={15}
+                        fill="currentColor" 
+                        fontSize={15}
+                        fontWeight="500"
+                      />
+                    </ReferenceDot>
+                  )}
                 </AreaChart>
               </ResponsiveContainer>
             </ChartContainer>

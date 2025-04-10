@@ -49,7 +49,8 @@
       "years": "Años",
       "monthly_payment": "Pago Mensual",
       "principal": "Principal",
-      "interest_insurance": "Intereses y Seguros"
+      "interest_insurance": "Intereses y Seguros",
+      "break_even_point": "Punto de Equilibrio"
     },
     "regular": {
       "title": " Regular",
