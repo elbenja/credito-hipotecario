@@ -20,7 +20,8 @@
     "click_to_edit": "Click to edit",
     "duplicate": "Duplicate",
     "open_menu": "Open menu",
-    "add": "Add"
+    "add": "Add",
+    "add_mortgage": "Add Mortgage"
   },
   "components": {
     "calendar": {

@@ -63,7 +63,7 @@
     "loan_protection": "Seguro de Desgravamen",
     "individual": "Individual",
     "joint": "Mancomunado",
-    "none": "Ninguno",
+    "none": "Endosado",
     "monthly_cost": "Costo Mensual del Seguro"
   },
   "payment_summary": {
