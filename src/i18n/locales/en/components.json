@@ -64,6 +64,11 @@
     },
     "new_rate": {
       "title": "New Rate Scenario"
+    },
+    "tooltip": {
+      "break_even_point_title": "Break-even Point",
+      "break_even_point": "After the break-even point, making extra payments starts generating real savings.",
+      "investment_advice": "However, if you can invest that money and get a return higher than the interest savings, it’s better to invest."
     }
   },
   "payment_scenarios": {

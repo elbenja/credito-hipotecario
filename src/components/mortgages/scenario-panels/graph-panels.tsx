@@ -9,6 +9,12 @@ import { PaymentRow, ScenarioResult } from "@/services/amortization/types/common
 import { useTranslation } from "react-i18next"
 import { Calendar } from "lucide-react"
 import { useState } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Currency = "USD" | "PEN"
 
@@ -409,6 +415,23 @@ const ScenarioPanel = ({
               </ResponsiveContainer>
             </ChartContainer>
           </ChartThemeWrapper>
+        </div>
+        <div className="flex w-full items-center justify-center">
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger className="flex items-center gap-2 bg-card px-2 py-1 rounded-md text-sm ">
+                <div className="size-2.5 rounded-full border-2 border-brand"></div> 
+                {t('scenario_graphs.tooltip.break_even_point_title', 'Punto de Equilibrio', { ns: 'components' })}
+              </TooltipTrigger>
+              <TooltipContent className="w-80">
+                <p>{t('scenario_graphs.tooltip.break_even_point', 'Pasando el punto de equilibrio, amortizar a genera ahorro real.', { ns: 'components' })}</p>
+                <p>{t('scenario_graphs.tooltip.investment_advice', 'Sin embargo, si puedes invertir ese dinero y obtener un rendimiento mayor que el ahorro en intereses, te conviene más invertir.', { ns: 'components' })}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+         
         </div>
       </div>
     </div>

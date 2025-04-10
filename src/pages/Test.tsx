@@ -20,8 +20,7 @@ import { PropertyCards } from "@/components/properties/property-cards";
 import { Toggle } from "@/components/ui/toggle";
 import { Switch } from "@/components/ui/switch";
 import { Label as UILabel } from "@/components/ui/label";
-import { CartesianGrid, Label, LabelList, Line, LineChart, ReferenceDot, ReferenceLine, XAxis, YAxis } from "recharts";
-
+import { CartesianGrid, Label, LabelList, Line, LineChart, ReferenceDot, ReferenceLine, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
 import {
   Card,
   CardContent,
@@ -36,6 +35,12 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const chartData = [
   { name: "Jan", visitors: 275 },
@@ -165,131 +170,19 @@ export default function Test() {
 
   return (
     <div className="min-h-screen items-center justify-start bg-background flex gap-4 flex-wrap content-center p-6">
-      <h2>This is a space to try ideas and prototype and build</h2>
+      <h2 className="text-2xl font-bold w-full">This is a space to try ideas and prototype and build</h2>
       {/* <PropertyCards /> */}
       
-      <div className="flex flex-col gap-8 w-full max-w-md">
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Line Chart - Custom Label</CardTitle>
-            <CardDescription>January - June 2024</CardDescription>
-          </CardHeader>
-          <CardContent className="relative" style={{
-            "--color-chrome": "hsl(var(--primary))",
-            "--color-safari": "hsl(var(--primary))",
-            "--color-firefox": "hsl(var(--primary))",
-            "--color-edge": "hsl(var(--primary))",
-            "--color-other": "hsl(var(--primary))",
-            "--color-visitors": "hsl(var(--primary))"
-          } as React.CSSProperties}>
-            <ChartContainer config={{
-              visitors: {
-                label: "Visitors",
-                color: "hsl(var(--primary))",
-              },
-              chrome: {
-                label: "Chrome",
-                color: "hsl(var(--primary))",
-              },
-              safari: {
-                label: "Safari",
-                color: "hsl(var(--primary))",
-              },
-              firefox: {
-                label: "Firefox",
-                color: "hsl(var(--primary))",
-              },
-              edge: {
-                label: "Edge",
-                color: "hsl(var(--primary))",
-              },
-              other: {
-                label: "Other",
-                color: "hsl(var(--primary))",
-              },
-            }}>
-              <LineChart
-                accessibilityLayer
-                data={[
-                  { browser: "chrome", visitors: 275, fill: "hsl(var(--primary))" },
-                  { browser: "safari", visitors: 200, fill: "hsl(var(--primary))" },
-                  { browser: "firefox", visitors: 187, fill: "hsl(var(--primary))" },
-                  { browser: "edge", visitors: 173, fill: "hsl(var(--primary))" },
-                  { browser: "other", visitors: 90, fill: "hsl(var(--primary))" },
-                ]}
-                margin={{
-                  top: 24,
-                  left: 24,
-                  right: 24,
-                  bottom: 24
-                }}
-                width={500}
-                height={300}
-              >
-                <CartesianGrid vertical={false} />
-                <ChartTooltip
-                  cursor={false}
-                  content={({ active, payload }) => {
-                    if (!active || !payload?.length) return null;
-                    const data = payload[0].payload;
-                    
-                    return (
-                      <div className="rounded-md bg-black text-white px-3 py-2 shadow-md">
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="text-sm font-medium">{data.browser.charAt(0).toUpperCase() + data.browser.slice(1)}</span>
-                          <span className="text-sm font-medium">{data.visitors}</span>
-                        </div>
-                      </div>
-                    );
-                  }}
-                />
-                <Line
-                  dataKey="visitors"
-                  type="monotone"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{
-                    fill: "hsl(var(--primary))",
-                    r: 4
-                  }}
-                  activeDot={{
-                    r: 6,
-                  }}
-                >
-                  <LabelList
-                    position="top"
-                    offset={12}
-                    className="fill-foreground"
-                    fontSize={12}
-                    dataKey="browser"
-                    formatter={(value: string) => {
-                      const labels: Record<string, string> = {
-                        chrome: "Chrome", 
-                        safari: "Safari", 
-                        firefox: "Firefox", 
-                        edge: "Edge", 
-                        other: "Other"
-                      };
-                      return labels[value] || value;
-                    }}
-                  />
-                </Line>
-              </LineChart>
-            </ChartContainer>
-          </CardContent>
-          <CardFooter className="flex-col items-start gap-2 text-sm">
-            <div className="flex gap-2 font-medium leading-none">
-              Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-            </div>
-            <div className="leading-none text-muted-foreground">
-              Showing total visitors for the last 6 months
-            </div>
-          </CardFooter>
-        </Card>
-        
-        {/* <LineChartComponent /> */}
-      </div>
+      <TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger className="flex items-center gap-2 bg-card px-2 py-1 rounded-md text-sm "><div className=" size-2.5 rounded-full border-2 border-brand"></div> Punto de Equilibrio</TooltipTrigger>
+    <TooltipContent className="w-80">
+      <p> Pasando el punto de equilibrio, amortizar a genera ahorro real. </p>
+      <p> Sin embargo, si puedes invertir ese dinero y obtener un rendimiento mayor que el ahorro en intereses, te conviene más <strong>invertir.</strong></p>
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+
     </div>
   );
 } 
