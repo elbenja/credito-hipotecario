@@ -246,7 +246,7 @@ const ScenarioPanel = ({
 
                {isButtonOn ? (
                  <button 
-                   className="flex justify-top gap-4 border-t px-6 py-4 text-left even:border-l sm:border-l sm:border-t-0 sm:px-8 sm:py-6 bg-secondary/20"
+                   className="flex justify-top gap-2 border-t px-6 py-4 text-left even:border-l sm:border-l sm:border-t-0 sm:px-8 sm:py-6 bg-secondary/20"
                    onClick={() => setIsButtonOn(false)}
                  >
                  <div className="flex-col justify-start items-start gap-1">
@@ -265,12 +265,12 @@ const ScenarioPanel = ({
                      </div>
                   </div>
                    <div className="self-stretch pt-5 flex justify-center items-center">
-                    <Calendar className="size-4 text-muted-foreground" />
+                    <Calendar className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
                  </div>
                  </button>
                 ) : (
                   <button 
-                    className="flex justify-top gap-4 border-t px-6 py-4 text-left even:border-l sm:border-l sm:border-t-0 sm:px-8 sm:py-6"
+                    className="flex justify-top gap-2 border-t px-6 py-4 text-left even:border-l sm:border-l sm:border-t-0 sm:px-8 sm:py-6"
                     onClick={() => setIsButtonOn(true)}
                   >
                  
@@ -289,8 +289,8 @@ const ScenarioPanel = ({
                            )}
                      </div>
                    </div>
-                   <div className="self-stretch pt-5 flex justify-center items-center">
-                     <Calendar className="size-4 text-muted-foreground" />
+                   <div className="self-stretch pt-5 flex justify-center items-center ">
+                     <Calendar className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
                  </div>
                  </button>
                 )}
@@ -425,7 +425,7 @@ const ScenarioPanel = ({
                 {t('scenario_graphs.tooltip.break_even_point_title', 'Punto de Equilibrio', { ns: 'components' })}
               </TooltipTrigger>
               <TooltipContent className="w-80">
-                <p>{t('scenario_graphs.tooltip.break_even_point', 'Pasando el punto de equilibrio, amortizar a genera ahorro real.', { ns: 'components' })}</p>
+                {/* <p>{t('scenario_graphs.tooltip.break_even_point', 'Pasando el punto de equilibrio, amortizar a genera ahorro real.', { ns: 'components' })}</p> */}
                 <p>{t('scenario_graphs.tooltip.investment_advice', 'Sin embargo, si puedes invertir ese dinero y obtener un rendimiento mayor que el ahorro en intereses, te conviene más invertir.', { ns: 'components' })}</p>
               </TooltipContent>
             </Tooltip>
