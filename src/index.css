@@ -112,14 +112,18 @@
   .button {
     @apply outline-none focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand data-[state=open]:ring-[3px] data-[state=open]:ring-brand;
   }
+  ::selection {
+    @apply bg-brand text-black; /* A vibrant blue */
+
+  }
 }
 
 /* Grid pattern background */
-.bg-grid-pattern {
+/* .bg-grid-pattern {
   background-image: linear-gradient(to right, #e5e7eb 1px, transparent 1px),
     linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
   background-size: 24px 24px;
-}
+} */
 
 @layer utilities {
   .text-balance {
