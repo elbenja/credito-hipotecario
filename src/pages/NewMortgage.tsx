@@ -517,7 +517,7 @@ export default function NewMortgage() {
                             first_installment_date: dateString,
                           }
 
-                          console.log('Saving amortization data:', amortizationData)
+                          // console.log('Saving amortization data:', amortizationData)
                           const { data, error } = await supabase
                             .from("amortizations")
                             .insert(amortizationData)

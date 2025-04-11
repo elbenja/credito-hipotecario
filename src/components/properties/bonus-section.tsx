@@ -100,7 +100,7 @@ export function BonusSection({ form }: BonusSectionProps) {
 
   const isPriceInBonusRange = (price: number): boolean => {
     if (!price || isNaN(price) || bonusRules.length === 0) {
-      console.log('Invalid price or no bonus rules:', { price, rulesLength: bonusRules.length });
+      // console.log('Invalid price or no bonus rules:', { price, rulesLength: bonusRules.length });
       return false;
     }
     
@@ -131,7 +131,7 @@ export function BonusSection({ form }: BonusSectionProps) {
       return priceInPEN >= minValue && priceInPEN <= maxValue;
     });
     
-    console.log('Final result - Is price in range:', isInRange);
+    // console.log('Final result - Is price in range:', isInRange);
     return isInRange;
   }
 

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react"
+import React, { useMemo, useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, ReferenceDot, Label } from "recharts"
@@ -8,7 +8,6 @@ import { format } from "date-fns"
 import { PaymentRow, ScenarioResult } from "@/services/amortization/types/common"
 import { useTranslation } from "react-i18next"
 import { Calendar } from "lucide-react"
-import { useState } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -137,7 +136,16 @@ const ScenarioPanel = ({
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
   const { t } = useTranslation()
   // Add state for the toggle button inside the component
-  const [isButtonOn, setIsButtonOn] = useState(false);
+  const [isButtonOn, setIsButtonOn] = useState(() => {
+    // Initialize state from localStorage
+    const savedState = localStorage.getItem('isButtonOn');
+    return savedState ? JSON.parse(savedState) : false;
+  });
+
+  // Update localStorage whenever isButtonOn changes
+  useEffect(() => {
+    localStorage.setItem('isButtonOn', JSON.stringify(isButtonOn));
+  }, [isButtonOn]);
   
   if (!scenario?.summary) return null;
 
@@ -247,7 +255,7 @@ const ScenarioPanel = ({
 
                {isButtonOn ? (
                  <button 
-                   className="flex justify-top gap-2 border-t px-6 py-4 text-left even:border-l sm:border-l sm:border-t-0 sm:px-8 sm:py-6 bg-secondary/20"
+                   className="flex justify-top gap-2 border-t px-6 py-4 text-left even:border-l sm:border-l sm:border-t-0 sm:px-8 sm:py-6  hover:bg-card/50"
                    onClick={() => setIsButtonOn(false)}
                  >
                  <div className="flex-col justify-start items-start gap-1">
@@ -271,7 +279,7 @@ const ScenarioPanel = ({
                  </button>
                 ) : (
                   <button 
-                    className="flex justify-top gap-2 border-t px-6 py-4 text-left even:border-l sm:border-l sm:border-t-0 sm:px-8 sm:py-6"
+                    className="flex justify-top gap-2 border-t px-6 py-4 text-left even:border-l sm:border-l sm:border-t-0 sm:px-8 sm:py-6 hover:bg-card/50"
                     onClick={() => setIsButtonOn(true)}
                   >
                  
