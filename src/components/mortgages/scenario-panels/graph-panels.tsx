@@ -263,7 +263,8 @@ const ScenarioPanel = ({
 
 
 <div className="flex flex-col items-stretch space-y-0 border-t border-b p-0 sm:flex-row">
-  <div className="flex flex-1 flex-col justify-top gap-2 px-4 xl:px-6 py-4 xl:py-5 ">
+  <div className="flex flex-1 flex-col justify-top gap-2 px-4 xl:px-6 2xl:px-8
+py-4 xl:py-5 2xl:py-6">
     <span className="text-xs text-muted-foreground">{t('scenario_graphs.common.sum_interest_insurance', 'Sum Interest & Insurances', { ns: 'components' })}</span>
     <div className="flex items-center gap-2">
       <span className="text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold leading-none whitespace-nowrap"> 
@@ -284,7 +285,8 @@ const ScenarioPanel = ({
 
   <div className="flex">
                {isButtonOn ? (
-                 <button className="flex justify-top gap-2 border-t px-4 xl:px-6 py-4 xl:py-5 text-left even:border-l sm:border-l sm:border-t-0  hover:bg-card/50"
+                 <button className="flex justify-top gap-2 border-t  text-left even:border-l sm:border-l sm:border-t-0 hover:bg-card/50 px-4 xl:px-6 2xl:px-8
+py-4 xl:py-5 2xl:py-6 "
                    onClick={() => setIsButtonOn(false)}
                  >
                  <div className="flex-col justify-start items-start gap-1">
@@ -308,7 +310,8 @@ const ScenarioPanel = ({
                  </div>
                  </button>
                 ) : (
-                  <button className="flex justify-top gap-2 border-t px-4 xl:px-6 py-4 xl:py-5 text-left even:border-l sm:border-l sm:border-t-0   hover:bg-card/50"
+                  <button className="flex justify-top gap-2 border-t  text-left even:border-l sm:border-l sm:border-t-0 hover:bg-card/50 px-4 xl:px-6 2xl:px-8
+py-4 xl:py-5 2xl:py-6"
                     onClick={() => setIsButtonOn(true)}
                   >
                  
@@ -335,7 +338,8 @@ const ScenarioPanel = ({
                  </button>
                 )}
 
-    <div className="flex flex-1 flex-col justify-top gap-1 border-t px-4 xl:px-6 py-4 xl:py-5 text-left even:border-l  sm:border-l sm:border-t-0  ">
+    <div className="flex flex-1 flex-col justify-top gap-1 border-t  text-left even:border-l  sm:border-l sm:border-t-0  px-4 xl:px-6 2xl:px-8
+py-4 xl:py-5 2xl:py-6">
       <span className="text-xs text-muted-foreground whitespace-nowrap">
       {t('scenario_graphs.common.monthly_payment', 'Monthly Payment', { ns: 'components' })}
       </span>
