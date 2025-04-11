@@ -123,14 +123,14 @@ export default function Dashboard() {
     >
    
 {/* container start */}
-<div className="min-h-svh p-2 sm:p-6 flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 overflow-hidden">
+<div className="h-full w-full p-6  flex flex-col justify-center items-center ">
   
-<div className="mb-10 items-start gap-4 content-start flex flex-wrap justify-start">
+<div className="mb-10 w-full inline-flex justify-start items-center gap-4 flex-wrap content-center ">
       
      
       {!hasProperties && (
 
-       <div className="flex justify-center items-end gap-4 "> 
+       <div className="flex justify-start items-start gap-4 "> 
 
 
             <div className="w-60  rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
@@ -196,7 +196,7 @@ export default function Dashboard() {
           </div>
         </div>
         </div>
-      )}:{
+      )}{
 propertiesCount > 0 && <FeatureCounts />
       }
 

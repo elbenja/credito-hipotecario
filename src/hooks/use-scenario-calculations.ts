@@ -100,6 +100,21 @@ export function useScenarioCalculations({
   const debouncedPropertyInsurance = useDebounce(propertyInsurance, 500)
   const debouncedLoanInsurance = useDebounce(loanInsurance, 500)
 
+  // Add validation for input values
+  const isValidInput = useMemo(() => {
+    return (
+      debouncedLoanAmount > 0 &&
+      debouncedInterestRate > 0 &&
+      debouncedTermYears > 0 &&
+      [12, 14].includes(debouncedInstallmentsPerYear)
+    );
+  }, [
+    debouncedLoanAmount,
+    debouncedInterestRate,
+    debouncedTermYears,
+    debouncedInstallmentsPerYear
+  ]);
+
   return useQuery<Scenarios, Error>({
     queryKey: [
       "scenarios", 
@@ -113,130 +128,154 @@ export function useScenarioCalculations({
       debouncedLoanInsurance
     ],
     queryFn: async () => {
+      try {
+        // Return default scenarios if input values are invalid
+        if (!isValidInput) {
+          return getDefaultScenarios();
+        }
 
-      // Fetch extra installments and rate changes from Supabase
-      const [extraInstallmentsResult, newRatesResult] = await Promise.all([
-        supabase
-          .from("extra_installments")
-          .select("*")
-          .eq("mortgage_id", id)
-          .order("start_date", { ascending: true }),
-        supabase
-          .from("new_rates")
-          .select("*")
-          .eq("mortgage_id", id)
-          .order("effective_date", { ascending: true })
-      ])
+        // Fetch extra installments and rate changes from Supabase
+        const [extraInstallmentsResult, newRatesResult] = await Promise.all([
+          supabase
+            .from("extra_installments")
+            .select("*")
+            .eq("mortgage_id", id)
+            .order("start_date", { ascending: true }),
+          supabase
+            .from("new_rates")
+            .select("*")
+            .eq("mortgage_id", id)
+            .order("effective_date", { ascending: true })
+        ])
 
-      if (extraInstallmentsResult.error) throw extraInstallmentsResult.error
-      if (newRatesResult.error) throw newRatesResult.error
+        if (extraInstallmentsResult.error) throw extraInstallmentsResult.error
+        if (newRatesResult.error) throw newRatesResult.error
 
+        // Improved handling of extra installments to preserve exact dates
+        const extraInstallments = extraInstallmentsResult.data.map(ei => {
+          // Keep the original string format for YYYY-MM-DD dates
+          if (typeof ei.start_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ei.start_date)) {
+            // Return the date in its original string format to avoid any conversion issues
+            return {
+              amount: ei.amount,
+              frequency: ei.frequency,
+              start_date: ei.start_date // Keep as string
+            };
+          } else {
+            // For non-standard formats, create a normalized date string
+            const tempDate = new Date(ei.start_date);
+            const year = tempDate.getFullYear();
+            const month = tempDate.getMonth() + 1; // Convert to 1-based
+            const day = tempDate.getDate();
+            const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            
+            return {
+              amount: ei.amount,
+              frequency: ei.frequency,
+              start_date: dateString
+            };
+          }
+        });
 
-
-      // Improved handling of extra installments to preserve exact dates
-      const extraInstallments = extraInstallmentsResult.data.map(ei => {
-        // Keep the original string format for YYYY-MM-DD dates
-        if (typeof ei.start_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ei.start_date)) {
-          // Return the date in its original string format to avoid any conversion issues
-          return {
-            amount: ei.amount,
-            frequency: ei.frequency,
-            start_date: ei.start_date // Keep as string
-          };
-        } else {
-          // For non-standard formats, create a normalized date string
-          const tempDate = new Date(ei.start_date);
-          const year = tempDate.getFullYear();
-          const month = tempDate.getMonth() + 1; // Convert to 1-based
-          const day = tempDate.getDate();
-          const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        // Improved handling of rate changes to preserve exact dates
+        const rateChanges = newRatesResult.data.map(rc => {
+          let effectiveDate;
+          
+          // Check if the date is already in ISO format (YYYY-MM-DD or with T)
+          if (typeof rc.effective_date === 'string') {
+            // Handle different date formats
+            if (rc.effective_date.includes('T')) {
+              // ISO format with time component - extract just the date part
+              effectiveDate = rc.effective_date.split('T')[0];
+            } else if (/^\d{4}-\d{2}-\d{2}$/.test(rc.effective_date)) {
+              // Already in YYYY-MM-DD format
+              effectiveDate = rc.effective_date;
+            } else {
+              // Other string format - parse and reformat
+              const date = new Date(rc.effective_date);
+              effectiveDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            }
+          } else if (rc.effective_date instanceof Date) {
+            // Direct Date object
+            effectiveDate = `${rc.effective_date.getFullYear()}-${String(rc.effective_date.getMonth() + 1).padStart(2, '0')}-${String(rc.effective_date.getDate()).padStart(2, '0')}`;
+          } else {
+            // Handle unexpected case
+            console.error("Invalid date format in rate change:", rc.effective_date);
+            // Use current date as fallback
+            const today = new Date();
+            effectiveDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+          }
           
           return {
-            amount: ei.amount,
-            frequency: ei.frequency,
-            start_date: dateString
+            id: rc.id,
+            mortgage_id: rc.mortgage_id || rc.amortization_id, // Support both old and new field names
+            new_interest_rate: rc.new_interest_rate,
+            new_term_years: rc.new_term_years,
+            effective_date: effectiveDate,
+            created_at: rc.created_at,
+            updated_at: rc.updated_at,
+            new_balance: rc.new_balance
           };
-        }
-      });
+        });
 
-      // Improved handling of rate changes to preserve exact dates
-      const rateChanges = newRatesResult.data.map(rc => {
-        let effectiveDate;
-        
-        // Check if the date is already in ISO format (YYYY-MM-DD or with T)
-        if (typeof rc.effective_date === 'string') {
-          // Handle different date formats
-          if (rc.effective_date.includes('T')) {
-            // ISO format with time component - extract just the date part
-            effectiveDate = rc.effective_date.split('T')[0];
-          } else if (/^\d{4}-\d{2}-\d{2}$/.test(rc.effective_date)) {
-            // Already in YYYY-MM-DD format
-            effectiveDate = rc.effective_date;
-          } else {
-            // Other string format - parse and reformat
-            const date = new Date(rc.effective_date);
-            effectiveDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-          }
-        } else if (rc.effective_date instanceof Date) {
-          // Direct Date object
-          effectiveDate = `${rc.effective_date.getFullYear()}-${String(rc.effective_date.getMonth() + 1).padStart(2, '0')}-${String(rc.effective_date.getDate()).padStart(2, '0')}`;
-        } else {
-          // Handle unexpected case
-          console.error("Invalid date format in rate change:", rc.effective_date);
-          // Use current date as fallback
-          const today = new Date();
-          effectiveDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        }
-        
+        // Calculate all scenarios using the static method
+        const scenarios = ScenarioCalculator.calculateScenarios({
+          loan_amount: debouncedLoanAmount,
+          interest_rate: debouncedInterestRate,
+          term_years: debouncedTermYears,
+          installments_per_year: debouncedInstallmentsPerYear,
+          first_installment_date: debouncedFirstInstallmentDate || new Date(),
+          property_insurance: debouncedPropertyInsurance,
+          loan_insurance: debouncedLoanInsurance,
+          extra_installments: extraInstallments,
+          rate_changes: rateChanges
+        })
+
+        // If there are no rate changes, the new_rate scenario should be the same as regular
+        const hasNewRates = rateChanges && rateChanges.length > 0
+        const newRateScenario = hasNewRates && scenarios.new_rate?.summary && 
+          typeof scenarios.new_rate.summary.total_months === 'number' && 
+          scenarios.new_rate.summary.total_months > 0
+            ? scenarios.new_rate
+            : scenarios.regular
+
         return {
-          id: rc.id,
-          mortgage_id: rc.mortgage_id || rc.amortization_id, // Support both old and new field names
-          new_interest_rate: rc.new_interest_rate,
-          new_term_years: rc.new_term_years,
-          effective_date: effectiveDate,
-          created_at: rc.created_at,
-          updated_at: rc.updated_at,
-          new_balance: rc.new_balance
+          regular: scenarios.regular,
+          accelerated: scenarios.accelerated,
+          lower_payment: scenarios.lower_payment,
+          new_rate: newRateScenario
         };
-      });
-
-      // Calculate all scenarios using the static method
-      const scenarios = ScenarioCalculator.calculateScenarios({
-        loan_amount: debouncedLoanAmount,
-        interest_rate: debouncedInterestRate,
-        term_years: debouncedTermYears,
-        installments_per_year: debouncedInstallmentsPerYear,
-        first_installment_date: debouncedFirstInstallmentDate || new Date(),
-        property_insurance: debouncedPropertyInsurance,
-        loan_insurance: debouncedLoanInsurance,
-        extra_installments: extraInstallments,
-        rate_changes: rateChanges
-      })
-
-    
-
-      // If there are no rate changes, the new_rate scenario should be the same as regular
-      const hasNewRates = rateChanges && rateChanges.length > 0
-      const newRateScenario = hasNewRates && scenarios.new_rate?.summary && 
-        typeof scenarios.new_rate.summary.total_months === 'number' && 
-        scenarios.new_rate.summary.total_months > 0
-          ? scenarios.new_rate
-          : scenarios.regular
-
-      const result = {
-        regular: scenarios.regular,
-        accelerated: scenarios.accelerated,
-        lower_payment: scenarios.lower_payment,
-        new_rate: newRateScenario
-      };
-
-
-      return result;
+      } catch (error) {
+        console.error("Error calculating scenarios:", error);
+        return getDefaultScenarios();
+      }
     },
     staleTime: 30000, // Add a reasonable staleTime to prevent frequent refetches
     gcTime: 300000, // Increase gcTime to keep data in cache longer
     refetchOnMount: true,
     refetchOnWindowFocus: false, // Disable refetch on window focus to reduce unnecessary calls
-    enabled: !!id
+    retry: 1, // Limit retries to avoid excessive calculations
+    enabled: !!id && isValidInput
   })
+}
+
+// Default empty scenarios to prevent UI crashes
+function getDefaultScenarios(): Scenarios {
+  const defaultSummary: ScenarioSummaryResult = {
+    total_interest_and_insurance: 0,
+    total_months: 0,
+    monthly_payment: 0
+  };
+  
+  const defaultScenario: ScenarioResult = {
+    summary: defaultSummary,
+    payments: []
+  };
+  
+  return {
+    regular: defaultScenario,
+    accelerated: defaultScenario,
+    lower_payment: defaultScenario,
+    new_rate: defaultScenario
+  };
 } 

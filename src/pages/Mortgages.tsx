@@ -204,7 +204,7 @@ export default function Mortgages() {
         title={`${tMortgages('title')} - CreditoHipotecar.io`}
         description={tMortgages('description')}
       />
-      <div className="p-6 flex h-full w-full  items-center justify-center">
+      <div className="p-6 flex flex-col h-full w-full  items-center justify-center">
         {propertiesWithMortgages?.map((property) => (
           property.mortgages.length > 0 && (
             <div key={property.id} className="space-y-8 w-full h-full ">

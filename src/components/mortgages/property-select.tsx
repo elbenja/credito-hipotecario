@@ -18,11 +18,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { useEffect, useState } from "react"
+import { useEffect, useState, memo } from "react"
 import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
 import { UseFormReturn } from "react-hook-form"
-import { AmortizationFormValues } from "./schema"
+import { AmortizationFormValues } from "@/components/amortizations/schema"
 import { formatCurrency } from "@/lib/utils"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { Pencil } from "lucide-react"
@@ -76,7 +76,6 @@ function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: P
 
   // Debug logs for props
 
-
   const handlePropertyUpdate = async () => {
     console.log('PropertyEditSheet - handlePropertyUpdate called');
     // Fetch the updated property data
@@ -127,7 +126,6 @@ function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: P
               onOpenChange(false);
             }}
             selectedProperty={property}
-            bonusRules={bonusRules}
           />
         </div>
       </SheetContent>
@@ -135,6 +133,7 @@ function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: P
   );
 }
 
+// TODO: Consider memoizing this component for better performance
 export function PropertyDisplay({ 
   property,
   onPropertyUpdate

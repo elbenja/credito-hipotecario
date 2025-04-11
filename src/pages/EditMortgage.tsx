@@ -39,6 +39,15 @@ import { ExtraInstallmentsSection } from '@/components/mortgages/extra-installme
 import { NewRateForm } from '@/components/mortgages/new-rate-form'
 import { useMemo, useCallback, useEffect, useState } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { useExchangeRate } from "@/hooks/use-exchange-rate"
+
+// Add type for BonusRule
+type BonusRule = {
+  min_value: number
+  max_value: number
+  traditional_bonus: number
+  sustainable_bonus: number
+}
 
 export default function EditMortgage() {
   const { t } = useTranslation()
@@ -50,6 +59,9 @@ export default function EditMortgage() {
   const queryClient = useQueryClient()
   const location = useLocation()
   
+  // Add state for bonus rules
+  const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
+  
   // Extract propertyId from URL query parameters
   const queryParams = new URLSearchParams(location.search)
   const propertyIdFromUrl = queryParams.get('propertyId')
@@ -57,6 +69,56 @@ export default function EditMortgage() {
   const [isCreatingNew, setIsCreatingNew] = useState(!id)
   // Add state to track if extra installments exist
   const [hasExtraInstallments, setHasExtraInstallments] = useState(false)
+  
+  // Get the current exchange rate
+  const { data: exchangeRate } = useExchangeRate()
+
+  // Load bonus rules
+  useEffect(() => {
+    const fetchBonusRules = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("bonus_rules")
+          .select("*")
+          .order('min_value', { ascending: true });
+
+        if (error) {
+          console.error("Error loading bonus rules:", error);
+          return;
+        }
+
+        setBonusRules(data || []);
+      } catch (error) {
+        console.error("Error loading bonus rules:", error);
+      }
+    };
+
+    fetchBonusRules();
+  }, []);
+
+  // Helper function to convert currency to PEN
+  const convertToPEN = (amount: number, currency: string): number => {
+    if (currency === 'PEN') return amount;
+    return amount * (exchangeRate || 3.7167); // Use the exchange rate from the hook with fallback
+  };
+
+  // Helper function to calculate bonus
+  const calculateBonus = (property: Property, rules: BonusRule[]): number | null => {
+    if (!property.is_first_home) return null;
+
+    // Convert property value to PEN for bonus calculation
+    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency);
+    
+    const applicableRule = rules.find(
+      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
+    );
+
+    if (!applicableRule) return null;
+
+    return property.is_sustainable 
+      ? applicableRule.sustainable_bonus 
+      : applicableRule.traditional_bonus;
+  };
 
   const mortgageForm = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
@@ -74,11 +136,62 @@ export default function EditMortgage() {
     }
   })
 
-  // Handle property update callback
-  const handlePropertyUpdate = useCallback((updatedProperty: Property) => {
-    // Invalidate the query to refetch the data
-    queryClient.invalidateQueries({ queryKey: ["amortization", id] })
-  }, [queryClient, id])
+  // Handle property update callback - Modified to update loan amount
+  const handlePropertyUpdate = useCallback(async (updatedProperty: Property) => {
+    if (!id || !user) {
+      // Just invalidate the query for new mortgages
+      queryClient.invalidateQueries({ queryKey: ["amortization", id] });
+      return;
+    }
+    
+    try {
+      // Get current mortgage data for down payment
+      const { data: mortgageData, error: mortgageError } = await supabase
+        .from("amortizations")
+        .select("down_payment")
+        .eq("id", id)
+        .single();
+        
+      if (mortgageError) throw mortgageError;
+      
+      const currentDownPayment = mortgageData?.down_payment || 0;
+      
+      // Calculate bonus if applicable
+      const bonus = calculateBonus(updatedProperty, bonusRules);
+      
+      // Calculate new loan amount including bonus
+      const newLoanAmount = updatedProperty.price_cost - currentDownPayment - (bonus || 0);
+      
+      console.log("Updating loan amount:", {
+        propertyPrice: updatedProperty.price_cost,
+        downPayment: currentDownPayment,
+        bonus: bonus,
+        newLoanAmount: newLoanAmount
+      });
+      
+      // Update the mortgage record with the new loan amount
+      const { error: updateError } = await supabase
+        .from("amortizations")
+        .update({ loan_amount: newLoanAmount })
+        .eq('id', id);
+        
+      if (updateError) throw updateError;
+      
+      // Then invalidate all relevant queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["amortization", id] });
+      queryClient.invalidateQueries({ queryKey: ["scenarios", id] });
+      
+      // Update local scenario inputs state
+      setScenarioInputs(prev => ({
+        ...prev,
+        loanAmount: newLoanAmount,
+        propertyInsurance: updatedProperty.property_insurance || 0
+      }));
+      
+    } catch (error) {
+      console.error("Error updating mortgage after property update:", error);
+    }
+  }, [queryClient, id, user, bonusRules, exchangeRate]);
 
   // Fetch property if propertyId is provided in URL
   useEffect(() => {
@@ -162,72 +275,80 @@ export default function EditMortgage() {
     }
   }, [mortgageForm.watch("loan_protection_type")]);
 
-  const { data: mortgage, isLoading } = useQuery({
+  const { data: mortgage, isLoading, error: mortgageError } = useQuery({
     queryKey: ["amortization", id],
     queryFn: async () => {
       if (!user || !id) return null
 
-      const { data, error } = await supabase
-        .from("amortizations")
-        .select(`
-          id, 
-          name,
-          down_payment,
-          interest_rate,
-          term_years,
-          installments_per_year,
-          first_installment_date,
-          loan_protection_type,
-          loan_protection_insurance,
-          loan_amount,
-          property:properties!inner (
-            id,
+      try {
+        const { data, error } = await supabase
+          .from("amortizations")
+          .select(`
+            id, 
             name,
-            description,
-            currency,
-            price_cost,
-            is_first_home,
-            is_sustainable,
-            property_insurance,
-            property_insurance_type
-          )
-        `)
-        .eq("id", id)
-        .single()
+            down_payment,
+            interest_rate,
+            term_years,
+            installments_per_year,
+            first_installment_date,
+            loan_protection_type,
+            loan_protection_insurance,
+            loan_amount,
+            property:properties!inner (
+              id,
+              name,
+              description,
+              currency,
+              price_cost,
+              is_first_home,
+              is_sustainable,
+              property_insurance,
+              property_insurance_type
+            )
+          `)
+          .eq("id", id)
+          .single()
 
-      if (error) throw error
-      if (!data) return null
+        if (error) throw error
+        if (!data) return null
 
-      const property = data.property as unknown as Property
-      
-      // Ensure all required fields have default values
-      const propertyWithDefaults: Property = {
-        ...property,
-        is_first_home: property.is_first_home ?? false,
-        is_sustainable: property.is_sustainable ?? false,
-        property_insurance: property.property_insurance ?? null,
-        property_insurance_type: (property.property_insurance_type as "auto" | "manual") ?? "auto"
-      }
+        const property = data.property as unknown as Property
+        
+        // Ensure all required fields have default values
+        const propertyWithDefaults: Property = {
+          ...property,
+          is_first_home: property.is_first_home ?? false,
+          is_sustainable: property.is_sustainable ?? false,
+          property_insurance: property.property_insurance ?? null,
+          property_insurance_type: (property.property_insurance_type as "auto" | "manual") ?? "auto"
+        }
 
-      // Initialize form with fetched data
-      mortgageForm.reset({
-        name: data.name || "",
-        property_id: propertyWithDefaults.id,
-        down_payment: data.down_payment?.toString() || "",
-        interest_rate: data.interest_rate?.toString() || "",
-        term_years: data.term_years?.toString() || "",
-        installments_per_year: data.installments_per_year?.toString() || "",
-        first_installment_date: normalizeDate(new Date(data.first_installment_date)),
-        loan_protection_type: data.loan_protection_type as "none" | "custom" | "individual" | "joint",
-        loan_protection_insurance: data.loan_protection_insurance?.toString() || "",
-      })
+        // Initialize form with fetched data
+        mortgageForm.reset({
+          name: data.name || "",
+          property_id: propertyWithDefaults.id,
+          down_payment: data.down_payment?.toString() || "",
+          interest_rate: data.interest_rate?.toString() || "",
+          term_years: data.term_years?.toString() || "",
+          installments_per_year: data.installments_per_year?.toString() || "",
+          first_installment_date: normalizeDate(new Date(data.first_installment_date)),
+          loan_protection_type: data.loan_protection_type as "none" | "custom" | "individual" | "joint",
+          loan_protection_insurance: data.loan_protection_insurance?.toString() || "",
+        })
 
-      return {
-        ...data,
-        property: propertyWithDefaults
+        return {
+          ...data,
+          property: propertyWithDefaults
+        }
+      } catch (err) {
+        console.error("Error fetching mortgage data:", err);
+        throw err;
       }
     },
-    enabled: !!user && !!id
+    enabled: !!user && !!id,
+    staleTime: 30000, // 30 seconds
+    retry: 1, // Only retry once to avoid infinite loading states
+    refetchOnWindowFocus: false // Prevent unexpected refetches
   })
 
   // Update scenario inputs when mortgage data changes
@@ -256,73 +377,87 @@ export default function EditMortgage() {
     const subscription = mortgageForm.watch((values) => {
       if (!values) return;
       
-      // Only call this function when we have meaningful changes
-      const downPayment = parseFloat(values.down_payment?.replace(/[^0-9.]/g, "") || "0");
-      const loanAmount = mortgage.property.price_cost - downPayment;
-      const interestRate = parseFloat(values.interest_rate || "0");
-      const termYears = parseInt(values.term_years || "0");
-      const installmentsPerYear = parseInt(values.installments_per_year || "12");
-      
-      // Handle loan protection insurance based on type
-      let loanInsurance = 0;
-      switch (values.loan_protection_type) {
-        case "individual":
-          loanInsurance = 0.028;
-          break;
-        case "joint":
-          loanInsurance = 0.052;
-          break;
-        case "custom":
-          loanInsurance = parseFloat(values.loan_protection_insurance || "0");
-          break;
-        case "none":
-          loanInsurance = 0;
-          break;
-      }
+      try {
+        // Only call this function when we have meaningful changes
+        const downPayment = parseFloat(values.down_payment?.replace(/[^0-9.]/g, "") || "0");
+        const loanAmount = mortgage.property.price_cost - downPayment;
+        
+        // Calculate and subtract bonus if applicable
+        const bonus = calculateBonus(mortgage.property, bonusRules);
+        const adjustedLoanAmount = bonus ? loanAmount - bonus : loanAmount;
+        
+        const interestRate = parseFloat(values.interest_rate || "0");
+        const termYears = parseInt(values.term_years || "0");
+        const installmentsPerYear = parseInt(values.installments_per_year || "12");
+        
+        // Handle loan protection insurance based on type
+        let loanInsurance = 0;
+        switch (values.loan_protection_type) {
+          case "individual":
+            loanInsurance = 0.028;
+            break;
+          case "joint":
+            loanInsurance = 0.052;
+            break;
+          case "custom":
+            loanInsurance = parseFloat(values.loan_protection_insurance || "0");
+            break;
+          case "none":
+            loanInsurance = 0;
+            break;
+        }
 
-      // Handle date properly to preserve the day of month
-      let firstInstallmentDate;
-      if (values.first_installment_date) {
-        firstInstallmentDate = normalizeDate(new Date(values.first_installment_date));
-      }
+        // Handle date properly to preserve the day of month
+        let firstInstallmentDate;
+        if (values.first_installment_date) {
+          firstInstallmentDate = normalizeDate(new Date(values.first_installment_date));
+        }
 
-      setScenarioInputs({
-        mortgageId: id || "",
-        loanAmount,
-        interestRate,
-        termYears,
-        installmentsPerYear,
-        firstInstallmentDate,
-        propertyInsurance: mortgage.property.property_insurance || 0,
-        loanInsurance
-      });
+        setScenarioInputs({
+          mortgageId: id || "",
+          loanAmount: adjustedLoanAmount,
+          interestRate,
+          termYears,
+          installmentsPerYear,
+          firstInstallmentDate,
+          propertyInsurance: mortgage.property.property_insurance || 0,
+          loanInsurance
+        });
+      } catch (error) {
+        console.error("Error updating scenario inputs:", error);
+      }
     });
     
     return () => subscription.unsubscribe();
-  }, [mortgageForm, id, mortgage?.property]);
+  }, [mortgageForm, id, mortgage?.property, bonusRules, calculateBonus]);
 
-  const { data: scenarios, isLoading: isLoadingScenarios } = useScenarioCalculations(scenarioInputs)
+  const { data: scenarios, isLoading: isLoadingScenarios, error: scenariosError } = useScenarioCalculations(scenarioInputs)
 
   // Helper function to transform payment rows for ScenarioTable
   const mapPaymentForTable = useCallback((payment: any) => {
     if (!payment) return null;
     
-    const paymentDate = new Date(payment.payment_date)
-    const isDoublePaymentMonth = mortgage?.installments_per_year === 14 && 
-      (paymentDate.getMonth() === 6 || paymentDate.getMonth() === 11)
-    
-    return {
-      date: paymentDate,
-      beginning_balance: payment.beginning_balance || 0,
-      capital: payment.principal || payment.capital || 0,
-      interest: payment.monthly_interest || payment.interest || 0,
-      property_insurance: payment.property_insurance || 0,
-      loan_insurance: payment.monthly_loan_insurance || payment.loan_insurance || 0,
-      monthly_payment: payment.monthly_payment || 0,
-      ending_balance: payment.ending_balance || 0,
-      is_different_from_base: payment.is_different_from_base || false,
-      is_double_payment: isDoublePaymentMonth
-    };
+    try {
+      const paymentDate = new Date(payment.payment_date)
+      const isDoublePaymentMonth = mortgage?.installments_per_year === 14 && 
+        (paymentDate.getMonth() === 6 || paymentDate.getMonth() === 11)
+      
+      return {
+        date: paymentDate,
+        beginning_balance: payment.beginning_balance || 0,
+        capital: payment.principal || payment.capital || 0,
+        interest: payment.monthly_interest || payment.interest || 0,
+        property_insurance: payment.property_insurance || 0,
+        loan_insurance: payment.monthly_loan_insurance || payment.loan_insurance || 0,
+        monthly_payment: payment.monthly_payment || 0,
+        ending_balance: payment.ending_balance || 0,
+        is_different_from_base: payment.is_different_from_base || false,
+        is_double_payment: isDoublePaymentMonth
+      };
+    } catch (error) {
+      console.error("Error mapping payment for table:", error);
+      return null;
+    }
   }, [mortgage?.installments_per_year]);
 
   const onUpdateMortgage = async (values: AmortizationFormValues) => {
@@ -634,6 +769,29 @@ export default function EditMortgage() {
     )
   }
 
+  // Handle mortgage fetch errors
+  if (mortgageError) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[50vh]">
+          <div className="text-center">
+            <p className="text-lg text-destructive">{t("messages.error_loading", "Error loading mortgage data", { ns: "mortgages" })}</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {mortgageError instanceof Error ? mortgageError.message : t("messages.unknown_error", "An unknown error occurred", { ns: "global" })}
+            </p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => window.location.reload()}
+            >
+              {t("ui.reload", "Reload", { ns: "global" })}
+            </Button>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   if (!mortgage) {
     return (
       <DashboardLayout>
@@ -741,6 +899,17 @@ export default function EditMortgage() {
                 <div className="flex items-center justify-center h-64">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-2"></div>
                   <div className="text-muted-foreground">{t("ui.loading", { ns: "global" })}</div>
+                </div>
+              ) : scenariosError ? (
+                <div className="flex items-center justify-center h-64 flex-col">
+                  <div className="text-destructive mb-2">{t("messages.error_calculating", "Error calculating scenarios", { ns: "mortgages" })}</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ["scenarios", id] })}
+                  >
+                    {t("ui.retry", "Retry", { ns: "global" })}
+                  </Button>
                 </div>
               ) : (
                 <Tabs 

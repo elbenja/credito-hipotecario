@@ -251,7 +251,7 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
       {properties.map((property, index) => (
         <div 
           key={property.id} 
-          className="container h-80 w-52 bg-card rounded-2xl flex flex-col justify-between items-center overflow-hidden p-4 cursor-pointer hover:shadow-md transition-shadow"
+          className=" h-80 w-52 bg-card rounded-2xl flex flex-col items-center overflow-hidden p-4 cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => onPropertySelect && onPropertySelect(property)}
         >
           <div className="self-stretch flex justify-start items-start gap-2">

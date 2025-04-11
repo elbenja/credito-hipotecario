@@ -147,25 +147,50 @@ const ScenarioPanel = ({
     localStorage.setItem('isButtonOn', JSON.stringify(isButtonOn));
   }, [isButtonOn]);
   
-  if (!scenario?.summary) return null;
+  // Handle null or undefined scenario gracefully
+  if (!scenario?.summary) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 space-y-2 bg-muted/10 rounded-md">
+        <p className="text-muted-foreground">{t('scenario_graphs.common.no_data', 'No scenario data available', { ns: 'components' })}</p>
+      </div>
+    );
+  }
+
+  // Safely handle missing values in summary
+  const {
+    total_interest_and_insurance = 0,
+    total_months = 0,
+    monthly_payment = 0
+  } = scenario.summary || {};
 
   // Determine the total months to display
   // For regular scenario (showBaseline=true), use its own length
   // For other scenarios, use regular scenario length or fallback to 360
   const totalMonthsToDisplay = showBaseline
-    ? scenario.summary.total_months
+    ? total_months
     : (regularScenario?.summary?.total_months || 360);
 
   // Memoize chart data to prevent unnecessary recalculations
   const chartData = useMemo(() => {
     if (!scenario?.payments?.length) return [];
-    return transformPaymentsToChartData(scenario.payments, totalMonthsToDisplay);
+    try {
+      return transformPaymentsToChartData(scenario.payments, totalMonthsToDisplay);
+    } catch (error) {
+      console.error("Error transforming payments data:", error);
+      return [];
+    }
   }, [scenario.payments, totalMonthsToDisplay]);
 
   // Bail early if we don't have chart data
-  if (!chartData.length) return null;
+  if (!chartData.length) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 space-y-2 bg-muted/10 rounded-md">
+        <p className="text-muted-foreground">{t('scenario_graphs.common.no_chart_data', 'Chart data could not be generated', { ns: 'components' })}</p>
+      </div>
+    );
+  }
 
-  // Memoize the difference calculations
+  // Memoize the difference calculations to avoid recalculation on each render
   const differences = useMemo(() => {
     const getDifference = (current: number, base?: number) => {
       if (!base) return null;
@@ -176,22 +201,22 @@ const ScenarioPanel = ({
 
     return {
       sum: getDifference(
-        scenario.summary.total_interest_and_insurance,
+        total_interest_and_insurance,
         regularScenario?.summary?.total_interest_and_insurance
       ),
       months: getDifference(
-        scenario.summary.total_months,
+        total_months,
         regularScenario?.summary?.total_months
       ),
       payment: getDifference(
-        scenario.summary.monthly_payment,
+        monthly_payment,
         regularScenario?.summary?.monthly_payment
       )
     };
   }, [
-    scenario.summary.total_interest_and_insurance,
-    scenario.summary.total_months,
-    scenario.summary.monthly_payment,
+    total_interest_and_insurance,
+    total_months,
+    monthly_payment,
     regularScenario?.summary?.total_interest_and_insurance,
     regularScenario?.summary?.total_months,
     regularScenario?.summary?.monthly_payment
@@ -243,7 +268,7 @@ const ScenarioPanel = ({
     <div className="flex items-center gap-2">
       <span className="text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold leading-none whitespace-nowrap"> 
         {/* Sum01 */}
-        {formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}
+        {formatCurrency(total_interest_and_insurance, currency as Currency)}
       </span>
             {showBaseline ? (
               <Badge variant="primary" className="text-xs xl:text-sm whitespace-nowrap">
@@ -268,7 +293,7 @@ const ScenarioPanel = ({
                      </span>
                        <div className="flex items-center gap-2"> 
                        <span className="text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold leading-none ">
-                       {scenario.summary.total_months}
+                       {total_months}
                          {/* Sum02 */}
                        </span>
                            {differences.months && !showBaseline && (
@@ -294,7 +319,7 @@ const ScenarioPanel = ({
                      </span>
                        <div className="flex items-center gap-2"> 
                        <span className="text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold leading-none">
-                           {(scenario.summary.total_months / 12).toFixed(1)}
+                           {(total_months / 12).toFixed(1)}
                            {/* Sum02 */}
                        </span>
                            {differences.months && !showBaseline && (
@@ -316,7 +341,7 @@ const ScenarioPanel = ({
       </span>
       <div className="flex items-center gap-2">
         <span className="text-lg lg:text-xl xl:text-2xl 2xl:text-3xl whitespace-nowrap font-bold leading-none ">
-        {formatCurrency(scenario.summary.monthly_payment, currency as Currency)}
+        {formatCurrency(monthly_payment, currency as Currency)}
           </span>
           {/* Sum03 */}
           {differences.payment && !showBaseline && (
