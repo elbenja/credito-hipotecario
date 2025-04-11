@@ -191,7 +191,7 @@ export default function Mortgages() {
       <div className="p-6 flex h-full w-full  items-center justify-center">
         {propertiesWithMortgages?.map((property) => (
           property.mortgages.length > 0 && (
-            <div key={property.id} className="space-y-8">
+            <div key={property.id} className="space-y-8 w-full h-full ">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">{property.name}</h2>
                 <span className="text-xl font-semibold">
