@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next"
 import { MoreVertical, Copy, Trash, ArrowUp, ArrowDown, ChevronsUpDown, Home } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { useNavigate } from "react-router-dom"
+import { useQuery } from "@tanstack/react-query"
 
 type Property = {
   id: string
@@ -40,9 +41,8 @@ type BonusRule = {
   sustainable_bonus: number
 }
 
-type PropertyListProps = {
+export type PropertyListProps = {
   properties: Property[]
-  bonusRules: BonusRule[]
   onPropertySelect: (property: Property) => void
   onPropertyUpdate: (updatedProperty: Property, isDelete?: boolean) => void
   sortConfig: {
@@ -63,19 +63,32 @@ const formatCurrency = (amount: number, currency: string) => {
   return currency === 'PEN' ? formatted.replace('PEN', 'S/') : formatted
 }
 
-export function PropertyList({ 
-  properties, 
-  bonusRules, 
-  onPropertySelect, 
-  onPropertyUpdate,
-  sortConfig,
-  onSort
-}: PropertyListProps) {
+export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, sortConfig, onSort }: PropertyListProps) {
   const { t } = useTranslation(['properties', 'global'])
   const { toast } = useToast()
   const { data: exchangeRate } = useExchangeRate()
   const { user } = useAuth()
   const navigate = useNavigate()
+
+  const { data: bonusRules = [] } = useQuery({
+    queryKey: ['bonus-rules'],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('bonus_rules')
+          .select('*')
+          .eq('is_active', true)
+          .order('min_value', { ascending: true })
+
+        if (error) throw error
+        return data || []
+      } catch (error) {
+        console.error("Error loading bonus rules:", error)
+        return []
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
 
   const convertToPEN = (amount: number, currency: string): number => {
     if (currency === 'PEN') return amount

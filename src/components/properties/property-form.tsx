@@ -27,10 +27,9 @@ type PropertyFormProps = {
   onSuccess: () => void
   onClose: () => void
   selectedProperty: Property | null
-  bonusRules: BonusRule[]
 }
 
-export function PropertyForm({ onSuccess, onClose, selectedProperty, bonusRules }: PropertyFormProps) {
+export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyFormProps) {
   const { toast } = useToast()
   const { user } = useAuth()
   const { t: tGlobal } = useTranslation('global')
@@ -109,7 +108,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty, bonusRules 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <PropertyDetails form={form} isNewProperty={!selectedProperty} />
         <MonthlyCosts form={form} />
-        <BonusSection form={form} bonusRules={bonusRules} />
+        <BonusSection form={form} />
         
         <Button type="submit" className="w-full">
           {selectedProperty ? tGlobal('ui.update') : tGlobal('ui.create')}

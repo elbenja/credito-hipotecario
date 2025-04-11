@@ -30,6 +30,7 @@ import { PropertyForm } from "@/components/properties/property-form"
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { useState, useEffect } from 'react'
 import { RealtimeChannel } from '@supabase/supabase-js'
+import { BonusRule } from "@/components/properties/types"
 
 type Property = {
   id: string
@@ -293,7 +294,7 @@ export default function Mortgages() {
                 <Sheet open={open} onOpenChange={setOpen}>
                 
                   <SheetTrigger asChild>
-                    <button className="text-xs h-8 flex gap-2">  
+                  <button className="text-xs h-8 flex gap-2">  
                       <div className="flex-1 text-right text-sm font-medium leading-none">
                         {t('actions.add_property', { ns: 'properties' })}
                       </div>
@@ -313,7 +314,6 @@ export default function Mortgages() {
                         onSuccess={loadProperties}
                         onClose={() => setOpen(false)}
                         selectedProperty={null}
-                        bonusRules={[]}
                       />
                     </div>
                   </SheetContent>

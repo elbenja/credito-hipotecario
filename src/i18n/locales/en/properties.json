@@ -42,7 +42,7 @@
     "amount_currency": "Bonus (S/)",
     "eligible": "Bonus Eligible",
     "first_home": "MiVivienda Bonus",
-    "price_range": "Bonus for prices between S/67,400 - S/355,100.",
+    "price_range": "Bonus for prices between: S/{{min}} - S/{{max}}",
     "applicable_range": "Applicable range: S/{{min}} - S/{{max}}",
     "price_outside_range": "Price outside the range.",
     "price_outside_range_usd": "Price (S/{{penAmount}}) outside the range.",

@@ -14,6 +14,7 @@ import { useState, useEffect } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Plus } from "lucide-react"
 import { PropertyForm } from "@/components/properties/property-form"
+import { toast } from "@/components/ui/use-toast"
 
 export default function Dashboard() {
   const { t } = useTranslation(['dashboard', 'properties', 'mortgages'])
@@ -165,7 +166,6 @@ export default function Dashboard() {
                         onSuccess={handlePropertySuccess}
                         onClose={() => setOpen(false)}
                         selectedProperty={null}
-                        bonusRules={[]}
                       />
                     </div>
                   </SheetContent>

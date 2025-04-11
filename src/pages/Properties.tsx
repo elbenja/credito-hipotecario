@@ -16,7 +16,7 @@ import { useAuth } from "@/context/auth-context"
 import { useToast } from "@/components/ui/use-toast"
 import { Separator } from "@/components/ui/separator"
 import { SEO } from "@/components/seo"
-import { Property, BonusRule } from "@/components/properties/types"
+import { Property } from "@/components/properties/types"
 import { useTranslation } from "react-i18next"
 import SVGillustration from "@/components/ui/SVGillustration"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -72,39 +72,6 @@ export default function Properties() {
     enabled: !!user?.id,
     staleTime: 5 * 1000, // 5 seconds
     gcTime: 2 * 60 * 1000, // 2 minutes
-  })
-
-  // Fetch bonus rules with React Query
-  const { data: bonusRules = [] } = useQuery({
-    queryKey: ['bonus-rules'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('bonus_rules')
-          .select('*')
-          .eq('is_active', true)
-          .order('min_value', { ascending: true })
-
-        if (error) {
-          toast({
-            variant: "destructive",
-            title: t('global:ui.error'),
-            description: t('properties:messages.error_loading_bonus_rules'),
-          })
-          throw error
-        }
-        return data || []
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          title: t('global:ui.error'),
-          description: t('properties:messages.error_loading_bonus_rules'),
-        })
-        throw error
-      }
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
   })
 
   // Set up real-time subscription for property updates
@@ -208,6 +175,11 @@ export default function Properties() {
     setOpen(true)
   }
 
+  // Only open the property form when bonus rules are loaded
+  const handleOpenEmptyPropertyForm = () => {
+    setOpen(true);
+  };
+
   const headerActions = (
     <Sheet 
       open={open} 
@@ -232,7 +204,6 @@ export default function Properties() {
             onSuccess={handlePropertySuccess}
             onClose={() => setOpen(false)}
             selectedProperty={selectedProperty}
-            bonusRules={bonusRules}
           />
         </div>
       </SheetContent>
@@ -255,7 +226,6 @@ export default function Properties() {
         {properties.length > 0 ? (
           <PropertyList 
             properties={properties}
-            bonusRules={bonusRules}
             onPropertySelect={handlePropertySelect}
             onPropertyUpdate={handlePropertyUpdate}
             sortConfig={sortConfig}
@@ -298,7 +268,6 @@ export default function Properties() {
                         onSuccess={handlePropertySuccess}
                         onClose={() => setOpen(false)}
                         selectedProperty={null}
-                        bonusRules={[]}
                       />
                     </div>
                   </SheetContent>
