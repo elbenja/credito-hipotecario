@@ -276,8 +276,9 @@ export default function Mortgages() {
 
              <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4 ">
                 <Sheet open={open} onOpenChange={setOpen}>
+                
                   <SheetTrigger asChild>
-                    <button className="text-xs h-8 flex gap-2" onClick={() => navigate('/new-mortgage')}>
+                    <button className="text-xs h-8 flex gap-2">  
                       <div className="flex-1 text-right text-sm font-medium leading-none">
                         {t('actions.add_property', { ns: 'properties' })}
                       </div>
