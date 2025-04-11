@@ -23,14 +23,14 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { PropertySelect, type Property } from "@/components/amortizations/property-select"
+import { PropertySelect, type Property } from "@/components/mortgages/property-select"
 import { AmortizationDetailsForm } from "@/components/amortizations/amortization-details-form"
 import { 
   RegularPanelGraph, 
   AcceleratedPanelGraph, 
   LowerPaymentPanelGraph, 
   NewRatePanelGraph 
-} from '@/components/amortizations/scenario-panels/graph-panels'
+} from '@/components/mortgages/scenario-panels/graph-panels'
 import { ExtraInstallmentsSection } from '@/components/mortgages/extra-installments-section'
 import { NewRateForm } from '@/components/mortgages/new-rate-form'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
