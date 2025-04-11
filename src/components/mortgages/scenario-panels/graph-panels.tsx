@@ -226,6 +226,11 @@ const ScenarioPanel = ({
     return chartData.find(point => point.breakEven);
   }, [chartData]);
 
+  // Calculate the month-index for the break-even point
+  const breakEvenIndex = chartData.findIndex(point => point.breakEven);
+  const breakEvenYear = (breakEvenIndex / 12).toFixed(1);
+  const yearsLabel = t('scenario_graphs.common.years', 'years', { ns: 'components' });
+
   return (
     
     <div className="">
@@ -411,12 +416,13 @@ const ScenarioPanel = ({
                       strokeWidth={2}
                     >
                       <Label
-                        value={t('scenario_graphs.common.break_even_point', 'Break-even point', { ns: 'components' })}
+                        value={`${breakEvenYear} ${yearsLabel}: ${t('scenario_graphs.common.break_even_point', 'Break-even point', { ns: 'components' })}`}
                         position="top"
                         offset={15}
                         fill="currentColor" 
-                        fontSize={15}
+                        fontSize={13}
                         fontWeight="500"
+                        width={100}
                       />
                     </ReferenceDot>
                   )}
