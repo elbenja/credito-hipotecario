@@ -237,8 +237,8 @@ const ScenarioPanel = ({
       
 
 
-<div className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
-  <div className="flex flex-1 flex-col justify-top gap-2 px-6 py-5 sm:py-6">
+<div className="flex flex-col items-stretch space-y-0 border-t border-b p-0 sm:flex-row">
+  <div className="flex flex-1 flex-col justify-top gap-2 px-4 xl:px-6 py-4 xl:py-5 ">
     <span className="text-xs text-muted-foreground">{t('scenario_graphs.common.sum_interest_insurance', 'Sum Interest & Insurances', { ns: 'components' })}</span>
     <div className="flex items-center gap-2">
       <span className="text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold leading-none whitespace-nowrap"> 
@@ -246,11 +246,11 @@ const ScenarioPanel = ({
         {formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}
       </span>
             {showBaseline ? (
-              <Badge variant="primary" className="text-sm whitespace-nowrap">
+              <Badge variant="primary" className="text-xs xl:text-sm whitespace-nowrap">
                 {t('scenario_graphs.regular.baseline', 'Baseline', { ns: 'components' })}
               </Badge>
             ) : differences.sum && (
-              <Badge variant={getBadgeVariant(differences.sum)} className="text-sm whitespace-nowrap">
+              <Badge variant={getBadgeVariant(differences.sum)} className="text-xs xl:text-sm whitespace-nowrap">
                 {differences.sum < 0 ? '-' : '+'}{formatCurrency(Math.abs(differences.sum), currency as Currency)}
               </Badge>
             )}
@@ -258,11 +258,8 @@ const ScenarioPanel = ({
   </div>
 
   <div className="flex">
-
-
                {isButtonOn ? (
-                 <button 
-                   className="flex justify-top gap-2 border-t px-6 py-4 text-left even:border-l sm:border-l sm:border-t-0 sm:px-8 sm:py-6  hover:bg-card/50"
+                 <button className="flex justify-top gap-2 border-t px-4 xl:px-6 py-4 xl:py-5 text-left even:border-l sm:border-l sm:border-t-0  hover:bg-card/50"
                    onClick={() => setIsButtonOn(false)}
                  >
                  <div className="flex-col justify-start items-start gap-1">
@@ -275,7 +272,7 @@ const ScenarioPanel = ({
                          {/* Sum02 */}
                        </span>
                            {differences.months && !showBaseline && (
-                             <Badge variant={getBadgeVariant(differences.months, true)} className="text-sm">
+                             <Badge variant={getBadgeVariant(differences.months, true)} className="text-xs xl:text-sm">
                                {formatDifference(differences.months)}
                              </Badge>
                            )}
@@ -286,8 +283,7 @@ const ScenarioPanel = ({
                  </div>
                  </button>
                 ) : (
-                  <button 
-                    className="flex justify-top gap-2 border-t px-6 py-4 text-left even:border-l sm:border-l sm:border-t-0 sm:px-8 sm:py-6 hover:bg-card/50"
+                  <button className="flex justify-top gap-2 border-t px-4 xl:px-6 py-4 xl:py-5 text-left even:border-l sm:border-l sm:border-t-0   hover:bg-card/50"
                     onClick={() => setIsButtonOn(true)}
                   >
                  
@@ -302,7 +298,7 @@ const ScenarioPanel = ({
                            {/* Sum02 */}
                        </span>
                            {differences.months && !showBaseline && (
-                             <Badge variant={getBadgeVariant(differences.months, true)} className="text-sm">
+                             <Badge variant={getBadgeVariant(differences.months, true)} className="text-xs xl:text-sm">
                                {differences.months ? `${differences.months < 0 ? '-' : '+'}${(Math.abs(differences.months/12)).toFixed(1)}` : ''}
                              </Badge>
                            )}
@@ -314,7 +310,7 @@ const ScenarioPanel = ({
                  </button>
                 )}
 
-    <div className="flex flex-1 flex-col justify-top gap-1 border-t px-6 py-4 text-left even:border-l  sm:border-l sm:border-t-0 sm:px-8 sm:py-6">
+    <div className="flex flex-1 flex-col justify-top gap-1 border-t px-4 xl:px-6 py-4 xl:py-5 text-left even:border-l  sm:border-l sm:border-t-0  ">
       <span className="text-xs text-muted-foreground whitespace-nowrap">
       {t('scenario_graphs.common.monthly_payment', 'Monthly Payment', { ns: 'components' })}
       </span>
@@ -324,12 +320,13 @@ const ScenarioPanel = ({
           </span>
           {/* Sum03 */}
           {differences.payment && !showBaseline && (
-              <Badge variant={getBadgeVariant(differences.payment)} className="text-sm whitespace-nowrap ">
+              <Badge variant={getBadgeVariant(differences.payment)} className="text-xs xl:text-sm whitespace-nowrap ">
                 {differences.payment < 0 ? '-' : '+'}{formatCurrency(Math.abs(differences.payment), currency as Currency)}
               </Badge>
             )}
       </div>
     </div>
+
   </div>
 </div>
  

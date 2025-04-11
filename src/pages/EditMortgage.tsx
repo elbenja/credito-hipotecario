@@ -699,7 +699,7 @@ export default function EditMortgage() {
       <div className="flex flex-col min-h-screen">
         <div className="flex flex-col md:flex-row flex-1">
           {/* Left Container */}
-          <div className="sm:w-full md:w-[30%] md:min-w-[370px] md:max-w-[520px] relative flex-shrink-0">
+          <div className="sm:w-full md:w-[30%] md:min-w-[340px] md:max-w-[520px] relative flex-shrink-0">
             <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-border"></div>
             
               {isCreatingNew ? (
@@ -735,7 +735,7 @@ export default function EditMortgage() {
 
           {/* Right Container */}
           {!isCreatingNew && (
-            <div className="w-screen sm:w-full overflow-hidden flex-1 pt-6 sm:pt-1 p-1 md:p-2 lg:p-4">
+            <div className="w-screen sm:w-full overflow-hidden flex-1 p-0  ">
               {/* <h2 className="text-sm mb-6">{t("payment_scenarios_graphs")}</h2> */}
               {(!mortgage || !scenarios || isLoadingScenarios) ? (
                 <div className="flex items-center justify-center h-64">
@@ -748,13 +748,14 @@ export default function EditMortgage() {
                   className="w-full"
                   onValueChange={setActiveTab}
                 >
-                  <TabsList className="w-screen sm:w-auto flex inline-flex overflow-x-auto">
+                  <TabsList className="w-screen sm:w-full items-center justify-start flex inline-flex overflow-x-auto h-10 lg:h-12 xl:h-14 px-4">
                     <TabsTrigger className="flex-shrink-0 px-5" value="regular">{t("scenarios.regular.title", { ns: "mortgages" })}</TabsTrigger>
                     <TabsTrigger className="flex-shrink-0 px-5" value="accelerated">{t("scenarios.accelerated.title", { ns: "mortgages" })}</TabsTrigger>
                     <TabsTrigger className="flex-shrink-0 px-5" value="lower_payment">{t("scenarios.lower_payment.title", { ns: "mortgages" })}</TabsTrigger>
                     <TabsTrigger className="flex-shrink-0 px-5" value="new_rate">{t("scenarios.new_rate.title", { ns: "mortgages" })}</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="regular">
+
+                  <TabsContent value="regular" className="m-0">
                     {scenarios.regular && (
                       <RegularPanelGraph
                         scenario={scenarios.regular}
@@ -763,7 +764,7 @@ export default function EditMortgage() {
                       />
                     )}
                   </TabsContent>
-                  <TabsContent value="accelerated">
+                  <TabsContent value="accelerated" className="m-0">
                     {scenarios.accelerated && (
                       <>
                         {hasExtraInstallments ? (
@@ -786,7 +787,7 @@ export default function EditMortgage() {
                       </>
                     )}
                   </TabsContent>
-                  <TabsContent value="lower_payment">
+                  <TabsContent value="lower_payment" className="m-0">
                     {scenarios.lower_payment && (
                       <>
                         {hasExtraInstallments ? (
@@ -809,7 +810,7 @@ export default function EditMortgage() {
                       </>
                     )}
                   </TabsContent>
-                  <TabsContent value="new_rate">
+                  <TabsContent value="new_rate" className="m-0">
                     {scenarios.new_rate && (
                       <>
                         {hasNewRates ? (

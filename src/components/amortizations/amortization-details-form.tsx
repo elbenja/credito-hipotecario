@@ -119,6 +119,7 @@ export function AmortizationDetailsForm({
         <h4 className=" font-medium ">{t('amortization.loan_amount', { ns: 'mortgages' })}</h4>
         <div className="text-xl lg:text-xl xl:text-2xl 2xl:text-3xl font-bold">
           {formatCurrency(Math.round(loanAmount), selectedProperty?.currency || "PEN")}
+          {/* brackets */}
         </div>
         <div className="text-xs ">
           {t('amortization.loan_amount_formula', { ns: 'mortgages' })}
