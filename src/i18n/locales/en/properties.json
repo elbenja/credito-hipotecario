@@ -52,7 +52,7 @@
     "qualifies_higher_bonus": "Qualifies for the higher bonus"
   },
   "messages": {
-    "no_properties": "No properties found. Add your first property to get started.",
+    "no_properties": "Add your first property to get started.",
     "error_loading_properties": "Could not load properties",
     "error_loading_bonus_rules": "Could not load bonus rules",
     "property_updated": "Property updated successfully",

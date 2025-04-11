@@ -18,74 +18,150 @@ import { Separator } from "@/components/ui/separator"
 import { SEO } from "@/components/seo"
 import { Property, BonusRule } from "@/components/properties/types"
 import { useTranslation } from "react-i18next"
+import SVGillustration from "@/components/ui/SVGillustration"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 
 export default function Properties() {
   const { t, i18n } = useTranslation(['properties', 'global'])
-  
-
-  
   const [open, setOpen] = useState(false)
   const { user } = useAuth()
   const { toast } = useToast()
-  const [properties, setProperties] = useState<Property[]>([])
-  const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
+  const queryClient = useQueryClient()
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Property;
     direction: 'asc' | 'desc';
   } | null>(null)
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
 
-  const loadBonusRules = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('bonus_rules')
-        .select('*')
-        .eq('is_active', true)
-        .order('min_value', { ascending: true })
+  // Fetch properties with React Query
+  const { data: properties = [], isLoading } = useQuery({
+    queryKey: ['properties', user?.id],
+    queryFn: async () => {
+      if (!user) return []
 
-      if (error) throw error
-      setBonusRules(data || [])
-    } catch (error) {
-      // console.error('Error loading bonus rules:', error)
-      toast({
-        variant: "destructive",
-        title: t('global:ui.error'),
-        description: t('properties:messages.error_loading_bonus_rules'),
-      })
-    }
-  }
+      try {
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('user_id', user.id)
 
-  const loadProperties = async () => {
-    try {
-      if (!user) return
+        if (error) {
+          console.error('Error loading properties:', error)
+          toast({
+            variant: "destructive",
+            title: t('global:ui.error'),
+            description: t('properties:messages.error_loading_properties'),
+          })
+          throw error
+        }
+        
+        return (data || []).map(p => ({
+          ...p,
+          property_insurance_type: p.property_insurance_type || "auto"
+        })) as Property[]
+      } catch (error) {
+        console.error('Error loading properties:', error)
+        toast({
+          variant: "destructive",
+          title: t('global:ui.error'),
+          description: t('properties:messages.error_loading_properties'),
+        })
+        throw error
+      }
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 1000, // 5 seconds
+    gcTime: 2 * 60 * 1000, // 2 minutes
+  })
 
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('user_id', user.id)
+  // Fetch bonus rules with React Query
+  const { data: bonusRules = [] } = useQuery({
+    queryKey: ['bonus-rules'],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('bonus_rules')
+          .select('*')
+          .eq('is_active', true)
+          .order('min_value', { ascending: true })
 
-      if (error) throw error
-      
-      const updatedData = (data || []).map(p => ({
-        ...p,
-        property_insurance_type: p.property_insurance_type || "auto"
-      })) as Property[]
-      
-      setProperties(updatedData)
-    } catch (error) {
-      console.error('Error loading properties:', error)
-      toast({
-        variant: "destructive",
-        title: t('global:ui.error'),
-        description: t('properties:messages.error_loading_properties'),
-      })
-    }
-  }
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: t('global:ui.error'),
+            description: t('properties:messages.error_loading_bonus_rules'),
+          })
+          throw error
+        }
+        return data || []
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: t('global:ui.error'),
+          description: t('properties:messages.error_loading_bonus_rules'),
+        })
+        throw error
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  })
 
+  // Set up real-time subscription for property updates
   useEffect(() => {
-    loadProperties()
-    loadBonusRules()
-  }, [user])
+    if (!user?.id) return
+
+    // Create a channel for property updates
+    const channel = supabase.channel('property-updates')
+    
+    // Subscribe to the channel
+    channel
+      .on('broadcast', { event: 'property-created' }, (payload) => {
+        if (payload.payload?.userId === user.id) {
+          // Invalidate and refresh properties when a property is created
+          queryClient.invalidateQueries({ queryKey: ['properties', user.id] })
+        }
+      })
+      .on('broadcast', { event: 'property-updated' }, (payload) => {
+        if (payload.payload?.userId === user.id) {
+          // Invalidate and refresh properties when a property is updated
+          queryClient.invalidateQueries({ queryKey: ['properties', user.id] })
+        }
+      })
+      .on('broadcast', { event: 'property-deleted' }, (payload) => {
+        if (payload.payload?.userId === user.id) {
+          // Invalidate and refresh properties when a property is deleted
+          queryClient.invalidateQueries({ queryKey: ['properties', user.id] })
+        }
+      })
+      .subscribe()
+
+    // Clean up the subscription when component unmounts
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id, queryClient])
+
+  // Handle property success and broadcast event
+  const handlePropertySuccess = () => {
+    // Optimistically update the query cache
+    queryClient.invalidateQueries({ queryKey: ['properties', user?.id] })
+    
+    // Broadcast property created/updated message
+    const channel = supabase.channel('property-updates')
+    channel.send({
+      type: 'broadcast',
+      event: selectedProperty ? 'property-updated' : 'property-created',
+      payload: { 
+        action: selectedProperty ? 'update' : 'create', 
+        userId: user?.id,
+        propertyId: selectedProperty?.id
+      },
+    })
+    
+    setOpen(false)
+    setSelectedProperty(null)
+  }
 
   const handleSort = (key: keyof Property) => {
     let direction: 'asc' | 'desc' = 'asc'
@@ -95,14 +171,6 @@ export default function Properties() {
     }
     
     setSortConfig({ key, direction })
-    const sortedProperties = [...properties].sort((a, b) => {
-      const aValue = a[key] ?? '';
-      const bValue = b[key] ?? '';
-      if (aValue < bValue) return direction === 'asc' ? -1 : 1;
-      if (aValue > bValue) return direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-    setProperties(sortedProperties)
   }
 
   const handlePropertySelect = (property: Property) => {
@@ -111,12 +179,27 @@ export default function Properties() {
   }
 
   const handlePropertyUpdate = (updatedProperty: Property, isDelete: boolean = false) => {
+    // Optimistically update the cache
     if (isDelete) {
-      setProperties(properties.filter(p => p.id !== updatedProperty.id))
+      queryClient.setQueryData(['properties', user?.id], (oldData: Property[] = []) => 
+        oldData.filter(p => p.id !== updatedProperty.id)
+      )
+      
+      // Broadcast property deleted message
+      const channel = supabase.channel('property-updates')
+      channel.send({
+        type: 'broadcast',
+        event: 'property-deleted',
+        payload: { 
+          action: 'delete', 
+          userId: user?.id,
+          propertyId: updatedProperty.id
+        },
+      })
     } else {
-      setProperties(properties.map(p => 
-        p.id === updatedProperty.id ? updatedProperty : p
-      ))
+      queryClient.setQueryData(['properties', user?.id], (oldData: Property[] = []) => 
+        oldData.map(p => p.id === updatedProperty.id ? updatedProperty : p)
+      )
     }
   }
 
@@ -146,7 +229,7 @@ export default function Properties() {
         </SheetHeader>
         <div className="mt-8">
           <PropertyForm
-            onSuccess={loadProperties}
+            onSuccess={handlePropertySuccess}
             onClose={() => setOpen(false)}
             selectedProperty={selectedProperty}
             bonusRules={bonusRules}
@@ -167,9 +250,10 @@ export default function Properties() {
         title={`${t('title', { ns: 'properties' })} - CreditoHipotecar.io`}
         description={t('description', { ns: 'properties' })}
       />
-      <div className="p-8">
-        <div className="rounded-md border">
-          <PropertyList
+
+      <div className="w-full h-full  flex flex-col justify-start items-center p-4 ">
+        {properties.length > 0 ? (
+          <PropertyList 
             properties={properties}
             bonusRules={bonusRules}
             onPropertySelect={handlePropertySelect}
@@ -177,8 +261,56 @@ export default function Properties() {
             sortConfig={sortConfig}
             onSort={handleSort}
           />
-        </div>
+        ) : (
+          <>
+          <div className="w-full h-full flex flex-col justify-center items-center">
+
+            <div className="w-60  rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
+                <div className=" rounded-3xl flex flex-col justify-center items-center  gap-1 ">
+                  <SVGillustration variant="dog" className="w-60 h-60" />
+                  <p  className="text-sm text-center w-40">
+                  {t('messages.no_properties', { ns: 'properties' })}
+
+                  </p>
+                </div>
+
+
+             <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4 ">
+                <Sheet open={open} onOpenChange={setOpen}>
+                  <SheetTrigger asChild>
+                    <button className="text-xs h-8 flex gap-2">  
+                      <div className="flex-1 text-right text-sm font-medium leading-none">
+                        {t('actions.add_property', { ns: 'properties' })}
+                      </div>
+                      <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
+                        <Plus className="h-4 w-4" />
+                      </div>
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle>
+                        {t('actions.add_property', { ns: 'properties' })}
+                      </SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-8">
+                      <PropertyForm
+                        onSuccess={handlePropertySuccess}
+                        onClose={() => setOpen(false)}
+                        selectedProperty={null}
+                        bonusRules={[]}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
+          </div>
+          
+          </>
+        )}
       </div>
+
     </DashboardLayout>
   )
 }

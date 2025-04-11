@@ -15,6 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 type Currency = "USD" | "PEN"
 
@@ -418,19 +419,26 @@ const ScenarioPanel = ({
         </div>
         <div className="flex w-full items-center justify-center">
           
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger className="flex items-center gap-2 bg-card px-2 py-1 rounded-md text-sm ">
-                <div className="size-2.5 rounded-full border-2 border-brand"></div> 
-                {t('scenario_graphs.tooltip.break_even_point_title', 'Punto de Equilibrio', { ns: 'components' })}
-              </TooltipTrigger>
-              <TooltipContent className="w-80">
-                {/* <p>{t('scenario_graphs.tooltip.break_even_point', 'Pasando el punto de equilibrio, amortizar a genera ahorro real.', { ns: 'components' })}</p> */}
-                <p>{t('scenario_graphs.tooltip.investment_advice', 'Sin embargo, si puedes invertir ese dinero y obtener un rendimiento mayor que el ahorro en intereses, te conviene más invertir.', { ns: 'components' })}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        
 
+          <Dialog>
+          <DialogTrigger className="flex items-center gap-2 bg-card px-2 py-1 rounded-md text-sm "><div className=" size-2.5 rounded-full border-2 border-brand"></div> 
+          {t('scenario_graphs.tooltip.break_even_point_title', 'Punto de Equilibrio', { ns: 'components' })}
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+              {t('scenario_graphs.tooltip.break_even_point_title', 'Punto de Equilibrio', { ns: 'components' })}
+
+              </DialogTitle>
+              <DialogDescription>
+              <p>{t('scenario_graphs.tooltip.investment_advice', 'Sin embargo, si puedes invertir ese dinero y obtener un rendimiento mayor que el ahorro en intereses, te conviene más invertir.', { ns: 'components' })}</p>
+
+
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
          
         </div>
       </div>

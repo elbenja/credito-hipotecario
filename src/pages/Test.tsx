@@ -42,6 +42,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { FeatureCounts } from "@/components/dashboard/feature-counts";
 
 const chartData = [
   { name: "Jan", visitors: 275 },
@@ -172,17 +173,10 @@ export default function Test() {
   return (
     <div className="min-h-screen items-center justify-center bg-background flex gap-4 flex-wrap content-center p-6">
       <h2 className="text-2xl font-bold w-full">This is a space to try ideas and prototype and build</h2>
+
+      <FeatureCounts />
       {/* <PropertyCards /> */}
       
-      {/* <TooltipProvider>
-  <Tooltip>
-    <TooltipTrigger className="flex items-center gap-2 bg-card px-2 py-1 rounded-md text-sm "><div className=" size-2.5 rounded-full border-2 border-brand"></div> Punto de Equilibrio</TooltipTrigger>
-    <TooltipContent className="w-80">
-      <p> Pasando el punto de equilibrio, amortizar a genera ahorro real. </p>
-      <p> Sin embargo, si puedes invertir ese dinero y obtener un rendimiento mayor que el ahorro en intereses, te conviene más <strong>invertir.</strong></p>
-    </TooltipContent>
-  </Tooltip>
-</TooltipProvider> */}
 
 
 

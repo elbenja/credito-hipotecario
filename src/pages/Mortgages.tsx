@@ -25,6 +25,10 @@ import { SEO } from "@/components/seo"
 import { useTranslation } from "react-i18next"
 import { useToast } from "@/components/ui/use-toast"
 import { useQueryClient } from "@tanstack/react-query"
+import SVGillustration from "@/components/ui/SVGillustration"
+import { PropertyForm } from "@/components/properties/property-form"
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { useState } from 'react'
 
 type Property = {
   id: string
@@ -58,6 +62,8 @@ export default function Mortgages() {
   const { t: tMortgages } = useTranslation('mortgages')
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const { t } = useTranslation('properties')
+  const [open, setOpen] = useState(false)
 
   const { data: propertiesWithMortgages, isLoading } = useQuery({
     queryKey: ["properties-with-mortgages", user?.id],
@@ -159,6 +165,10 @@ export default function Mortgages() {
     </Button>
   )
 
+  const loadProperties = () => {
+    // Logic to load or refresh properties
+  }
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -178,10 +188,10 @@ export default function Mortgages() {
         title={`${tMortgages('title')} - CreditoHipotecar.io`}
         description={tMortgages('description')}
       />
-      <div className="p-8 space-y-8">
+      <div className="p-6 flex h-full w-full  items-center justify-center">
         {propertiesWithMortgages?.map((property) => (
           property.mortgages.length > 0 && (
-            <div key={property.id} className="space-y-4">
+            <div key={property.id} className="space-y-8">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">{property.name}</h2>
                 <span className="text-xl font-semibold">
@@ -252,8 +262,78 @@ export default function Mortgages() {
         ))}
 
         {(!propertiesWithMortgages || propertiesWithMortgages.length === 0) && (
-          <div className="text-center text-muted-foreground py-8">
-            {tMortgages('messages.no_amortizations')}
+          <div className="flex h-full flex-col items-center justify-center">
+            
+            <div className="w-60  rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
+                <div className=" rounded-3xl flex flex-col justify-center items-center  gap-1 ">
+                  <SVGillustration variant="dog" className="w-60 h-60" />
+                  <p  className="text-sm text-center w-40">
+                  {t('messages.no_properties', { ns: 'properties' })}
+
+                  </p>
+                </div>
+
+
+             <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4 ">
+                <Sheet open={open} onOpenChange={setOpen}>
+                  <SheetTrigger asChild>
+                    <button className="text-xs h-8 flex gap-2" onClick={() => navigate('/new-mortgage')}>
+                      <div className="flex-1 text-right text-sm font-medium leading-none">
+                        {t('actions.add_property', { ns: 'properties' })}
+                      </div>
+                      <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
+                        <Plus className="h-4 w-4" />
+                      </div>
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle>
+                        {t('actions.add_property', { ns: 'properties' })}
+                      </SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-8">
+                      <PropertyForm
+                        onSuccess={loadProperties}
+                        onClose={() => setOpen(false)}
+                        selectedProperty={null}
+                        bonusRules={[]}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {propertiesWithMortgages && propertiesWithMortgages.length > 0 && propertiesWithMortgages.every(property => property.mortgages.length === 0) && (
+          <div className="flex h-full flex-col items-center justify-center">
+
+            <div className="w-60  rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
+                <div className=" rounded-3xl flex flex-col justify-center items-center  gap-1 ">
+                  <SVGillustration variant="beanBag" className="w-60 h-60" />
+                  <p  className="text-sm text-center w-40">
+                  {t('messages.no_properties', { ns: 'properties' })}
+
+                  </p>
+                </div>
+
+
+             <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4 ">
+           
+              <button className="text-xs h-8 flex gap-2" onClick={() => navigate('/mortgages/new')}>
+                      <div className="flex-1 text-right text-sm font-medium leading-none">
+                      {tMortgages('amortization.new')}
+                      </div>
+                      <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
+                        <Plus className="h-4 w-4" />
+                  </div>
+                </button>
+              </div>
+            </div>
+
+        
           </div>
         )}
       </div>
