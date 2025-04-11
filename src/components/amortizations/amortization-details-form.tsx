@@ -155,11 +155,14 @@ export function AmortizationDetailsForm({
                         value={form.watch("down_payment") ? 
                           Number(((parseFloat(form.watch("down_payment")) / selectedProperty.price_cost) * 100).toFixed(2)) : 
                           ""}
+                        onFocus={(e) => {
+                          // Clear input when user focuses
+                          e.target.value = ""
+                        }}
                         onChange={(e) => {
                           const value = e.target.value
                           // Allow empty input
                           if (value === "") {
-                            form.setValue("down_payment", "0", { shouldValidate: true })
                             return
                           }
                           
@@ -173,13 +176,16 @@ export function AmortizationDetailsForm({
                         onBlur={(e) => {
                           // Format to 2 decimal places when leaving the field
                           const value = e.target.value
-                          if (value) {
+                          if (value && value !== "") {
                             const percentage = parseFloat(value)
                             if (!isNaN(percentage)) {
                               e.target.value = percentage.toFixed(2)
                               const downPayment = (percentage / 100 * selectedProperty.price_cost).toFixed(2)
                               form.setValue("down_payment", downPayment, { shouldValidate: true })
                             }
+                          } else {
+                            // If field is empty on blur, set to "0"
+                            form.setValue("down_payment", "0", { shouldValidate: true })
                           }
                         }}
                       />
