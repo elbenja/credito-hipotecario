@@ -159,7 +159,7 @@ export default function Mortgages() {
   }
 
   const headerActions = (
-    <Button onClick={() => navigate("/mortgages/new")}>
+    <Button onClick={() => navigate("/mortgages/new")} disabled={!propertiesWithMortgages || propertiesWithMortgages.length === 0}>
       <Plus className="mr-2 h-4 w-4" />
       {tMortgages('amortization.new')}
     </Button>
@@ -315,7 +315,7 @@ export default function Mortgages() {
                 <div className=" rounded-3xl flex flex-col justify-center items-center  gap-1 ">
                   <SVGillustration variant="beanBag" className="w-60 h-60" />
                   <p  className="text-sm text-center w-40">
-                  {t('messages.no_properties', { ns: 'properties' })}
+                  {t('messages.no_mortgages', { ns: 'properties' })}
 
                   </p>
                 </div>
