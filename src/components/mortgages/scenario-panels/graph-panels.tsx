@@ -241,7 +241,9 @@ const ScenarioPanel = ({
   <div className="flex flex-1 flex-col justify-top gap-2 px-6 py-5 sm:py-6">
     <span className="text-xs text-muted-foreground">{t('scenario_graphs.common.sum_interest_insurance', 'Sum Interest & Insurances', { ns: 'components' })}</span>
     <div className="flex items-center gap-2">
-      <span className="text-lg font-bold leading-none sm:text-3xl whitespace-nowrap"> {formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}
+      <span className="text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold leading-none whitespace-nowrap"> 
+        {/* Sum01 */}
+        {formatCurrency(scenario.summary.total_interest_and_insurance, currency as Currency)}
       </span>
             {showBaseline ? (
               <Badge variant="primary" className="text-sm whitespace-nowrap">
@@ -268,8 +270,9 @@ const ScenarioPanel = ({
                      {t('scenario_graphs.common.months', 'Months', { ns: 'components' })}
                      </span>
                        <div className="flex items-center gap-2"> 
-                       <span className="text-lg font-bold leading-none sm:text-3xl">
+                       <span className="text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold leading-none ">
                        {scenario.summary.total_months}
+                         {/* Sum02 */}
                        </span>
                            {differences.months && !showBaseline && (
                              <Badge variant={getBadgeVariant(differences.months, true)} className="text-sm">
@@ -291,10 +294,12 @@ const ScenarioPanel = ({
                  <div className="flex-col justify-start items-start gap-1">
                    <span className="text-xs text-muted-foreground">
                      {t('scenario_graphs.common.years', 'Years', { ns: 'components' })}
+                       
                      </span>
                        <div className="flex items-center gap-2"> 
-                       <span className="text-lg font-bold leading-none sm:text-3xl">
+                       <span className="text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold leading-none">
                            {(scenario.summary.total_months / 12).toFixed(1)}
+                           {/* Sum02 */}
                        </span>
                            {differences.months && !showBaseline && (
                              <Badge variant={getBadgeVariant(differences.months, true)} className="text-sm">
@@ -314,10 +319,10 @@ const ScenarioPanel = ({
       {t('scenario_graphs.common.monthly_payment', 'Monthly Payment', { ns: 'components' })}
       </span>
       <div className="flex items-center gap-2">
-        <span className="text-lg whitespace-nowrap font-bold leading-none sm:text-3xl">
+        <span className="text-lg lg:text-xl xl:text-2xl 2xl:text-3xl whitespace-nowrap font-bold leading-none ">
         {formatCurrency(scenario.summary.monthly_payment, currency as Currency)}
           </span>
-
+          {/* Sum03 */}
           {differences.payment && !showBaseline && (
               <Badge variant={getBadgeVariant(differences.payment)} className="text-sm whitespace-nowrap ">
                 {differences.payment < 0 ? '-' : '+'}{formatCurrency(Math.abs(differences.payment), currency as Currency)}
@@ -329,7 +334,7 @@ const ScenarioPanel = ({
 </div>
  
       <div className="space-y-4 ">
-        <div className="h-[300px] w-full mt-6 relative">
+        <div className="h-[200px] lg:h-[300px] w-full mt-6 relative">
           <ChartThemeWrapper >
             <ChartContainer config={translatedChartConfig}>
               <ResponsiveContainer width="100%" height="100%">

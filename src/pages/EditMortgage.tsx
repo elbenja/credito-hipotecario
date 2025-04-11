@@ -699,7 +699,7 @@ export default function EditMortgage() {
       <div className="flex flex-col min-h-screen">
         <div className="flex flex-col md:flex-row flex-1">
           {/* Left Container */}
-          <div className="sm:w-full md:w-[30%] md:min-w-[400px] md:max-w-[540px] relative flex-shrink-0">
+          <div className="sm:w-full md:w-[30%] md:min-w-[370px] md:max-w-[520px] relative flex-shrink-0">
             <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-border"></div>
             
               {isCreatingNew ? (
