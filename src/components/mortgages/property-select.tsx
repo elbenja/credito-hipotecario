@@ -244,8 +244,7 @@ export function PropertyDisplay({
       </div>
 {/* start */}
 <div className="flex flex-col items-stretch space-y-0 border-t p-0 sm:flex-row">
-  <div className="justify-top flex flex-1 flex-col gap-2 px-2 py-2 sm:px-4 sm:py-4">
-    
+  <div className="justify-top flex flex-1 flex-col gap-1 px-2 py-2 sm:px-4 sm:py-4">
     <Label className="text-muted-foreground text-xs">{t('form.property_cost', { ns: 'properties' })}</Label>
     <span className="text-lg leading-none font-bold sm:text-lg whitespace-nowrap">
       {formatCurrency(cost, currentProperty.currency)}
@@ -253,20 +252,20 @@ export function PropertyDisplay({
   </div>
 
   <div className="flex">
-    <div className="justify-top relative z-30 flex flex-1 flex-col gap-1 border-t px-2 py-2 text-left even:border-l sm:border-t-0 sm:border-l sm:px-4 sm:py-4">
-      <span className="text-muted-foreground text-xs">
+    <div className="justify-top flex flex-1 flex-col gap-1 border-t px-2 py-2 text-left even:border-l sm:border-t-0 sm:border-l sm:px-4 sm:py-4">
+      <Label className="text-muted-foreground text-xs">
         {t('bonus.amount_short', '', { ns: 'properties' })}
-      </span>
-      <Label className="text-xs font-normal"></Label>
+      </Label>
+      
       <span className="text-lg leading-none font-bold sm:text-lg whitespace-nowrap">
         {bonus ? formatCurrency(bonus, currentProperty.currency) : t('bonus.no_bonus', '', { ns: 'properties' })}
       </span>
     </div>
 
     <div className="justify-top flex flex-1 flex-col gap-1 border-t px-2 py-2 text-left even:border-l sm:border-t-0 sm:border-l sm:px-4 sm:py-4">
-      <span className="text-muted-foreground text-xs whitespace-nowrap">
-      <Label className="text-xs font-normal">{t('form.property_insurance_short', '', { ns: 'properties' })}</Label>
-      </span>
+      <Label className="text-muted-foreground text-xs whitespace-nowrap">
+      {t('form.property_insurance_short', '', { ns: 'properties' })}
+      </Label>
       <span className="text-lg leading-none font-bold sm:text-lg whitespace-nowrap">
       {currentProperty.property_insurance !== null
               ? formatCurrency(currentProperty.property_insurance, currentProperty.currency)
