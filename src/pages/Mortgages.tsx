@@ -28,7 +28,8 @@ import { useQueryClient } from "@tanstack/react-query"
 import SVGillustration from "@/components/ui/SVGillustration"
 import { PropertyForm } from "@/components/properties/property-form"
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { RealtimeChannel } from '@supabase/supabase-js'
 
 type Property = {
   id: string
@@ -85,6 +86,20 @@ export default function Mortgages() {
     },
     enabled: !!user,
   })
+
+  useEffect(() => {
+    const propertiesChannel: RealtimeChannel = supabase
+      .channel('properties-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'properties' }, (payload) => {
+        console.log('Change received!', payload)
+        queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(propertiesChannel)
+    }
+  }, [queryClient])
 
   const handleDuplicate = async (e: React.MouseEvent, mortgage: Mortgage) => {
     e.stopPropagation()
