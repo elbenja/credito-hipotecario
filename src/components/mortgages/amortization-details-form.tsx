@@ -43,13 +43,15 @@ interface AmortizationDetailsFormProps {
   selectedProperty: Property
   onSubmit: (values: MortgageFormValues) => Promise<void>
   submitLabel?: string
+  isSubmitting?: boolean
 }
 
 export function AmortizationDetailsForm({
   form,
   selectedProperty,
   onSubmit,
-  submitLabel = 'update'
+  submitLabel = 'update',
+  isSubmitting
 }: AmortizationDetailsFormProps) {
   const { t } = useTranslation(['mortgages', 'global', 'components'])
   const { data: exchangeRate } = useExchangeRate()
@@ -355,10 +357,32 @@ export function AmortizationDetailsForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('amortization.installments_per_year', { ns: 'mortgages' })}</FormLabel>
-                  <Select onValueChange={(value) => {
-                    field.onChange(value)
-                    form.trigger("installments_per_year")
-                  }} value={field.value}>
+                  <Select 
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      
+                      // Force immediate validation and form update
+                      form.trigger("installments_per_year");
+                      
+                      // Apply a more comprehensive update with timeout to ensure state propagation
+                      setTimeout(() => {
+                        // Log for debugging
+                        console.log(`Installments value changed to: ${value}`);
+                        
+                        // Force a complete form update with all events triggered
+                        form.setValue("installments_per_year", value, {
+                          shouldDirty: true,
+                          shouldTouch: true,
+                          shouldValidate: true
+                        });
+                        
+                        // Trigger a manual submit event to propagate the change
+                        if (onSubmit && typeof onSubmit === 'function') {
+                          form.handleSubmit(onSubmit)();
+                        }
+                      }, 0);
+                    }} 
+                    value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select installments" />
@@ -421,8 +445,15 @@ export function AmortizationDetailsForm({
         </div>
       </div>
       <div className=" sm:mb-16 sm:h-80" >
-      <Button type="submit" className="w-full ">
-        {submitLabel === 'update' ? t('ui.update', { ns: 'global' }) : submitLabel}
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
+        {isSubmitting ? (
+          <div className="flex items-center">
+            <div className="animate-spin mr-2 h-4 w-4 border-2 border-b-transparent rounded-full"></div>
+            {submitLabel === 'update' ? t('ui.updating', 'Updating...', { ns: 'global' }) : t('ui.creating', 'Creating...', { ns: 'global' })}
+          </div>
+        ) : (
+          submitLabel === 'update' ? t('ui.update', { ns: 'global' }) : submitLabel
+        )}
       </Button>
       </div>
     </form>

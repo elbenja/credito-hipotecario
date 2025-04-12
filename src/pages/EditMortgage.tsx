@@ -73,6 +73,11 @@ export default function EditMortgage() {
   // Get the current exchange rate
   const { data: exchangeRate } = useExchangeRate()
 
+  // Add a loading state for the form submission
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Add state to track if the form is ready with data
+  const [formIsReady, setFormIsReady] = useState(false);
+
   // Load bonus rules
   useEffect(() => {
     const fetchBonusRules = async () => {
@@ -323,7 +328,7 @@ export default function EditMortgage() {
           property_insurance_type: (property.property_insurance_type as "auto" | "manual") ?? "auto"
         }
 
-        // Initialize form with fetched data
+        // Initialize form with fetched data - handle with delay to ensure form properly updates
         mortgageForm.reset({
           name: data.name || "",
           property_id: propertyWithDefaults.id,
@@ -334,7 +339,15 @@ export default function EditMortgage() {
           first_installment_date: normalizeDate(new Date(data.first_installment_date)),
           loan_protection_type: data.loan_protection_type as "none" | "custom" | "individual" | "joint",
           loan_protection_insurance: data.loan_protection_insurance?.toString() || "",
-        })
+        }, {
+          keepDirty: false,
+          keepValues: false,
+        });
+        
+        // Set form as ready after a short delay to ensure form is properly populated
+        setTimeout(() => {
+          setFormIsReady(true);
+        }, 100);
 
         return {
           ...data,
@@ -354,6 +367,28 @@ export default function EditMortgage() {
   // Update scenario inputs when mortgage data changes
   useEffect(() => {
     if (mortgage) {
+      // Ensure form is reset with the correct data
+      mortgageForm.reset({
+        name: mortgage.name || "",
+        property_id: mortgage.property.id,
+        down_payment: mortgage.down_payment?.toString() || "",
+        interest_rate: mortgage.interest_rate?.toString() || "",
+        term_years: mortgage.term_years?.toString() || "",
+        installments_per_year: mortgage.installments_per_year?.toString() || "",
+        first_installment_date: mortgage.first_installment_date ? normalizeDate(new Date(mortgage.first_installment_date)) : new Date(),
+        loan_protection_type: mortgage.loan_protection_type as "none" | "custom" | "individual" | "joint",
+        loan_protection_insurance: mortgage.loan_protection_insurance?.toString() || "",
+      }, {
+        keepDirty: false,
+        keepValues: false,
+      });
+      
+      // Set form as ready with a slight delay to ensure DOM updates
+      setTimeout(() => {
+        setFormIsReady(true);
+      }, 100);
+      
+      // Update scenario inputs
       setScenarioInputs({
         mortgageId: id || "",
         loanAmount: mortgage.loan_amount || 0,
@@ -365,10 +400,7 @@ export default function EditMortgage() {
         loanInsurance: mortgage.loan_protection_insurance || 0
       });
     }
-  }, [
-    id, 
-    mortgage
-  ]);
+  }, [id, mortgage]);
 
   // Add form value watching effect with proper dependency array
   useEffect(() => {
@@ -461,6 +493,9 @@ export default function EditMortgage() {
   }, [mortgage?.installments_per_year]);
 
   const onUpdateMortgage = async (values: MortgageFormValues) => {
+    // Set loading state to true at the beginning
+    setIsSubmitting(true);
+    
     try {
       // Different handling for new mortgage vs editing existing one
       if (isCreatingNew) {
@@ -650,6 +685,8 @@ export default function EditMortgage() {
           loan_protection_insurance: loanProtectionInsurance,
         }
 
+        console.log("Updating mortgage with installments_per_year:", installmentsPerYear);
+
         // Update mortgage in Supabase
         const { error: updateError } = await supabase
           .from("amortizations")
@@ -658,6 +695,9 @@ export default function EditMortgage() {
 
         if (updateError) throw updateError
 
+        // Invalidate the scenarios query to refresh data
+        queryClient.invalidateQueries({ queryKey: ["scenarios", id] });
+        
         toast({
           title: t("ui.success", { ns: "global" }),
           description: t("messages.success_update", { ns: "mortgages" }),
@@ -670,6 +710,9 @@ export default function EditMortgage() {
         title: t("ui.error", { ns: "global" }),
         description: error instanceof Error ? error.message : t("messages.error_update", { ns: "mortgages" })
       })
+    } finally {
+      // Always set loading state back to false when finished
+      setIsSubmitting(false);
     }
   }
 
@@ -703,6 +746,36 @@ export default function EditMortgage() {
 
   // Add state to track if new rates exist
   const [hasNewRates, setHasNewRates] = useState(false)
+  
+  // Add effect to specifically watch installments_per_year changes
+  useEffect(() => {
+    // Subscribe to changes in the installments_per_year field
+    const subscription = mortgageForm.watch((value, { name }) => {
+      // Only respond to installments_per_year changes
+      if (name === 'installments_per_year') {
+        const installmentsValue = value.installments_per_year;
+        console.log(`Installments field watched change: ${installmentsValue}`);
+        
+        // Immediately update the scenarioInputs to trigger recalculation
+        if (mortgage && installmentsValue) {
+          const installments = parseInt(installmentsValue);
+          
+          setScenarioInputs(prev => ({
+            ...prev,
+            installmentsPerYear: installments,
+          }));
+          
+          // Invalidate scenarios to force recalculation
+          queryClient.invalidateQueries({
+            queryKey: ["scenarios", id]
+          });
+        }
+      }
+    });
+    
+    // Cleanup the subscription when component unmounts
+    return () => subscription.unsubscribe();
+  }, [mortgageForm, id, queryClient, mortgage]);
   
   // Add effect to fetch and update new rates state
   useEffect(() => {
@@ -755,6 +828,53 @@ export default function EditMortgage() {
       console.error("Error checking extra installments:", error)
     }
   }, [queryClient, id, user])
+
+  // Add effect to reset form ready state when mortgage ID changes
+  useEffect(() => {
+    if (id) {
+      // Reset the form ready state when navigating to a different mortgage
+      setFormIsReady(false);
+    }
+    
+    // Cleanup function to reset form ready state when component unmounts
+    return () => {
+      setFormIsReady(false);
+    };
+  }, [id]);
+
+  // Add an effect to watch installments_per_year field changes
+  useEffect(() => {
+    // Get the current value
+    const currentValue = mortgageForm.getValues("installments_per_year");
+    
+    // Set up a subscription to field changes
+    const subscription = mortgageForm.register("installments_per_year", {
+      onChange: () => {
+        // This will run whenever the installments_per_year field changes
+        const newValue = mortgageForm.getValues("installments_per_year");
+        
+        console.log(`Installments field changed from ${currentValue} to ${newValue}`);
+        
+        // Only proceed if there's a value and it's changed
+        if (newValue && parseInt(newValue) !== parseInt(currentValue || "12")) {
+          // Force immediate scenario update
+          if (mortgage) {
+            setScenarioInputs(prev => ({
+              ...prev,
+              installmentsPerYear: parseInt(newValue),
+            }));
+            
+            // Invalidate queries to force refresh
+            queryClient.invalidateQueries({
+              queryKey: ["scenarios", id]
+            });
+          }
+        }
+      }
+    });
+    
+    // No need for cleanup, React Hook Form handles it
+  }, [mortgageForm, id, queryClient, mortgage]);
 
   if (isLoading) {
     return (
@@ -884,6 +1004,7 @@ export default function EditMortgage() {
                     form={mortgageForm}
                     selectedProperty={isCreatingNew ? selectedPropertyFromUrl as Property : mortgage?.property}
                     onSubmit={onUpdateMortgage}
+                    isSubmitting={isSubmitting}
                     submitLabel={isCreatingNew ? t("ui.create", "Create", { ns: "global" }) : t("ui.update", { ns: "global" })}
                   />
                 </Form>
@@ -929,7 +1050,7 @@ export default function EditMortgage() {
                       <RegularPanelGraph
                         scenario={scenarios.regular}
                         currency={mortgage.property.currency}
-                        installmentsPerYear={mortgage.installments_per_year}
+                        installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
                       />
                     )}
                   </TabsContent>
@@ -941,7 +1062,7 @@ export default function EditMortgage() {
                             scenario={scenarios.accelerated}
                             regularScenario={scenarios.regular}
                             currency={mortgage.property.currency}
-                            installmentsPerYear={mortgage.installments_per_year}
+                            installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
                           />
                         ) : null}
                         <div className="mt-8">
@@ -964,7 +1085,7 @@ export default function EditMortgage() {
                             scenario={scenarios.lower_payment}
                             regularScenario={scenarios.regular}
                             currency={mortgage.property.currency}
-                            installmentsPerYear={mortgage.installments_per_year}
+                            installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
                           />
                         ) : null}
                         <div className="mt-8">
@@ -987,7 +1108,7 @@ export default function EditMortgage() {
                             scenario={scenarios.new_rate}
                             regularScenario={scenarios.regular}
                             currency={mortgage.property.currency}
-                            installmentsPerYear={mortgage.installments_per_year}
+                            installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
                           />
                         ) : null}
                         <div className="mt-8">
