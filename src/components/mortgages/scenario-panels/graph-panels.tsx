@@ -39,7 +39,7 @@ interface ScenarioPanelProps {
 }
 
 // Memoize the data transformation function to avoid recalculating on every render
-const transformPaymentsToChartData = (payments: ExtendedPaymentRow[], totalMonths: number) => {
+const transformPaymentsToChartData = (payments: ExtendedPaymentRow[], totalMonths: number, installmentsPerYear: number = 12) => {
   if (!payments?.length) return [];
   
   type ChartDataPoint = {
@@ -47,6 +47,7 @@ const transformPaymentsToChartData = (payments: ExtendedPaymentRow[], totalMonth
     principal: number;
     interest_insurance: number;
     breakEven?: boolean;
+    isJulyOrDecember?: boolean;
   };
   
   // Create an array of the full payment period
@@ -64,10 +65,20 @@ const transformPaymentsToChartData = (payments: ExtendedPaymentRow[], totalMonth
                                        (payment.property_insurance || 0) + 
                                        (payment.monthly_loan_insurance || payment.loan_insurance || 0);
 
+      const paymentDate = typeof payment.payment_date === 'string' 
+        ? payment.payment_date 
+        : payment.payment_date.toISOString();
+        
+      // Check if this is July or December for the Double option
+      const date = new Date(paymentDate);
+      const month = date.getMonth();
+      const isJulyOrDecember = month === 6 || month === 11;
+
       result[index] = {
-        date: typeof payment.payment_date === 'string' ? payment.payment_date : payment.payment_date.toISOString(),
+        date: paymentDate,
         principal: payment.principal || payment.capital || 0,
         interest_insurance: totalInterestAndInsurances,
+        isJulyOrDecember: isJulyOrDecember,
       };
     }
   });
@@ -105,17 +116,80 @@ const transformPaymentsToChartData = (payments: ExtendedPaymentRow[], totalMonth
   }
 
   // Find the break-even point where principal >= interest_insurance
-  // We're looking for the crossing point where the trend changes
+  // For Double option (14 installments), ignore July and December
   let breakEvenIndex = -1;
   for (let i = 0; i < result.length - 1; i++) {
-    // Check if this is the crossing point (one value goes from less to greater)
-    if (
-      (result[i].principal <= result[i].interest_insurance && 
-       result[i+1].principal >= result[i+1].interest_insurance) ||
-      (Math.abs(result[i].principal - result[i].interest_insurance) < 0.01)
-    ) {
+    const currentDate = new Date(result[i].date);
+    const currentMonth = currentDate.getMonth();
+    
+    // Skip July and December for Double option (14 installments per year)
+    if (installmentsPerYear === 14 && (currentMonth === 6 || currentMonth === 11)) {
+      continue;
+    }
+    
+    // Also check the next month - don't mark break-even if next month is July/December
+    if (installmentsPerYear === 14 && i + 1 < result.length) {
+      const nextDate = new Date(result[i + 1].date);
+      const nextMonth = nextDate.getMonth();
+      if (nextMonth === 6 || nextMonth === 11) {
+        continue;
+      }
+    }
+
+    // Only proceed if we're not looking at a July or December payment for Double option
+    if (installmentsPerYear === 14 && result[i].isJulyOrDecember) {
+      continue;
+    }
+
+    // Check if principal becomes greater than interest_insurance
+    if (result[i].principal <= result[i].interest_insurance && 
+        i + 1 < result.length &&
+        result[i+1].principal > result[i+1].interest_insurance) {
+      
+      // For Double option, verify the break-even month is not July or December
+      if (installmentsPerYear === 14) {
+        if (result[i+1].isJulyOrDecember) {
+          continue;  // Skip if the break-even month is July or December
+        }
+      }
+      
+      breakEvenIndex = i + 1; // Mark the month where principal first exceeds interest
+      break;
+    }
+    
+    // Also check for equality (within a small margin of error)
+    if (Math.abs(result[i].principal - result[i].interest_insurance) < 0.01 && 
+        result[i].principal >= result[i].interest_insurance) {
+      
+      // For Double option, verify the break-even month is not July or December
+      if (installmentsPerYear === 14) {
+        if (result[i].isJulyOrDecember) {
+          continue;  // Skip if the break-even month is July or December
+        }
+      }
+      
       breakEvenIndex = i;
       break;
+    }
+  }
+
+  // Double check that we're not marking a July or December as break-even point
+  if (breakEvenIndex >= 0 && installmentsPerYear === 14) {
+    const breakEvenDate = new Date(result[breakEvenIndex].date);
+    const breakEvenMonth = breakEvenDate.getMonth();
+    if (breakEvenMonth === 6 || breakEvenMonth === 11) {
+      // Log warning and search for the next valid month
+      console.warn('Found break-even in July or December, searching for next valid month');
+      
+      // Look for the next valid month
+      for (let i = breakEvenIndex + 1; i < result.length; i++) {
+        const date = new Date(result[i].date);
+        const month = date.getMonth();
+        if (month !== 6 && month !== 11 && result[i].principal > result[i].interest_insurance) {
+          breakEvenIndex = i;
+          break;
+        }
+      }
     }
   }
 
@@ -132,6 +206,7 @@ const ScenarioPanel = ({
   scenario,
   regularScenario,
   currency,
+  installmentsPerYear = 12,
   showBaseline = false
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
   const { t } = useTranslation()
@@ -174,12 +249,12 @@ const ScenarioPanel = ({
   const chartData = useMemo(() => {
     if (!scenario?.payments?.length) return [];
     try {
-      return transformPaymentsToChartData(scenario.payments, totalMonthsToDisplay);
+      return transformPaymentsToChartData(scenario.payments, totalMonthsToDisplay, installmentsPerYear);
     } catch (error) {
       console.error("Error transforming payments data:", error);
       return [];
     }
-  }, [scenario.payments, totalMonthsToDisplay]);
+  }, [scenario.payments, totalMonthsToDisplay, installmentsPerYear]);
 
   // Bail early if we don't have chart data
   if (!chartData.length) {
@@ -255,6 +330,20 @@ const ScenarioPanel = ({
   const breakEvenIndex = chartData.findIndex(point => point.breakEven);
   const breakEvenYear = (breakEvenIndex / 12).toFixed(1);
   const yearsLabel = t('scenario_graphs.common.years', 'years', { ns: 'components' });
+  
+  // Get actual month and year for the break-even point
+  const breakEvenMonthYear = useMemo(() => {
+    if (!breakEvenPoint || !breakEvenPoint.date) return '';
+    const date = new Date(breakEvenPoint.date);
+    // Ensure the month is not July or December
+    if (installmentsPerYear === 14) {
+      const month = date.getMonth();
+      if (month === 6 || month === 11) {
+        console.warn('Break-even point appears to be in July or December, which should be ignored for Double option');
+      }
+    }
+    return format(date, 'MMM yyyy');
+  }, [breakEvenPoint, installmentsPerYear]);
 
   return (
     
@@ -441,15 +530,18 @@ py-4 xl:py-5 2xl:py-6">
                     <ReferenceDot
                       x={breakEvenPoint.date}
                       y={(breakEvenPoint.principal + breakEvenPoint.interest_insurance) / 2}
-                      r={4}
+                      r={6}
+                      // fill={installmentsPerYear === 14 ? "#000" : "#fff"} 
+                      // stroke={installmentsPerYear === 14 ? "#10b981" : "var(--color-principal)"}
                       fill="#fff"
                       stroke="var(--color-principal)"
-                      strokeWidth={2}
+                      strokeWidth={3}
                     >
                       <Label
                         value={`${breakEvenYear} ${yearsLabel}: ${t('scenario_graphs.common.break_even_point', 'Break-even point', { ns: 'components' })}`}
                         position="top"
-                        offset={15}
+                        offset={20}
+                        // fill={installmentsPerYear === 14 ? "#10b981" : "currentColor"}
                         fill="currentColor" 
                         fontSize={13}
                         fontWeight="500"
