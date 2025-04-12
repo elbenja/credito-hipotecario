@@ -325,29 +325,11 @@ const ScenarioPanel = ({
   const breakEvenYear = useMemo(() => {
     if (breakEvenIndex === -1) return "0.0";
     
-    // For Double payment option (14 installments), adjust the calculation
-    // to account for the extra payments in July and December
-    if (installmentsPerYear === 14) {
-      // Count how many July/December months come before the break-even point
-      let specialMonthsCount = 0;
-      for (let i = 0; i < breakEvenIndex; i++) {
-        if (!chartData[i].date) continue;
-        
-        const date = new Date(chartData[i].date);
-        const month = date.getMonth();
-        if (month === 6 || month === 11) { // July or December
-          specialMonthsCount++;
-        }
-      }
-      
-      // Calculate the effective month index considering 12 regular months per year
-      const effectiveMonthIndex = breakEvenIndex - specialMonthsCount;
-      return (effectiveMonthIndex / 12).toFixed(1);
-    }
-    
-    // Regular payment option (12 installments)
-    return (breakEvenIndex / 12).toFixed(1);
-  }, [breakEvenIndex, chartData, installmentsPerYear]);
+    // For any payment option, we should count all months up to the break-even point
+    // This gives us the actual elapsed time including July/December for double payments
+    const monthsToBreakEven = breakEvenIndex + 1;
+    return (monthsToBreakEven / 12).toFixed(1);
+  }, [breakEvenIndex]);
 
   const yearsLabel = t('scenario_graphs.common.years', 'years', { ns: 'components' });
   
