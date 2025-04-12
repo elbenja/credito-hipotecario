@@ -125,7 +125,7 @@ export default function Dashboard() {
 {/* container start */}
 <div className="h-full w-full p-6  flex flex-col justify-center items-center ">
   
-<div className="mb-10 w-full inline-flex justify-start items-center gap-4 flex-wrap content-center ">
+<div className="mb-10 w-full inline-flex justify-center items-center gap-4 flex-wrap content-center ">
       
      
       {!hasProperties && (
