@@ -1,3 +1,4 @@
+import * as z from "zod"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { addYears, subYears, startOfDay, isBefore, isAfter, isSameDay } from "date-fns"
@@ -20,7 +21,7 @@ import {
 import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
 import { cn, normalizeDate, formatCurrency, handleInputFocus } from "@/lib/utils"
 import type { Property } from "./property-select"
-import type { AmortizationFormValues } from "@/components/amortizations/schema"
+import type { MortgageFormValues as AmortizationFormValues } from "./schema"
 import { LoanCalculator } from "@/services/amortization/calculations/loan"
 import { Separator } from "@/components/ui/separator"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"

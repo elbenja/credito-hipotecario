@@ -22,7 +22,7 @@ import { useEffect, useState, memo } from "react"
 import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
 import { UseFormReturn } from "react-hook-form"
-import { AmortizationFormValues } from "@/components/amortizations/schema"
+import { MortgageFormValues as AmortizationFormValues } from "./schema"
 import { formatCurrency } from "@/lib/utils"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { Pencil } from "lucide-react"
@@ -30,6 +30,8 @@ import { PropertyForm } from "@/components/properties/property-form"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { useQuery } from "@tanstack/react-query"
+import { cn } from "@/lib/utils"
 
 // Helper function for currency formatting
 const formatAmount = (amount: number, currency: "USD" | "PEN") => {
