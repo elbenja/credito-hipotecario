@@ -24,7 +24,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { PropertySelect, type Property } from "@/components/mortgages/property-select"
-import { AmortizationDetailsForm } from "@/components/amortizations/amortization-details-form"
+import { AmortizationDetailsForm } from "@/components/mortgages/amortization-details-form"
 import { 
   RegularPanelGraph, 
   AcceleratedPanelGraph, 
@@ -35,10 +35,10 @@ import { ExtraInstallmentsSection } from '@/components/mortgages/extra-installme
 import { NewRateForm } from '@/components/mortgages/new-rate-form'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { 
-  amortizationFormSchema, 
+  mortgageFormSchema, 
   defaultValues, 
-  type AmortizationFormValues 
-} from "@/components/amortizations/schema"
+  type MortgageFormValues 
+} from "@/components/mortgages/schema"
 import { LoanCalculator } from "@/services/amortization/calculations/loan"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
@@ -77,8 +77,8 @@ export default function NewMortgage() {
     new_rate: null
   })
 
-  const form = useForm<AmortizationFormValues>({
-    resolver: zodResolver(amortizationFormSchema),
+  const form = useForm<MortgageFormValues>({
+    resolver: zodResolver(mortgageFormSchema),
     defaultValues: {
       ...defaultValues,
       property_id: propertyIdFromUrl || ""
@@ -118,7 +118,7 @@ export default function NewMortgage() {
 
   const loanCalculator = new LoanCalculator()
 
-  const calculateScenarios = (values: Partial<AmortizationFormValues>) => {
+  const calculateScenarios = (values: Partial<MortgageFormValues>) => {
     if (!selectedProperty || !values.down_payment || !values.interest_rate || !values.term_years || !values.installments_per_year || !values.first_installment_date) {
       return {
         regular: null,

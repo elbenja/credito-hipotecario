@@ -104,5 +104,16 @@
         "term_max": "El plazo no puede exceder 50 años"
       }
     }
+  },
+  "amortization_form": {
+    "validation": {
+      "required": "Requerido",
+      "invalid_number": "Debe ser un número válido",
+      "interest_rate_min": "La tasa de interés debe ser al menos 4%",
+      "interest_rate_max": "La tasa de interés no puede exceder 18%",
+      "first_installment_date_required": "La fecha de la primera cuota es requerida",
+      "first_installment_date_invalid": "Por favor ingrese una fecha válida en el formato 'MMM d, yyyy' (ej., Feb 28, 2026)",
+      "loan_protection_type_required": "Por favor seleccione un tipo de seguro de desgravamen"
+    }
   }
 } 

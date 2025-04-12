@@ -9,6 +9,7 @@ import {
   FormProvider,
   useFormContext,
 } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
@@ -145,7 +146,13 @@ const FormMessage = React.forwardRef<
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, children, ...props }, ref) => {
   const { error, formMessageId } = useFormField()
-  const body = error ? String(error?.message) : children
+  const { t } = useTranslation("components")
+  
+  let body = error ? String(error?.message) : children
+  
+  if (typeof body === 'string' && body.includes('.') && body.includes('validation')) {
+    body = t(body as any)
+  }
 
   if (!body) {
     return null

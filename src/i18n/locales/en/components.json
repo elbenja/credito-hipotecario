@@ -104,5 +104,16 @@
         "term_max": "Term cannot exceed 50 years"
       }
     }
+  },
+  "amortization_form": {
+    "validation": {
+      "required": "Required",
+      "invalid_number": "Must be a valid number",
+      "interest_rate_min": "Interest rate must be at least 4%",
+      "interest_rate_max": "Interest rate cannot exceed 18%",
+      "first_installment_date_required": "First installment date is required",
+      "first_installment_date_invalid": "Please enter a valid date in the format 'MMM d, yyyy' (e.g., Feb 28, 2026)",
+      "loan_protection_type_required": "Please select a loan protection type"
+    }
   }
 } 

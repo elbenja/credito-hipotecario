@@ -3,40 +3,40 @@ import { startOfMonth, addMonths } from "date-fns"
 import { formatDate, normalizeDate } from "@/lib/utils"
 
 export const amortizationFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  property_id: z.string().min(1, "Property is required"),
-  down_payment: z.string().min(1, "Down payment is required"),
+  name: z.string().min(1, "amortization_form.validation.required"),
+  property_id: z.string().min(1, "amortization_form.validation.required"),
+  down_payment: z.string().min(1, "amortization_form.validation.required"),
   interest_rate: z.string()
-    .min(1, "Interest rate is required")
+    .min(1, "amortization_form.validation.required")
     .refine(
       (value) => {
         const rate = parseFloat(value)
         return !isNaN(rate)
       },
-      "Must be a valid number"
+      "amortization_form.validation.invalid_number"
     )
     .refine(
       (value) => {
         const rate = parseFloat(value)
         return rate >= 4
       },
-      "Interest rate must be at least 4%"
+      "amortization_form.validation.interest_rate_min"
     )
     .refine(
       (value) => {
         const rate = parseFloat(value)
         return rate <= 18
       },
-      "Interest rate cannot exceed 18%"
+      "amortization_form.validation.interest_rate_max"
     ),
-  term_years: z.string().min(1, "Term is required"),
-  installments_per_year: z.string().min(1, "Installments per year is required"),
+  term_years: z.string().min(1, "amortization_form.validation.required"),
+  installments_per_year: z.string().min(1, "amortization_form.validation.required"),
   first_installment_date: z.date({
-    required_error: "First installment date is required",
-    invalid_type_error: "Please enter a valid date in the format 'MMM d, yyyy' (e.g., Feb 28, 2025)",
+    required_error: "amortization_form.validation.first_installment_date_required",
+    invalid_type_error: "amortization_form.validation.first_installment_date_invalid",
   }),
   loan_protection_type: z.enum(["individual", "joint", "none", "custom"], {
-    required_error: "Please select a loan protection type",
+    required_error: "amortization_form.validation.loan_protection_type_required",
   }).default("none"),
   loan_protection_insurance: z.string().default("0"),
 })

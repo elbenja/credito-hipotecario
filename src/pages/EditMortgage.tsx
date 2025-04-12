@@ -22,10 +22,10 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form"
-import { AmortizationDetailsForm } from "@/components/amortizations/amortization-details-form"
+import { AmortizationDetailsForm } from "@/components/mortgages/amortization-details-form"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { amortizationFormSchema, type AmortizationFormValues } from "@/components/amortizations/schema"
+import { mortgageFormSchema, type MortgageFormValues } from "@/components/mortgages/schema"
 import { useToast } from "@/components/ui/use-toast"
 import { createLocalDate, normalizeDate } from "@/lib/utils"
 import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
@@ -120,8 +120,8 @@ export default function EditMortgage() {
       : applicableRule.traditional_bonus;
   };
 
-  const mortgageForm = useForm<AmortizationFormValues>({
-    resolver: zodResolver(amortizationFormSchema),
+  const mortgageForm = useForm<MortgageFormValues>({
+    resolver: zodResolver(mortgageFormSchema),
     // Set initial values for new mortgage if we have property from URL
     defaultValues: {
       property_id: propertyIdFromUrl || "",
@@ -460,7 +460,7 @@ export default function EditMortgage() {
     }
   }, [mortgage?.installments_per_year]);
 
-  const onUpdateMortgage = async (values: AmortizationFormValues) => {
+  const onUpdateMortgage = async (values: MortgageFormValues) => {
     try {
       // Different handling for new mortgage vs editing existing one
       if (isCreatingNew) {

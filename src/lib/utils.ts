@@ -114,3 +114,17 @@ export function formatInterest(value: number | string, isInput: boolean = false)
 
   return `${formatter.format(numericValue)}%`
 }
+
+/**
+ * Utility for handling input focus behavior
+ * Only clears the input value if it's zero, otherwise keeps the existing value
+ */
+export function handleInputFocus(e: React.FocusEvent<HTMLInputElement>) {
+  const value = e.target.value
+  const numValue = parseFloat(value)
+  
+  // Only clear if the value is zero or invalid
+  if (value === "" || value === "0" || value === "0.00" || isNaN(numValue) || numValue === 0) {
+    e.target.value = ""
+  }
+}

@@ -1,20 +1,64 @@
-import { z } from "zod";
+import * as z from "zod"
+import { startOfMonth, addMonths } from "date-fns"
+import { formatDate, normalizeDate } from "@/lib/utils"
 
-// Validation schema for the mortgage form
+// Unified schema for both amortizations and mortgages
 export const mortgageFormSchema = z.object({
-  name: z.string().min(1, "mortgage_details_form.errors.name_required"),
-  property_id: z.string().min(1, "mortgage_details_form.errors.property_required"),
-  down_payment: z.string().min(1, "mortgage_details_form.errors.down_payment_required"),
-  interest_rate: z.string().min(1, "mortgage_details_form.errors.interest_rate_required"),
-  term_years: z.string().min(1, "mortgage_details_form.errors.term_required"),
-  installments_per_year: z.string().min(1, "mortgage_details_form.errors.installments_required"),
+  name: z.string().min(1, "amortization_form.validation.required"),
+  property_id: z.string().min(1, "amortization_form.validation.required"),
+  down_payment: z.string().min(1, "amortization_form.validation.required"),
+  interest_rate: z.string()
+    .min(1, "amortization_form.validation.required")
+    .refine(
+      (value) => {
+        const rate = parseFloat(value)
+        return !isNaN(rate)
+      },
+      "amortization_form.validation.invalid_number"
+    )
+    .refine(
+      (value) => {
+        const rate = parseFloat(value)
+        return rate >= 4
+      },
+      "amortization_form.validation.interest_rate_min"
+    )
+    .refine(
+      (value) => {
+        const rate = parseFloat(value)
+        return rate <= 18
+      },
+      "amortization_form.validation.interest_rate_max"
+    ),
+  term_years: z.string().min(1, "amortization_form.validation.required"),
+  installments_per_year: z.string().min(1, "amortization_form.validation.required"),
   first_installment_date: z.date({
-    required_error: "mortgage_details_form.errors.first_installment_date_required",
-    invalid_type_error: "mortgage_details_form.errors.first_installment_date_invalid",
+    required_error: "amortization_form.validation.first_installment_date_required",
+    invalid_type_error: "amortization_form.validation.first_installment_date_invalid",
   }),
-  loan_protection_type: z.enum(["none", "custom", "individual", "joint"]),
-  loan_protection_insurance: z.string().optional(),
-});
+  loan_protection_type: z.enum(["individual", "joint", "none", "custom"], {
+    required_error: "amortization_form.validation.loan_protection_type_required",
+  }).default("none"),
+  loan_protection_insurance: z.string().default("0"),
+})
 
-// Type for the form values
-export type MortgageFormValues = z.infer<typeof mortgageFormSchema>; 
+export const defaultValues: MortgageFormValues = {
+  name: "",
+  property_id: "",
+  down_payment: "0",
+  interest_rate: "8.5",
+  term_years: "20",
+  installments_per_year: "12",
+  first_installment_date: normalizeDate(startOfMonth(addMonths(new Date(), 1))),
+  loan_protection_type: "individual",
+  loan_protection_insurance: "0.028",
+}
+
+export type MortgageFormValues = z.infer<typeof mortgageFormSchema>
+
+// For compatibility with existing code
+export { mortgageFormSchema as amortizationFormSchema }
+export type AmortizationFormValues = MortgageFormValues 
+
+
+
