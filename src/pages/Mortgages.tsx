@@ -204,10 +204,11 @@ export default function Mortgages() {
         title={`${tMortgages('title')} - CreditoHipotecar.io`}
         description={tMortgages('description')}
       />
-      <div className="p-6 flex flex-col h-full w-full  items-center justify-center">
+      <div className="p-6 flex flex-col h-full w-full  items-center ">
+
         {propertiesWithMortgages?.map((property) => (
           property.mortgages.length > 0 && (
-            <div key={property.id} className="space-y-8 w-full h-full ">
+            <div key={property.id} className="space-y-8 w-full  ">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">{property.name}</h2>
                 <span className="text-xl font-semibold">
@@ -278,6 +279,7 @@ export default function Mortgages() {
         ))}
 
         {(!propertiesWithMortgages || propertiesWithMortgages.length === 0) && (
+
           <div className="flex h-full flex-col items-center justify-center">
             
             <div className="w-60  rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
