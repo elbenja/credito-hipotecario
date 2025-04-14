@@ -7,7 +7,7 @@ import { ChartThemeWrapper } from "@/components/ui/chart/theme-wrapper"
 import { format } from "date-fns"
 import { PaymentRow, ScenarioResult } from "@/services/amortization/types/common"
 import { useTranslation } from "react-i18next"
-import { Calendar } from "lucide-react"
+import { Calendar, Landmark } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
@@ -36,6 +36,7 @@ interface ScenarioPanelProps {
   regularScenario?: ScenarioResult | undefined
   currency: string
   installmentsPerYear: number
+  propertyCost?: number
 }
 
 // Memoize the data transformation function to avoid recalculating on every render
@@ -131,20 +132,33 @@ const ScenarioPanel = ({
   regularScenario,
   currency,
   installmentsPerYear = 12,
-  showBaseline = false
+  showBaseline = false,
+  propertyCost = 0
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
   const { t } = useTranslation()
-  // Add state for the toggle button inside the component
+  // Add state for the toggle buttons
   const [isButtonOn, setIsButtonOn] = useState(() => {
     // Initialize state from localStorage
     const savedState = localStorage.getItem('isButtonOn');
     return savedState ? JSON.parse(savedState) : false;
   });
 
+  // Add a second toggle state for the first set of buttons
+  const [isTotalViewOn, setIsTotalViewOn] = useState(() => {
+    // Initialize state from localStorage
+    const savedState = localStorage.getItem('isTotalViewOn');
+    return savedState ? JSON.parse(savedState) : true;
+  });
+
   // Update localStorage whenever isButtonOn changes
   useEffect(() => {
     localStorage.setItem('isButtonOn', JSON.stringify(isButtonOn));
   }, [isButtonOn]);
+
+  // Update localStorage whenever isTotalViewOn changes
+  useEffect(() => {
+    localStorage.setItem('isTotalViewOn', JSON.stringify(isTotalViewOn));
+  }, [isTotalViewOn]);
   
   // Handle null or undefined scenario gracefully
   if (!scenario?.summary) {
@@ -175,10 +189,10 @@ const ScenarioPanel = ({
     try {
       // Force recalculation when installmentsPerYear changes
       // by adding it explicitly to the dependency array
-      console.log(`Recalculating chart data with ${installmentsPerYear} installments per year`);
+      // console.log(`Recalculating chart data with ${installmentsPerYear} installments per year`);
       return transformPaymentsToChartData(scenario.payments, totalMonthsToDisplay, installmentsPerYear);
     } catch (error) {
-      console.error("Error transforming payments data:", error);
+      // console.error("Error transforming payments data:", error);
       return [];
     }
   }, [scenario.payments, totalMonthsToDisplay, installmentsPerYear]);
@@ -191,6 +205,11 @@ const ScenarioPanel = ({
       </div>
     );
   }
+
+  // Calculate total cost (property cost + interest and insurances)
+  const totalCost = useMemo(() => {
+    return propertyCost + total_interest_and_insurance;
+  }, [propertyCost, total_interest_and_insurance]);
 
   // Memoize the difference calculations to avoid recalculation on each render
   const differences = useMemo(() => {
@@ -206,6 +225,10 @@ const ScenarioPanel = ({
         total_interest_and_insurance,
         regularScenario?.summary?.total_interest_and_insurance
       ),
+      totalCost: getDifference(
+        totalCost,
+        regularScenario ? (propertyCost + (regularScenario.summary?.total_interest_and_insurance || 0)) : undefined
+      ),
       months: getDifference(
         total_months,
         regularScenario?.summary?.total_months
@@ -217,6 +240,8 @@ const ScenarioPanel = ({
     };
   }, [
     total_interest_and_insurance,
+    totalCost,
+    propertyCost,
     total_months,
     monthly_payment,
     regularScenario?.summary?.total_interest_and_insurance,
@@ -252,7 +277,7 @@ const ScenarioPanel = ({
   const breakEvenPoint = useMemo(() => {
     // When installmentsPerYear changes, we need to force a recalculation of the break-even point
     // Log for debugging purposes
-    console.log(`Finding break-even point with ${installmentsPerYear} installments per year`);
+    // console.log(`Finding break-even point with ${installmentsPerYear} installments per year`);
     
     // If we don't have chart data, return undefined
     if (!chartData.length) return undefined;
@@ -378,25 +403,76 @@ const ScenarioPanel = ({
 
 
 <div className="flex flex-col items-stretch space-y-0 border-t border-b p-0 sm:flex-row">
-  <div className="flex flex-1 flex-col justify-top gap-2 px-4 xl:px-6 2xl:px-8
-py-4 xl:py-5 2xl:py-6">
-    <span className="text-xs text-muted-foreground">{t('scenario_graphs.common.sum_interest_insurance', 'Sum Interest & Insurances', { ns: 'components' })}</span>
-    <div className="flex items-center gap-2">
-      <span className="text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold leading-none whitespace-nowrap"> 
-        {/* Sum01 */}
-        {formatCurrency(total_interest_and_insurance, currency as Currency)}
-      </span>
-            {showBaseline ? (
-              <Badge variant="primary" className="text-xs xl:text-sm whitespace-nowrap">
-                {t('scenario_graphs.regular.baseline', 'Baseline', { ns: 'components' })}
+
+  {isTotalViewOn ? (
+    <button className="flex flex-1 text-left justify-top gap-2 hover:bg-card/50 px-4 xl:px-6 2xl:px-8
+py-4 xl:py-5 2xl:py-6"
+      onClick={() => setIsTotalViewOn(false)}
+    >
+      <div className="flex-col justify-start items-start gap-1">
+        <span className="text-xs text-muted-foreground">
+          {t('scenario_graphs.common.total_cost', 'Total: Property + Interest + Insurances', { ns: 'components' })}
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xl  xl:text-2xl 2xl:text-3xl font-bold leading-none whitespace-nowrap"> 
+            {formatCurrency(totalCost, currency as Currency)}
+          </span>
+          {showBaseline ? (
+            <Badge variant="primary" className="text-xs xl:text-sm whitespace-nowrap">
+              {t('scenario_graphs.regular.baseline', 'Baseline', { ns: 'components' })}
+            </Badge>
+          ) : (
+            differences.totalCost && (
+              <Badge 
+                variant={getBadgeVariant(differences.totalCost)} 
+                className="text-xs xl:text-sm whitespace-nowrap"
+              >
+                {differences.totalCost < 0 ? '-' : '+'}
+                {formatCurrency(Math.abs(differences.totalCost), currency as Currency)}
               </Badge>
-            ) : differences.sum && (
-              <Badge variant={getBadgeVariant(differences.sum)} className="text-xs xl:text-sm whitespace-nowrap">
-                {differences.sum < 0 ? '-' : '+'}{formatCurrency(Math.abs(differences.sum), currency as Currency)}
+            )
+          )}
+        </div>
+      </div>
+      <div className="self-stretch pt-5 flex justify-center items-center">
+        <Landmark className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
+      </div>
+    </button>
+  ) : (
+    <button className="flex flex-1 text-left justify-top gap-2 hover:bg-card/50 px-4 xl:px-6 2xl:px-8
+py-4 xl:py-5 2xl:py-6"
+      onClick={() => setIsTotalViewOn(true)}
+    >
+      <div className="flex-col justify-start items-start gap-1">
+        <span className="text-xs text-muted-foreground">
+          {t('scenario_graphs.common.sum_interest_insurance', 'Sum Interest & Insurances', { ns: 'components' })}
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xl  xl:text-2xl 2xl:text-3xl font-bold leading-none whitespace-nowrap"> 
+            {formatCurrency(total_interest_and_insurance, currency as Currency)}
+          </span>
+          {showBaseline ? (
+            <Badge variant="primary" className="text-xs xl:text-sm whitespace-nowrap">
+              {t('scenario_graphs.regular.baseline', 'Baseline', { ns: 'components' })}
+            </Badge>
+          ) : (
+            differences.sum && (
+              <Badge 
+                variant={getBadgeVariant(differences.sum)} 
+                className="text-xs xl:text-sm whitespace-nowrap"
+              >
+                {differences.sum < 0 ? '-' : '+'}
+                {formatCurrency(Math.abs(differences.sum), currency as Currency)}
               </Badge>
-            )}
-  </div>
-  </div>
+            )
+          )}
+        </div>
+      </div>
+      <div className="self-stretch pt-5 flex justify-center items-center">
+        <Landmark className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
+      </div>
+    </button>
+  )}
 
   <div className="flex">
                {isButtonOn ? (
@@ -409,7 +485,7 @@ py-4 xl:py-5 2xl:py-6 "
                      {t('scenario_graphs.common.months', 'Months', { ns: 'components' })}
                      </span>
                        <div className="flex items-center gap-2"> 
-                       <span className="text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold leading-none ">
+                       <span className="text-xl xl:text-2xl 2xl:text-3xl font-bold leading-none ">
                        {total_months}
                          {/* Sum02 */}
                        </span>
@@ -436,7 +512,7 @@ py-4 xl:py-5 2xl:py-6"
                        
                      </span>
                        <div className="flex items-center gap-2"> 
-                       <span className="text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold leading-none">
+                       <span className="text-xl xl:text-2xl 2xl:text-3xl font-bold leading-none">
                            {(total_months / 12).toFixed(1)}
                            {/* Sum02 */}
                        </span>
@@ -459,7 +535,7 @@ py-4 xl:py-5 2xl:py-6">
       {t('scenario_graphs.common.monthly_payment', 'Monthly Payment', { ns: 'components' })}
       </span>
       <div className="flex items-center gap-2">
-        <span className="text-lg lg:text-xl xl:text-2xl 2xl:text-3xl whitespace-nowrap font-bold leading-none ">
+        <span className="text-xl  xl:text-2xl 2xl:text-3xl whitespace-nowrap font-bold leading-none ">
         {formatCurrency(monthly_payment, currency as Currency)}
           </span>
           {/* Sum03 */}

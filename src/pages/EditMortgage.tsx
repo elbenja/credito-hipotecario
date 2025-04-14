@@ -1051,6 +1051,7 @@ export default function EditMortgage() {
                         scenario={scenarios.regular}
                         currency={mortgage.property.currency}
                         installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
+                        propertyCost={mortgage.property.price_cost}
                       />
                     )}
                   </TabsContent>
@@ -1063,6 +1064,7 @@ export default function EditMortgage() {
                             regularScenario={scenarios.regular}
                             currency={mortgage.property.currency}
                             installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
+                            propertyCost={mortgage.property.price_cost}
                           />
                         ) : null}
                         <div className="mt-8">
@@ -1086,6 +1088,7 @@ export default function EditMortgage() {
                             regularScenario={scenarios.regular}
                             currency={mortgage.property.currency}
                             installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
+                            propertyCost={mortgage.property.price_cost}
                           />
                         ) : null}
                         <div className="mt-8">
@@ -1109,6 +1112,7 @@ export default function EditMortgage() {
                             regularScenario={scenarios.regular}
                             currency={mortgage.property.currency}
                             installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
+                            propertyCost={mortgage.property.price_cost}
                           />
                         ) : null}
                         <div className="mt-8">

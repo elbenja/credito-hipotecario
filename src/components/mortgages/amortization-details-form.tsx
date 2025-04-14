@@ -118,11 +118,11 @@ export function AmortizationDetailsForm({
   }, [selectedProperty, numericDownPayment, bonusRules, exchangeRate]);
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
       {/* Loan Amount Display */}
       <div className="space-y-2">
         <h4 className=" font-medium ">{t('amortization.loan_amount', { ns: 'mortgages' })}</h4>
-        <div className="text-xl lg:text-xl xl:text-2xl 2xl:text-3xl font-bold">
+        <div className="text-xl xl:text-2xl 2xl:text-3xl font-bold">
           {formatCurrency(Math.round(loanAmount), selectedProperty?.currency || "PEN")}
           {/* brackets */}
         </div>
@@ -139,8 +139,9 @@ export function AmortizationDetailsForm({
 
       <div>
         {/* <h4 className="font-medium mb-4">{t('amortization.title', { ns: 'mortgages' })}</h4> */}
-        <div className="space-y-4">
-        <h4 className="font-medium mb-4"> {t('amortization.down_payment', { ns: 'mortgages' })}   </h4>
+        <div className="space-y-6 sm:space-y-4">
+        <div className="mt-4">           
+          <h4 className="font-medium"> {t('amortization.down_payment', { ns: 'mortgages' })}   </h4>
           <div className="grid grid-col-1 sm:grid-cols-[_1fr_16px_1fr] ">
          
             <FormField
@@ -201,7 +202,7 @@ export function AmortizationDetailsForm({
                 </FormItem>
               )}
             />
-            <div className="h-8 sm:h-16 inline-flex justify-center items-end ">    =  </div>
+            <div className="h-5 sm:h-16 inline-flex justify-center items-end ">    =  </div>
                <FormField
               control={form.control}
               name="down_payment"
@@ -227,7 +228,9 @@ export function AmortizationDetailsForm({
             />
              
           </div>
-          <h4 className="font-medium mt-4 mb-4"> {t('insurance.loan_protection', { ns: 'mortgages' })}  </h4>
+        </div>  
+<div className="mt-8">   
+        <h4 className="font-medium"> {t('insurance.loan_protection', { ns: 'mortgages' })}  </h4>
           <div className="grid grid-col-1 sm:grid-cols-[_1fr_16px_1fr] "> 
             <FormField
               control={form.control}
@@ -255,7 +258,7 @@ export function AmortizationDetailsForm({
                 </FormItem>
               )}
             />
-             <div className="h-8 sm:h-16 inline-flex justify-center items-end ">    =  </div>
+             <div className="h-5 sm:h-16 inline-flex justify-center items-end ">    =  </div>
             <FormField
               control={form.control}
               name="loan_protection_insurance"
@@ -293,6 +296,7 @@ export function AmortizationDetailsForm({
               )}
             />
           </div>
+</div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField

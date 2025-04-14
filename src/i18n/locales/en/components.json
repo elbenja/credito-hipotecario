@@ -50,11 +50,12 @@
       "monthly_payment": "Monthly Payment",
       "principal": "Principal",
       "interest_insurance": "Interest & Insurance",
-      "break_even_point": "Break-even point"
+      "break_even_point": "Break-even point",
+      "total_cost": "Total: Property + Interest + Insurances"
     },
     "regular": {
       "title": "Regular Scenario",
-      "baseline": "Baseline"
+      "baseline": "Base"
     },
     "accelerated": {
       "title": "Accelerated Scenario"

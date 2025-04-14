@@ -50,7 +50,8 @@
       "monthly_payment": "Pago Mensual",
       "principal": "Capital",
       "interest_insurance": "Intereses y Seguros",
-      "break_even_point": "Punto de Equilibrio"
+      "break_even_point": "Punto de Equilibrio",
+      "total_cost": "Total: Propiedad + Intereses + Seguros"
     },
     "regular": {
       "title": " Regular",
