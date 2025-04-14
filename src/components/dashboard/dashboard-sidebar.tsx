@@ -204,7 +204,9 @@ const adminNavItems: NavItem[] = [
 ]
 
 const footerNavItems: NavItem[] = [
-  { title: "ai_chat", namespace: "dashboard", icon: MessageSquare, href: "/chat" },
+  { title: "ai_chat", namespace: "dashboard", icon: MessageSquare, href: "/dashboard" },
+
+
 ]
 
 export function DashboardSidebar() {
@@ -404,19 +406,19 @@ export function DashboardSidebar() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="start" side="right">
                     <DropdownMenuItem asChild>
-                      <Link to="/profile" className="flex items-center">
+                      <Link to="/dashboard" className="flex items-center">
                         <User className="mr-2 h-4 w-4" />
                         <span>{tDashboard('sections.account')}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/billing" className="flex items-center">
+                      <Link to="/dashboard" className="flex items-center">
                         <CreditCard className="mr-2 h-4 w-4" />
                         <span>{tDashboard('sections.billing')}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/notifications" className="flex items-center">
+                      <Link to="/dashboard" className="flex items-center">
                         <Bell className="mr-2 h-4 w-4" />
                         <span>{tDashboard('sections.notifications')}</span>
                       </Link>
