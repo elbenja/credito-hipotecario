@@ -7,25 +7,11 @@ import { formatCurrency } from "@/lib/utils"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { useTranslation } from "react-i18next"
-import { useState, useEffect } from "react"
-
-const formSchema = z.object({
-  name: z.string().min(1, {
-    message: "validation.property_name_required"
-  }),
-  description: z.string().optional(),
-  price_cost: z.string().min(1, {
-    message: "validation.price_required"
-  }),
-  currency: z.enum(["PEN", "USD"]).default("PEN"),
-  property_insurance: z.string().optional(),
-  property_insurance_type: z.enum(["auto", "manual"]).default("auto"),
-  is_sustainable: z.boolean().default(false),
-  is_first_home: z.boolean().default(false),
-})
+import { useState, useEffect, useMemo } from "react"
+import { PropertyFormSchema } from "./property-form"
 
 type BonusSectionProps = {
-  form: UseFormReturn<z.infer<typeof formSchema>>
+  form: UseFormReturn<PropertyFormSchema>
 }
 
 export function BonusSection({ form }: BonusSectionProps) {
@@ -47,8 +33,6 @@ export function BonusSection({ form }: BonusSectionProps) {
           .order('min_value', { ascending: true })
 
         if (error) throw error
-        
-        console.log('BonusSection - Fetched bonus rules directly:', data);
         return data || []
       } catch (error) {
         console.error("Error loading bonus rules:", error)
@@ -58,26 +42,16 @@ export function BonusSection({ form }: BonusSectionProps) {
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
   
-  // Log when bonus rules change
-  useEffect(() => {
-    // console.log('BonusSection received bonusRules:', bonusRules);
-  }, [bonusRules]);
-
-  // Debug the raw price value
-  // console.log('Raw price from form:', price, typeof price);
-  
   // Helper function to parse price string properly
   const parsePrice = (priceStr: string): number => {
     if (!priceStr) return 0;
     // Remove all non-numeric characters except decimal point
     const sanitized = priceStr.replace(/[^0-9.]/g, '');
-    const parsed = parseFloat(sanitized);
-    // console.log('Sanitized price:', sanitized, 'Parsed price:', parsed);
-    return parsed;
+    return parseFloat(sanitized);
   };
 
   // Fetch exchange rate
-  const { data: exchangeRate } = useQuery({
+  const { data: exchangeRate = 3.70 } = useQuery({
     queryKey: ['exchangeRate', currency, 'PEN'],
     queryFn: async () => {
       if (currency === 'PEN') return 1
@@ -94,79 +68,51 @@ export function BonusSection({ form }: BonusSectionProps) {
     }
   })
 
-  const convertToPEN = (amount: number): number => {
-    return amount * (exchangeRate || 3.70)
-  }
+  // Memoize price parsing to avoid recalculating on every render
+  const parsedPrice = useMemo(() => parsePrice(price), [price]);
+  
+  // Memoize currency conversion to PEN
+  const priceInPEN = useMemo(() => 
+    parsedPrice * exchangeRate,
+    [parsedPrice, exchangeRate]
+  );
 
-  const isPriceInBonusRange = (price: number): boolean => {
-    if (!price || isNaN(price) || bonusRules.length === 0) {
-      // console.log('Invalid price or no bonus rules:', { price, rulesLength: bonusRules.length });
+  // Memoize price range check
+  const isPriceInBonusRange = useMemo(() => {
+    if (!parsedPrice || isNaN(parsedPrice) || bonusRules.length === 0) {
       return false;
     }
     
-    const priceInPEN = convertToPEN(price)
-    
-    // Detailed debugging
-    // console.log('==== BONUS VALIDATION ====');
-    // console.log('Price to validate:', price, typeof price);
-    // console.log('Price in PEN:', priceInPEN, typeof priceInPEN);
-    // console.log('Bonus rules count:', bonusRules.length);
-    
-    // if (bonusRules.length > 0) {
-    //   console.log('First rule min:', bonusRules[0].min_value, typeof bonusRules[0].min_value);
-    //   console.log('First rule max:', bonusRules[0].max_value, typeof bonusRules[0].max_value);
-    // }
-    
-    // Manual check each rule
-    bonusRules.forEach((rule, index) => {
-      const minValue = Number(rule.min_value);
-      const maxValue = Number(rule.max_value);
-      // console.log(`Rule ${index + 1}: ${minValue} - ${maxValue}, Price in range: ${priceInPEN >= minValue && priceInPEN <= maxValue}`);
-    });
-    
     // Ensure numeric comparison by converting all values to numbers
-    const isInRange = bonusRules.some(rule => {
+    return bonusRules.some(rule => {
       const minValue = Number(rule.min_value);
       const maxValue = Number(rule.max_value);
       return priceInPEN >= minValue && priceInPEN <= maxValue;
     });
-    
-    // console.log('Final result - Is price in range:', isInRange);
-    return isInRange;
-  }
+  }, [parsedPrice, priceInPEN, bonusRules]);
 
-  const getApplicableRule = (price: number) => {
-    if (!price || isNaN(price) || bonusRules.length === 0) {
-      console.log('Cannot get applicable rule - Invalid price or no rules');
+  // Memoize applicable rule calculation
+  const applicableRule = useMemo(() => {
+    if (!parsedPrice || isNaN(parsedPrice) || bonusRules.length === 0) {
       return null;
     }
     
-    const priceInPEN = convertToPEN(price)
-    
     // Ensure numeric comparison by converting all values to numbers
-    const matchingRule = bonusRules.find(rule => {
+    return bonusRules.find(rule => {
       const minValue = Number(rule.min_value);
       const maxValue = Number(rule.max_value);
       return priceInPEN >= minValue && priceInPEN <= maxValue;
     });
-    
-    // if (matchingRule) {
-    //   console.log('Found matching rule:', {
-    //     min: matchingRule.min_value,
-    //     max: matchingRule.max_value,
-    //     traditional: matchingRule.traditional_bonus,
-    //     sustainable: matchingRule.sustainable_bonus
-    //   });
-    // } else {
-    //   console.log('No matching rule found for price:', priceInPEN);
-    // }
-    
-    return matchingRule;
-  }
+  }, [parsedPrice, priceInPEN, bonusRules]);
 
   // Calculate the lowest min_value and highest max_value
-  const minPrice = Math.min(...bonusRules.map(rule => rule.min_value));
-  const maxPrice = Math.max(...bonusRules.map(rule => rule.max_value));
+  const { minPrice, maxPrice } = useMemo(() => {
+    if (!bonusRules.length) return { minPrice: 0, maxPrice: 0 };
+    return {
+      minPrice: Math.min(...bonusRules.map(rule => Number(rule.min_value))),
+      maxPrice: Math.max(...bonusRules.map(rule => Number(rule.max_value)))
+    };
+  }, [bonusRules]);
 
   return (
     <div className="space-y-4">
@@ -194,7 +140,7 @@ export function BonusSection({ form }: BonusSectionProps) {
 
             {isFirstHome && price && (
               <div className="mt-4 space-y-4">
-                {isPriceInBonusRange(parsePrice(price)) ? (
+                {isPriceInBonusRange ? (
                   <>
                     <FormField
                       control={form.control}
@@ -219,23 +165,23 @@ export function BonusSection({ form }: BonusSectionProps) {
                       )}
                     />
 
-                    {getApplicableRule(parsePrice(price)) && (
+                    {applicableRule && (
                       <div className="mt-4 rounded-md bg-primary-foreground p-6">
                         <p className="text-lg font-medium">{t('bonus.amount')}:</p>
                         <p className="text-2xl font-bold">
                           {formatCurrency(
                             isSustainable
-                              ? getApplicableRule(parsePrice(price))!.sustainable_bonus
-                              : getApplicableRule(parsePrice(price))!.traditional_bonus,
+                              ? applicableRule.sustainable_bonus
+                              : applicableRule.traditional_bonus,
                             'PEN'
                           )}
                         </p>
                         <div className="space-y-2">
-                          {getApplicableRule(parsePrice(price)) && (
+                          {applicableRule && (
                             <p className="text-sm text-muted-foreground">
                               {t('bonus.applicable_range', {
-                                min: getApplicableRule(parsePrice(price))?.min_value.toLocaleString(),
-                                max: getApplicableRule(parsePrice(price))?.max_value.toLocaleString()
+                                min: applicableRule.min_value.toLocaleString(),
+                                max: applicableRule.max_value.toLocaleString()
                               })}
                             </p>
                           )}
@@ -247,7 +193,7 @@ export function BonusSection({ form }: BonusSectionProps) {
                   <div className="mt-2 text-sm text-muted-foreground">
                     {currency === 'USD' ? 
                       t('bonus.price_outside_range_usd', {
-                        penAmount: convertToPEN(parsePrice(price)).toLocaleString()
+                        penAmount: priceInPEN.toLocaleString()
                       }) :
                       t('bonus.price_outside_range')
                     }

@@ -3,31 +3,17 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CurrencyInput } from "@/components/ui/currency-input"
 import { UseFormReturn } from "react-hook-form"
-import { EditableHeading } from "@/components/ui/editable-heading"
+
 import { useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
 import { useTranslation } from "react-i18next"
 import * as z from "zod"
 import { Input } from "@/components/ui/input"
-
-const formSchema = z.object({
-  name: z.string().min(1, {
-    message: "validation.property_name_required"
-  }),
-  description: z.string().optional(),
-  price_cost: z.string().min(1, {
-    message: "validation.price_required"
-  }),
-  currency: z.enum(["PEN", "USD"]).default("PEN"),
-  property_insurance: z.string().optional(),
-  property_insurance_type: z.enum(["auto", "manual"]).default("auto"),
-  is_sustainable: z.boolean().default(false),
-  is_first_home: z.boolean().default(false),
-})
+import { PropertyFormSchema } from "./property-form"
 
 type PropertyDetailsProps = {
-  form: UseFormReturn<z.infer<typeof formSchema>>
+  form: UseFormReturn<PropertyFormSchema>
   isNewProperty?: boolean
 }
 

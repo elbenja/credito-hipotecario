@@ -11,17 +11,26 @@ import { MonthlyCosts } from "./monthly-costs"
 import { BonusSection } from "./bonus-section"
 import { Property, BonusRule } from "./types"
 import { useTranslation } from "react-i18next"
+import { useMemo } from "react"
 
-const formSchema = z.object({
-  name: z.string().min(1, "validation.property_name_required"),
+// Define the schema creator function that takes the translation function
+export const createPropertyFormSchema = (t: any) => z.object({
+  name: z.string().min(1, {
+    message: t('property_form.validation.property_name_required', 'Property name is required', { ns: 'components' })
+  }),
   description: z.string().optional(),
-  price_cost: z.string().min(1, "validation.price_required"),
+  price_cost: z.string().min(1, {
+    message: t('property_form.validation.price_required', 'Property price is required', { ns: 'components' })
+  }),
   currency: z.enum(["PEN", "USD"]).default("PEN"),
   property_insurance: z.string().optional(),
   property_insurance_type: z.enum(["auto", "manual"]).default("auto"),
   is_sustainable: z.boolean().default(false),
   is_first_home: z.boolean().default(false),
 })
+
+// Define a type that can be used by child components
+export type PropertyFormSchema = z.infer<ReturnType<typeof createPropertyFormSchema>>
 
 type PropertyFormProps = {
   onSuccess: () => void
@@ -34,9 +43,16 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
   const { user } = useAuth()
   const { t: tGlobal } = useTranslation('global')
   const { t: tProperties } = useTranslation('properties')
+  const { t: tComponents } = useTranslation('components')
+  
+  // Create the schema with translations
+  const propertyFormSchema = useMemo(() => 
+    createPropertyFormSchema(tComponents), 
+    [tComponents]
+  )
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof propertyFormSchema>>({
+    resolver: zodResolver(propertyFormSchema),
     defaultValues: {
       name: selectedProperty?.name || "",
       description: selectedProperty?.description || "",
@@ -49,7 +65,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
     },
   })
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof propertyFormSchema>) {
     try {
       if (!user) throw new Error(tGlobal('messages.no_user_found', 'User not found', { ns: 'properties' }))
 

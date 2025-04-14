@@ -409,7 +409,7 @@ const ScenarioPanel = ({
 py-4 xl:py-5 2xl:py-6"
       onClick={() => setIsTotalViewOn(false)}
     >
-      <div className="flex flex-col justify-start items-start gap-1">
+      <div className="flex flex-col justify-start items-start gap-2">
         <span className="text-xs text-muted-foreground">
           {t('scenario_graphs.common.total_cost', 'Total: Property + Interest + Insurances', { ns: 'components' })}
         </span>
@@ -434,7 +434,7 @@ py-4 xl:py-5 2xl:py-6"
           )}
         </div>
       </div>
-      <div className="self-stretch pt-5 flex justify-center items-center">
+      <div className="self-stretch pt-4 flex justify-center items-center">
         <Landmark className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
       </div>
     </button>
@@ -443,7 +443,7 @@ py-4 xl:py-5 2xl:py-6"
 py-4 xl:py-5 2xl:py-6"
       onClick={() => setIsTotalViewOn(true)}
     >
-      <div className="flex flex-col justify-start items-start gap-1">
+      <div className="flex flex-col justify-start items-start gap-2">
         <span className="text-xs text-muted-foreground">
           {t('scenario_graphs.common.sum_interest_insurance', 'Sum Interest & Insurances', { ns: 'components' })}
         </span>
@@ -468,7 +468,7 @@ py-4 xl:py-5 2xl:py-6"
           )}
         </div>
       </div>
-      <div className="self-stretch pt-5 flex justify-center items-center">
+      <div className="self-stretch pt-4 flex justify-center items-center">
         <Landmark className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
       </div>
     </button>
@@ -480,7 +480,7 @@ py-4 xl:py-5 2xl:py-6"
 py-4 xl:py-5 2xl:py-6 "
                    onClick={() => setIsButtonOn(false)}
                  >
-                 <div className="flex flex-col justify-start items-start gap-1">
+                 <div className="flex flex-col justify-start items-start gap-2">
                    <span className="text-xs text-muted-foreground">
                      {t('scenario_graphs.common.months', 'Months', { ns: 'components' })}
                      </span>
@@ -496,7 +496,7 @@ py-4 xl:py-5 2xl:py-6 "
                            )}
                      </div>
                   </div>
-                   <div className="self-stretch pt-5 flex justify-center items-center">
+                   <div className="self-stretch pt-4 flex justify-center items-center">
                     <Calendar className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
                  </div>
                  </button>
@@ -506,7 +506,7 @@ py-4 xl:py-5 2xl:py-6"
                     onClick={() => setIsButtonOn(true)}
                   >
                  
-                 <div className="flex flex-col justify-start items-start gap-1">
+                 <div className="flex flex-col justify-start items-start gap-2">
                    <span className="text-xs text-muted-foreground">
                      {t('scenario_graphs.common.years', 'Years', { ns: 'components' })}
                        
@@ -523,7 +523,7 @@ py-4 xl:py-5 2xl:py-6"
                            )}
                      </div>
                    </div>
-                   <div className="self-stretch pt-5 flex justify-center items-center ">
+                   <div className="self-stretch pt-4 flex justify-center items-center ">
                      <Calendar className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
                  </div>
                  </button>
@@ -532,7 +532,7 @@ py-4 xl:py-5 2xl:py-6"
     <div className="flex flex-1  justify-top gap-1 border-t  text-left even:border-l  sm:border-l sm:border-t-0  px-4 xl:px-6 2xl:px-8
 py-4 xl:py-5 2xl:py-6">
       
-      <div className="flex flex-col justify-start items-start gap-1">
+      <div className="flex flex-col justify-start items-start gap-2">
 
       
       <span className="text-xs text-muted-foreground whitespace-nowrap">

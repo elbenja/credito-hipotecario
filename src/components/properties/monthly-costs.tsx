@@ -7,24 +7,10 @@ import { supabase } from "@/integrations/supabase/client"
 import { useTranslation } from "react-i18next"
 import { useEffect } from "react"
 import * as z from "zod"
-
-const formSchema = z.object({
-  name: z.string().min(1, {
-    message: "validation.property_name_required"
-  }),
-  description: z.string().optional(),
-  price_cost: z.string().min(1, {
-    message: "validation.price_required"
-  }),
-  currency: z.enum(["PEN", "USD"]).default("PEN"),
-  property_insurance: z.string().optional(),
-  property_insurance_type: z.enum(["auto", "manual"]).default("auto"),
-  is_sustainable: z.boolean().default(false),
-  is_first_home: z.boolean().default(false),
-})
+import { PropertyFormSchema } from "./property-form"
 
 type MonthlyCostsProps = {
-  form: UseFormReturn<z.infer<typeof formSchema>>
+  form: UseFormReturn<PropertyFormSchema>
 }
 
 export function MonthlyCosts({ form }: MonthlyCostsProps) {

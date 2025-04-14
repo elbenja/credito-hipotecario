@@ -116,5 +116,12 @@
       "first_installment_date_invalid": "Por favor ingrese una fecha válida en el formato 'MMM d, yyyy' (ej., Feb 28, 2026)",
       "loan_protection_type_required": "Por favor seleccione un tipo de seguro de desgravamen"
     }
+  },
+  "property_form": {
+    "validation": {
+      "property_name_required": "El nombre es requerido",
+      "price_required": "El precio es requerido",
+      "currency_required": "La moneda es requerida"
+    }
   }
 } 

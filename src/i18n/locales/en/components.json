@@ -116,5 +116,12 @@
       "first_installment_date_invalid": "Please enter a valid date in the format 'MMM d, yyyy' (e.g., Feb 28, 2026)",
       "loan_protection_type_required": "Please select a loan protection type"
     }
+  },
+  "property_form": {
+    "validation": {
+      "property_name_required": "Name is required",
+      "price_required": "Price is required",
+      "currency_required": "Currency is required"
+    }
   }
 } 

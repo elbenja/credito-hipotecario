@@ -1014,7 +1014,7 @@ export default function EditMortgage() {
 
           {/* Right Container */}
           {!isCreatingNew && (
-            <div className="w-screen sm:w-full overflow-hidden flex-1 p-0  ">
+            <div className="w-screen sm:w-full overflow-hidden flex-1 pt-8 sm:p-0  ">
               {/* <h2 className="text-sm mb-6">{t("payment_scenarios_graphs")}</h2> */}
               {(!mortgage || !scenarios || isLoadingScenarios) ? (
                 <div className="flex items-center justify-center h-64">
@@ -1038,11 +1038,11 @@ export default function EditMortgage() {
                   className="w-full"
                   onValueChange={setActiveTab}
                 >
-                  <TabsList className="w-screen sm:w-full items-center justify-start flex inline-flex overflow-x-auto h-10 lg:h-12 xl:h-14 px-4">
-                    <TabsTrigger className="flex-shrink-0 px-5" value="regular">{t("scenarios.regular.title", { ns: "mortgages" })}</TabsTrigger>
-                    <TabsTrigger className="flex-shrink-0 px-5" value="accelerated">{t("scenarios.accelerated.title", { ns: "mortgages" })}</TabsTrigger>
-                    <TabsTrigger className="flex-shrink-0 px-5" value="lower_payment">{t("scenarios.lower_payment.title", { ns: "mortgages" })}</TabsTrigger>
-                    <TabsTrigger className="flex-shrink-0 px-5" value="new_rate">{t("scenarios.new_rate.title", { ns: "mortgages" })}</TabsTrigger>
+                  <TabsList className="w-screen sm:w-full items-center justify-start flex inline-flex overflow-x-auto h-14  xl:h-14 px-4">
+                    <TabsTrigger className="flex-shrink-0 px-5 py-2" value="regular">{t("scenarios.regular.title", { ns: "mortgages" })}</TabsTrigger>
+                    <TabsTrigger className="flex-shrink-0 px-5 py-2" value="accelerated">{t("scenarios.accelerated.title", { ns: "mortgages" })}</TabsTrigger>
+                    <TabsTrigger className="flex-shrink-0 px-5 py-2" value="lower_payment">{t("scenarios.lower_payment.title", { ns: "mortgages" })}</TabsTrigger>
+                    <TabsTrigger className="flex-shrink-0 px-5 py-2" value="new_rate">{t("scenarios.new_rate.title", { ns: "mortgages" })}</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="regular" className="m-0">
