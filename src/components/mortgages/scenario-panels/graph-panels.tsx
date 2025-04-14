@@ -409,7 +409,7 @@ const ScenarioPanel = ({
 py-4 xl:py-5 2xl:py-6"
       onClick={() => setIsTotalViewOn(false)}
     >
-      <div className="flex-col justify-start items-start gap-1">
+      <div className="flex flex-col justify-start items-start gap-1">
         <span className="text-xs text-muted-foreground">
           {t('scenario_graphs.common.total_cost', 'Total: Property + Interest + Insurances', { ns: 'components' })}
         </span>
@@ -443,7 +443,7 @@ py-4 xl:py-5 2xl:py-6"
 py-4 xl:py-5 2xl:py-6"
       onClick={() => setIsTotalViewOn(true)}
     >
-      <div className="flex-col justify-start items-start gap-1">
+      <div className="flex flex-col justify-start items-start gap-1">
         <span className="text-xs text-muted-foreground">
           {t('scenario_graphs.common.sum_interest_insurance', 'Sum Interest & Insurances', { ns: 'components' })}
         </span>
@@ -480,7 +480,7 @@ py-4 xl:py-5 2xl:py-6"
 py-4 xl:py-5 2xl:py-6 "
                    onClick={() => setIsButtonOn(false)}
                  >
-                 <div className="flex-col justify-start items-start gap-1">
+                 <div className="flex flex-col justify-start items-start gap-1">
                    <span className="text-xs text-muted-foreground">
                      {t('scenario_graphs.common.months', 'Months', { ns: 'components' })}
                      </span>
@@ -506,7 +506,7 @@ py-4 xl:py-5 2xl:py-6"
                     onClick={() => setIsButtonOn(true)}
                   >
                  
-                 <div className="flex-col justify-start items-start gap-1">
+                 <div className="flex flex-col justify-start items-start gap-1">
                    <span className="text-xs text-muted-foreground">
                      {t('scenario_graphs.common.years', 'Years', { ns: 'components' })}
                        
@@ -529,8 +529,12 @@ py-4 xl:py-5 2xl:py-6"
                  </button>
                 )}
 
-    <div className="flex flex-1 flex-col justify-top gap-1 border-t  text-left even:border-l  sm:border-l sm:border-t-0  px-4 xl:px-6 2xl:px-8
+    <div className="flex flex-1  justify-top gap-1 border-t  text-left even:border-l  sm:border-l sm:border-t-0  px-4 xl:px-6 2xl:px-8
 py-4 xl:py-5 2xl:py-6">
+      
+      <div className="flex flex-col justify-start items-start gap-1">
+
+      
       <span className="text-xs text-muted-foreground whitespace-nowrap">
       {t('scenario_graphs.common.monthly_payment', 'Monthly Payment', { ns: 'components' })}
       </span>
@@ -544,6 +548,8 @@ py-4 xl:py-5 2xl:py-6">
                 {differences.payment < 0 ? '-' : '+'}{formatCurrency(Math.abs(differences.payment), currency as Currency)}
               </Badge>
             )}
+      </div>
+    
       </div>
     </div>
 
