@@ -1038,11 +1038,11 @@ export default function EditMortgage() {
                   className="w-full"
                   onValueChange={setActiveTab}
                 >
-                  <TabsList className="w-screen sm:w-full items-center justify-start flex inline-flex overflow-x-auto h-14  xl:h-14 px-4">
-                    <TabsTrigger className="flex-shrink-0 px-5 py-2" value="regular">{t("scenarios.regular.title", { ns: "mortgages" })}</TabsTrigger>
-                    <TabsTrigger className="flex-shrink-0 px-5 py-2" value="accelerated">{t("scenarios.accelerated.title", { ns: "mortgages" })}</TabsTrigger>
-                    <TabsTrigger className="flex-shrink-0 px-5 py-2" value="lower_payment">{t("scenarios.lower_payment.title", { ns: "mortgages" })}</TabsTrigger>
-                    <TabsTrigger className="flex-shrink-0 px-5 py-2" value="new_rate">{t("scenarios.new_rate.title", { ns: "mortgages" })}</TabsTrigger>
+                  <TabsList className="w-screen sm:w-full items-center justify-start flex inline-flex overflow-x-auto h-14 px-2 lg:px-3 xl:px-4">
+                    <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2" value="regular">{t("scenarios.regular.title", { ns: "mortgages" })}</TabsTrigger>
+                    <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2" value="accelerated">{t("scenarios.accelerated.title", { ns: "mortgages" })}</TabsTrigger>
+                    <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2" value="lower_payment">{t("scenarios.lower_payment.title", { ns: "mortgages" })}</TabsTrigger>
+                    <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2" value="new_rate">{t("scenarios.new_rate.title", { ns: "mortgages" })}</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="regular" className="m-0">
