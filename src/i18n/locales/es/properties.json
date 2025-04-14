@@ -41,14 +41,14 @@
     "amount_short": "Bono",
     "amount_currency": "Bono (S/)",
     "eligible": "Elegible para Bono",
-    "first_home": "Bono MiVivienda",
+    "first_home": "Bono MiVivienda Tradicional",
     "price_range": "Bono para precios entre: S/{{min}} - S/{{max}}",
     "applicable_range": "Rango aplicable: S/{{min}} - S/{{max}}",
     "price_outside_range": "Precio fuera del rango.",
     "price_outside_range_usd": "Precio (S/{{penAmount}}) fuera del rango.",
     "no_bonus": "-",
-    "first_home_buyer": "Bono MiVivienda",
-    "sustainable_property": "Bono de Propiedad Sostenible",
+    "first_home_buyer": "Bono MiVivienda Tradicional",
+    "sustainable_property": "Bono MiVivienda Sostenible",
     "qualifies_higher_bonus": "Califica para el bono más alto"
   },
   "messages": {
