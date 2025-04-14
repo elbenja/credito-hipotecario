@@ -35,5 +35,6 @@
   "delete_user_description": "Are you sure you want to delete {{email}}? This action cannot be undone.",
   "warning_deleting_admin": "Warning: You are deleting an admin user!",
   "deleting": "Deleting...",
-  "delete": "Delete"
+  "delete": "Delete",
+  "mortgages": "Mortgages"
 } 

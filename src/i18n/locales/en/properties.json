@@ -47,8 +47,8 @@
     "price_outside_range": "Price outside the range.",
     "price_outside_range_usd": "Price (S/{{penAmount}}) outside the range.",
     "no_bonus": "-",
-    "first_home_buyer": "First Home Buyer Bonus",
-    "sustainable_property": "Sustainable Property Bonus",
+    "first_home_buyer": "Traditional MiVivienda Bonus",
+    "sustainable_property": "Sustainable MiVivienda Bonus",
     "qualifies_higher_bonus": "Qualifies for the higher bonus"
   },
   "messages": {
@@ -59,6 +59,10 @@
     "property_updated": "Property updated successfully",
     "property_added": "Property added successfully",
     "error_saving": "There was an error saving the property",
-    "no_user_found": "User not found"
+    "no_user_found": "User not found",
+    "property_duplicated": "Property duplicated successfully",
+    "error_duplicating_property": "Error duplicating property",
+    "property_deleted": "Property deleted successfully",
+    "error_deleting_property": "Error deleting property"
   }
 } 

@@ -16,6 +16,7 @@
     "property_percentage": "% de la Propiedad",
     "interest_rate": "Interés - TEA",
     "term": "Plazo",
+    "years": "años",
     "installments_per_year": "Cuotas/Año",
     "monthly_payment": "Cuota Mensual",
     "total_interest": "Interés Total",
@@ -94,6 +95,12 @@
     "amortization_duplicated": "Hipoteca duplicada exitosamente",
     "error_duplicating_amortization": "Hubo un error al duplicar la hipoteca",
     "save_to_access_all_features": "Guarda esta hipoteca para acceder a todas las funciones de escenarios como Amortizaciones Extra y Compra de Deuda",
-    "no_amortizations": "No se encontraron hipotecas. ¡Crea una para empezar!"
+    "no_amortizations": "No se encontraron hipotecas. ¡Crea una para empezar!",
+    "error_loading_amortizations": "Hubo un error al cargar las hipotecas",
+    "error_loading_amortization_rules": "Hubo un error al cargar las reglas de Hipoteca",
+    "amortization_updated": "Hipoteca actualizada exitosamente",
+    "amortization_added": "Hipoteca agregada exitosamente",
+    "error_saving": "Hubo un error al guardar la hipoteca",
+    "error_deleting": "Hubo un error al eliminar la hipoteca"
   }
 } 

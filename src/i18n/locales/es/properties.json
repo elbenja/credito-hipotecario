@@ -59,6 +59,10 @@
     "property_updated": "Propiedad actualizada exitosamente",
     "property_added": "Propiedad agregada exitosamente",
     "error_saving": "Hubo un error al guardar la propiedad",
-    "no_user_found": "No se encontró el usuario"
+    "no_user_found": "No se encontró el usuario",
+    "property_duplicated": "Propiedad duplicada exitosamente",
+    "error_duplicating_property": "Error duplicando la propiedad",
+    "property_deleted": "Propiedad eliminada exitosamente",
+    "error_deleting_property": "Error eliminando la propiedad"
   }
 } 

@@ -35,5 +35,6 @@
   "delete_user_description": "¿Estás seguro de que deseas eliminar a {{email}}? Esta acción no se puede deshacer.",
   "warning_deleting_admin": "¡Advertencia: Estás eliminando un usuario administrador!",
   "deleting": "Eliminando...",
-  "delete": "Eliminar"
+  "delete": "Eliminar",
+  "mortgages": "Hipotecas"
 } 

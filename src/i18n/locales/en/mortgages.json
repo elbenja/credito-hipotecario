@@ -95,6 +95,12 @@
     "amortization_duplicated": "Mortgage duplicated successfully",
     "error_duplicating_amortization": "There was an error duplicating the mortgage",
     "save_to_access_all_features": "Save this mortgage to access all scenario features such as extra payments and refinancing options",
-    "no_amortizations": "No mortgages found. Create one to get started!"
+    "no_amortizations": "No mortgages found. Create one to get started!",
+    "error_loading_amortizations": "There was an error loading the mortgages",
+    "error_loading_amortization_rules": "There was an error loading the Mortgage rules",
+    "amortization_updated": "Mortgage updated successfully",
+    "amortization_added": "Mortgage added successfully",
+    "error_saving": "There was an error saving the mortgage",
+    "error_deleting": "There was an error deleting the mortgage"
   }
 } 

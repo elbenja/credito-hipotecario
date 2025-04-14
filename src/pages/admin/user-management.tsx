@@ -52,10 +52,11 @@ type User = {
     plan_id: string
     plan_name?: string
   } | null
+  mortgages_count?: number
 }
 
 export default function UserManagement() {
-  const { t } = useTranslation()
+  const { t } = useTranslation(["admin", "global"])
   const navigate = useNavigate()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -154,20 +155,31 @@ export default function UserManagement() {
             console.error("Error fetching subscriptions:", subscriptionError);
           }
           
-          // Map subscriptions to users
-          const usersWithSubscriptions = data.map((user: User) => {
+          // Fetch mortgage counts for each user using the admin RPC function
+          const { data: mortgageCounts, error: mortgageError } = await supabase
+            .rpc('get_mortgage_counts_for_admins');
+            
+          if (mortgageError) {
+            console.error("Error fetching mortgage counts:", mortgageError);
+          }
+          
+          // Map subscriptions and mortgage counts to users
+          const usersWithData = data.map((user: User) => {
             const userSubscription = subscriptions?.find(s => s.user_id === user.id);
+            const userMortgageCount = mortgageCounts?.find((m: { user_id: string, count: number }) => m.user_id === user.id);
+            
             return {
               ...user,
               subscription: userSubscription ? {
                 id: userSubscription.id,
                 plan_id: userSubscription.plan_id,
                 plan_name: userSubscription.plan?.name
-              } : null
+              } : null,
+              mortgages_count: userMortgageCount ? userMortgageCount.count : 0
             };
           });
           
-          setUsers(usersWithSubscriptions);
+          setUsers(usersWithData);
           return;
         }
         console.error("RPC error:", error)
@@ -187,15 +199,28 @@ export default function UserManagement() {
         throw profileError
       }
       
+      // Get mortgage counts using the admin RPC function
+      const { data: profileMortgageCounts, error: mortgageError } = await supabase
+        .rpc('get_mortgage_counts_for_admins');
+      
+      if (mortgageError) {
+        console.error("Error fetching mortgage counts:", mortgageError);
+      }
+      
       // Transform the data to match our User type
-      const transformedUsers = (profiles || []).map(profile => ({
-        id: profile.id,
-        email: profile.email || 'No email',
-        role: profile.is_admin ? 'admin' : 'user',
-        created_at: profile.created_at,
-        last_sign_in_at: null, // We don't have this info in profiles table
-        subscription: null
-      }))
+      const transformedUsers = (profiles || []).map(profile => {
+        const profileMortgageCount = profileMortgageCounts?.find((m: { user_id: string, count: number }) => m.user_id === profile.id);
+        
+        return {
+          id: profile.id,
+          email: profile.email || 'No email',
+          role: profile.is_admin ? 'admin' : 'user',
+          created_at: profile.created_at,
+          last_sign_in_at: null, // We don't have this info in profiles table
+          subscription: null,
+          mortgages_count: profileMortgageCount ? profileMortgageCount.count : 0
+        };
+      });
       
       setUsers(transformedUsers)
     } catch (error) {
@@ -513,6 +538,7 @@ export default function UserManagement() {
                 <TableHead>{t("admin:created_at")}</TableHead>
                 <TableHead className="hidden sm:table-cell">{t("admin:last_sign_in")}</TableHead>
                 <TableHead className="hidden md:table-cell">Plan</TableHead>
+                <TableHead className="hidden md:table-cell">{t("admin:mortgages")}</TableHead>
                 <TableHead>{t("admin:actions")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -561,6 +587,9 @@ export default function UserManagement() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {user.mortgages_count || 0}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
