@@ -116,7 +116,7 @@ src/
    - total_interest_and_insurance: Sum of all interest and insurance payments
    - total_months: Duration of the loan
    - monthly_payment: Final monthly installment amount
-   - tipping_point: Month where principal paid exceeds interest paid
+   - break_even_point: Month where principal paid exceeds interest paid
 
 5. **Scenario Payments**
    - Monthly breakdown of: payment_date, beginning_balance, monthly_payment, monthly_interest, property_insurance, monthly_loan_insurance, principal, ending_balance

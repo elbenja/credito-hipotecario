@@ -511,7 +511,7 @@ export default function NewMortgage() {
                             installments_per_year: installmentsPerYear,
                             loan_protection_type: values.loan_protection_type,
                             loan_protection_insurance: loanProtectionInsurance,
-                            first_installment_date: dateString,
+                            first_installment_date: dateString
                           }
 
                           // console.log('Saving amortization data:', amortizationData)
