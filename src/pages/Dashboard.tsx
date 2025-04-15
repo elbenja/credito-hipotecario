@@ -130,12 +130,12 @@ export default function Dashboard() {
      
       {!hasProperties && (
 
-       <div className="flex justify-start items-start gap-4 "> 
+       <div className="flex justify-start items-center gap-4 "> 
 
 
-            <div className="w-60  rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
+            <div className="w-52  rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
                 <div className=" rounded-3xl flex flex-col justify-center items-center  gap-1 ">
-                  <SVGillustration variant="dog" className="w-60 h-60" />
+                  <SVGillustration variant="dog" className="w-52 h-52" />
                   <p  className="text-sm text-center w-40">
                   {t('messages.no_properties', { ns: 'properties' })}
 
@@ -174,8 +174,8 @@ export default function Dashboard() {
             </div>
 
 
-        <div className="flex justify-start items-center gap-2 h-80">
-          <div className="w-64 flex flex-col justify-start items-start gap-8 relative ml-12">
+       
+          <div className="w-64 flex flex-col justify-end items-start gap-8 relative ml-6  h-full">
                <div className="flex items-center space-x-4">
                 <div className="text-lg font-black flex size-16  flex-none rounded-full bg-muted text-primary  items-center justify-center">01</div>   
                 <Link to="/properties">
@@ -194,7 +194,7 @@ export default function Dashboard() {
                   <p className="text-md leading-none">{t("sections.step_three")}</p>
                 </div>
           </div>
-        </div>
+       
         </div>
       )}{
 propertiesCount > 0 && <FeatureCounts />
