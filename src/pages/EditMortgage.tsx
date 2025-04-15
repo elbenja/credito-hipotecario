@@ -145,14 +145,14 @@ export default function EditMortgage() {
   const handlePropertyUpdate = useCallback(async (updatedProperty: Property) => {
     if (!id || !user) {
       // Just invalidate the query for new mortgages
-      queryClient.invalidateQueries({ queryKey: ["amortization", id] });
+      queryClient.invalidateQueries({ queryKey: ["mortgage", id] });
       return;
     }
     
     try {
       // Get current mortgage data for down payment
       const { data: mortgageData, error: mortgageError } = await supabase
-        .from("amortizations")
+        .from("mortgages")
         .select("down_payment")
         .eq("id", id)
         .single();
@@ -176,14 +176,14 @@ export default function EditMortgage() {
       
       // Update the mortgage record with the new loan amount
       const { error: updateError } = await supabase
-        .from("amortizations")
+        .from("mortgages")
         .update({ loan_amount: newLoanAmount })
         .eq('id', id);
         
       if (updateError) throw updateError;
       
       // Then invalidate all relevant queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["amortization", id] });
+      queryClient.invalidateQueries({ queryKey: ["mortgage", id] });
       queryClient.invalidateQueries({ queryKey: ["scenarios", id] });
       
       // Update local scenario inputs state
@@ -281,13 +281,13 @@ export default function EditMortgage() {
   }, [mortgageForm.watch("loan_protection_type")]);
 
   const { data: mortgage, isLoading, error: mortgageError } = useQuery({
-    queryKey: ["amortization", id],
+    queryKey: ["mortgage", id],
     queryFn: async () => {
       if (!user || !id) return null
 
       try {
         const { data, error } = await supabase
-          .from("amortizations")
+          .from("mortgages")
           .select(`
             id, 
             name,
@@ -412,6 +412,8 @@ export default function EditMortgage() {
       try {
         // Only call this function when we have meaningful changes
         const downPayment = parseFloat(values.down_payment?.replace(/[^0-9.]/g, "") || "0");
+        
+        // Calculate total loan amount
         const loanAmount = mortgage.property.price_cost - downPayment;
         
         // Calculate and subtract bonus if applicable
@@ -548,11 +550,17 @@ export default function EditMortgage() {
           throw new Error("Invalid installments per year")
         }
 
-        // Calculate loan amount
-        const loanAmount = selectedPropertyFromUrl.price_cost - downPayment
+        // Get loan amount from the form component calculation
+        const loanAmount = selectedPropertyFromUrl.price_cost - downPayment;
+        
+        // Calculate bonus if applicable
+        const bonus = calculateBonus(selectedPropertyFromUrl, bonusRules);
+        
+        // Apply bonus to loan amount if applicable
+        const finalLoanAmount = bonus ? loanAmount - bonus : loanAmount;
 
         // Validate loan amount
-        if (loanAmount <= 0) {
+        if (finalLoanAmount <= 0) {
           throw new Error("Down payment cannot be greater than property cost")
         }
 
@@ -577,14 +585,14 @@ export default function EditMortgage() {
           term_years: termYears,
           installments_per_year: installmentsPerYear,
           first_installment_date: dateString,
-          loan_amount: loanAmount,
+          loan_amount: finalLoanAmount,
           loan_protection_type: values.loan_protection_type,
           loan_protection_insurance: loanProtectionInsurance,
         }
 
         // Create new mortgage in Supabase
         const { data, error } = await supabase
-          .from("amortizations")
+          .from("mortgages")
           .insert(mortgageData)
           .select()
           .single()
@@ -653,11 +661,17 @@ export default function EditMortgage() {
           throw new Error("Invalid installments per year")
         }
 
-        // Calculate loan amount
-        const loanAmount = mortgage.property.price_cost - downPayment
+        // Get loan amount from the form component calculation
+        const loanAmount = mortgage.property.price_cost - downPayment;
+        
+        // Calculate bonus if applicable
+        const bonus = calculateBonus(mortgage.property, bonusRules);
+        
+        // Apply bonus to loan amount if applicable
+        const finalLoanAmount = bonus ? loanAmount - bonus : loanAmount;
 
         // Validate loan amount
-        if (loanAmount <= 0) {
+        if (finalLoanAmount <= 0) {
           throw new Error("Down payment cannot be greater than property cost")
         }
 
@@ -680,7 +694,7 @@ export default function EditMortgage() {
           term_years: termYears,
           installments_per_year: installmentsPerYear,
           first_installment_date: dateString,
-          loan_amount: loanAmount,
+          loan_amount: finalLoanAmount,
           loan_protection_type: values.loan_protection_type,
           loan_protection_insurance: loanProtectionInsurance,
         }
@@ -689,7 +703,7 @@ export default function EditMortgage() {
 
         // Update mortgage in Supabase
         const { error: updateError } = await supabase
-          .from("amortizations")
+          .from("mortgages")
           .update(mortgageData)
           .eq('id', id)
 
@@ -954,7 +968,7 @@ export default function EditMortgage() {
                     onChange={async (newName) => {
                       try {
                         const { error } = await supabase
-                          .from("amortizations")
+                          .from("mortgages")
                           .update({ name: newName })
                           .eq("id", id)
 
@@ -1005,7 +1019,7 @@ export default function EditMortgage() {
                     selectedProperty={isCreatingNew ? selectedPropertyFromUrl as Property : mortgage?.property}
                     onSubmit={onUpdateMortgage}
                     isSubmitting={isSubmitting}
-                    submitLabel={isCreatingNew ? t("ui.create", "Create", { ns: "global" }) : t("ui.update", { ns: "global" })}
+                    submitLabel={isCreatingNew ? t("ui.create", "Create", { ns: "global" }) : t("ui.save", { ns: "global" })}
                   />
                 </Form>
               )}

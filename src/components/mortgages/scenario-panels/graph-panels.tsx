@@ -7,7 +7,7 @@ import { ChartThemeWrapper } from "@/components/ui/chart/theme-wrapper"
 import { format } from "date-fns"
 import { PaymentRow, ScenarioResult } from "@/services/amortization/types/common"
 import { useTranslation } from "react-i18next"
-import { Calendar, Landmark } from "lucide-react"
+import { Calendar, Landmark, MousePointerClick } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
@@ -435,7 +435,7 @@ py-4 xl:py-5 2xl:py-6"
         </div>
       </div>
       <div className="self-stretch pt-4 flex justify-center items-center">
-        <Landmark className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
+        <MousePointerClick className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
       </div>
     </button>
   ) : (
@@ -469,7 +469,7 @@ py-4 xl:py-5 2xl:py-6"
         </div>
       </div>
       <div className="self-stretch pt-4 flex justify-center items-center">
-        <Landmark className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
+        <MousePointerClick className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
       </div>
     </button>
   )}
@@ -497,7 +497,7 @@ py-4 xl:py-5 2xl:py-6 "
                      </div>
                   </div>
                    <div className="self-stretch pt-4 flex justify-center items-center">
-                    <Calendar className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
+                    <MousePointerClick className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
                  </div>
                  </button>
                 ) : (
@@ -524,7 +524,7 @@ py-4 xl:py-5 2xl:py-6"
                      </div>
                    </div>
                    <div className="self-stretch pt-4 flex justify-center items-center ">
-                     <Calendar className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
+                     <MousePointerClick className="size-8 text-muted-foreground p-2 bg-card rounded-full" />
                  </div>
                  </button>
                 )}

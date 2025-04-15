@@ -1,6 +1,7 @@
 {
   "ui": {
     "save": "Save",
+    "saving": "Saving",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
@@ -32,6 +33,37 @@
       "next_month": "Next month",
       "previous_year": "Previous year",
       "next_year": "Next year"
+    },
+    "scenario_graphs": {
+      "common": {
+        "sum_interest_insurance": "Interest and Insurance Payment",
+        "months": "Months",
+        "years": "Years",
+        "monthly_payment": "Monthly Payment",
+        "principal": "Principal",
+        "interest_insurance": "Interest and Insurance"
+      },
+      "regular": {
+        "title": "Regular",
+        "baseline": "Baseline",
+        "break_even_point": "Break-even point"
+      },
+      "accelerated": {
+        "title": "Accelerated",
+        "break_even_point": "Break-even point"
+      },
+      "lower_payment": {
+        "title": "Lower Payment",
+        "break_even_point": "Break-even point"
+      },
+      "new_rate": {
+        "title": "New Rate",
+        "break_even_point": "Break-even point"
+      },
+      "tooltip": {
+        "break_even_point_title": "Break-even point",
+        "investment_advice": "However, if you can invest that money and get a return higher than the savings on interest, it's better to invest."
+      }
     },
     "property_form": {
       "name": "Name",

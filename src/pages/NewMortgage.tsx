@@ -509,9 +509,6 @@ export default function NewMortgage() {
                             interest_rate: interestRate,
                             term_years: termYears,
                             installments_per_year: installmentsPerYear,
-                            installment_amount: regularScenario.summary.monthly_payment || 0,
-                            total_interest: regularScenario.summary.total_interest_and_insurance || 0,
-                            total_payment: regularScenario.summary.monthly_payment * regularScenario.summary.total_months || 0,
                             loan_protection_type: values.loan_protection_type,
                             loan_protection_insurance: loanProtectionInsurance,
                             first_installment_date: dateString,
@@ -519,7 +516,7 @@ export default function NewMortgage() {
 
                           // console.log('Saving amortization data:', amortizationData)
                           const { data, error } = await supabase
-                            .from("amortizations")
+                            .from("mortgages")
                             .insert(amortizationData)
                             .select()
                             .single()

@@ -48,9 +48,6 @@ type Mortgage = {
   interest_rate: number
   term_years: number
   installments_per_year: number
-  installment_amount: number
-  total_interest: number
-  total_payment: number
   property_id: string
   loan_protection_type: "none" | "custom" | "individual" | "joint"
   loan_protection_insurance: number
@@ -114,9 +111,6 @@ export default function Mortgages() {
         interest_rate: mortgage.interest_rate,
         term_years: mortgage.term_years,
         installments_per_year: mortgage.installments_per_year,
-        installment_amount: mortgage.installment_amount,
-        total_interest: mortgage.total_interest,
-        total_payment: mortgage.total_payment,
         loan_protection_type: mortgage.loan_protection_type,
         loan_protection_insurance: mortgage.loan_protection_insurance,
         first_installment_date: mortgage.first_installment_date,

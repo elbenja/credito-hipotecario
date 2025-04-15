@@ -15,7 +15,6 @@ export type Database = {
           down_payment: number
           first_installment_date: string
           id: string
-          installment_amount: number
           installments_per_year: number
           interest_rate: number
           loan_amount: number
@@ -24,8 +23,6 @@ export type Database = {
           name: string
           property_id: string
           term_years: number
-          total_interest: number
-          total_payment: number
           updated_at: string
           user_id: string
         }
@@ -34,7 +31,6 @@ export type Database = {
           down_payment: number
           first_installment_date: string
           id?: string
-          installment_amount: number
           installments_per_year: number
           interest_rate: number
           loan_amount: number
@@ -43,8 +39,6 @@ export type Database = {
           name: string
           property_id: string
           term_years: number
-          total_interest: number
-          total_payment: number
           updated_at?: string
           user_id: string
         }
@@ -53,7 +47,6 @@ export type Database = {
           down_payment?: number
           first_installment_date?: string
           id?: string
-          installment_amount?: number
           installments_per_year?: number
           interest_rate?: number
           loan_amount?: number
@@ -62,8 +55,6 @@ export type Database = {
           name?: string
           property_id?: string
           term_years?: number
-          total_interest?: number
-          total_payment?: number
           updated_at?: string
           user_id?: string
         }

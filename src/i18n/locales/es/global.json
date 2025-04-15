@@ -1,6 +1,7 @@
 {
   "ui": {
     "save": "Guardar",
+    "saving": "Guardando",
     "cancel": "Cancelar",
     "delete": "Eliminar",
     "edit": "Editar",
@@ -44,16 +45,24 @@
       },
       "regular": {
         "title": "Regular",
-        "baseline": "Base"
+        "baseline": "Base",
+        "break_even_point": "Punto de Equilibrio"
       },
       "accelerated": {
-        "title": "Amotizaciones a plazo"
+        "title": "Amotizaciones a plazo",
+        "break_even_point": "Punto de Equilibrio"
       },
       "lower_payment": {
-        "title": "Amotizaciones a cuotas"
+        "title": "Amotizaciones a cuotas",
+        "break_even_point": "Punto de Equilibrio"
       },
       "new_rate": {
-        "title": "NCompra de deuda"
+        "title": "NCompra de deuda",
+        "break_even_point": "Punto de Equilibrio"
+      },
+      "tooltip": {
+        "break_even_point_title": "Punto de Equilibrio",
+        "investment_advice": "Sin embargo, si puedes invertir ese dinero y obtener un rendimiento mayor que el ahorro en intereses, te conviene más invertir."
       }
     },
     "property_form": {

@@ -50,7 +50,7 @@ export function AmortizationDetailsForm({
   form,
   selectedProperty,
   onSubmit,
-  submitLabel = 'update',
+  submitLabel = 'save',
   isSubmitting
 }: AmortizationDetailsFormProps) {
   const { t } = useTranslation(['mortgages', 'global', 'components'])
@@ -449,14 +449,15 @@ export function AmortizationDetailsForm({
         </div>
       </div>
       <div className=" sm:mb-16 sm:h-80" >
+
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? (
           <div className="flex items-center">
             <div className="animate-spin mr-2 h-4 w-4 border-2 border-b-transparent rounded-full"></div>
-            {submitLabel === 'update' ? t('ui.updating', 'Updating...', { ns: 'global' }) : t('ui.creating', 'Creating...', { ns: 'global' })}
+            {submitLabel === 'save' ? t('ui.saving', 'Saving...', { ns: 'global' }) : t('ui.creating', 'Creating...', { ns: 'global' })}
           </div>
         ) : (
-          submitLabel === 'update' ? t('ui.update', { ns: 'global' }) : submitLabel
+          submitLabel === 'save' ? t('ui.save', { ns: 'global' }) : submitLabel
         )}
       </Button>
       </div>
