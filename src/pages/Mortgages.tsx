@@ -52,6 +52,11 @@ type Mortgage = {
   loan_protection_type: "none" | "custom" | "individual" | "joint"
   loan_protection_insurance: number
   first_installment_date: string
+  saved_scenario?: string
+  saved_scenario_total_interest_and_insurance?: number
+  saved_scenario_total_months?: number
+  saved_scenario_monthly_payment?: number
+  saved_scenario_breakeven_point?: number
 }
 
 export default function Mortgages() {
@@ -71,7 +76,15 @@ export default function Mortgages() {
 
       const { data: properties, error: propertiesError } = await supabase
         .from("properties")
-        .select("*, mortgages(*)")
+        .select(`
+          *,
+          mortgages(
+            id, name, loan_amount, down_payment, interest_rate, term_years,
+            installments_per_year, loan_protection_type, loan_protection_insurance,
+            first_installment_date, saved_scenario, saved_scenario_total_interest_and_insurance,
+            saved_scenario_total_months, saved_scenario_monthly_payment, saved_scenario_breakeven_point
+          )
+        `)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
 
@@ -220,6 +233,11 @@ export default function Mortgages() {
                     <TableHead className="w-[12%]">{tMortgages('amortization.interest_rate')}</TableHead>
                     <TableHead className="w-[12%]">{tMortgages('amortization.term')}</TableHead>
                     <TableHead className="w-[12%]">{tMortgages('amortization.installments_per_year')}</TableHead>
+                    <TableHead className="w-[12%]">Scenario</TableHead>
+                    <TableHead className="w-[12%]">Total Interest</TableHead>
+                    <TableHead className="w-[12%]">Months</TableHead>
+                    <TableHead className="w-[12%]">Monthly</TableHead>
+                    <TableHead className="w-[12%]">Breakeven</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -240,6 +258,25 @@ export default function Mortgages() {
                       <TableCell className="w-[12%]">{mortgage.interest_rate}%</TableCell>
                       <TableCell className="w-[12%]">{mortgage.term_years} {tMortgages('amortization.years')}</TableCell>
                       <TableCell className="w-[12%]">{mortgage.installments_per_year}</TableCell>
+                      <TableCell className="w-[12%]">{mortgage.saved_scenario || "regular"}</TableCell>
+                      <TableCell className="w-[12%]">
+                        {mortgage.saved_scenario_total_interest_and_insurance 
+                          ? formatCurrency(mortgage.saved_scenario_total_interest_and_insurance, property.currency)
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="w-[12%]">
+                        {mortgage.saved_scenario_total_months || "-"}
+                      </TableCell>
+                      <TableCell className="w-[12%]">
+                        {mortgage.saved_scenario_monthly_payment
+                          ? formatCurrency(mortgage.saved_scenario_monthly_payment, property.currency)
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="w-[12%]">
+                        {mortgage.saved_scenario_breakeven_point 
+                          ? `${parseFloat(mortgage.saved_scenario_breakeven_point.toString()).toFixed(1)} ${tMortgages('amortization.years')}`
+                          : "-"}
+                      </TableCell>
                       <TableCell className="w-[50px]">
                         <DropdownMenu>
                           <DropdownMenuTrigger
