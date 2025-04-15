@@ -125,12 +125,12 @@ export default function Dashboard() {
 {/* container start */}
 <div className="h-full w-full p-6  flex flex-col justify-center items-center ">
   
-<div className="mb-10 w-full inline-flex justify-center items-center gap-4 flex-wrap content-center ">
+<div className="-mt-12 w-full inline-flex justify-center items-center gap-4 flex-wrap content-center ">
       
      
       {!hasProperties && (
 
-       <div className="flex justify-start items-center gap-4 "> 
+       <div className="flex justify-start items-end gap-4 "> 
 
 
             <div className="w-52  rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
