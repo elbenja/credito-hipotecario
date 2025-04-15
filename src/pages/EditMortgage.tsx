@@ -40,6 +40,8 @@ import { NewRateForm } from '@/components/mortgages/new-rate-form'
 import { useMemo, useCallback, useEffect, useState } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
+import { Heart } from "lucide-react"
+import { ScenarioResult } from "@/services/amortization/types/common"
 
 // Add type for BonusRule
 type BonusRule = {
@@ -77,6 +79,24 @@ export default function EditMortgage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Add state to track if the form is ready with data
   const [formIsReady, setFormIsReady] = useState(false);
+  
+  // Add state to track which tab is active
+  const [activeTab, setActiveTab] = useState("regular")
+  
+  // Add state to track saved scenario with localStorage persistence
+  const [savedScenario, setSavedScenario] = useState(() => {
+    // Try to get the saved scenario from localStorage for this mortgage
+    const savedValue = localStorage.getItem(`savedScenario_${id}`);
+    // Default to "regular" if nothing is saved
+    return savedValue || "regular";
+  });
+  
+  // Add effect to set active tab to match the saved scenario when component loads
+  useEffect(() => {
+    if (savedScenario && savedScenario !== activeTab) {
+      setActiveTab(savedScenario);
+    }
+  }, [savedScenario, activeTab]);
 
   // Load bonus rules
   useEffect(() => {
@@ -299,6 +319,7 @@ export default function EditMortgage() {
             loan_protection_type,
             loan_protection_insurance,
             loan_amount,
+            saved_scenario,
             property:properties!inner (
               id,
               name,
@@ -318,6 +339,13 @@ export default function EditMortgage() {
         if (!data) return null
 
         const property = data.property as unknown as Property
+        
+        // Update saved scenario if one exists in the database
+        if (data.saved_scenario) {
+          // Update both state and localStorage
+          setSavedScenario(data.saved_scenario);
+          localStorage.setItem(`savedScenario_${id}`, data.saved_scenario);
+        }
         
         // Ensure all required fields have default values
         const propertyWithDefaults: Property = {
@@ -730,8 +758,6 @@ export default function EditMortgage() {
     }
   }
 
-  const [activeTab, setActiveTab] = useState("regular")
-
   // Add effect to fetch and update extra installments state
   useEffect(() => {
     const fetchExtraInstallments = async () => {
@@ -758,39 +784,127 @@ export default function EditMortgage() {
     }
   }, [id, user, isCreatingNew])
 
-  // Add state to track if new rates exist
+  // Add state to track new rates
   const [hasNewRates, setHasNewRates] = useState(false)
   
-  // Add effect to specifically watch installments_per_year changes
-  useEffect(() => {
-    // Subscribe to changes in the installments_per_year field
-    const subscription = mortgageForm.watch((value, { name }) => {
-      // Only respond to installments_per_year changes
-      if (name === 'installments_per_year') {
-        const installmentsValue = value.installments_per_year;
-        console.log(`Installments field watched change: ${installmentsValue}`);
+  // Handler to save a scenario
+  const handleSaveScenario = async (scenarioType: string) => {
+    try {
+      // Save to state
+      setSavedScenario(scenarioType);
+      
+      // Save to localStorage for persistence
+      localStorage.setItem(`savedScenario_${id}`, scenarioType);
+      
+      // We need to explicitly check each scenario type
+      let totalInterest = 0;
+      let totalMonths = 0;
+      let monthlyPayment = 0;
+      let breakEvenPoint = null;
+      
+      // Extract data based on scenario type
+      if (scenarioType === "regular" && scenarios?.regular?.summary) {
+        totalInterest = scenarios.regular.summary.total_interest_and_insurance || 0;
+        totalMonths = scenarios.regular.summary.total_months || 0;
+        monthlyPayment = scenarios.regular.summary.monthly_payment || 0;
         
-        // Immediately update the scenarioInputs to trigger recalculation
-        if (mortgage && installmentsValue) {
-          const installments = parseInt(installmentsValue);
-          
-          setScenarioInputs(prev => ({
-            ...prev,
-            installmentsPerYear: installments,
-          }));
-          
-          // Invalidate scenarios to force recalculation
-          queryClient.invalidateQueries({
-            queryKey: ["scenarios", id]
-          });
+        if (scenarios.regular.payments && scenarios.regular.payments.length > 0) {
+          breakEvenPoint = findBreakEvenPoint(scenarios.regular.payments);
+        }
+      } 
+      else if (scenarioType === "accelerated" && scenarios?.accelerated?.summary) {
+        totalInterest = scenarios.accelerated.summary.total_interest_and_insurance || 0;
+        totalMonths = scenarios.accelerated.summary.total_months || 0;
+        monthlyPayment = scenarios.accelerated.summary.monthly_payment || 0;
+        
+        if (scenarios.accelerated.payments && scenarios.accelerated.payments.length > 0) {
+          breakEvenPoint = findBreakEvenPoint(scenarios.accelerated.payments);
         }
       }
-    });
-    
-    // Cleanup the subscription when component unmounts
-    return () => subscription.unsubscribe();
-  }, [mortgageForm, id, queryClient, mortgage]);
+      else if (scenarioType === "lower_payment" && scenarios?.lower_payment?.summary) {
+        totalInterest = scenarios.lower_payment.summary.total_interest_and_insurance || 0;
+        totalMonths = scenarios.lower_payment.summary.total_months || 0;
+        monthlyPayment = scenarios.lower_payment.summary.monthly_payment || 0;
+        
+        if (scenarios.lower_payment.payments && scenarios.lower_payment.payments.length > 0) {
+          breakEvenPoint = findBreakEvenPoint(scenarios.lower_payment.payments);
+        }
+      }
+      else if (scenarioType === "new_rate" && scenarios?.new_rate?.summary) {
+        totalInterest = scenarios.new_rate.summary.total_interest_and_insurance || 0;
+        totalMonths = scenarios.new_rate.summary.total_months || 0;
+        monthlyPayment = scenarios.new_rate.summary.monthly_payment || 0;
+        
+        if (scenarios.new_rate.payments && scenarios.new_rate.payments.length > 0) {
+          breakEvenPoint = findBreakEvenPoint(scenarios.new_rate.payments);
+        }
+      }
+      
+      // Save to database if we have an ID
+      if (id) {
+        const { error } = await supabase
+          .from("mortgages")
+          .update({
+            saved_scenario: scenarioType,
+            saved_scenario_total_interest_and_insurance: totalInterest,
+            saved_scenario_total_months: totalMonths, 
+            saved_scenario_monthly_payment: monthlyPayment,
+            saved_scenario_breakeven_point: breakEvenPoint
+          })
+          .eq("id", id);
+          
+        if (error) throw error;
+      }
+      
+      // Show confirmation toast
+      toast({
+        title: t("ui.success", { ns: "global" }),
+        description: t("messages.scenario_saved", "Scenario saved as default", { ns: "mortgages" }),
+      });
+    } catch (error) {
+      console.error("Error saving scenario:", error);
+      toast({
+        variant: "destructive",
+        title: t("ui.error", { ns: "global" }),
+        description: t("messages.error_saving_scenario", "Error saving scenario", { ns: "mortgages" }),
+      });
+    }
+  }
   
+  // Helper function to find the breakeven point from payments data
+  const findBreakEvenPoint = (payments: any[]) => {
+    if (!payments || payments.length === 0) return null;
+    
+    // Look for the point where principal becomes greater than interest+insurance
+    for (let i = 0; i < payments.length - 1; i++) {
+      const current = payments[i];
+      const next = payments[i + 1];
+      
+      const currentPrincipal = current.principal || current.capital || 0;
+      const currentInterest = (current.monthly_interest || current.interest || 0) + 
+                             (current.property_insurance || 0) + 
+                             (current.monthly_loan_insurance || current.loan_insurance || 0);
+      
+      const nextPrincipal = next.principal || next.capital || 0;
+      const nextInterest = (next.monthly_interest || next.interest || 0) + 
+                          (next.property_insurance || 0) + 
+                          (next.monthly_loan_insurance || next.loan_insurance || 0);
+      
+      // Found the crossover point
+      if (currentPrincipal <= currentInterest && nextPrincipal > nextInterest) {
+        // Return year value with one decimal
+        return (i + 1) / 12;
+      }
+      
+      // Alternative check for when principal already exceeds interest
+      if (currentPrincipal >= currentInterest) {
+        return i / 12;
+      }
+    }
+    
+    return null;
+  }
+
   // Add effect to fetch and update new rates state
   useEffect(() => {
     const fetchNewRates = async () => {
@@ -888,6 +1002,36 @@ export default function EditMortgage() {
     });
     
     // No need for cleanup, React Hook Form handles it
+  }, [mortgageForm, id, queryClient, mortgage]);
+
+  // Add effect to specifically watch installments_per_year changes
+  useEffect(() => {
+    // Subscribe to changes in the installments_per_year field
+    const subscription = mortgageForm.watch((value, { name }) => {
+      // Only respond to installments_per_year changes
+      if (name === 'installments_per_year') {
+        const installmentsValue = value.installments_per_year;
+        console.log(`Installments field watched change: ${installmentsValue}`);
+        
+        // Immediately update the scenarioInputs to trigger recalculation
+        if (mortgage && installmentsValue) {
+          const installments = parseInt(installmentsValue);
+          
+          setScenarioInputs(prev => ({
+            ...prev,
+            installmentsPerYear: installments,
+          }));
+          
+          // Invalidate scenarios to force recalculation
+          queryClient.invalidateQueries({
+            queryKey: ["scenarios", id]
+          });
+        }
+      }
+    });
+    
+    // Cleanup the subscription when component unmounts
+    return () => subscription.unsubscribe();
   }, [mortgageForm, id, queryClient, mortgage]);
 
   if (isLoading) {
@@ -1053,10 +1197,30 @@ export default function EditMortgage() {
                   onValueChange={setActiveTab}
                 >
                   <TabsList className="w-screen sm:w-full items-center justify-start flex inline-flex overflow-x-auto h-14 px-2 lg:px-3 xl:px-4">
-                    <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2" value="regular">{t("scenarios.regular.title", { ns: "mortgages" })}</TabsTrigger>
-                    <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2" value="accelerated">{t("scenarios.accelerated.title", { ns: "mortgages" })}</TabsTrigger>
-                    <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2" value="lower_payment">{t("scenarios.lower_payment.title", { ns: "mortgages" })}</TabsTrigger>
-                    <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2" value="new_rate">{t("scenarios.new_rate.title", { ns: "mortgages" })}</TabsTrigger>
+                    <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2 flex items-center gap-1.5" value="regular">
+                      {t("scenarios.regular.title", { ns: "mortgages" })}
+                      {savedScenario === "regular" && (
+                        <Heart className="h-3 w-3 text-brand" />
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2 flex items-center gap-1.5" value="accelerated">
+                      {t("scenarios.accelerated.title", { ns: "mortgages" })}
+                      {savedScenario === "accelerated" && (
+                        <Heart className="h-3 w-3 text-brand" />
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2 flex items-center gap-1.5" value="lower_payment">
+                      {t("scenarios.lower_payment.title", { ns: "mortgages" })}
+                      {savedScenario === "lower_payment" && (
+                        <Heart className="h-3 w-3 text-brand" />
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2 flex items-center gap-1.5" value="new_rate">
+                      {t("scenarios.new_rate.title", { ns: "mortgages" })}
+                      {savedScenario === "new_rate" && (
+                        <Heart className="h-3 w-3 text-brand" />
+                      )}
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="regular" className="m-0">
@@ -1066,6 +1230,8 @@ export default function EditMortgage() {
                         currency={mortgage.property.currency}
                         installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
                         propertyCost={mortgage.property.price_cost}
+                        isThisScenarioSaved={savedScenario === "regular"}
+                        onSaveScenario={handleSaveScenario}
                       />
                     )}
                   </TabsContent>
@@ -1079,6 +1245,8 @@ export default function EditMortgage() {
                             currency={mortgage.property.currency}
                             installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
                             propertyCost={mortgage.property.price_cost}
+                            isThisScenarioSaved={savedScenario === "accelerated"}
+                            onSaveScenario={handleSaveScenario}
                           />
                         ) : null}
                         <div className="mt-8">
@@ -1103,6 +1271,8 @@ export default function EditMortgage() {
                             currency={mortgage.property.currency}
                             installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
                             propertyCost={mortgage.property.price_cost}
+                            isThisScenarioSaved={savedScenario === "lower_payment"}
+                            onSaveScenario={handleSaveScenario}
                           />
                         ) : null}
                         <div className="mt-8">
@@ -1127,6 +1297,8 @@ export default function EditMortgage() {
                             currency={mortgage.property.currency}
                             installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
                             propertyCost={mortgage.property.price_cost}
+                            isThisScenarioSaved={savedScenario === "new_rate"}
+                            onSaveScenario={handleSaveScenario}
                           />
                         ) : null}
                         <div className="mt-8">

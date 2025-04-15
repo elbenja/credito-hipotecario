@@ -67,7 +67,7 @@
       "title": "Compra de deuda"
     },
     "tooltip": {
-      "break_even_point_title": "Punto de Equilibrio",
+      "break_even_point_title": "¿Punto de Equilibrio?",
       "break_even_point": "Pasando el punto de equilibrio, amortizar a genera ahorro real.",
       "investment_advice": "Después del punto de equilibrio, te sale más a cuenta invertir que seguir amortizando."
     }

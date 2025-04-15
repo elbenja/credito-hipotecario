@@ -15,7 +15,7 @@ import { addYears, subYears, startOfDay, isBefore, isAfter, isSameDay } from "da
 import { es } from 'date-fns/locale';
 import { useTranslation } from "react-i18next";
 import SVGillustration from "@/components/ui/SVGillustration";
-import { Plus, Pencil, Bold, Calendar, TrendingUp } from "lucide-react";
+import { Heart, Plus, Pencil, Bold, Calendar, TrendingUp } from "lucide-react";
 import { PropertyCards } from "@/components/properties/property-cards";
 import { Toggle } from "@/components/ui/toggle";
 import { Switch } from "@/components/ui/switch";
@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FeatureCounts } from "@/components/dashboard/feature-counts";
-
+import { Button } from "@/components/ui/button";
 const chartData = [
   { name: "Jan", visitors: 275 },
   { name: "Feb", visitors: 200 },
@@ -178,19 +178,19 @@ export default function Test() {
       {/* <PropertyCards /> */}
       
 
+      {/* {isThisScenarioSaved ? (
+                 <Button variant="outline" className="" >             
+                        Saved scenario
+                        <Heart className="size-4 text-brand" />
+                  </Button>
+                ) : (
+                  <Button variant="ghost" className="border"
+                    onClick={() => setIsButtonOn(true)}>
+                        Save scenario
+                        <Heart className="size-4 " />
+                  </Button>
+                )} */}
 
-
-<Dialog>
-  <DialogTrigger className="flex items-center gap-2 bg-card px-2 py-1 rounded-md text-sm "><div className=" size-2.5 rounded-full border-2 border-brand"></div> Punto de Equilibrio</DialogTrigger>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Punto de Equilibrio</DialogTitle>
-      <DialogDescription>
-      Después del punto de equilibrio, te sale más a cuenta invertir que seguir amortizando
-      </DialogDescription>
-    </DialogHeader>
-  </DialogContent>
-</Dialog>
 
 
     </div>

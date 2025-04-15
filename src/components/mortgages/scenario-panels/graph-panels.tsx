@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, ReferenceDot, Label } from "recharts"
 import { ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart"
@@ -7,7 +8,7 @@ import { ChartThemeWrapper } from "@/components/ui/chart/theme-wrapper"
 import { format } from "date-fns"
 import { PaymentRow, ScenarioResult } from "@/services/amortization/types/common"
 import { useTranslation } from "react-i18next"
-import { Calendar, Landmark, MousePointerClick } from "lucide-react"
+import { Calendar, Landmark, MousePointerClick, ChevronRight as ChevronRightIcon, Heart } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
@@ -37,6 +38,9 @@ interface ScenarioPanelProps {
   currency: string
   installmentsPerYear: number
   propertyCost?: number
+  scenarioType?: string
+  isThisScenarioSaved?: boolean
+  onSaveScenario?: (scenarioType: string) => void
 }
 
 // Memoize the data transformation function to avoid recalculating on every render
@@ -133,7 +137,10 @@ const ScenarioPanel = ({
   currency,
   installmentsPerYear = 12,
   showBaseline = false,
-  propertyCost = 0
+  propertyCost = 0,
+  scenarioType = "regular",
+  isThisScenarioSaved = false,
+  onSaveScenario
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
   const { t } = useTranslation()
   // Add state for the toggle buttons
@@ -400,7 +407,51 @@ const ScenarioPanel = ({
     
     <div className="">
       
+      <div className="flex items-center p-2">
+        <div className="flex items-center gap-2">
 
+
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+
+
+
+          <Dialog>
+          <DialogTrigger className="flex items-center gap-2 px-4 h-10 rounded-md text-sm border border-input hover:bg-accent hover:text-accent-foreground">
+            <div className=" size-2.5 rounded-full border-2 border-muted-foreground"></div> 
+          {t('scenario_graphs.tooltip.break_even_point_title', 'Punto de Equilibrio', { ns: 'components' })}
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+              {t('scenario_graphs.tooltip.break_even_point_title', 'Punto de Equilibrio', { ns: 'components' })}
+
+              </DialogTitle>
+              <DialogDescription>
+              <p>{t('scenario_graphs.tooltip.investment_advice', 'Sin embargo, si puedes invertir ese dinero y obtener un rendimiento mayor que el ahorro en intereses, te conviene más invertir.', { ns: 'components' })}</p>
+
+
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+
+          {isThisScenarioSaved ? (
+            <Button variant="outline" className="">             
+              {t('scenario_graphs.common.saved_scenario', 'Saved scenario', { ns: 'components' })}
+              <Heart className="size-4 text-brand ml-2" />
+            </Button>
+          ) : (
+            <Button variant="ghost" className="border"
+              onClick={() => onSaveScenario && onSaveScenario(scenarioType)}>
+              {t('scenario_graphs.common.save_scenario', 'Save scenario', { ns: 'components' })}
+              <Heart className="size-4 ml-2" />
+            </Button>
+          )}
+            
+        </div>
+
+      </div>
 
 <div className="flex flex-col items-stretch space-y-0 border-t border-b p-0 sm:flex-row">
 
@@ -666,24 +717,7 @@ py-4 xl:py-5 2xl:py-6">
           
         
 
-          <Dialog>
-          <DialogTrigger className="flex items-center gap-2 bg-card px-2 py-1 rounded-md text-sm "><div className=" size-2.5 rounded-full border-2 border-brand"></div> 
-          {t('scenario_graphs.tooltip.break_even_point_title', 'Punto de Equilibrio', { ns: 'components' })}
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-              {t('scenario_graphs.tooltip.break_even_point_title', 'Punto de Equilibrio', { ns: 'components' })}
 
-              </DialogTitle>
-              <DialogDescription>
-              <p>{t('scenario_graphs.tooltip.investment_advice', 'Sin embargo, si puedes invertir ese dinero y obtener un rendimiento mayor que el ahorro en intereses, te conviene más invertir.', { ns: 'components' })}</p>
-
-
-              </DialogDescription>
-            </DialogHeader>
-          </DialogContent>
-        </Dialog>
          
         </div>
       </div>
@@ -693,20 +727,37 @@ py-4 xl:py-5 2xl:py-6">
 
 export const RegularPanelGraph = (props: ScenarioPanelProps) => {
   const { t } = useTranslation()
-  return <ScenarioPanel {...props} title={t('scenario_graphs.regular.title', 'Regular Scenario', { ns: 'components' })} showBaseline />
+  return <ScenarioPanel 
+    {...props} 
+    title={t('scenario_graphs.regular.title', 'Regular Scenario', { ns: 'components' })} 
+    showBaseline
+    scenarioType="regular" 
+  />
 }
 
 export const AcceleratedPanelGraph = (props: ScenarioPanelProps) => {
   const { t } = useTranslation()
-  return <ScenarioPanel {...props} title={t('scenario_graphs.accelerated.title', 'Accelerated Scenario', { ns: 'components' })} />
+  return <ScenarioPanel 
+    {...props} 
+    title={t('scenario_graphs.accelerated.title', 'Accelerated Scenario', { ns: 'components' })} 
+    scenarioType="accelerated"
+  />
 }
 
 export const LowerPaymentPanelGraph = (props: ScenarioPanelProps) => {
   const { t } = useTranslation()
-  return <ScenarioPanel {...props} title={t('scenario_graphs.lower_payment.title', 'Lower Payment Scenario', { ns: 'components' })} />
+  return <ScenarioPanel 
+    {...props} 
+    title={t('scenario_graphs.lower_payment.title', 'Lower Payment Scenario', { ns: 'components' })} 
+    scenarioType="lower_payment"
+  />
 }
 
 export const NewRatePanelGraph = (props: ScenarioPanelProps) => {
   const { t } = useTranslation()
-  return <ScenarioPanel {...props} title={t('scenario_graphs.new_rate.title', 'New Rate Scenario', { ns: 'components' })} />
+  return <ScenarioPanel 
+    {...props} 
+    title={t('scenario_graphs.new_rate.title', 'New Rate Scenario', { ns: 'components' })} 
+    scenarioType="new_rate"
+  />
 } 
