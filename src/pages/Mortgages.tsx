@@ -82,7 +82,7 @@ export default function Mortgages() {
             id, name, loan_amount, down_payment, interest_rate, term_years,
             installments_per_year, loan_protection_type, loan_protection_insurance,
             first_installment_date, saved_scenario, saved_scenario_total_interest_and_insurance,
-            saved_scenario_total_months, saved_scenario_monthly_payment, saved_scenario_breakeven_point
+            saved_scenario_total_months, saved_scenario_monthly_payment, saved_scenario_breakeven_point, property_id
           )
         `)
         .eq("user_id", user.id)
@@ -115,6 +115,15 @@ export default function Mortgages() {
   const handleDuplicate = async (e: React.MouseEvent, mortgage: Mortgage) => {
     e.stopPropagation()
     try {
+      // Log the mortgage we're trying to duplicate to debug
+      // console.log("Original mortgage to duplicate:", mortgage)
+      
+      if (!mortgage.property_id) {
+        console.error("Missing property_id in mortgage:", mortgage)
+        throw new Error("Property ID is missing")
+      }
+
+      // Create duplicate with only the fields needed for the amortizations table
       const duplicatedMortgage = {
         name: `${mortgage.name} (${tGlobal('ui.copy')})`,
         property_id: mortgage.property_id,
@@ -129,8 +138,12 @@ export default function Mortgages() {
         first_installment_date: mortgage.first_installment_date,
       }
 
+      // console.log("Duplicating mortgage with data:", duplicatedMortgage)
+
+      // Explicitly use the amortizations table instead of the mortgages view
+      // until the migration is complete
       const { data, error } = await supabase
-        .from("mortgages")
+        .from("amortizations")
         .insert(duplicatedMortgage)
         .select()
         .single()
