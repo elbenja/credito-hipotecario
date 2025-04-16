@@ -156,7 +156,7 @@ export function AmortizationDetailsForm({
                         type="number" 
                         step="0.01"
                         min="0"
-                        max="100"
+                        max="90"
                         placeholder="0.00"
                         className="pr-8"
                         value={form.watch("down_payment") ? 
@@ -199,6 +199,12 @@ export function AmortizationDetailsForm({
                     </div>
                   </FormControl>
                   <FormMessage />
+                  {form.watch("down_payment") && 
+                   (Number(((parseFloat(form.watch("down_payment").replace(/[^0-9.]/g, "") || "0") / selectedProperty.price_cost) * 100).toFixed(2)) > 90) && (
+                    <p className="text-sm font-medium text-destructive">
+                      {t('amortization.validation.down_payment_max', 'Max is 90% of property cost', { ns: 'mortgages' })}
+                    </p>
+                  )}
                 </FormItem>
               )}
             />
@@ -223,6 +229,7 @@ export function AmortizationDetailsForm({
                     />
                   </FormControl>
                   <FormMessage />
+                 
                 </FormItem>
               )}
             />

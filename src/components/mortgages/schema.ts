@@ -6,7 +6,15 @@ import { formatDate, normalizeDate } from "@/lib/utils"
 export const mortgageFormSchema = z.object({
   name: z.string().min(1, "amortization_form.validation.required"),
   property_id: z.string().min(1, "amortization_form.validation.required"),
-  down_payment: z.string().min(1, "amortization_form.validation.required"),
+  down_payment: z.string()
+    .min(1, "amortization_form.validation.required")
+    .refine(
+      (value) => {
+        const amount = parseFloat(value.replace(/[^0-9.]/g, "") || "0")
+        return !isNaN(amount)
+      },
+      "amortization_form.validation.invalid_number"
+    ),
   interest_rate: z.string()
     .min(1, "amortization_form.validation.required")
     .refine(
