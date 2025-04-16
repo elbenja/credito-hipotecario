@@ -338,6 +338,12 @@ export default function EditMortgage() {
         if (error) throw error
         if (!data) return null
 
+        console.log("Fetched mortgage data:", { 
+          id: data.id, 
+          name: data.name, 
+          saved_scenario: data.saved_scenario 
+        });
+
         const property = data.property as unknown as Property
         
         // Update saved scenario if one exists in the database
@@ -495,6 +501,67 @@ export default function EditMortgage() {
 
   const { data: scenarios, isLoading: isLoadingScenarios, error: scenariosError } = useScenarioCalculations(scenarioInputs)
 
+  // Add debug logs for scenarios calculation
+  useEffect(() => {
+    if (scenarios && scenarios.regular) {
+      console.log("Scenarios calculated:", { 
+        hasSavedScenario: !!savedScenario,
+        hasRegularScenario: !!scenarios.regular,
+        regularSummary: scenarios.regular.summary
+      });
+    }
+  }, [scenarios, savedScenario]);
+
+  // Effect to update default scenario values when scenarios are first calculated
+  useEffect(() => {
+    const setDefaultScenario = async () => {
+      // Only run if we have mortgage data, scenarios calculated, and no saved scenario yet
+      if (!id || !mortgage || !scenarios?.regular?.summary || isLoadingScenarios || savedScenario) {
+        console.log("Not setting default scenario because:", {
+          id: !!id,
+          mortgage: !!mortgage,
+          regularScenario: !!scenarios?.regular?.summary,
+          isLoadingScenarios,
+          hasSavedScenario: !!savedScenario
+        });
+        return;
+      }
+      
+      console.log("Setting default regular scenario");
+      
+      // Calculate breakeven point
+      let breakEvenPoint = null;
+      if (scenarios.regular.payments && scenarios.regular.payments.length > 0) {
+        breakEvenPoint = findBreakEvenPoint(scenarios.regular.payments);
+      }
+      
+      // Update mortgage with regular scenario values
+      const { error: updateError } = await supabase
+        .from("mortgages")
+        .update({
+          saved_scenario: "regular",
+          saved_scenario_total_interest_and_insurance: scenarios.regular.summary.total_interest_and_insurance || 0,
+          saved_scenario_total_months: scenarios.regular.summary.total_months || 0,
+          saved_scenario_monthly_payment: scenarios.regular.summary.monthly_payment || 0,
+          saved_scenario_breakeven_point: breakEvenPoint
+        })
+        .eq("id", id);
+        
+        if (updateError) {
+          console.error("Error setting default scenario:", updateError);
+          return;
+        }
+        
+        console.log("Successfully set default scenario to regular");
+        
+        // Update state
+        setSavedScenario("regular");
+        localStorage.setItem(`savedScenario_${id}`, "regular");
+      };
+      
+      setDefaultScenario();
+    }, [id, mortgage, scenarios, isLoadingScenarios, savedScenario]);
+
   // Helper function to transform payment rows for ScenarioTable
   const mapPaymentForTable = useCallback((payment: any) => {
     if (!payment) return null;
@@ -621,7 +688,14 @@ export default function EditMortgage() {
         // Create new mortgage in Supabase
         const { data, error } = await supabase
           .from("mortgages")
-          .insert(mortgageData)
+          .insert({
+            ...mortgageData,
+            saved_scenario: "regular", // Set regular as default scenario
+            saved_scenario_total_interest_and_insurance: 0, // Will be updated when scenario is calculated
+            saved_scenario_total_months: termYears * 12,
+            saved_scenario_monthly_payment: 0, // Will be updated when scenario is calculated
+            saved_scenario_breakeven_point: null // Will be updated when scenario is calculated
+          })
           .select()
           .single()
 

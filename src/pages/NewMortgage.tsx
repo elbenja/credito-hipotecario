@@ -500,6 +500,55 @@ export default function NewMortgage() {
                           const inputDate = new Date(values.first_installment_date);
                           const dateString = `${inputDate.getFullYear()}-${String(inputDate.getMonth() + 1).padStart(2, '0')}-${String(inputDate.getDate()).padStart(2, '0')}`;
 
+                          // Extract regular scenario values if available
+                          let regularScenarioValues = {};
+                          if (regularScenario?.summary) {
+                            console.log("Setting regular scenario values during creation:", regularScenario.summary);
+                            
+                            // Calculate breakeven point
+                            let breakEvenPoint = null;
+                            if (regularScenario.payments && regularScenario.payments.length > 0) {
+                              // Find the point where principal becomes greater than interest+insurance
+                              for (let i = 0; i < regularScenario.payments.length - 1; i++) {
+                                const current = regularScenario.payments[i];
+                                const next = regularScenario.payments[i + 1];
+                                
+                                const currentPrincipal = current.capital || 0;
+                                const currentInterest = (current.interest || 0) + 
+                                                  (current.property_insurance || 0) + 
+                                                  (current.loan_insurance || 0);
+                                
+                                const nextPrincipal = next.capital || 0;
+                                const nextInterest = (next.interest || 0) + 
+                                                (next.property_insurance || 0) + 
+                                                (next.loan_insurance || 0);
+                                
+                                // Found the crossover point
+                                if (currentPrincipal <= currentInterest && nextPrincipal > nextInterest) {
+                                  // Return year value with one decimal
+                                  breakEvenPoint = (i + 1) / 12;
+                                  break;
+                                }
+                                
+                                // Alternative check for when principal already exceeds interest
+                                if (i === 0 && currentPrincipal >= currentInterest) {
+                                  breakEvenPoint = 0;
+                                  break;
+                                }
+                              }
+                            }
+                            
+                            regularScenarioValues = {
+                              saved_scenario: "regular",
+                              saved_scenario_total_interest_and_insurance: regularScenario.summary.total_interest_and_insurance || 0,
+                              saved_scenario_total_months: regularScenario.summary.total_months || 0,
+                              saved_scenario_monthly_payment: regularScenario.summary.monthly_payment || 0,
+                              saved_scenario_breakeven_point: breakEvenPoint
+                            };
+                          } else {
+                            console.log("No regular scenario summary available during creation");
+                          }
+
                           const amortizationData = {
                             name: values.name,
                             property_id: selectedProperty.id,
@@ -511,10 +560,11 @@ export default function NewMortgage() {
                             installments_per_year: installmentsPerYear,
                             loan_protection_type: values.loan_protection_type,
                             loan_protection_insurance: loanProtectionInsurance,
-                            first_installment_date: dateString
+                            first_installment_date: dateString,
+                            ...regularScenarioValues  // Include regular scenario values
                           }
 
-                          // console.log('Saving amortization data:', amortizationData)
+                          console.log('Saving amortization data:', amortizationData)
                           const { data, error } = await supabase
                             .from("mortgages")
                             .insert(amortizationData)

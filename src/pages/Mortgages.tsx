@@ -136,9 +136,14 @@ export default function Mortgages() {
         loan_protection_type: mortgage.loan_protection_type,
         loan_protection_insurance: mortgage.loan_protection_insurance,
         first_installment_date: mortgage.first_installment_date,
+        saved_scenario: mortgage.saved_scenario || "regular",
+        saved_scenario_total_interest_and_insurance: mortgage.saved_scenario_total_interest_and_insurance,
+        saved_scenario_total_months: mortgage.saved_scenario_total_months,
+        saved_scenario_monthly_payment: mortgage.saved_scenario_monthly_payment,
+        saved_scenario_breakeven_point: mortgage.saved_scenario_breakeven_point
       }
 
-      // console.log("Duplicating mortgage with data:", duplicatedMortgage)
+      console.log("Duplicating mortgage with data:", duplicatedMortgage)
 
       // Explicitly use the amortizations table instead of the mortgages view
       // until the migration is complete
