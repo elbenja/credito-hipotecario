@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
+// import { Separator } from "@/components/ui/separator"
 import {
   Table,
   TableBody,
@@ -64,6 +64,7 @@ export default function Mortgages() {
   const { user } = useAuth()
   const { t: tGlobal } = useTranslation('global')
   const { t: tMortgages } = useTranslation('mortgages')
+  const { t: tComponents } = useTranslation('components')
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const { t } = useTranslation('properties')
@@ -210,6 +211,23 @@ export default function Mortgages() {
     // Logic to load or refresh properties
   }
 
+  const getScenarioTranslation = (scenarioType: string | null): string => {
+    if (!scenarioType) return "-";
+    
+    switch(scenarioType) {
+      case "regular":
+        return tComponents('scenario_graphs.regular.title');
+      case "accelerated":
+        return tComponents('scenario_graphs.accelerated.title');
+      case "lower_payment":
+        return tComponents('scenario_graphs.lower_payment.title');
+      case "new_rate":
+        return tComponents('scenario_graphs.new_rate.title');
+      default:
+        return scenarioType;
+    }
+  }
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -252,8 +270,8 @@ export default function Mortgages() {
                     <TableHead className="w-[12%]">{tMortgages('amortization.term')}</TableHead>
                     <TableHead className="w-[12%]">{tMortgages('amortization.installments_per_year')}</TableHead>
                     <TableHead className="w-[12%]">Scenario</TableHead>
-                    <TableHead className="w-[12%]">Total Interest</TableHead>
-                    <TableHead className="w-[12%]">Months</TableHead>
+                    <TableHead className="w-[12%]">Total Cost</TableHead>
+                    <TableHead className="w-[12%]">Years</TableHead>
                     <TableHead className="w-[12%]">Monthly</TableHead>
                     <TableHead className="w-[12%]">Breakeven</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
@@ -276,14 +294,16 @@ export default function Mortgages() {
                       <TableCell className="w-[12%]">{mortgage.interest_rate}%</TableCell>
                       <TableCell className="w-[12%]">{mortgage.term_years} {tMortgages('amortization.years')}</TableCell>
                       <TableCell className="w-[12%]">{mortgage.installments_per_year}</TableCell>
-                      <TableCell className="w-[12%]">{mortgage.saved_scenario || "regular"}</TableCell>
+                      <TableCell className="w-[12%]">{getScenarioTranslation(mortgage.saved_scenario || "regular")}</TableCell>
                       <TableCell className="w-[12%]">
                         {mortgage.saved_scenario_total_interest_and_insurance 
-                          ? formatCurrency(mortgage.saved_scenario_total_interest_and_insurance, property.currency)
+                          ? formatCurrency(property.price_cost + mortgage.saved_scenario_total_interest_and_insurance, property.currency)
                           : "-"}
                       </TableCell>
                       <TableCell className="w-[12%]">
-                        {mortgage.saved_scenario_total_months || "-"}
+                        {mortgage.saved_scenario_total_months 
+                          ? (mortgage.saved_scenario_total_months / 12).toFixed(1)
+                          : "-"}
                       </TableCell>
                       <TableCell className="w-[12%]">
                         {mortgage.saved_scenario_monthly_payment
