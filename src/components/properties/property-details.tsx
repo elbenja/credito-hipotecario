@@ -25,7 +25,7 @@ export function PropertyDetails({ form, isNewProperty = false }: PropertyDetails
 
   useEffect(() => {
     const setupDefaultName = async () => {
-      if (!isNewProperty || !user || currentName) return
+      if (!isNewProperty || !user || form.getValues("name")) return
 
       try {
         const { data: profile } = await supabase
@@ -51,7 +51,7 @@ export function PropertyDetails({ form, isNewProperty = false }: PropertyDetails
     }
 
     setupDefaultName()
-  }, [isNewProperty, user, form, t, currentName])
+  }, [isNewProperty, user, form, t])
 
   const handleNameChange = (newName: string) => {
     form.setValue("name", newName, { shouldValidate: true })
