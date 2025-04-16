@@ -252,9 +252,9 @@ export default function Mortgages() {
         {propertiesWithMortgages?.map((property) => (
           property.mortgages.length > 0 && (
             <div key={property.id} className="space-y-4 w-full mt-4 mb-6 ">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-start gap-8">
                 <h2 className="text-xl font-semibold">{property.name}</h2>
-                <span className="text-xl font-semibold">
+                <span className="text-xl font-medium">
                   {property.price_cost !== undefined && property.price_cost !== null 
                     ? formatCurrency(property.price_cost, property.currency)
                     : '-'}
@@ -264,15 +264,15 @@ export default function Mortgages() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[22%]">{tMortgages('amortization.name')}</TableHead>
-                    <TableHead className="w-[20%]">{tMortgages('amortization.loan_amount')}</TableHead>
+                    <TableHead className="w-[13%]">{tMortgages('amortization.loan_amount')}</TableHead>
                     <TableHead className="w-[12%]">{tMortgages('amortization.down_payment')}</TableHead>
                     <TableHead className="w-[12%]">{tMortgages('amortization.interest_rate')}</TableHead>
-                    <TableHead className="w-[12%]">{tMortgages('amortization.term')}</TableHead>
-                    <TableHead className="w-[12%]">{tMortgages('amortization.installments_per_year')}</TableHead>
+                    <TableHead className="w-[8%]">{tMortgages('amortization.term')}</TableHead>
+                    <TableHead className="w-[6%]">{tMortgages('amortization.installments_per_year')}</TableHead>
                     <TableHead className="w-[12%]">Scenario</TableHead>
-                    <TableHead className="w-[12%]">Total Cost</TableHead>
-                    <TableHead className="w-[12%]">Years</TableHead>
-                    <TableHead className="w-[12%]">Monthly</TableHead>
+                    <TableHead className="w-[18%]">Total Cost</TableHead>
+                    <TableHead className="w-[10%]">Years</TableHead>
+                    <TableHead className="w-[19%]">Monthly</TableHead>
                     <TableHead className="w-[12%]">Breakeven</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
@@ -285,27 +285,27 @@ export default function Mortgages() {
                       onClick={() => navigate(`/mortgages/${mortgage.id}`)}
                     >
                       <TableCell className="w-[22%]">{mortgage.name}</TableCell>
-                      <TableCell className="w-[20%]">
+                      <TableCell className="w-[13%]">
                         {formatCurrency(mortgage.loan_amount, property.currency)}
                       </TableCell>
                       <TableCell className="w-[12%]">
                         {formatCurrency(mortgage.down_payment, property.currency)}
                       </TableCell>
                       <TableCell className="w-[12%]">{mortgage.interest_rate}%</TableCell>
-                      <TableCell className="w-[12%]">{mortgage.term_years} {tMortgages('amortization.years')}</TableCell>
-                      <TableCell className="w-[12%]">{mortgage.installments_per_year}</TableCell>
+                      <TableCell className="w-[8%]">{mortgage.term_years} {tMortgages('amortization.years')}</TableCell>
+                      <TableCell className="w-[6%]">{mortgage.installments_per_year}</TableCell>
                       <TableCell className="w-[12%]">{getScenarioTranslation(mortgage.saved_scenario || "regular")}</TableCell>
-                      <TableCell className="w-[12%]">
+                      <TableCell className="w-[18%]">
                         {mortgage.saved_scenario_total_interest_and_insurance 
                           ? formatCurrency(property.price_cost + mortgage.saved_scenario_total_interest_and_insurance, property.currency)
                           : "-"}
                       </TableCell>
-                      <TableCell className="w-[12%]">
+                      <TableCell className="w-[10%]">
                         {mortgage.saved_scenario_total_months 
                           ? (mortgage.saved_scenario_total_months / 12).toFixed(1)
                           : "-"}
                       </TableCell>
-                      <TableCell className="w-[12%]">
+                      <TableCell className="w-[19%]">
                         {mortgage.saved_scenario_monthly_payment
                           ? formatCurrency(mortgage.saved_scenario_monthly_payment, property.currency)
                           : "-"}
