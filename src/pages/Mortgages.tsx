@@ -143,7 +143,7 @@ export default function Mortgages() {
         saved_scenario_breakeven_point: mortgage.saved_scenario_breakeven_point
       }
 
-      console.log("Duplicating mortgage with data:", duplicatedMortgage)
+      // console.log("Duplicating mortgage with data:", duplicatedMortgage)
 
       // Explicitly use the amortizations table instead of the mortgages view
       // until the migration is complete

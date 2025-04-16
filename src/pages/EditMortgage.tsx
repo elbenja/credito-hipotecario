@@ -338,11 +338,11 @@ export default function EditMortgage() {
         if (error) throw error
         if (!data) return null
 
-        console.log("Fetched mortgage data:", { 
-          id: data.id, 
-          name: data.name, 
-          saved_scenario: data.saved_scenario 
-        });
+        // console.log("Fetched mortgage data:", { 
+        //   id: data.id, 
+        //   name: data.name, 
+        //   saved_scenario: data.saved_scenario 
+        // });
 
         const property = data.property as unknown as Property
         
@@ -527,7 +527,7 @@ export default function EditMortgage() {
         return;
       }
       
-      console.log("Setting default regular scenario");
+      // console.log("Setting default regular scenario");
       
       // Calculate breakeven point
       let breakEvenPoint = null;
@@ -803,10 +803,83 @@ export default function EditMortgage() {
 
         console.log("Updating mortgage with installments_per_year:", installmentsPerYear);
 
-        // Update mortgage in Supabase
+        // Get updated scenario values based on current saved scenario type
+        let updatedScenarioData = {};
+        
+        try {
+          // Get the current saved scenario type
+          const currentScenarioType = savedScenario || "regular";
+          
+          // Prepare inputs for scenario calculation
+          const calculationInput = {
+            loan_amount: finalLoanAmount,
+            interest_rate: interestRate,
+            term_years: termYears,
+            installments_per_year: installmentsPerYear,
+            first_installment_date: firstInstallmentDate || new Date(),
+            property_insurance: mortgage.property.property_insurance || 0,
+            loan_insurance: loanProtectionInsurance || 0
+          };
+          
+          // Fetch extra installments
+          const { data: extraInstallments, error: extraInstallmentsError } = await supabase
+            .from("extra_installments")
+            .select("*")
+            .eq("mortgage_id", id)
+            .order("start_date", { ascending: true });
+            
+          if (extraInstallmentsError) throw extraInstallmentsError;
+          
+          // Fetch rate changes
+          const { data: rateChanges, error: rateChangesError } = await supabase
+            .from("new_rates")
+            .select("*")
+            .eq("mortgage_id", id)
+            .order("effective_date", { ascending: true });
+            
+          if (rateChangesError) throw rateChangesError;
+          
+          // Import the ScenarioCalculator
+          const { ScenarioCalculator } = await import("@/services/amortization/services/scenarioCalculator");
+          
+          // Calculate updated scenarios with the new parameters
+          const updatedScenarios = ScenarioCalculator.calculateScenarios({
+            ...calculationInput,
+            extra_installments: extraInstallments || [],
+            rate_changes: rateChanges || []
+          });
+          
+          // Get the correct scenario data based on saved scenario type
+          const scenarioData = updatedScenarios[currentScenarioType as keyof typeof updatedScenarios];
+          
+          if (scenarioData?.summary) {
+            // Calculate breakeven point
+            let breakEvenPoint = null;
+            if (scenarioData.payments && scenarioData.payments.length > 0) {
+              breakEvenPoint = findBreakEvenPoint(scenarioData.payments);
+            }
+            
+            // Update the scenario data
+            updatedScenarioData = {
+              saved_scenario: currentScenarioType,
+              saved_scenario_total_interest_and_insurance: scenarioData.summary.total_interest_and_insurance || 0,
+              saved_scenario_total_months: scenarioData.summary.total_months || 0,
+              saved_scenario_monthly_payment: scenarioData.summary.monthly_payment || 0,
+              saved_scenario_breakeven_point: breakEvenPoint
+            };
+          }
+        } catch (error) {
+          console.error("Error calculating updated scenario values:", error);
+          // Continue with the update even if scenario calculation fails
+        }
+
+        // Update mortgage in Supabase with both mortgage data and updated scenario values
         const { error: updateError } = await supabase
           .from("mortgages")
-          .update(mortgageData)
+          .update({
+            ...mortgageData,
+            ...updatedScenarioData
+          })
           .eq('id', id)
 
         if (updateError) throw updateError
@@ -1191,6 +1264,9 @@ export default function EditMortgage() {
                           .eq("id", id)
 
                         if (error) throw error
+                        
+                        // Invalidate the query to refresh mortgage data with the new name
+                        queryClient.invalidateQueries({ queryKey: ["mortgage", id] })
                       } catch (error) {
                         console.error("Error updating name:", error)
                       }
