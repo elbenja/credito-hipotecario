@@ -5,21 +5,8 @@ import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Button } from "@/components/ui/button"
-// import { Separator } from "@/components/ui/separator"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DataTable } from "@/components/ui/data-table"
+import { getColumns } from "@/components/mortgages/columns"
 import { formatCurrency } from "@/lib/utils"
 import { SEO } from "@/components/seo"
 import { useTranslation } from "react-i18next"
@@ -31,33 +18,7 @@ import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/co
 import { useState, useEffect } from 'react'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { BonusRule } from "@/components/properties/types"
-
-type Property = {
-  id: string
-  name: string
-  currency: "USD" | "PEN"
-  price_cost: number
-  mortgages: Mortgage[]
-}
-
-type Mortgage = {
-  id: string
-  name: string
-  loan_amount: number
-  down_payment: number
-  interest_rate: number
-  term_years: number
-  installments_per_year: number
-  property_id: string
-  loan_protection_type: "none" | "custom" | "individual" | "joint"
-  loan_protection_insurance: number
-  first_installment_date: string
-  saved_scenario?: string
-  saved_scenario_total_interest_and_insurance?: number
-  saved_scenario_total_months?: number
-  saved_scenario_monthly_payment?: number
-  saved_scenario_breakeven_point?: number
-}
+import type { Property, Mortgage } from "../types"
 
 export default function Mortgages() {
   const navigate = useNavigate()
@@ -113,12 +74,72 @@ export default function Mortgages() {
     }
   }, [queryClient])
 
+  // Add function to handle row reordering
+  const handleReorderMortgages = async (propertyId: string, reorderedMortgages: Mortgage[]) => {
+    try {
+      console.log("handleReorderMortgages called with propertyId:", propertyId);
+      console.log("Reordered mortgages:", reorderedMortgages.map(m => m.id));
+      
+      // Create a local updated copy of propertiesWithMortgages
+      if (propertiesWithMortgages) {
+        // Find the property to update
+        const updatedProperties = propertiesWithMortgages.map(property => {
+          // Only update the property that contains the reordered mortgages
+          if (property.id === propertyId) {
+            return {
+              ...property,
+              mortgages: reorderedMortgages
+            };
+          }
+          return property;
+        });
+        
+        // Force a refresh of the component by updating the query cache
+        queryClient.setQueryData(
+          ["properties-with-mortgages", user?.id], 
+          updatedProperties
+        );
+      }
+      
+      // Show success message
+      toast({
+        title: tGlobal('ui.success'),
+        description: "Mortgage order updated successfully",
+      });
+      
+      // In a real application, you would also update the database
+      // For example:
+      /*
+      console.log("Creating updates for mortgages...");
+      // Create an array of updates, one for each reordered mortgage
+      const updates = reorderedMortgages.map((mortgage, index) => {
+        console.log(`Setting order ${index} for mortgage ${mortgage.id}`);
+        return supabase
+          .from("mortgages")
+          .update({ display_order: index })
+          .eq('id', mortgage.id)
+      });
+      
+      // Execute all updates in parallel
+      const results = await Promise.all(updates);
+      console.log("Update results:", results);
+      
+      // Refresh the data from server
+      queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] });
+      */
+    } catch (error) {
+      console.error("Error reordering mortgages:", error);
+      toast({
+        variant: "destructive",
+        title: tGlobal('ui.error'),
+        description: "Error updating mortgage order",
+      });
+    }
+  }
+
   const handleDuplicate = async (e: React.MouseEvent, mortgage: Mortgage) => {
     e.stopPropagation()
     try {
-      // Log the mortgage we're trying to duplicate to debug
-      // console.log("Original mortgage to duplicate:", mortgage)
-      
       if (!mortgage.property_id) {
         console.error("Missing property_id in mortgage:", mortgage)
         throw new Error("Property ID is missing")
@@ -143,8 +164,6 @@ export default function Mortgages() {
         saved_scenario_monthly_payment: mortgage.saved_scenario_monthly_payment,
         saved_scenario_breakeven_point: mortgage.saved_scenario_breakeven_point
       }
-
-      // console.log("Duplicating mortgage with data:", duplicatedMortgage)
 
       // Explicitly use the amortizations table instead of the mortgages view
       // until the migration is complete
@@ -211,22 +230,12 @@ export default function Mortgages() {
     // Logic to load or refresh properties
   }
 
-  const getScenarioTranslation = (scenarioType: string | null): string => {
-    if (!scenarioType) return "-";
-    
-    switch(scenarioType) {
-      case "regular":
-        return tComponents('scenario_graphs.regular.title');
-      case "accelerated":
-        return tComponents('scenario_graphs.accelerated.title');
-      case "lower_payment":
-        return tComponents('scenario_graphs.lower_payment.title');
-      case "new_rate":
-        return tComponents('scenario_graphs.new_rate.title');
-      default:
-        return scenarioType;
-    }
-  }
+  // Create a translations object to pass to the columns function
+  const translations = {
+    tGlobal,
+    tMortgages,
+    tComponents
+  };
 
   if (isLoading) {
     return (
@@ -247,11 +256,11 @@ export default function Mortgages() {
         title={`${tMortgages('title')} - CreditoHipotecar.io`}
         description={tMortgages('description')}
       />
-      <div className="p-6 flex flex-col h-full w-full  items-center ">
+      <div className="p-6 flex flex-col h-full w-full items-center">
 
         {propertiesWithMortgages?.map((property) => (
           property.mortgages.length > 0 && (
-            <div key={property.id} className="space-y-4 w-full mt-4 mb-6 ">
+            <div key={property.id} className="space-y-4 w-full mt-4 mb-6">
               <div className="flex items-center justify-start gap-8">
                 <h2 className="text-xl font-semibold">{property.name}</h2>
                 <span className="text-xl font-medium">
@@ -260,167 +269,80 @@ export default function Mortgages() {
                     : '-'}
                 </span>
               </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[22%]">{tMortgages('amortization.name')}</TableHead>
-                    <TableHead className="w-[13%]">{tMortgages('amortization.loan_amount')}</TableHead>
-                    <TableHead className="w-[12%]">{tMortgages('amortization.down_payment')}</TableHead>
-                    <TableHead className="w-[12%]">{tMortgages('amortization.interest_rate')}</TableHead>
-                    <TableHead className="w-[8%]">{tMortgages('amortization.term')}</TableHead>
-                    <TableHead className="w-[6%]">{tMortgages('amortization.installments_per_year')}</TableHead>
-                    <TableHead className="w-[12%]">Scenario</TableHead>
-                    <TableHead className="w-[18%]">Total Cost</TableHead>
-                    <TableHead className="w-[10%]">Years</TableHead>
-                    <TableHead className="w-[19%]">Monthly</TableHead>
-                    <TableHead className="w-[12%]">Breakeven</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {property.mortgages.map((mortgage) => (
-                    <TableRow 
-                      key={mortgage.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/mortgages/${mortgage.id}`)}
-                    >
-                      <TableCell className="w-[22%]">{mortgage.name}</TableCell>
-                      <TableCell className="w-[13%]">
-                        {formatCurrency(mortgage.loan_amount, property.currency)}
-                      </TableCell>
-                      <TableCell className="w-[12%]">
-                        {formatCurrency(mortgage.down_payment, property.currency)}
-                      </TableCell>
-                      <TableCell className="w-[12%]">{mortgage.interest_rate}%</TableCell>
-                      <TableCell className="w-[8%]">{mortgage.term_years} {tMortgages('amortization.years')}</TableCell>
-                      <TableCell className="w-[6%]">{mortgage.installments_per_year}</TableCell>
-                      <TableCell className="w-[12%]">{getScenarioTranslation(mortgage.saved_scenario || "regular")}</TableCell>
-                      <TableCell className="w-[18%]">
-                        {mortgage.saved_scenario_total_interest_and_insurance 
-                          ? formatCurrency(property.price_cost + mortgage.saved_scenario_total_interest_and_insurance, property.currency)
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="w-[10%]">
-                        {mortgage.saved_scenario_total_months 
-                          ? (mortgage.saved_scenario_total_months / 12).toFixed(1)
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="w-[19%]">
-                        {mortgage.saved_scenario_monthly_payment
-                          ? formatCurrency(mortgage.saved_scenario_monthly_payment, property.currency)
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="w-[12%]">
-                        {mortgage.saved_scenario_breakeven_point 
-                          ? `${parseFloat(mortgage.saved_scenario_breakeven_point.toString()).toFixed(1)} ${tMortgages('amortization.years')}`
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="w-[50px]">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
-                            className="flex h-8 w-8 items-center justify-center rounded-md border transition-colors hover:bg-muted touch-none"
-                            onClick={(e) => e.stopPropagation()}
-                            data-touch="true"
-                            style={{ touchAction: 'none' }}
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">{tGlobal('ui.open_menu')}</span>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" sideOffset={5} className="touch-none">
-                            <DropdownMenuItem onClick={(e) => handleDuplicate(e, mortgage)}>
-                              <Copy className="mr-2 h-4 w-4" />
-                              <span>{tGlobal('ui.duplicate')}</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => handleDelete(e, mortgage)}
-                                className="text-red-600 focus:text-red-600">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              <span>{tGlobal('ui.delete')}</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              
+              <DataTable 
+                columns={getColumns(propertiesWithMortgages, handleDuplicate, handleDelete, translations)}
+                data={property.mortgages}
+                onRowClick={(mortgage) => navigate(`/mortgages/${mortgage.id}`)}
+                onReorder={(reorderedData) => handleReorderMortgages(property.id, reorderedData as Mortgage[])}
+              />
             </div>
           )
         ))}
 
         {(!propertiesWithMortgages || propertiesWithMortgages.length === 0) && (
-
           <div className="flex h-full flex-col items-center justify-center">
-            
-            <div className="w-60  rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
-                <div className=" rounded-3xl flex flex-col justify-center items-center  gap-1 ">
+            <div className="w-60 rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
+                <div className="rounded-3xl flex flex-col justify-center items-center gap-1">
                   <SVGillustration variant="dog" className="w-60 h-60" />
-                  <p  className="text-sm text-center w-40">
-                  {t('messages.no_properties', { ns: 'properties' })}
-
+                  <p className="text-sm text-center w-40">
+                    {t('messages.no_properties', { ns: 'properties' })}
                   </p>
                 </div>
 
-
-             <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4 ">
-                <Sheet open={open} onOpenChange={setOpen}>
-                
-                  <SheetTrigger asChild>
-                  <button className="text-xs h-8 flex gap-2">  
-                      <div className="flex-1 text-right text-sm font-medium leading-none">
-                        {t('actions.add_property', { ns: 'properties' })}
+                <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4">
+                  <Sheet open={open} onOpenChange={setOpen}>
+                    <SheetTrigger asChild>
+                      <button className="text-xs h-8 flex gap-2">  
+                        <div className="flex-1 text-right text-sm font-medium leading-none">
+                          {t('actions.add_property', { ns: 'properties' })}
+                        </div>
+                        <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
+                          <Plus className="h-4 w-4" />
+                        </div>
+                      </button>
+                    </SheetTrigger>
+                    <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+                      <SheetHeader>
+                        <SheetTitle>
+                          {t('actions.add_property', { ns: 'properties' })}
+                        </SheetTitle>
+                      </SheetHeader>
+                      <div className="mt-8">
+                        <PropertyForm
+                          onSuccess={loadProperties}
+                          onClose={() => setOpen(false)}
+                          selectedProperty={null}
+                        />
                       </div>
-                      <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
-                        <Plus className="h-4 w-4" />
-                      </div>
-                    </button>
-                  </SheetTrigger>
-                  <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-                    <SheetHeader>
-                      <SheetTitle>
-                        {t('actions.add_property', { ns: 'properties' })}
-                      </SheetTitle>
-                    </SheetHeader>
-                    <div className="mt-8">
-                      <PropertyForm
-                        onSuccess={loadProperties}
-                        onClose={() => setOpen(false)}
-                        selectedProperty={null}
-                      />
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              </div>
+                    </SheetContent>
+                  </Sheet>
+                </div>
             </div>
           </div>
         )}
 
         {propertiesWithMortgages && propertiesWithMortgages.length > 0 && propertiesWithMortgages.every(property => property.mortgages.length === 0) && (
           <div className="flex h-full flex-col items-center justify-center">
-
-            <div className="w-60  rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
-                <div className=" rounded-3xl flex flex-col justify-center items-center  gap-1 ">
+            <div className="w-60 rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
+                <div className="rounded-3xl flex flex-col justify-center items-center gap-1">
                   <SVGillustration variant="beanBag" className="w-60 h-60" />
-                  <p  className="text-sm text-center w-40">
-                  {t('messages.no_mortgages', { ns: 'properties' })}
-
+                  <p className="text-sm text-center w-40">
+                    {t('messages.no_mortgages', { ns: 'properties' })}
                   </p>
                 </div>
 
-
-             <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4 ">
-           
-              <button className="text-xs h-8 flex gap-2" onClick={() => navigate('/mortgages/new')}>
-                      <div className="flex-1 text-right text-sm font-medium leading-none">
+                <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4">
+                  <button className="text-xs h-8 flex gap-2" onClick={() => navigate('/mortgages/new')}>
+                    <div className="flex-1 text-right text-sm font-medium leading-none">
                       {tMortgages('amortization.new')}
-                      </div>
-                      <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
-                        <Plus className="h-4 w-4" />
-                  </div>
-                </button>
-              </div>
+                    </div>
+                    <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
+                      <Plus className="h-4 w-4" />
+                    </div>
+                  </button>
+                </div>
             </div>
-
-        
           </div>
         )}
       </div>
