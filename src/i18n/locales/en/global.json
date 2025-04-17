@@ -22,7 +22,12 @@
     "duplicate": "Duplicate",
     "open_menu": "Open menu",
     "add": "Add",
-    "add_mortgage": "Add Mortgage"
+    "add_mortgage": "Add Mortgage",
+    "short_year": "y",
+    "term_type": {
+      "regular": "Regular",
+      "double": "Double"
+    }
   },
   "components": {
     "calendar": {

@@ -74,69 +74,6 @@ export default function Mortgages() {
     }
   }, [queryClient])
 
-  // Add function to handle row reordering
-  const handleReorderMortgages = async (propertyId: string, reorderedMortgages: Mortgage[]) => {
-    try {
-      console.log("handleReorderMortgages called with propertyId:", propertyId);
-      console.log("Reordered mortgages:", reorderedMortgages.map(m => m.id));
-      
-      // Create a local updated copy of propertiesWithMortgages
-      if (propertiesWithMortgages) {
-        // Find the property to update
-        const updatedProperties = propertiesWithMortgages.map(property => {
-          // Only update the property that contains the reordered mortgages
-          if (property.id === propertyId) {
-            return {
-              ...property,
-              mortgages: reorderedMortgages
-            };
-          }
-          return property;
-        });
-        
-        // Force a refresh of the component by updating the query cache
-        queryClient.setQueryData(
-          ["properties-with-mortgages", user?.id], 
-          updatedProperties
-        );
-      }
-      
-      // Show success message
-      toast({
-        title: tGlobal('ui.success'),
-        description: "Mortgage order updated successfully",
-      });
-      
-      // In a real application, you would also update the database
-      // For example:
-      /*
-      console.log("Creating updates for mortgages...");
-      // Create an array of updates, one for each reordered mortgage
-      const updates = reorderedMortgages.map((mortgage, index) => {
-        console.log(`Setting order ${index} for mortgage ${mortgage.id}`);
-        return supabase
-          .from("mortgages")
-          .update({ display_order: index })
-          .eq('id', mortgage.id)
-      });
-      
-      // Execute all updates in parallel
-      const results = await Promise.all(updates);
-      console.log("Update results:", results);
-      
-      // Refresh the data from server
-      queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] });
-      */
-    } catch (error) {
-      console.error("Error reordering mortgages:", error);
-      toast({
-        variant: "destructive",
-        title: tGlobal('ui.error'),
-        description: "Error updating mortgage order",
-      });
-    }
-  }
-
   const handleDuplicate = async (e: React.MouseEvent, mortgage: Mortgage) => {
     e.stopPropagation()
     try {
@@ -274,7 +211,6 @@ export default function Mortgages() {
                 columns={getColumns(propertiesWithMortgages, handleDuplicate, handleDelete, translations)}
                 data={property.mortgages}
                 onRowClick={(mortgage) => navigate(`/mortgages/${mortgage.id}`)}
-                onReorder={(reorderedData) => handleReorderMortgages(property.id, reorderedData as Mortgage[])}
               />
             </div>
           )

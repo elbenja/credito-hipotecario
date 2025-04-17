@@ -22,7 +22,12 @@
     "duplicate": "Duplicar",
     "open_menu": "Abrir menú",
     "add": "Agregar",
-    "add_mortgage": "Agregar Hipoteca"
+    "add_mortgage": "Agregar Hipoteca",
+    "short_year": "a",
+    "term_type": {
+      "regular": "Simple",
+      "double": "Doble"
+    }
   },
   "components": {
     "calendar": {

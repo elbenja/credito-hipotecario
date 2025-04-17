@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table"
-import { Car, Clock, CreditCard, Calendar, DollarSign, GripVertical } from "lucide-react"
+  import { Car, Clock, CreditCard, Calendar, DollarSign } from "lucide-react"
 import type { Mortgage, Property } from "../../types"
 import { formatCurrency } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -78,9 +78,9 @@ const getPropertyPrice = (properties: Property[], mortgageId: string): number =>
 };
 
 // Determine if a term is "simple" or "doble" based on the installments per year
-const getTermType = (mortgage: Mortgage): "simple" | "doble" => {
+const getTermType = (mortgage: Mortgage): "regular" | "double" => {
   // If installments per year is 14, it's "doble", otherwise "simple"
-  return mortgage.installments_per_year === 14 ? "doble" : "simple";
+  return mortgage.installments_per_year === 14 ? "double" : "regular";
 };
 
 // Update this interface to match the actual translation functions
@@ -120,70 +120,10 @@ export const getColumns = (
 
   return [
     {
-      id: "drag_handle",
-      accessorKey: "drag_handle",
-      header: "",
-      enableHiding: false,
-      cell: ({ row }) => {
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div 
-                  className="flex items-center justify-center text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing h-full w-full px-2 py-2 touch-none"
-                  onClick={(e) => {
-                    console.log("Drag handle clicked");
-                    e.stopPropagation();
-                  }}
-                  onMouseDown={(e) => {
-                    console.log("Drag handle mouse down");
-                    e.stopPropagation();
-                  }}
-                  draggable="true"
-                  onDragStart={(e) => {
-                    console.log("Drag started for row:", row.original.id);
-                    // Set the drag data - mortgage ID
-                    e.dataTransfer.setData('text/plain', row.original.id);
-                    e.dataTransfer.effectAllowed = 'move';
-                    
-                    // Also set a class for visual feedback
-                    try {
-                      // Add a class to the row being dragged
-                      const rowElement = e.currentTarget.closest('tr');
-                      if (rowElement) {
-                        console.log("Found row element, adding opacity class");
-                        rowElement.classList.add('opacity-50');
-                      } else {
-                        console.log("Could not find row element");
-                      }
-                    } catch (error) {
-                      console.error("Error setting drag visual:", error);
-                    }
-                  }}
-                  onDragEnd={(e) => {
-                    console.log("Drag ended");
-                    // Remove the drag effect class
-                    const rowElement = e.currentTarget.closest('tr');
-                    if (rowElement) {
-                      rowElement.classList.remove('opacity-50');
-                    }
-                  }}
-                >
-                  <GripVertical className="h-4 w-4" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Drag to reorder</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      },
-      size: 40,
-    },
-    {
       accessorKey: "name",
-      header: tMortgages('amortization.name'),
+      header: ({ column }) => (
+        <div className="line-clamp-1">{tMortgages('amortization.name')}</div>
+      ),
       enableHiding: false,
       cell: ({ row }) => {
         return <span className="font-medium line-clamp-1">{row.original.name}</span>;
@@ -244,8 +184,8 @@ export const getColumns = (
         const termType = getTermType(row.original);
         return (
           <div className="flex items-center gap-1">
-            <span className="line-clamp-1">{row.original.term_years} años</span>
-            <span className="text-muted-foreground text-sm">{termType}</span>
+            <span className="text-nowrap">{row.original.term_years} {tGlobal('ui.short_year')}</span>
+            <span className="text-muted-foreground text-sm">{tGlobal(`ui.term_type.${termType}`)}</span>
           </div>
         );
       },
@@ -254,7 +194,7 @@ export const getColumns = (
     {
       accessorKey: "scenario",
       header: ({ column }) => (
-        <div className="line-clamp-1">Scenario</div>
+        <div className="line-clamp-1">{tMortgages('amortization.scenario')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => {
@@ -271,7 +211,7 @@ export const getColumns = (
     {
       accessorKey: "total_cost",
       header: ({ column }) => (
-        <div className="line-clamp-1">Costo Total</div>
+        <div className="line-clamp-1">{tMortgages('amortization.total_cost')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => {
@@ -295,7 +235,7 @@ export const getColumns = (
     {
       accessorKey: "years",
       header: ({ column }) => (
-        <div className="line-clamp-1">Años</div>
+        <div className="line-clamp-1">{tMortgages('amortization.years')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => {
@@ -314,7 +254,7 @@ export const getColumns = (
     {
       accessorKey: "monthly_payment",
       header: ({ column }) => (
-        <div className="line-clamp-1">Monthly</div>
+        <div className="line-clamp-1">{tMortgages('amortization.monthly_payment')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => {
@@ -333,14 +273,14 @@ export const getColumns = (
     {
       accessorKey: "breakeven",
       header: ({ column }) => (
-        <div className="line-clamp-1">Breakeven</div>
+        <div className="line-clamp-1">{tMortgages('amortization.breakeven')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => {
         if (row.original.saved_scenario_breakeven_point) {
           return (
             <div className="text-nowrap">
-              {`${parseFloat(row.original.saved_scenario_breakeven_point.toString()).toFixed(1)} ${tMortgages('amortization.years')}`}
+              {`${parseFloat(row.original.saved_scenario_breakeven_point.toString()).toFixed(1)} ${tGlobal('ui.short_year')}`}
             </div>
           );
         }
