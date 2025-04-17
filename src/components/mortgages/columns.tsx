@@ -123,6 +123,7 @@ export const getColumns = (
       id: "drag_handle",
       accessorKey: "drag_handle",
       header: "",
+      enableHiding: false,
       cell: ({ row }) => {
         return (
           <TooltipProvider>
@@ -183,23 +184,30 @@ export const getColumns = (
     {
       accessorKey: "name",
       header: tMortgages('amortization.name'),
+      enableHiding: false,
       cell: ({ row }) => {
-        return <span className="font-medium">{row.original.name}</span>;
+        return <span className="font-medium line-clamp-1">{row.original.name}</span>;
       },
       size: 200,
     },
     {
       accessorKey: "loan_amount",
-      header: tMortgages('amortization.loan_amount'),
+      header: ({ column }) => (
+        <div className="line-clamp-1">{tMortgages('amortization.loan_amount')}</div>
+      ),
+      enableHiding: true,
       cell: ({ row }) => {
         const currency = getPropertyCurrency(properties, row.original.id);
-        return formatCurrency(row.original.loan_amount, currency);
+        return <div className="text-nowrap">{formatCurrency(row.original.loan_amount, currency)}</div>;
       },
       size: 150,
     },
     {
       accessorKey: "down_payment_percentage",
-      header: tMortgages('amortization.down_payment'),
+      header: ({ column }) => (
+        <div className="line-clamp-1">{tMortgages('amortization.down_payment')}</div>
+      ),
+      enableHiding: true,
       cell: ({ row }) => {
         const property = properties.find(p => 
           p.mortgages.some((m: Mortgage) => m.id === row.original.id)
@@ -219,18 +227,24 @@ export const getColumns = (
     },
     {
       accessorKey: "interest_rate",
-      header: tMortgages('amortization.interest_rate'),
+      header: ({ column }) => (
+        <div className="line-clamp-1">{tMortgages('amortization.interest_rate')}</div>
+      ),
+      enableHiding: true,
       cell: ({ row }) => `${row.original.interest_rate}%`,
       size: 120,
     },
     {
       accessorKey: "term",
-      header: tMortgages('amortization.term'),
+      header: ({ column }) => (
+        <div className="line-clamp-1">{tMortgages('amortization.term')}</div>
+      ),
+      enableHiding: true,
       cell: ({ row }) => {
         const termType = getTermType(row.original);
         return (
           <div className="flex items-center gap-1">
-            <span>{row.original.term_years} años</span>
+            <span className="line-clamp-1">{row.original.term_years} años</span>
             <span className="text-muted-foreground text-sm">{termType}</span>
           </div>
         );
@@ -239,13 +253,16 @@ export const getColumns = (
     },
     {
       accessorKey: "scenario",
-      header: "Scenario",
+      header: ({ column }) => (
+        <div className="line-clamp-1">Scenario</div>
+      ),
+      enableHiding: true,
       cell: ({ row }) => {
         const scenarioType = row.original.saved_scenario || "regular";
         return (
           <div className="flex items-center">
             <ScenarioIcon type={scenarioType} />
-            <span>{getScenarioTranslation(scenarioType)}</span>
+            <span className="line-clamp-1">{getScenarioTranslation(scenarioType)}</span>
           </div>
         );
       },
@@ -253,15 +270,22 @@ export const getColumns = (
     },
     {
       accessorKey: "total_cost",
-      header: "Costo Total",
+      header: ({ column }) => (
+        <div className="line-clamp-1">Costo Total</div>
+      ),
+      enableHiding: true,
       cell: ({ row }) => {
         const currency = getPropertyCurrency(properties, row.original.id);
         const propertyPrice = getPropertyPrice(properties, row.original.id);
         
         if (row.original.saved_scenario_total_interest_and_insurance) {
-          return formatCurrency(
-            propertyPrice + row.original.saved_scenario_total_interest_and_insurance, 
-            currency
+          return (
+            <div className="text-nowrap">
+              {formatCurrency(
+                propertyPrice + row.original.saved_scenario_total_interest_and_insurance, 
+                currency
+              )}
+            </div>
           );
         }
         return "-";
@@ -270,7 +294,10 @@ export const getColumns = (
     },
     {
       accessorKey: "years",
-      header: "Años",
+      header: ({ column }) => (
+        <div className="line-clamp-1">Años</div>
+      ),
+      enableHiding: true,
       cell: ({ row }) => {
         if (row.original.saved_scenario_total_months) {
           return (
@@ -286,11 +313,18 @@ export const getColumns = (
     },
     {
       accessorKey: "monthly_payment",
-      header: "Monthly",
+      header: ({ column }) => (
+        <div className="line-clamp-1">Monthly</div>
+      ),
+      enableHiding: true,
       cell: ({ row }) => {
         const currency = getPropertyCurrency(properties, row.original.id);
         if (row.original.saved_scenario_monthly_payment) {
-          return formatCurrency(row.original.saved_scenario_monthly_payment, currency);
+          return (
+            <div className="text-nowrap">
+              {formatCurrency(row.original.saved_scenario_monthly_payment, currency)}
+            </div>
+          );
         }
         return "-";
       },
@@ -298,10 +332,17 @@ export const getColumns = (
     },
     {
       accessorKey: "breakeven",
-      header: "Breakeven",
+      header: ({ column }) => (
+        <div className="line-clamp-1">Breakeven</div>
+      ),
+      enableHiding: true,
       cell: ({ row }) => {
         if (row.original.saved_scenario_breakeven_point) {
-          return `${parseFloat(row.original.saved_scenario_breakeven_point.toString()).toFixed(1)} ${tMortgages('amortization.years')}`;
+          return (
+            <div className="text-nowrap">
+              {`${parseFloat(row.original.saved_scenario_breakeven_point.toString()).toFixed(1)} ${tMortgages('amortization.years')}`}
+            </div>
+          );
         }
         return "-";
       },
@@ -309,6 +350,7 @@ export const getColumns = (
     },
     {
       id: "row_actions",
+      enableHiding: false,
       cell: ({ row }) => {
         return (
           <DropdownMenu>

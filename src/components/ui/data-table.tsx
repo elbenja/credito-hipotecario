@@ -9,6 +9,7 @@ import {
   ColumnFiltersState,
   getFilteredRowModel,
   getPaginationRowModel,
+  VisibilityState,
 } from "@tanstack/react-table"
 
 import {
@@ -20,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
+import { ColumnToggle } from "@/components/ui/column-toggle"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -36,10 +38,13 @@ export function DataTable<TData extends { id: string }, TValue>({
   className,
   onReorder,
 }: DataTableProps<TData, TValue>) {
+  // Define hooks at the top level, not conditionally
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [dragOverRowId, setDragOverRowId] = useState<string | null>(null)
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
 
+  // Always create the table config object
   const table = useReactTable({
     data,
     columns,
@@ -49,9 +54,11 @@ export function DataTable<TData extends { id: string }, TValue>({
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
     state: {
       sorting,
       columnFilters,
+      columnVisibility,
     },
   })
 
@@ -124,110 +131,115 @@ export function DataTable<TData extends { id: string }, TValue>({
   };
 
   return (
-    <div 
-      className={cn("rounded-md border", className)}
-      onDragOver={(e) => {
-        // Allow drops on the entire table
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        console.log("Drag over table container");
-      }}
-    >
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && "selected"}
-                className={cn(
-                  dragOverRowId === row.id ? "bg-muted/70 border-t-2 border-primary" : "",
-                  "group" // Add group class for styling
-                )}
-                // Remove onClick from the row - we'll put it on cells instead
-                draggable={false}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation(); // Stop propagation to prevent bubbling
-                  e.dataTransfer.dropEffect = 'move';
-                  console.log("Drag over row:", row.id);
-                  setDragOverRowId(row.id);
-                }}
-                onDragEnter={(e) => {
-                  e.preventDefault();
-                  console.log("Drag enter row:", row.id);
-                  setDragOverRowId(row.id);
-                }}
-                onDragLeave={(e) => {
-                  // Only clear if we're actually leaving this row (not entering a child)
-                  if (dragOverRowId === row.id) {
-                    console.log("Drag leave row:", row.id);
-                    // Use setTimeout to avoid flickering when moving between cells
-                    setTimeout(() => {
-                      if (dragOverRowId === row.id) {
-                        setDragOverRowId(null);
-                      }
-                    }, 50);
-                  }
-                }}
-                onDrop={(e) => {
-                  console.log("Drop triggered on row");
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleDrop(e, row.id);
-                }}
-              >
-                {row.getVisibleCells().map((cell, cellIndex) => {
-                  // Check if this is the drag handle column
-                  const isDragHandleColumn = cellIndex === 0; 
-                  
-                  return (
-                    <TableCell 
-                      key={cell.id}
-                      className={cn(
-                        !isDragHandleColumn && onRowClick ? "cursor-pointer hover:bg-muted/50" : "",
-                        isDragHandleColumn ? "drag-handle-cell" : ""
-                      )}
-                      // Only attach click handler to non-drag-handle cells
-                      onClick={(e) => {
-                        if (!isDragHandleColumn && onRowClick) {
-                          // Only navigate if we click on a non-drag-handle cell
-                          onRowClick(row.original);
-                        }
-                      }}
-                      onDragOver={(e) => e.stopPropagation()}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  );
-                })}
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <ColumnToggle table={table} columns={columns} />
+      </div>
+      <div 
+        className={cn("rounded-md border", className)}
+        onDragOver={(e) => {
+          // Allow drops on the entire table
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          console.log("Drag over table container");
+        }}
+      >
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                No results.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className={cn(
+                    dragOverRowId === row.id ? "bg-muted/70 border-t-2 border-primary" : "",
+                    "group" // Add group class for styling
+                  )}
+                  // Remove onClick from the row - we'll put it on cells instead
+                  draggable={false}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation(); // Stop propagation to prevent bubbling
+                    e.dataTransfer.dropEffect = 'move';
+                    console.log("Drag over row:", row.id);
+                    setDragOverRowId(row.id);
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    console.log("Drag enter row:", row.id);
+                    setDragOverRowId(row.id);
+                  }}
+                  onDragLeave={(e) => {
+                    // Only clear if we're actually leaving this row (not entering a child)
+                    if (dragOverRowId === row.id) {
+                      console.log("Drag leave row:", row.id);
+                      // Use setTimeout to avoid flickering when moving between cells
+                      setTimeout(() => {
+                        if (dragOverRowId === row.id) {
+                          setDragOverRowId(null);
+                        }
+                      }, 50);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    console.log("Drop triggered on row");
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDrop(e, row.id);
+                  }}
+                >
+                  {row.getVisibleCells().map((cell, cellIndex) => {
+                    // Check if this is the drag handle column
+                    const isDragHandleColumn = cellIndex === 0; 
+                    
+                    return (
+                      <TableCell 
+                        key={cell.id}
+                        className={cn(
+                          !isDragHandleColumn && onRowClick ? "cursor-pointer hover:bg-muted/50" : "",
+                          isDragHandleColumn ? "drag-handle-cell" : ""
+                        )}
+                        // Only attach click handler to non-drag-handle cells
+                        onClick={(e) => {
+                          if (!isDragHandleColumn && onRowClick) {
+                            // Only navigate if we click on a non-drag-handle cell
+                            onRowClick(row.original);
+                          }
+                        }}
+                        onDragOver={(e) => e.stopPropagation()}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   )
 } 
