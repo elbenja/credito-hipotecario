@@ -25,8 +25,8 @@
     "add_mortgage": "Add Mortgage",
     "short_year": "y",
     "term_type": {
-      "regular": "Regular",
-      "double": "Double"
+      "regular": "regular",
+      "double": "double"
     }
   },
   "components": {

@@ -130,10 +130,34 @@ export const getColumns = (
       },
       size: 200,
     },
+   
+    {
+      accessorKey: "down_payment_percentage",
+      header: ({ column }) => (
+        <div className="line-clamp-1">{tMortgages('amortization.short_down_payment')}</div>
+      ),
+      enableHiding: true,
+      cell: ({ row }) => {
+        const property = properties.find(p => 
+          p.mortgages.some((m: Mortgage) => m.id === row.original.id)
+        );
+        
+        if (!property) return <PercentageBadge value="0" />;
+        
+        const totalPrice = property.price_cost;
+        const downPayment = row.original.down_payment;
+        
+        if (!totalPrice || !downPayment) return <PercentageBadge value="0" />;
+        
+        const percentage = Math.round((downPayment / totalPrice) * 100);
+        return <PercentageBadge value={percentage.toString()} />;
+      },
+      size: 120,
+    },
     {
       accessorKey: "loan_amount",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.loan_amount')}</div>
+        <div className="line-clamp-1">{tMortgages('amortization.short_loan_amount')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => {
@@ -143,32 +167,9 @@ export const getColumns = (
       size: 150,
     },
     {
-      accessorKey: "down_payment_percentage",
-      header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.down_payment')}</div>
-      ),
-      enableHiding: true,
-      cell: ({ row }) => {
-        const property = properties.find(p => 
-          p.mortgages.some((m: Mortgage) => m.id === row.original.id)
-        );
-        
-        if (!property) return "-%";
-        
-        const totalPrice = property.price_cost;
-        const downPayment = row.original.down_payment;
-        
-        if (!totalPrice || !downPayment) return "-%";
-        
-        const percentage = Math.round((downPayment / totalPrice) * 100);
-        return <PercentageBadge value={percentage.toString()} />;
-      },
-      size: 120,
-    },
-    {
       accessorKey: "interest_rate",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.interest_rate')}</div>
+        <div className="line-clamp-1">{tMortgages('amortization.short_interest_rate')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => `${row.original.interest_rate}%`,
@@ -184,7 +185,7 @@ export const getColumns = (
         const termType = getTermType(row.original);
         return (
           <div className="flex items-center gap-1">
-            <span className="text-nowrap">{row.original.term_years} {tGlobal('ui.short_year')}</span>
+            <span className="text-nowrap">{row.original.term_years}{tGlobal('ui.short_year')}</span>
             <span className="text-muted-foreground text-sm">{tGlobal(`ui.term_type.${termType}`)}</span>
           </div>
         );
@@ -200,7 +201,7 @@ export const getColumns = (
       cell: ({ row }) => {
         const scenarioType = row.original.saved_scenario || "regular";
         return (
-          <Badge variant="outline" className="px-2 py-1 inline-flex items-center">
+          <Badge variant="outline" className="px-2 py-1 inline-flex items-center font-medium">
             <ScenarioIcon type={scenarioType} />
             <span className="line-clamp-1">{getScenarioTranslation(scenarioType)}</span>
           </Badge>
@@ -252,9 +253,28 @@ export const getColumns = (
       size: 100,
     },
     {
+      accessorKey: "months",
+      header: ({ column }) => (
+        <div className="line-clamp-1">{tMortgages('amortization.months')}</div>
+      ),
+      enableHiding: true,
+      cell: ({ row }) => {
+        if (row.original.saved_scenario_total_months) {
+          return (
+            <div className="flex items-center justify-start">
+              <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
+              <span>{row.original.saved_scenario_total_months}</span>
+            </div>
+          );
+        }
+        return "-";
+      },
+      size: 100,
+    },
+    {
       accessorKey: "monthly_payment",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.monthly_payment')}</div>
+        <div className="line-clamp-1">{tMortgages('amortization.short_monthly_payment')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => {
@@ -273,14 +293,14 @@ export const getColumns = (
     {
       accessorKey: "breakeven",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.breakeven')}</div>
+        <div className="line-clamp-1">{tMortgages('amortization.short_breakeven')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => {
         if (row.original.saved_scenario_breakeven_point) {
           return (
             <div className="text-nowrap">
-              {`${parseFloat(row.original.saved_scenario_breakeven_point.toString()).toFixed(1)} ${tGlobal('ui.short_year')}`}
+              {`${parseFloat(row.original.saved_scenario_breakeven_point.toString()).toFixed(1)}${tGlobal('ui.short_year')}`}
             </div>
           );
         }

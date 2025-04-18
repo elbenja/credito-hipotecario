@@ -25,8 +25,8 @@
     "add_mortgage": "Agregar Hipoteca",
     "short_year": "a",
     "term_type": {
-      "regular": "Simple",
-      "double": "Doble"
+      "regular": "simple",
+      "double": "doble"
     }
   },
   "components": {
