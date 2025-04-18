@@ -127,5 +127,9 @@
       "price_required": "Price is required",
       "currency_required": "Currency is required"
     }
+  },
+  "column_toggle": {
+    "customize_columns": "Customize Columns",
+    "columns": "Columns"
   }
 } 

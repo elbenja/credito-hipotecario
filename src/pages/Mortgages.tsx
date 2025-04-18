@@ -197,8 +197,8 @@ export default function Mortgages() {
 
         {propertiesWithMortgages?.map((property) => (
           property.mortgages.length > 0 && (
-            <div key={property.id} className="space-y-4 w-full mt-4 mb-6">
-              <div className="flex items-center justify-start gap-8">
+            <div key={property.id} className="space-y-4 w-full mt-4 mb-8">
+              <div className="flex items-center justify-start gap-8 -mb-12">
                 <h2 className="text-xl font-semibold">{property.name}</h2>
                 <span className="text-xl font-medium">
                   {property.price_cost !== undefined && property.price_cost !== null 
@@ -211,7 +211,7 @@ export default function Mortgages() {
                 columns={getColumns(propertiesWithMortgages, handleDuplicate, handleDelete, translations)}
                 data={property.mortgages}
                 onRowClick={(mortgage) => navigate(`/mortgages/${mortgage.id}`)}
-                className="rounded-2xl"
+                className="rounded-2xl overflow-hidden"
               />
             </div>
           )

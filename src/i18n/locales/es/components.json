@@ -127,5 +127,9 @@
       "price_required": "El precio es requerido",
       "currency_required": "La moneda es requerida"
     }
+  },
+  "column_toggle": {
+    "customize_columns": "Seleccionar Columnas",
+    "columns": "Columnas"
   }
 } 
