@@ -12,7 +12,7 @@
     "loan_amount": "Monto del Préstamo",
     "short_loan_amount": "Préstamo",
     "loan_amount_formula": "= Costo de Propiedad - Bono MiVivienda - Cuota Inicial",
-    "down_payment": "Cuota Inicial en ",
+    "down_payment": "Cuota Inicial",
     "short_down_payment": "Inicial",
     "amount_in": "Monto en",
     "property_percentage": "% de la Propiedad",

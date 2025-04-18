@@ -517,17 +517,8 @@ export default function EditMortgage() {
     const setDefaultScenario = async () => {
       // Only run if we have mortgage data, scenarios calculated, and no saved scenario yet
       if (!id || !mortgage || !scenarios?.regular?.summary || isLoadingScenarios || savedScenario) {
-        console.log("Not setting default scenario because:", {
-          id: !!id,
-          mortgage: !!mortgage,
-          regularScenario: !!scenarios?.regular?.summary,
-          isLoadingScenarios,
-          hasSavedScenario: !!savedScenario
-        });
         return;
       }
-      
-      // console.log("Setting default regular scenario");
       
       // Calculate breakeven point
       let breakEvenPoint = null;
@@ -801,7 +792,7 @@ export default function EditMortgage() {
           loan_protection_insurance: loanProtectionInsurance,
         }
 
-        console.log("Updating mortgage with installments_per_year:", installmentsPerYear);
+        // console.log("Updating mortgage with installments_per_year:", installmentsPerYear);
 
         // Get updated scenario values based on current saved scenario type
         let updatedScenarioData = {};

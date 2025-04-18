@@ -63,7 +63,7 @@ export function ColumnToggle<TData, TValue>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[220px]">
-        <DropdownMenuLabel className="text-center font-semibold">{t('column_toggle.customize_columns')}</DropdownMenuLabel>
+        {/* <DropdownMenuLabel className="text-center font-semibold">{t('column_toggle.customize_columns')}</DropdownMenuLabel> */}
         <DropdownMenuSeparator />
         <div className="max-h-[400px] overflow-y-auto">
           {allColumns.map((column) => {
