@@ -55,16 +55,20 @@
     },
     "regular": {
       "title": "Regular Scenario",
+      "short_title": "Regular",
       "baseline": "Base"
     },
     "accelerated": {
-      "title": "Accelerated Scenario"
+      "title": "Accelerated Scenario",
+      "short_title": "Accelerated"
     },
     "lower_payment": {
-      "title": "Lower Payment Scenario"
+      "title": "Lower Payment Scenario",
+      "short_title": "Lower"
     },
     "new_rate": {
-      "title": "New Rate Scenario"
+      "title": "New Rate Scenario",
+      "short_title": "New Rate"
     },
     "tooltip": {
       "break_even_point_title": "Break-even Point?",

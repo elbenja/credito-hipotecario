@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table"
-  import { Car, Clock, CreditCard, Calendar, DollarSign } from "lucide-react"
+  import { Car, Clock, CreditCard, Calendar, DollarSign, Compass, Armchair, TrendingDown, Wallet, Axe } from "lucide-react"
 import type { Mortgage, Property } from "../../types"
 import { formatCurrency } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -28,30 +28,30 @@ const PercentageBadge = ({ value }: { value: string }) => (
 const ScenarioIcon = ({ type }: { type: string | null }) => {
   switch(type) {
     case "regular":
-      return <Car className="h-4 w-4 mr-2" />
+      return <Armchair className="h-4 w-4 mr-2" />
     case "accelerated":
-      return <Clock className="h-4 w-4 mr-2" />
+      return <TrendingDown className="h-4 w-4 mr-2" />
     case "new_rate":
-      return <CreditCard className="h-4 w-4 mr-2" />
+      return <Wallet className="h-4 w-4 mr-2" />
     case "lower_payment":
-      return <Calendar className="h-4 w-4 mr-2" />
-    case "a_plazo":
-      return <Calendar className="h-4 w-4 mr-2" />
-    case "a_cuotas":
-      return <DollarSign className="h-4 w-4 mr-2" />
+      return <Axe className="h-4 w-4 mr-2" />
+    // case "a_plazo":
+    //   return <Calendar className="h-4 w-4 mr-2" />
+    // case "a_cuotas":
+    //   return <DollarSign className="h-4 w-4 mr-2" />
     default:
-      return <Car className="h-4 w-4 mr-2" />
+      return <Armchair className="h-4 w-4 mr-2" />
   }
 }
 
 // Define translation keys for scenario types
 const scenarioTranslationKeys: Record<string, string> = {
-  "regular": "scenario_graphs.regular.title",
-  "accelerated": "scenario_graphs.accelerated.title", 
-  "lower_payment": "scenario_graphs.lower_payment.title",
-  "new_rate": "scenario_graphs.new_rate.title",
-  "a_plazo": "a_plazo", // Custom translation
-  "a_cuotas": "a_cuotas" // Custom translation
+  "regular": "scenario_graphs.regular.short_title",
+  "accelerated": "scenario_graphs.accelerated.short_title", 
+  "lower_payment": "scenario_graphs.lower_payment.short_title",
+  "new_rate": "scenario_graphs.new_rate.short_title",
+    // "a_plazo": "a_plazo", // Custom translation
+    // "a_cuotas": "a_cuotas" // Custom translation
 };
 
 // These functions don't use React hooks, so they're safe to use in any context
@@ -111,8 +111,8 @@ export const getColumns = (
     
     const key = scenarioTranslationKeys[scenarioType];
     if (key) {
-      if (key === "a_plazo") return "A Plazo";
-      if (key === "a_cuotas") return "A Cuotas";
+      // if (key === "a_plazo") return "A Plazo";
+      // if (key === "a_cuotas") return "A Cuotas";
       return tComponents(key);
     }
     return scenarioType;
@@ -200,10 +200,10 @@ export const getColumns = (
       cell: ({ row }) => {
         const scenarioType = row.original.saved_scenario || "regular";
         return (
-          <div className="flex items-center">
+          <Badge variant="outline" className="px-2 py-1 inline-flex items-center">
             <ScenarioIcon type={scenarioType} />
             <span className="line-clamp-1">{getScenarioTranslation(scenarioType)}</span>
-          </div>
+          </Badge>
         );
       },
       size: 180,
@@ -242,7 +242,7 @@ export const getColumns = (
         if (row.original.saved_scenario_total_months) {
           return (
             <div className="flex items-center justify-start">
-              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+              <Compass className="h-4 w-4 mr-1 text-muted-foreground" />
               <span>{(row.original.saved_scenario_total_months / 12).toFixed(1)}</span>
             </div>
           );

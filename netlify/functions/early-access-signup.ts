@@ -18,7 +18,7 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
 
 function getClientIp(headers: { [key: string]: string | undefined }): { ip: string; source: string } {
   // Log all headers for debugging
-  console.log('Request headers:', headers)
+  // console.log('Request headers:', headers)
 
   // Check headers in priority order
   const headerChecks = [
@@ -35,12 +35,12 @@ function getClientIp(headers: { [key: string]: string | undefined }): { ip: stri
     if (value) {
       // For x-forwarded-for, take the first IP in the chain
       const ip = name === 'x-forwarded-for' ? value.split(',')[0].trim() : value
-      console.log(`Found IP ${ip} from ${label} header: ${name}`)
+      // console.log(`Found IP ${ip} from ${label} header: ${name}`)
       return { ip, source: `${label} (${name})` }
     }
   }
 
-  console.log('No IP address found in headers')
+  // console.log('No IP address found in headers')
   return { ip: 'unknown', source: 'none' }
 }
 

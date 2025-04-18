@@ -55,16 +55,20 @@
     },
     "regular": {
       "title": " Regular",
+      "short_title": "Regular",
       "baseline": "Base"
     },
     "accelerated": {
-      "title": "Amotizaciones a plazo"
+      "title": "Amotizaciones a plazo",
+      "short_title": "A Plazo"
     },
     "lower_payment": {
-      "title": "Amotizaciones a cuotas"
+      "title": "Amotizaciones a cuotas",
+      "short_title": "A Cuota"
     },
     "new_rate": {
-      "title": "Compra de deuda"
+      "title": "Compra de deuda",
+      "short_title": "Compra Deuda"
     },
     "tooltip": {
       "break_even_point_title": "¿Punto de Equilibrio?",

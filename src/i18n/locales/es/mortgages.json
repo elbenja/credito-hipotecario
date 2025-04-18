@@ -39,18 +39,22 @@
     "title": "Escenarios de Pago",
     "regular": {
       "title": "Regular",
+      "short_title": "Regular",
       "description": "Hipoteca base con parámetros estándar."
     },
     "accelerated": {
       "title": "Amortización a Plazo",
+      "short_title": "A Plazo",
       "description": "Los pagos extra reducen el plazo, la cuota se mantiene constante."
     },
     "lower_payment": {
       "title": "Amortización a Cuota",
+      "short_title": "A Cuota",
       "description": "Los pagos extra reducen la cuota mensual, el plazo se mantiene igual."
     },
     "new_rate": {
       "title": "Compra de Deuda",
+      "short_title": "Compra de Deuda",
       "description": "Simula una nueva tasa de interés.",
       "form": {
         "new_interest_rate": "Nueva Tasa de Interés (%)",

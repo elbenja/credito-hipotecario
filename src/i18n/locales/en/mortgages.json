@@ -39,18 +39,22 @@
     "title": "Payment Scenarios",
     "regular": {
       "title": "Regular",
+      "short_title": "Regular",
       "description": "Base mortgage with standard parameters."
     },
     "accelerated": {
       "title": "Accelerated",
+      "short_title": "Accelerated",
       "description": "Extra payments reduce the term, installment remains constant."
     },
     "lower_payment": {
       "title": "Lower Payment",
+      "short_title": "Lower",
       "description": "Extra payments reduce the monthly payment, term remains the same."
     },
     "new_rate": {
       "title": "New Rate",
+      "short_title": "New Rate",
       "description": "Simulate a new interest rate.",
       "form": {
         "new_interest_rate": "New Interest Rate (%)",
