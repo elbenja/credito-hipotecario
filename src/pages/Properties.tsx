@@ -225,7 +225,28 @@ export default function Properties() {
       <div className="w-full h-full  flex flex-col justify-start items-center p-4 ">
         {properties.length > 0 ? (
           <PropertyList 
-            properties={properties}
+            properties={sortConfig ? [...properties].sort((a, b) => {
+              const key = sortConfig.key;
+              const aValue = a[key];
+              const bValue = b[key];
+              
+              // Handle string comparison
+              if (typeof aValue === 'string' && typeof bValue === 'string') {
+                return sortConfig.direction === 'asc' 
+                  ? aValue.localeCompare(bValue)
+                  : bValue.localeCompare(aValue);
+              }
+              
+              // Handle number comparison
+              if (typeof aValue === 'number' && typeof bValue === 'number') {
+                return sortConfig.direction === 'asc' 
+                  ? aValue - bValue 
+                  : bValue - aValue;
+              }
+              
+              // Fallback for other types or null/undefined values
+              return 0;
+            }) : properties}
             onPropertySelect={handlePropertySelect}
             onPropertyUpdate={handlePropertyUpdate}
             sortConfig={sortConfig}

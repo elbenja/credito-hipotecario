@@ -197,7 +197,10 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
             className="cursor-pointer hover:bg-muted/50"
             onClick={() => onSort('name')}
           >
-            {t('form.property_name', 'Property Name', { ns: 'properties' })} {getSortIcon('name')}
+            {t('form.short_name', 'Name', { ns: 'properties' })} {getSortIcon('name')}
+          </TableHead>
+          <TableHead>
+            {t('form.property_description', 'Description', { ns: 'properties' })}
           </TableHead>
           <TableHead 
             className="cursor-pointer hover:bg-muted/50"
@@ -213,7 +216,7 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
       <TableBody>
         {properties.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={5} className="text-center py-4">
+            <TableCell colSpan={6} className="text-center py-4">
               {t('messages.no_properties', 'No properties found', { ns: 'properties' })}
             </TableCell>
           </TableRow>
@@ -228,6 +231,11 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
                 title={t('ui.click_to_edit', 'Click to edit', { ns: 'global' })}
               >
                 <TableCell>{property.name}</TableCell>
+                <TableCell >
+                  <div className="line-clamp-2">
+                  {property.description || '-'}
+                  </div>
+                  </TableCell>
                 <TableCell>
                   {formatCurrency(property.price_cost, property.currency)}
                 </TableCell>

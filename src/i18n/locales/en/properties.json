@@ -27,7 +27,8 @@
     "property_insurance_short": "Prop Ins.",
     "first_home": "MiVivienda Bonus",
     "sustainable": "Sustainable",
-    "name": "Property Name"
+    "name": "Property Name",
+    "short_name": "Name"
   },
   "insurance": {
     "type": "Insurance Type",

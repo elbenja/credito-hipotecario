@@ -27,7 +27,8 @@
     "property_insurance_short": "Seg. Bien",
     "first_home": "Vivienda MiVivienda",
     "sustainable": "Sostenible",
-    "name": "Nombre de la Propiedad"
+    "name": "Nombre de la Propiedad",
+    "short_name": "Nombre"
   },
   "insurance": {
     "type": "Tipo",
