@@ -16,11 +16,12 @@ import SVGillustration from "@/components/ui/SVGillustration"
 import { PropertyForm } from "@/components/properties/property-form"
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
-import { useState, useEffect, useMemo } from 'react'
-import { RealtimeChannel } from '@supabase/supabase-js'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import { BonusRule } from "@/components/properties/types"
 import type { Property, Mortgage } from "../types"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
+import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
 
 export default function Mortgages() {
   const navigate = useNavigate()
@@ -33,6 +34,42 @@ export default function Mortgages() {
   const { t } = useTranslation('properties')
   const [open, setOpen] = useState(false)
   const { data: exchangeRate } = useExchangeRate()
+
+  // Add subscription limits hook
+  const {
+    currentUsage,
+    planLimit,
+    currentPlan,
+    checkLimit
+  } = useSubscriptionLimits();
+
+  // Function to check mortgage limits directly from the database
+  const checkMortgageLimits = useCallback(async (): Promise<boolean> => {
+    if (!user) return false;
+    
+    try {
+      // Get current count directly from database for accuracy
+      const { count, error } = await supabase
+        .from("mortgages")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Error counting mortgages:", error);
+        return false;
+      }
+      
+      // Get limit from subscription or default
+      const limitValue = planLimit > 0 ? planLimit : 
+                         (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3);
+      
+      // True if limit reached
+      return (count || 0) >= limitValue;
+    } catch (err) {
+      console.error("Error checking mortgage limits:", err);
+      return false;
+    }
+  }, [user, planLimit, currentPlan]);
 
   // Fetch bonus rules
   const { data: bonusRules = [] } = useQuery({
@@ -55,14 +92,14 @@ export default function Mortgages() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
-  // Helper function to convert currency to PEN
-  const convertToPEN = (amount: number, currency: string): number => {
+  // Helper function to convert currency to PEN - memoize to prevent recreation on each render
+  const convertToPEN = useCallback((amount: number, currency: string): number => {
     if (currency === 'PEN') return amount
     return amount * (exchangeRate || 3.7167)
-  }
+  }, [exchangeRate])
 
-  // Helper function to calculate bonus
-  const calculateBonus = (property: Property): number | null => {
+  // Helper function to calculate bonus - memoize to prevent recreation on each render
+  const calculateBonus = useCallback((property: Property): number | null => {
     if (!property.is_first_home) return null
 
     const propertyValueInPEN = convertToPEN(property.price_cost, property.currency)
@@ -76,7 +113,7 @@ export default function Mortgages() {
     return property.is_sustainable 
       ? applicableRule.sustainable_bonus 
       : applicableRule.traditional_bonus
-  }
+  }, [bonusRules, convertToPEN])
 
   const { data: propertiesWithMortgages, isLoading } = useQuery({
     queryKey: ["properties-with-mortgages", user?.id],
@@ -108,25 +145,47 @@ export default function Mortgages() {
   })
 
   useEffect(() => {
-    const propertiesChannel: RealtimeChannel = supabase
-      .channel('properties-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'properties' }, (payload) => {
-        console.log('Change received!', payload)
-        queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
-      })
-      .subscribe()
+    let propertiesChannel: RealtimeChannel | null = null
+    
+    if (user) {
+      propertiesChannel = supabase
+        .channel('properties-changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'properties' }, 
+          (payload: RealtimePostgresChangesPayload<any>) => {
+            console.log('Change received!', payload)
+            queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
+          }
+        )
+        .subscribe()
+    }
 
     return () => {
-      supabase.removeChannel(propertiesChannel)
+      if (propertiesChannel) {
+        supabase.removeChannel(propertiesChannel)
+      }
     }
-  }, [queryClient])
+  }, [queryClient, user])
 
-  const handleDuplicate = async (e: React.MouseEvent, mortgage: Mortgage) => {
+  const handleDuplicate = useCallback(async (e: React.MouseEvent, mortgage: Mortgage) => {
     e.stopPropagation()
     try {
       if (!mortgage.property_id) {
         console.error("Missing property_id in mortgage:", mortgage)
         throw new Error("Property ID is missing")
+      }
+
+      // Check if user has reached their mortgage limit
+      const limitReached = await checkMortgageLimits();
+      
+      if (limitReached) {
+        console.log("Mortgage limit reached, cannot duplicate");
+        toast({
+          variant: "destructive",
+          title: tGlobal('ui.error'),
+          description: tMortgages('messages.plan_limit_reached', "You have reached your plan limit for mortgages"),
+        })
+        return;
       }
 
       // Create duplicate with only the fields needed for the amortizations table
@@ -174,9 +233,9 @@ export default function Mortgages() {
         description: tMortgages('messages.error_duplicating_amortization'),
       })
     }
-  }
+  }, [tGlobal, tMortgages, user, queryClient, toast, checkMortgageLimits])
 
-  const handleDelete = async (e: React.MouseEvent, mortgage: Mortgage) => {
+  const handleDelete = useCallback(async (e: React.MouseEvent, mortgage: Mortgage) => {
     e.stopPropagation()
     try {
       const { error } = await supabase
@@ -201,25 +260,33 @@ export default function Mortgages() {
         description: tMortgages('messages.error_delete'),
       })
     }
-  }
+  }, [tGlobal, tMortgages, queryClient, toast])
 
-  const headerActions = (
+  // Memoize the header actions to prevent recreating on every render
+  const headerActions = useMemo(() => (
     <Button onClick={() => navigate("/mortgages/new")} disabled={!propertiesWithMortgages || propertiesWithMortgages.length === 0}>
       <Plus className="mr-2 h-4 w-4" />
       {tMortgages('amortization.new')}
     </Button>
-  )
+  ), [navigate, tMortgages, propertiesWithMortgages])
 
-  const loadProperties = () => {
+  const loadProperties = useCallback(() => {
     // Logic to load or refresh properties
-  }
+    queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
+  }, [queryClient])
 
-  // Create a translations object to pass to the columns function
-  const translations = {
+  // Create a translations object to pass to the columns function - memoize to prevent recreation
+  const translations = useMemo(() => ({
     tGlobal,
     tMortgages,
     tComponents
-  };
+  }), [tGlobal, tMortgages, tComponents]);
+
+  // Memoize the columns to prevent recreation on every render
+  const columns = useMemo(() => {
+    if (!propertiesWithMortgages) return [];
+    return getColumns(propertiesWithMortgages, handleDuplicate, handleDelete, translations);
+  }, [propertiesWithMortgages, handleDuplicate, handleDelete, translations]);
 
   if (isLoading) {
     return (
@@ -264,7 +331,7 @@ export default function Mortgages() {
               </div>
               
               <DataTable 
-                columns={getColumns(propertiesWithMortgages, handleDuplicate, handleDelete, translations)}
+                columns={columns}
                 data={property.mortgages}
                 onRowClick={(mortgage) => navigate(`/mortgages/${mortgage.id}`)}
                 className="rounded-xl overflow-hidden"

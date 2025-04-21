@@ -135,14 +135,11 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
 
       const limitReached = await isLimitReached('property')
       if (limitReached) {
-        sonnerToast.error(
-          t('messages.plan_limit_reached', 'You have reached your plan limit for properties.', { ns: 'properties' }),
-          {
-            description: t('messages.upgrade_plan_to_continue', 'Please upgrade your plan to add more properties.', { ns: 'properties' }),
-            duration: 5000,
-            className: '!bg-destructive !text-destructive-foreground !border-destructive',
-          }
-        )
+        toast({
+          variant: "destructive",
+          title: t('ui.error', 'Error', { ns: 'global' }),
+          description: t('messages.plan_limit_reached', 'You have reached your plan limit for properties.', { ns: 'properties' }),
+        })
         return
       }
 

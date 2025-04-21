@@ -107,7 +107,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setIsLoading(true);
       
       try {
-        console.log("SUBSCRIPTION: Fetching plan information for user", user.id);
+        // console.log("SUBSCRIPTION: Fetching plan information for user", user.id);
         
         // 1. Get the active subscription
         const { data: subscriptionData, error: subscriptionError } = await supabase
@@ -244,7 +244,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     // Fetch the count directly from database
     try {
       // Add a debouncing mechanism to prevent excessive database calls
-      console.log(`SUBSCRIPTION: Counting ${resourceType}s for user ${user?.id}`);
+      // console.log(`SUBSCRIPTION: Counting ${resourceType}s for user ${user?.id}`);
       
       const { count, error } = await supabase
         .from(tableName)

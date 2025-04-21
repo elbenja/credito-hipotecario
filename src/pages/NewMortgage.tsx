@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { useAuth } from "@/context/auth-context"
@@ -24,7 +24,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { PropertySelect, type Property } from "@/components/mortgages/property-select"
-import { AmortizationDetailsForm } from "@/components/mortgages/amortization-details-form"
+import { AmortizationDetailsForm } from "@/components/mortgages/mortgage-details-form"
 import { 
   RegularPanelGraph, 
   AcceleratedPanelGraph, 
@@ -44,7 +44,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
 import type { ScenarioResult } from "@/services/amortization/types/common"
 import { NoMoreSpace } from "@/components/common/NoMoreSpace"
-import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits"
+import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
 
 export default function NewMortgage() {
   const { t } = useTranslation(['mortgages', 'dashboard', 'global'])
@@ -57,6 +57,19 @@ export default function NewMortgage() {
   // Extract propertyId from URL query parameters
   const queryParams = new URLSearchParams(location.search)
   const propertyIdFromUrl = queryParams.get('propertyId')
+  
+  // Form setup
+  const form = useForm<MortgageFormValues>({
+    resolver: zodResolver(mortgageFormSchema),
+    defaultValues: {
+      ...defaultValues,
+      property_id: propertyIdFromUrl || ""
+    },
+    mode: "onChange"
+  })
+  
+  // Reference for tracking plan changes
+  const hasPlanBeenChecked = useRef(false);
   
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [regularScenario, setRegularScenario] = useState<ScenarioResult | null>(null)
@@ -90,38 +103,105 @@ export default function NewMortgage() {
     checkLimit
   } = useSubscriptionLimits();
   
-  // State to track if we've checked limits
+  // State for limit checking
   const [isLimitCheckDone, setIsLimitCheckDone] = useState(false);
   const [isLimitReached, setIsLimitReached] = useState(false);
+  const [mortgageCount, setMortgageCount] = useState(0);
+  const limitCheckRef = useRef(false);
 
-  const form = useForm<MortgageFormValues>({
-    resolver: zodResolver(mortgageFormSchema),
-    defaultValues: {
-      ...defaultValues,
-      property_id: propertyIdFromUrl || ""
-    },
-    mode: "onChange"
-  })
+  // Direct count from database for checking
+  const getMortgageCount = useCallback(async (): Promise<number> => {
+    if (!user) return 0;
 
-  // Check limits once when the component loads
-  useEffect(() => {
-    if (!isLimitCheckDone) {
-      const checkMortgageLimits = async () => {
-        try {
-          // Force a fresh count from the database
-          const hasReached = await checkLimit("mortgage", true);
-          console.log("Initial mortgage limit check result:", hasReached);
-          setIsLimitReached(hasReached);
-          setIsLimitCheckDone(true);
-        } catch (error) {
-          console.error("Error checking mortgage limits:", error);
-          setIsLimitCheckDone(true);
-        }
-      };
-      
-      checkMortgageLimits();
+    try {
+      const { count, error } = await supabase
+        .from("mortgages")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Error counting mortgages:", error);
+        return 0;
+      }
+
+      return count || 0;
+    } catch (e) {
+      console.error("Exception counting mortgages:", e);
+      return 0;
     }
-  }, [checkLimit, isLimitCheckDone]);
+  }, [user]);
+
+  // Single function to check limits once
+  const checkLimitOnce = useCallback(async () => {
+    // Prevent multiple simultaneous checks
+    if (limitCheckRef.current) return false;
+    limitCheckRef.current = true;
+    
+    try {
+      console.log("Performing one-time mortgage limit check");
+      
+      // 1. Get direct count from database
+      const { count, error } = await supabase
+        .from("mortgages")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user?.id || '');
+
+      if (error) {
+        console.error("Error counting mortgages:", error);
+        return false;
+      }
+      
+      // Store the count
+      const currentCount = count || 0;
+      setMortgageCount(currentCount);
+      console.log("Direct mortgage count from database:", currentCount);
+      
+      // 2. Determine the user's plan limit
+      // Use planLimit from the hook or fall back to plan defaults
+      const limitValue = planLimit > 0 ? planLimit : 
+                         (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3);
+      console.log(`User plan: ${currentPlan}, Mortgage limit: ${limitValue}`);
+      
+      // 3. Simple comparison to determine if limit is reached
+      const limitReached = currentCount >= limitValue;
+      console.log(`Limit check result: ${currentCount} >= ${limitValue} = ${limitReached}`);
+      
+      // 4. Set state based on the check
+      setIsLimitReached(limitReached);
+      return limitReached;
+    } catch (err) {
+      console.error("Limit check failed:", err);
+      return false;
+    } finally {
+      setIsLimitCheckDone(true);
+      // Don't reset limitCheckRef.current so the check only runs once
+    }
+  }, [user?.id, planLimit, currentPlan]);
+  
+  // Run the check only once when component mounts
+  useEffect(() => {
+    // Only run if:
+    // 1. We haven't done a check yet AND
+    // 2. We have a user ID AND
+    // 3. Current plan information is available
+    if (!isLimitCheckDone && user?.id && currentPlan) {
+      checkLimitOnce();
+    }
+  }, [checkLimitOnce, isLimitCheckDone, user?.id, currentPlan]);
+
+  // Add a separate effect for currentPlan changes to avoid infinite loops
+  useEffect(() => {
+    // Skip the first render and only run when plan actually changes
+    if (currentPlan && !hasPlanBeenChecked.current) {
+      hasPlanBeenChecked.current = true;
+      return;
+    }
+    
+    if (currentPlan && hasPlanBeenChecked.current) {
+      console.log("Plan changed, rechecking limits");
+      checkLimitOnce();
+    }
+  }, [currentPlan, checkLimitOnce]);
 
   // Add loan protection type watcher effect
   useEffect(() => {
@@ -412,8 +492,8 @@ export default function NewMortgage() {
     fetchPropertyFromUrl()
   }, [propertyIdFromUrl, user, form, handlePropertyChange, t])
 
-  // If we haven't checked limits yet or still checking, show a loading state
-  if (!isLimitCheckDone || isCheckingLimits) {
+  // If we haven't checked limits yet, show a loading state
+  if (!isLimitCheckDone) {
     return (
       <DashboardLayout
         header={{
@@ -470,8 +550,8 @@ export default function NewMortgage() {
         <div className="flex items-center justify-center p-6">
           <NoMoreSpace
             resourceType="mortgage"
-            currentUsage={currentUsage}
-            planLimit={planLimit}
+            currentUsage={mortgageCount}
+            planLimit={planLimit > 0 ? planLimit : (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3)}
             currentPlan={currentPlan}
             nextPlan={nextPlan}
             onBack={() => navigate("/mortgages")}
@@ -549,15 +629,19 @@ export default function NewMortgage() {
                             return
                           }
 
-                          // Double-check limits before submitting - ALWAYS force a fresh count
-                          const hasReached = await checkLimit("mortgage", true);
-                          console.log("Mortgage limit check before submission:", hasReached);
+                          // Check for limits one more time before submitting
+                          // Get a fresh count directly from the database
+                          const currentCount = await getMortgageCount();
+                          const limitValue = planLimit > 0 ? planLimit : 
+                                           (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3);
                           
-                          if (hasReached) {
+                          // Final check right before submission
+                          if (currentCount >= limitValue) {
+                            console.log(`Submission blocked: Current count ${currentCount} >= Limit ${limitValue}`);
                             toast({
                               variant: "destructive",
                               title: t("ui.error", { ns: "global" }),
-                              description: t("messages.plan_limit_reached", "You have reached your plan limit for mortgages.", { ns: "mortgages" }),
+                              description: "You have reached your plan limit for mortgages",
                             });
                             setIsLimitReached(true);
                             return;
@@ -701,6 +785,11 @@ export default function NewMortgage() {
                             description: t("messages.amortization_created", { ns: "mortgages" }),
                           })
 
+                          // After successful creation, immediately check limits again
+                          // to ensure the UI state is updated
+                          await getMortgageCount();
+                          checkLimitOnce();
+                          
                           navigate(`/mortgages/${data.id}`)
                         } catch (error) {
                           console.error("Error saving amortization:", error)

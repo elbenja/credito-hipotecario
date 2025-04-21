@@ -2,9 +2,9 @@ import * as React from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Columns2, ChevronDown, Check } from "lucide-react"
-import { ColumnDef, Table } from "@tanstack/react-table"
+import { ColumnDef, Table, Column } from "@tanstack/react-table"
 import { useTranslation } from "react-i18next"
-import { useEffect } from "react"
+import { useEffect, useMemo, useCallback } from "react"
 
 interface ColumnToggleProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -19,13 +19,17 @@ export function ColumnToggle<TData, TValue>({
 }: ColumnToggleProps<TData, TValue>) {
   const { t } = useTranslation('components')
   const { t: tMortgages } = useTranslation('mortgages')
-  const allColumns = table.getAllColumns().filter(
-    column => column.getCanHide() && 
-    column.id !== 'drag_handle' && 
-    column.id !== 'row_actions'
-  )
   
-  // Load saved column visibility on mount
+  // Memoize the filterable columns to prevent recalculation on each render
+  const allColumns = useMemo(() => (
+    table.getAllColumns().filter(
+      column => column.getCanHide() && 
+      column.id !== 'drag_handle' && 
+      column.id !== 'row_actions'
+    )
+  ), [table]);
+  
+  // Load saved column visibility on mount only
   useEffect(() => {
     const savedVisibility = localStorage.getItem(storageKey)
     
@@ -33,20 +37,25 @@ export function ColumnToggle<TData, TValue>({
       try {
         const parsedVisibility = JSON.parse(savedVisibility)
         
-        // Apply saved visibility to columns
-        allColumns.forEach(column => {
-          if (parsedVisibility[column.id] !== undefined) {
-            column.toggleVisibility(parsedVisibility[column.id])
-          }
-        })
+        // Initialize visibility state once on component mount
+        table.setColumnVisibility(prevState => {
+          const newState = {...prevState};
+          
+          // Only apply saved states, don't modify existing ones if not found in saved state
+          Object.entries(parsedVisibility).forEach(([columnId, isVisible]) => {
+            newState[columnId] = Boolean(isVisible);
+          });
+          
+          return newState;
+        });
       } catch (error) {
         console.error("Failed to parse saved column visibility", error)
       }
     }
-  }, [allColumns, storageKey])
+  }, [storageKey, table]);
   
-  // Save visibility state when it changes
-  const saveColumnVisibility = (columnId: string, isVisible: boolean) => {
+  // Save visibility state when it changes, memoize to prevent recreation on each render
+  const saveColumnVisibility = useCallback((columnId: string, isVisible: boolean) => {
     try {
       const savedVisibility = localStorage.getItem(storageKey) || "{}"
       const parsedVisibility = JSON.parse(savedVisibility)
@@ -60,9 +69,10 @@ export function ColumnToggle<TData, TValue>({
     } catch (error) {
       console.error("Failed to save column visibility", error)
     }
-  }
+  }, [storageKey]);
   
-  const getColumnName = (column: any) => {
+  // Memoize the getColumnName function to prevent recreation on each render
+  const getColumnName = useCallback((column: any) => {
     if (typeof column.columnDef.header === 'function') {
       // Get the original function's string representation
       const headerStr = column.columnDef.header.toString()
@@ -76,13 +86,23 @@ export function ColumnToggle<TData, TValue>({
         return tMortgages(translationKey)
       }
       
-      // If it's not a translation call, execute the header function
-      const result = column.columnDef.header(column)
-      // If the result is a React element, try to get its text content
-      if (result && typeof result === 'object' && 'props' in result) {
-        return result.props.children
+      // If it's not a translation call, try to get the column header as a string
+      try {
+        // Avoid re-execution of the header function if possible
+        if (column.columnDef.meta && column.columnDef.meta.cachedHeader) {
+          return column.columnDef.meta.cachedHeader;
+        }
+        
+        const result = column.columnDef.header(column)
+        // If the result is a React element, try to get its text content
+        if (result && typeof result === 'object' && 'props' in result) {
+          return result.props.children
+        }
+        return result
+      } catch (e) {
+        // Fallback if header function fails
+        return column.id
       }
-      return result
     }
     if (column.columnDef.header) {
       return column.columnDef.header
@@ -90,7 +110,13 @@ export function ColumnToggle<TData, TValue>({
     // Fallback to formatted column ID if no header is provided
     return column.id.charAt(0).toUpperCase() + 
            column.id.slice(1).replace(/([A-Z])/g, ' $1').trim().replace(/_/g, ' ')
-  }
+  }, [tMortgages]);
+
+  // Handle visibility toggle with a memoized function
+  const handleToggleVisibility = useCallback((column: Column<TData, unknown>, isCurrentlyVisible: boolean) => {
+    column.toggleVisibility(!isCurrentlyVisible);
+    saveColumnVisibility(column.id, !isCurrentlyVisible);
+  }, [saveColumnVisibility]);
 
   return (
     <DropdownMenu>
@@ -103,7 +129,6 @@ export function ColumnToggle<TData, TValue>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[220px]">
-        {/* <DropdownMenuLabel className="text-center font-semibold">{t('column_toggle.customize_columns')}</DropdownMenuLabel> */}
         <DropdownMenuSeparator />
         <div className="max-h-[400px] overflow-y-auto">
           {allColumns.map((column) => {
@@ -113,9 +138,9 @@ export function ColumnToggle<TData, TValue>({
               <DropdownMenuItem
                 key={column.id}
                 className="flex items-center gap-2 px-4 py-2 cursor-pointer"
-                onClick={() => {
-                  column.toggleVisibility(!isVisible)
-                  saveColumnVisibility(column.id, !isVisible)
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleToggleVisibility(column, isVisible);
                 }}
               >
                 <div className="flex h-4 w-4 items-center justify-center rounded-sm border mr-2">

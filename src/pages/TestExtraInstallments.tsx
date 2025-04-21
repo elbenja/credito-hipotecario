@@ -35,7 +35,7 @@ import { useNavigate } from "react-router-dom"
 import React from "react"
 import { addYears, subYears, startOfDay, isBefore, isAfter, isSameDay } from "date-fns"
 import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
-import { AmortizationDetailsForm } from "@/components/mortgages/amortization-details-form"
+import { AmortizationDetailsForm } from "@/components/mortgages/mortgage-details-form"
 
 type Amortization = Database['public']['Tables']['amortizations']['Row']
 type ExtraInstallment = Database['public']['Tables']['extra_installments']['Row']

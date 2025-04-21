@@ -22,7 +22,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form"
-import { AmortizationDetailsForm } from "@/components/mortgages/amortization-details-form"
+import { AmortizationDetailsForm } from "@/components/mortgages/mortgage-details-form"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { mortgageFormSchema, type MortgageFormValues } from "@/components/mortgages/schema"
