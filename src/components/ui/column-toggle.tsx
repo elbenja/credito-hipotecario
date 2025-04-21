@@ -4,15 +4,18 @@ import { Button } from "@/components/ui/button"
 import { Columns2, ChevronDown, Check } from "lucide-react"
 import { ColumnDef, Table } from "@tanstack/react-table"
 import { useTranslation } from "react-i18next"
+import { useEffect } from "react"
 
 interface ColumnToggleProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   table: Table<TData>
+  storageKey?: string
 }
 
 export function ColumnToggle<TData, TValue>({
   columns,
   table,
+  storageKey = "tableColumnVisibility",
 }: ColumnToggleProps<TData, TValue>) {
   const { t } = useTranslation('components')
   const { t: tMortgages } = useTranslation('mortgages')
@@ -21,6 +24,43 @@ export function ColumnToggle<TData, TValue>({
     column.id !== 'drag_handle' && 
     column.id !== 'row_actions'
   )
+  
+  // Load saved column visibility on mount
+  useEffect(() => {
+    const savedVisibility = localStorage.getItem(storageKey)
+    
+    if (savedVisibility) {
+      try {
+        const parsedVisibility = JSON.parse(savedVisibility)
+        
+        // Apply saved visibility to columns
+        allColumns.forEach(column => {
+          if (parsedVisibility[column.id] !== undefined) {
+            column.toggleVisibility(parsedVisibility[column.id])
+          }
+        })
+      } catch (error) {
+        console.error("Failed to parse saved column visibility", error)
+      }
+    }
+  }, [allColumns, storageKey])
+  
+  // Save visibility state when it changes
+  const saveColumnVisibility = (columnId: string, isVisible: boolean) => {
+    try {
+      const savedVisibility = localStorage.getItem(storageKey) || "{}"
+      const parsedVisibility = JSON.parse(savedVisibility)
+      
+      // Update visibility for this column
+      parsedVisibility[columnId] = isVisible
+      
+      // Save back to localStorage
+      localStorage.setItem(storageKey, JSON.stringify(parsedVisibility))
+      
+    } catch (error) {
+      console.error("Failed to save column visibility", error)
+    }
+  }
   
   const getColumnName = (column: any) => {
     if (typeof column.columnDef.header === 'function') {
@@ -73,7 +113,10 @@ export function ColumnToggle<TData, TValue>({
               <DropdownMenuItem
                 key={column.id}
                 className="flex items-center gap-2 px-4 py-2 cursor-pointer"
-                onClick={() => column.toggleVisibility(!isVisible)}
+                onClick={() => {
+                  column.toggleVisibility(!isVisible)
+                  saveColumnVisibility(column.id, !isVisible)
+                }}
               >
                 <div className="flex h-4 w-4 items-center justify-center rounded-sm border mr-2">
                   {isVisible ? <Check className="h-3 w-3" /> : null}
