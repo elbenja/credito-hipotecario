@@ -525,6 +525,39 @@ For component-specific implementation details, refer to:
 - Role-based access control
 - Admin privileges for bonus management
 
+## Subscription System
+### Database Structure
+- **Profiles (`profiles`)**: Contains user profile information
+- **Subscription Plans (`subscription_plans`)**:
+  - Defines available subscription tiers (e.g., Personal, Professional, Investor)
+  - Plans can be modified as needed for business requirements
+  - Each plan has its own set of features and limits
+
+- **Plan Features (`plan_features`)**:
+  - Defines limits for each plan's features:
+    - Number of properties allowed
+    - Number of mortgages allowed
+    - Number of rentals allowed
+  - Some plans (e.g., Investor) may have unlimited access to certain features
+  - Extensible structure for adding new feature controls in the future
+
+- **User Subscriptions (`user_subscriptions`)**:
+  - Links users to their active subscription plan
+  - Tracks subscription status (active/cancelled)
+  - Manages subscription periods:
+    - Start and end dates
+    - Current period tracking (current_period_start, current_period_end)
+  - Payment tracking:
+    - payment_provider: Identifies the payment service provider
+    - payment_provider_subscription_id: External subscription reference
+  - Enables subscription lifecycle management
+
+### Implementation Notes
+- Subscription plans and pricing are configurable for testing and optimization
+- Feature limits are enforced through the plan_features table
+- System is designed to be extensible for future feature additions
+- Payment processing is integrated with external payment providers
+
 ## Admin Features
 - Bonus bracket configuration
 - Translation management

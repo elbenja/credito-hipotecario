@@ -42,6 +42,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { Heart } from "lucide-react"
 import { ScenarioResult } from "@/services/amortization/types/common"
+import SVGfixed from "@/components/ui/svg-fixed"
 
 // Add type for BonusRule
 type BonusRule = {
@@ -1341,25 +1342,25 @@ export default function EditMortgage() {
                     <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2 flex items-center gap-1.5" value="regular">
                       {t("scenarios.regular.title", { ns: "mortgages" })}
                       {savedScenario === "regular" && (
-                        <Heart className="h-3 w-3 text-brand" />
+                          <SVGfixed size={14} name="heartFilled" strokeClassName="text-transparent" fillClassName="fill-brand" />  
                       )}
                     </TabsTrigger>
                     <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2 flex items-center gap-1.5" value="accelerated">
                       {t("scenarios.accelerated.title", { ns: "mortgages" })}
                       {savedScenario === "accelerated" && (
-                        <Heart className="h-3 w-3 text-brand" />
+                        <SVGfixed size={14} name="heartFilled" strokeClassName="text-transparent" fillClassName="fill-brand" />  
                       )}
                     </TabsTrigger>
                     <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2 flex items-center gap-1.5" value="lower_payment">
                       {t("scenarios.lower_payment.title", { ns: "mortgages" })}
                       {savedScenario === "lower_payment" && (
-                        <Heart className="h-3 w-3 text-brand" />
+                        <SVGfixed size={14} name="heartFilled" strokeClassName="text-transparent" fillClassName="fill-brand" />  
                       )}
                     </TabsTrigger>
                     <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2 flex items-center gap-1.5" value="new_rate">
                       {t("scenarios.new_rate.title", { ns: "mortgages" })}
                       {savedScenario === "new_rate" && (
-                        <Heart className="h-3 w-3 text-brand" />
+                        <SVGfixed size={14} name="heartFilled" strokeClassName="text-transparent" fillClassName="fill-brand" />  
                       )}
                     </TabsTrigger>
                   </TabsList>

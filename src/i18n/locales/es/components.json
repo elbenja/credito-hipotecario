@@ -51,7 +51,9 @@
       "principal": "Capital",
       "interest_insurance": "Intereses y Seguros",
       "break_even_point": "Punto de Equilibrio",
-      "total_cost": "Costo Total: Propiedad + Intereses + Seguros"
+      "total_cost": "Costo Total: Propiedad + Intereses + Seguros",
+      "saved_scenario": "Escenario Favorito",
+      "save_scenario": "Volver Favorito"
     },
     "regular": {
       "title": " Regular",

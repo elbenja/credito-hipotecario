@@ -19,8 +19,10 @@ import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useTranslation } from "react-i18next"
 import { MoreVertical, Copy, Trash, ArrowUp, ArrowDown, ChevronsUpDown, Home } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
+import { useSubscription } from "@/context/subscription-context"
 import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
+import { toast as sonnerToast } from "sonner"
 
 type Property = {
   id: string
@@ -69,6 +71,7 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
   const { data: exchangeRate } = useExchangeRate()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { isLimitReached, getCurrentUsage, limits } = useSubscription()
 
   const { data: bonusRules = [] } = useQuery({
     queryKey: ['bonus-rules'],
@@ -130,6 +133,19 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
     try {
       if (!user) throw new Error(t('messages.no_user_found', 'No user found', { ns: 'global' }))
 
+      const limitReached = await isLimitReached('property')
+      if (limitReached) {
+        sonnerToast.error(
+          t('messages.plan_limit_reached', 'You have reached your plan limit for properties.', { ns: 'properties' }),
+          {
+            description: t('messages.upgrade_plan_to_continue', 'Please upgrade your plan to add more properties.', { ns: 'properties' }),
+            duration: 5000,
+            className: '!bg-destructive !text-destructive-foreground !border-destructive',
+          }
+        )
+        return
+      }
+
       const duplicatedProperty = {
         ...property,
         name: `${property.name} (${t('ui.copy', 'Copy', { ns: 'global' })})`,
@@ -151,7 +167,18 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
       })
 
       if (data) {
-        onPropertyUpdate(data)
+        onPropertyUpdate(data, false)
+        
+        const channel = supabase.channel('property-updates')
+        channel.send({
+          type: 'broadcast',
+          event: 'property-created',
+          payload: { 
+            action: 'create', 
+            userId: user.id,
+            propertyId: data.id
+          },
+        })
       }
     } catch (error) {
       console.error("Error duplicating property:", error)
@@ -190,7 +217,7 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
   }
 
   return (
-    <Table>
+    <Table className="rounded-xl overflow-hidden">
       <TableHeader>
         <TableRow>
           <TableHead 

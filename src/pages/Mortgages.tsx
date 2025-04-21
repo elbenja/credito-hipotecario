@@ -211,7 +211,7 @@ export default function Mortgages() {
                 columns={getColumns(propertiesWithMortgages, handleDuplicate, handleDelete, translations)}
                 data={property.mortgages}
                 onRowClick={(mortgage) => navigate(`/mortgages/${mortgage.id}`)}
-                className="rounded-2xl overflow-hidden"
+                className="rounded-xl overflow-hidden"
               />
             </div>
           )

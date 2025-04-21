@@ -187,7 +187,7 @@ export function FeatureCounts({
             onSuccess={handlePropertyAdded}
             onClose={() => setOpen(false)}
             selectedProperty={null}
-            bonusRules={[]}
+            // bonusRules={[]}
           />
         </div>
       </SheetContent>

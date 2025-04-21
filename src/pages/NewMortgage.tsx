@@ -43,6 +43,8 @@ import { LoanCalculator } from "@/services/amortization/calculations/loan"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
 import type { ScenarioResult } from "@/services/amortization/types/common"
+import { NoMoreSpace } from "@/components/common/NoMoreSpace"
+import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits"
 
 export default function NewMortgage() {
   const { t } = useTranslation(['mortgages', 'dashboard', 'global'])
@@ -76,6 +78,21 @@ export default function NewMortgage() {
     lower_payment: null,
     new_rate: null
   })
+  
+  // Subscription limits hook
+  const {
+    isLoading: isCheckingLimits,
+    hasReachedLimit,
+    currentUsage,
+    planLimit,
+    currentPlan,
+    nextPlan,
+    checkLimit
+  } = useSubscriptionLimits();
+  
+  // State to track if we've checked limits
+  const [isLimitCheckDone, setIsLimitCheckDone] = useState(false);
+  const [isLimitReached, setIsLimitReached] = useState(false);
 
   const form = useForm<MortgageFormValues>({
     resolver: zodResolver(mortgageFormSchema),
@@ -85,6 +102,26 @@ export default function NewMortgage() {
     },
     mode: "onChange"
   })
+
+  // Check limits once when the component loads
+  useEffect(() => {
+    if (!isLimitCheckDone) {
+      const checkMortgageLimits = async () => {
+        try {
+          // Force a fresh count from the database
+          const hasReached = await checkLimit("mortgage", true);
+          console.log("Initial mortgage limit check result:", hasReached);
+          setIsLimitReached(hasReached);
+          setIsLimitCheckDone(true);
+        } catch (error) {
+          console.error("Error checking mortgage limits:", error);
+          setIsLimitCheckDone(true);
+        }
+      };
+      
+      checkMortgageLimits();
+    }
+  }, [checkLimit, isLimitCheckDone]);
 
   // Add loan protection type watcher effect
   useEffect(() => {
@@ -375,6 +412,75 @@ export default function NewMortgage() {
     fetchPropertyFromUrl()
   }, [propertyIdFromUrl, user, form, handlePropertyChange, t])
 
+  // If we haven't checked limits yet or still checking, show a loading state
+  if (!isLimitCheckDone || isCheckingLimits) {
+    return (
+      <DashboardLayout
+        header={{
+          title: (
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <Link to="/mortgages" className="transition-colors hover:text-foreground">
+                    {t("sections.mortgages", { ns: "dashboard" })}
+                  </Link>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>
+                    {t("amortization.new", { ns: "mortgages" })}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          )
+        }}
+      >
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+  
+  // If user has reached their mortgage limit, show the NoMoreSpace component
+  if (isLimitReached) {
+    return (
+      <DashboardLayout
+        header={{
+          title: (
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <Link to="/mortgages" className="transition-colors hover:text-foreground">
+                    {t("sections.mortgages", { ns: "dashboard" })}
+                  </Link>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>
+                    {t("amortization.new", { ns: "mortgages" })}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          )
+        }}
+      >
+        <div className="flex items-center justify-center p-6">
+          <NoMoreSpace
+            resourceType="mortgage"
+            currentUsage={currentUsage}
+            planLimit={planLimit}
+            currentPlan={currentPlan}
+            nextPlan={nextPlan}
+            onBack={() => navigate("/mortgages")}
+          />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout
       header={{
@@ -441,6 +547,20 @@ export default function NewMortgage() {
                               description: t("messages.please_complete_all_fields", { ns: "mortgages" }),
                             })
                             return
+                          }
+
+                          // Double-check limits before submitting - ALWAYS force a fresh count
+                          const hasReached = await checkLimit("mortgage", true);
+                          console.log("Mortgage limit check before submission:", hasReached);
+                          
+                          if (hasReached) {
+                            toast({
+                              variant: "destructive",
+                              title: t("ui.error", { ns: "global" }),
+                              description: t("messages.plan_limit_reached", "You have reached your plan limit for mortgages.", { ns: "mortgages" }),
+                            });
+                            setIsLimitReached(true);
+                            return;
                           }
 
                           // Parse numeric values safely

@@ -164,9 +164,21 @@ export default function Properties() {
         },
       })
     } else {
-      queryClient.setQueryData(['properties', user?.id], (oldData: Property[] = []) => 
-        oldData.map(p => p.id === updatedProperty.id ? updatedProperty : p)
-      )
+      queryClient.setQueryData(['properties', user?.id], (oldData: Property[] = []) => {
+        // Check if property already exists in the list
+        const propertyExists = oldData.some(p => p.id === updatedProperty.id);
+        
+        if (propertyExists) {
+          // Update existing property
+          return oldData.map(p => p.id === updatedProperty.id ? updatedProperty : p);
+        } else {
+          // Add new property to the list (for duplication)
+          return [...oldData, updatedProperty];
+        }
+      });
+      
+      // Force a refresh of the subscription context to update property counts
+      queryClient.invalidateQueries({ queryKey: ['properties', user?.id] });
     }
   }
 

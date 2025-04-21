@@ -16,6 +16,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { SVGfixed } from "@/components/ui/svg-fixed"
 
 type Currency = "USD" | "PEN"
 
@@ -439,7 +440,9 @@ const ScenarioPanel = ({
           {isThisScenarioSaved ? (
             <Button variant="outline" className="">             
               {t('scenario_graphs.common.saved_scenario', 'Saved scenario', { ns: 'components' })}
-              <Heart className="size-4 text-brand ml-2" />
+              {/* <Heart className="size-4 text-brand ml-2" /> */}
+              <span className="ml-2"> <SVGfixed name="heartFilled" strokeClassName="text-brand" fillClassName="fill-brand" />  </span>
+              
             </Button>
           ) : (
             <Button variant="ghost" className="border"
