@@ -245,7 +245,7 @@ export default function Mortgages() {
         {propertiesWithMortgages?.map((property) => (
           property.mortgages.length > 0 && (
             <div key={property.id} className="space-y-4 w-full mt-4 mb-8">
-              <div className="flex items-center justify-start gap-8 -mb-12">
+              <div className="flex items-center justify-start gap-4 -mb-12">
                 <h2 className="text-xl font-semibold">{property.name}</h2>
                 <span className="text-xl font-medium">
                   {property.price_cost !== undefined && property.price_cost !== null 
@@ -255,7 +255,7 @@ export default function Mortgages() {
                 {property.is_first_home && (
                   <>
                     {calculateBonus(property) && (
-                      <Badge variant="outline" className="text-sm font-medium">
+                      <Badge variant="outline" className="ml-4 text-sm font-medium">
                         Bonus: S/ {Number(calculateBonus(property)).toLocaleString('en-US')}
                       </Badge>
                     )}
