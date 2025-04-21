@@ -4,6 +4,10 @@ export type Property = {
   currency: "USD" | "PEN"
   price_cost: number
   mortgages: Mortgage[]
+  is_first_home?: boolean
+  is_sustainable?: boolean
+  property_insurance?: number
+  property_insurance_type?: "auto" | "manual"
 }
 
 export type Mortgage = {

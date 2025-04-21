@@ -15,10 +15,12 @@ import { useQueryClient } from "@tanstack/react-query"
 import SVGillustration from "@/components/ui/SVGillustration"
 import { PropertyForm } from "@/components/properties/property-form"
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { useState, useEffect } from 'react'
+import { Badge } from "@/components/ui/badge"
+import { useState, useEffect, useMemo } from 'react'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { BonusRule } from "@/components/properties/types"
 import type { Property, Mortgage } from "../types"
+import { useExchangeRate } from "@/hooks/use-exchange-rate"
 
 export default function Mortgages() {
   const navigate = useNavigate()
@@ -30,6 +32,51 @@ export default function Mortgages() {
   const queryClient = useQueryClient()
   const { t } = useTranslation('properties')
   const [open, setOpen] = useState(false)
+  const { data: exchangeRate } = useExchangeRate()
+
+  // Fetch bonus rules
+  const { data: bonusRules = [] } = useQuery({
+    queryKey: ['bonus-rules'],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('bonus_rules')
+          .select('*')
+          .eq('is_active', true)
+          .order('min_value', { ascending: true })
+
+        if (error) throw error
+        return data || []
+      } catch (error) {
+        console.error("Error loading bonus rules:", error)
+        return []
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+
+  // Helper function to convert currency to PEN
+  const convertToPEN = (amount: number, currency: string): number => {
+    if (currency === 'PEN') return amount
+    return amount * (exchangeRate || 3.7167)
+  }
+
+  // Helper function to calculate bonus
+  const calculateBonus = (property: Property): number | null => {
+    if (!property.is_first_home) return null
+
+    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency)
+    
+    const applicableRule = bonusRules.find(
+      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
+    )
+
+    if (!applicableRule) return null
+
+    return property.is_sustainable 
+      ? applicableRule.sustainable_bonus 
+      : applicableRule.traditional_bonus
+  }
 
   const { data: propertiesWithMortgages, isLoading } = useQuery({
     queryKey: ["properties-with-mortgages", user?.id],
@@ -205,6 +252,15 @@ export default function Mortgages() {
                     ? formatCurrency(property.price_cost, property.currency)
                     : '-'}
                 </span>
+                {property.is_first_home && (
+                  <>
+                    {calculateBonus(property) && (
+                      <Badge variant="outline" className="text-sm font-medium">
+                        Bonus: S/ {Number(calculateBonus(property)).toLocaleString('en-US')}
+                      </Badge>
+                    )}
+                  </>
+                )}
               </div>
               
               <DataTable 
