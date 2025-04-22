@@ -55,6 +55,7 @@
       "saved_scenario": "Saved scenario",
       "save_scenario": "Save scenario",
       "capture_scenario": "Capture scenario",
+      "favorite": "Favorite",
       "capture_scenario_success": "Scenario successfully captured",
       "capture_scenario_error": "Error capturing scenario"
     },

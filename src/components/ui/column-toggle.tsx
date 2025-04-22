@@ -25,7 +25,12 @@ export function ColumnToggle<TData, TValue>({
     table.getAllColumns().filter(
       column => column.getCanHide() && 
       column.id !== 'drag_handle' && 
-      column.id !== 'row_actions'
+      column.id !== 'row_actions' &&
+      // Safe check for isHidden flag in meta
+      !(column.columnDef.meta && 
+        typeof column.columnDef.meta === 'object' && 
+        'isHidden' in column.columnDef.meta && 
+        column.columnDef.meta.isHidden)
     )
   ), [table]);
   

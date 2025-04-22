@@ -123,6 +123,7 @@
     "scenario_saved": "Escenario guardado como predeterminado",
     "plan_limit_reached": "Has alcanzado el límite de hipotecas de tu plan",
     "scenario_captured": "Escenario capturado: {{name}}",
+    "scenario_captured_redirect": "Escenario capturado: {{name}}. Redirigiendo a la lista de hipotecas...",
     "error_capturing_scenario": "Error al capturar el escenario"
   }
 } 

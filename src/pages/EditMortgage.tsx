@@ -929,6 +929,9 @@ export default function EditMortgage() {
   // Handler to save a scenario
   const handleSaveScenario = async (scenarioType: string) => {
     try {
+      // First, submit the current mortgage form to save any form changes
+      await onUpdateMortgage(mortgageForm.getValues());
+      
       // Save to state
       setSavedScenario(scenarioType);
       

@@ -28,6 +28,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   onRowClick?: (row: TData) => void
   className?: string
+  defaultSort?: SortingState
 }
 
 export function DataTable<TData extends { id: string }, TValue>({
@@ -35,10 +36,13 @@ export function DataTable<TData extends { id: string }, TValue>({
   data,
   onRowClick,
   className,
+  defaultSort = [{ id: "timestamp", desc: true }],
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [sorting, setSorting] = React.useState<SortingState>(defaultSort)
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
+    timestamp: false, // Hide timestamp column by default
+  })
 
   const table = useReactTable({
     data,

@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 export interface MortgageCapture {
   mortgageId: string;
   successCallback?: () => void;
+  stayOnPage?: boolean;
 }
 
 /**
@@ -84,7 +85,7 @@ export const useMortgageCapture = () => {
   /**
    * Captures a mortgage with all its dependencies
    */
-  const captureMortgage = async ({ mortgageId, successCallback }: MortgageCapture) => {
+  const captureMortgage = async ({ mortgageId, successCallback, stayOnPage = false }: MortgageCapture) => {
     try {
       // Check if user has reached their mortgage limit
       const limitReached = await checkMortgageLimits();
@@ -98,14 +99,19 @@ export const useMortgageCapture = () => {
         return null;
       }
 
-      // 1. Get original mortgage data
+      // 1. Get original mortgage data with the most up-to-date values
       const { data: originalMortgage, error: mortgageError } = await supabase
         .from("mortgages")
         .select(`
           *,
           property:properties (
             id,
-            name
+            name,
+            price_cost,
+            currency,
+            is_first_home,
+            is_sustainable,
+            property_insurance
           )
         `)
         .eq("id", mortgageId)
@@ -209,14 +215,21 @@ export const useMortgageCapture = () => {
       // 5. Show success toast with the name including scenario
       toast({
         title: tGlobal('ui.success'),
-        description: tMortgages('messages.scenario_captured', "Scenario captured: {{name}}", { 
-          name: mortgageName 
-        }),
+        description: stayOnPage 
+          ? tMortgages('messages.scenario_captured', "Scenario captured: {{name}}", { name: mortgageName })
+          : tMortgages('messages.scenario_captured_redirect', "Scenario captured: {{name}}. Redirecting to mortgages list...", { 
+            name: mortgageName 
+          }),
       });
 
-      // 6. Call the success callback if provided (e.g., refresh mortgage list)
+      // 6. Call the success callback if provided
       if (successCallback) {
         successCallback();
+      }
+
+      // If not staying on the page, navigate to the mortgages list
+      if (!stayOnPage) {
+        navigate("/mortgages");
       }
 
       // Return the new mortgage data

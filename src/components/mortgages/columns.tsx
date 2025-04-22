@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table"
-  import { Car, Clock, CreditCard, Calendar, DollarSign, Compass, Armchair, TrendingDown, Wallet, Axe } from "lucide-react"
+import { Car, Clock, CreditCard, Calendar, DollarSign, Compass, Armchair, TrendingDown, Wallet, Axe, ArrowUpDown } from "lucide-react"
 import type { Mortgage, Property } from "../../types"
 import { formatCurrency } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -95,6 +95,16 @@ const fallbackTranslations: Translations = {
   tGlobal: (key: string) => key,
   tMortgages: (key: string) => key,
   tComponents: (key: string) => key
+};
+
+// Helper function to create sortable column header
+const SortableHeader = ({ column, children }: { column: any, children: React.ReactNode }) => {
+  return (
+    <div className="flex items-center space-x-1 cursor-pointer" onClick={() => column.toggleSorting()}>
+      {children}
+      <ArrowUpDown className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+    </div>
+  );
 };
 
 export const getColumns = (
@@ -212,9 +222,26 @@ export const getColumns = (
     {
       accessorKey: "total_cost",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.total_cost')}</div>
+        <SortableHeader column={column}>
+          <div className="line-clamp-1">{tMortgages('amortization.total_cost')}</div>
+        </SortableHeader>
       ),
       enableHiding: true,
+      enableSorting: true,
+      sortingFn: (rowA, rowB, columnId) => {
+        const propertyPriceA = getPropertyPrice(properties, rowA.original.id);
+        const propertyPriceB = getPropertyPrice(properties, rowB.original.id);
+        
+        const totalCostA = rowA.original.saved_scenario_total_interest_and_insurance 
+          ? propertyPriceA + rowA.original.saved_scenario_total_interest_and_insurance 
+          : 0;
+          
+        const totalCostB = rowB.original.saved_scenario_total_interest_and_insurance 
+          ? propertyPriceB + rowB.original.saved_scenario_total_interest_and_insurance 
+          : 0;
+          
+        return totalCostA > totalCostB ? 1 : totalCostA < totalCostB ? -1 : 0;
+      },
       cell: ({ row }) => {
         const currency = getPropertyCurrency(properties, row.original.id);
         const propertyPrice = getPropertyPrice(properties, row.original.id);
@@ -236,9 +263,17 @@ export const getColumns = (
     {
       accessorKey: "years",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.years')}</div>
+        <SortableHeader column={column}>
+          <div className="line-clamp-1">{tMortgages('amortization.years')}</div>
+        </SortableHeader>
       ),
       enableHiding: true,
+      enableSorting: true,
+      sortingFn: (rowA, rowB, columnId) => {
+        const valueA = rowA.original.saved_scenario_total_months ? rowA.original.saved_scenario_total_months / 12 : 0;
+        const valueB = rowB.original.saved_scenario_total_months ? rowB.original.saved_scenario_total_months / 12 : 0;
+        return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
+      },
       cell: ({ row }) => {
         if (row.original.saved_scenario_total_months) {
           return (
@@ -255,9 +290,17 @@ export const getColumns = (
     {
       accessorKey: "months",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.months')}</div>
+        <SortableHeader column={column}>
+          <div className="line-clamp-1">{tMortgages('amortization.months')}</div>
+        </SortableHeader>
       ),
       enableHiding: true,
+      enableSorting: true,
+      sortingFn: (rowA, rowB, columnId) => {
+        const valueA = rowA.original.saved_scenario_total_months || 0;
+        const valueB = rowB.original.saved_scenario_total_months || 0;
+        return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
+      },
       cell: ({ row }) => {
         if (row.original.saved_scenario_total_months) {
           return (
@@ -274,9 +317,17 @@ export const getColumns = (
     {
       accessorKey: "monthly_payment",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.short_monthly_payment')}</div>
+        <SortableHeader column={column}>
+          <div className="line-clamp-1">{tMortgages('amortization.short_monthly_payment')}</div>
+        </SortableHeader>
       ),
       enableHiding: true,
+      enableSorting: true,
+      sortingFn: (rowA, rowB, columnId) => {
+        const valueA = rowA.original.saved_scenario_monthly_payment || 0;
+        const valueB = rowB.original.saved_scenario_monthly_payment || 0;
+        return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
+      },
       cell: ({ row }) => {
         const currency = getPropertyCurrency(properties, row.original.id);
         if (row.original.saved_scenario_monthly_payment) {
@@ -307,6 +358,21 @@ export const getColumns = (
         return "-";
       },
       size: 120,
+    },
+    // Hidden timestamp column for default sorting - uses IDs since they should be sequential
+    {
+      accessorKey: "timestamp",
+      header: () => null,
+      enableHiding: true,
+      enableSorting: true,
+      cell: ({ row }) => null,
+      size: 0,
+      meta: {
+        isHidden: true
+      },
+      // Ensure this column is never visible in the UI
+      maxSize: 0,
+      minSize: 0
     },
     {
       id: "row_actions",

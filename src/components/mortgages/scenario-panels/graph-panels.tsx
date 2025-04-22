@@ -414,12 +414,19 @@ const ScenarioPanel = ({
   const handleCaptureScenario = async () => {
     if (!id) return;
     
+    // First, save the current scenario as favorite (this will also save form values)
+    if (onSaveScenario && scenarioType) {
+      await onSaveScenario(scenarioType);
+    }
+    
+    // Then capture the mortgage (duplicate it) but don't navigate away
     await captureMortgage({ 
       mortgageId: id,
       successCallback: () => {
-        // Redirect the user to the mortgages page
-        navigate("/mortgages");
-      }
+        // Don't navigate, just show success message
+        // The toast will be shown by the captureMortgage function
+      },
+      stayOnPage: true // Add this flag to indicate we want to stay on the current page
     });
   };
 
@@ -466,15 +473,16 @@ const ScenarioPanel = ({
 
           {isThisScenarioSaved ? (
             <Button variant="secondary" className="border border-input">             
-              {t('scenario_graphs.common.saved_scenario', 'Saved scenario', { ns: 'components' })}
-              {/* <Heart className="size-4 text-brand ml-2" /> */}
+              {t('scenario_graphs.common.favorite', 'Favorite', { ns: 'components' })}
               <span className="ml-2"> <SVGfixed name="heartFilled" strokeClassName="text-brand" fillClassName="fill-brand" />  </span>
-              
             </Button>
           ) : (
-            <Button variant="outline" className=""
-              onClick={() => onSaveScenario && onSaveScenario(scenarioType)}>
-              {t('scenario_graphs.common.save_scenario', 'Save scenario', { ns: 'components' })}
+            <Button 
+              variant="outline" 
+              className=""
+              onClick={() => onSaveScenario && onSaveScenario(scenarioType)}
+            >
+              {t('scenario_graphs.common.favorite', 'Favorite', { ns: 'components' })}
               <Heart className="size-4 ml-2" />
             </Button>
           )}

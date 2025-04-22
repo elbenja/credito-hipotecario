@@ -55,6 +55,7 @@
       "saved_scenario": "Escenario guardado",
       "save_scenario": "Guardar escenario",
       "capture_scenario": "Capturar escenario",
+      "favorite": "Favorito",
       "capture_scenario_success": "Escenario capturado exitosamente",
       "capture_scenario_error": "Error al capturar escenario"
     },

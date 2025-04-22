@@ -101,12 +101,12 @@
     "success_update": "Mortgage updated successfully",
     "error_update": "There was an error updating the mortgage",
     "success_delete": "Mortgage deleted successfully",
-    "error_delete": "There was an error deleting the mortgage",
+    "error_delete": "Error deleting mortgage",
     "please_complete_all_fields": "Please complete all required fields",
     "amortization_created": "Mortgage created successfully",
     "error_creating_amortization": "There was an error creating the mortgage",
     "amortization_duplicated": "Mortgage duplicated successfully",
-    "error_duplicating_amortization": "There was an error duplicating the mortgage",
+    "error_duplicating_amortization": "Error duplicating mortgage",
     "save_to_access_all_features": "Save this mortgage to access all scenario features such as extra payments and refinancing options",
     "no_amortizations": "No mortgages found. Create one to get started!",
     "error_loading_amortizations": "There was an error loading the mortgages",
@@ -123,6 +123,7 @@
     "scenario_saved": "Scenario saved as default",
     "plan_limit_reached": "You have reached your plan limit for mortgages",
     "scenario_captured": "Scenario captured: {{name}}",
+    "scenario_captured_redirect": "Scenario captured: {{name}}. Redirecting to mortgages list...",
     "error_capturing_scenario": "Error capturing scenario"
   }
 } 

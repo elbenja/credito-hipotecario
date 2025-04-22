@@ -178,7 +178,8 @@ export default function Mortgages() {
       successCallback: () => {
         // Refresh the data after capture
         queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
-      }
+      },
+      stayOnPage: false // Always redirect when duplicating from the mortgages list
     });
     
   }, [captureMortgage, queryClient])
