@@ -323,7 +323,7 @@ export default function Mortgages() {
                   <>
                     {calculateBonus(property) && (
                       <Badge variant="outline" className="ml-4 text-sm font-medium">
-                        Bonus: S/ {Number(calculateBonus(property)).toLocaleString('en-US')}
+                        {t('bonus.amount_short')}: S/ {Number(calculateBonus(property)).toLocaleString('en-US')}
                       </Badge>
                     )}
                   </>

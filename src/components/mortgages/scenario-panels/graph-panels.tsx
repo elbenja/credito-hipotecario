@@ -8,7 +8,7 @@ import { ChartThemeWrapper } from "@/components/ui/chart/theme-wrapper"
 import { format } from "date-fns"
 import { PaymentRow, ScenarioResult } from "@/services/amortization/types/common"
 import { useTranslation } from "react-i18next"
-import { Calendar, Landmark, MousePointerClick, ChevronRight as ChevronRightIcon, Heart } from "lucide-react"
+import { Calendar, Landmark, MousePointerClick, ChevronRight as ChevronRightIcon, Heart, Camera } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
@@ -410,15 +410,8 @@ const ScenarioPanel = ({
       
       <div className="flex items-center p-2">
         <div className="flex items-center gap-2">
-
-
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-
-
-
-          <Dialog>
-          <DialogTrigger className="flex items-center gap-2 px-4 h-10 rounded-md text-sm border border-input hover:bg-accent hover:text-accent-foreground">
+        <Dialog>
+          <DialogTrigger className="flex items-center gap-2 px-4 h-10 rounded-md text-sm border border-input hover:bg-accent hover:text-accent-foreground mr-auto">
             <div className=" size-2.5 rounded-full border-2 border-muted-foreground"></div> 
           {t('scenario_graphs.tooltip.break_even_point_title', 'Punto de Equilibrio', { ns: 'components' })}
           </DialogTrigger>
@@ -437,15 +430,28 @@ const ScenarioPanel = ({
           </DialogContent>
         </Dialog>
 
+
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+
+
+
+
+        <Button variant="outline" className=" "
+             >
+              {t('scenario_graphs.common.capture_scenario', 'Capture scenario', { ns: 'components' })}
+              <Camera className="size-4 ml-2" />
+            </Button>
+
           {isThisScenarioSaved ? (
-            <Button variant="outline" className="">             
+            <Button variant="secondary" className="border border-input">             
               {t('scenario_graphs.common.saved_scenario', 'Saved scenario', { ns: 'components' })}
               {/* <Heart className="size-4 text-brand ml-2" /> */}
               <span className="ml-2"> <SVGfixed name="heartFilled" strokeClassName="text-brand" fillClassName="fill-brand" />  </span>
               
             </Button>
           ) : (
-            <Button variant="ghost" className="border"
+            <Button variant="outline" className=""
               onClick={() => onSaveScenario && onSaveScenario(scenarioType)}>
               {t('scenario_graphs.common.save_scenario', 'Save scenario', { ns: 'components' })}
               <Heart className="size-4 ml-2" />

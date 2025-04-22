@@ -53,7 +53,8 @@
       "break_even_point": "Punto de Equilibrio",
       "total_cost": "Costo Total: Propiedad + Intereses + Seguros",
       "saved_scenario": "Escenario Favorito",
-      "save_scenario": "Volver Favorito"
+      "save_scenario": "Volver Favorito",
+      "capture_scenario": "Capturar Escenario"
     },
     "regular": {
       "title": " Regular",

@@ -53,7 +53,8 @@
       "break_even_point": "Break-even point",
       "total_cost": "Total: Property + Interest + Insurances",
       "saved_scenario": "Saved scenario",
-      "save_scenario": "Save scenario"
+      "save_scenario": "Save scenario",
+      "capture_scenario": "Capture scenario"
     },
     "regular": {
       "title": "Regular Scenario",
