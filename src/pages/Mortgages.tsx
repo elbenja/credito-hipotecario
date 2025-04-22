@@ -282,7 +282,7 @@ export default function Mortgages() {
               <DataTable 
                 columns={columns}
                 data={property.mortgages}
-                onRowClick={(mortgage) => navigate(`/mortgages/${mortgage.id}`)}
+                onRowClick={(mortgage) => navigate(`/mortgages/${mortgage.id}?tab=${mortgage.saved_scenario || 'regular'}`)}
                 className="rounded-xl overflow-hidden"
               />
             </div>

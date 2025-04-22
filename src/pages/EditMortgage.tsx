@@ -68,6 +68,7 @@ export default function EditMortgage() {
   // Extract propertyId from URL query parameters
   const queryParams = new URLSearchParams(location.search)
   const propertyIdFromUrl = queryParams.get('propertyId')
+  const tabFromUrl = queryParams.get('tab')
   const [selectedPropertyFromUrl, setSelectedPropertyFromUrl] = useState<Property | null>(null)
   const [isCreatingNew, setIsCreatingNew] = useState(!id)
   // Add state to track if extra installments exist
@@ -81,8 +82,10 @@ export default function EditMortgage() {
   // Add state to track if the form is ready with data
   const [formIsReady, setFormIsReady] = useState(false);
   
-  // Add state to track which tab is active
-  const [activeTab, setActiveTab] = useState("regular")
+  // Add state to track which tab is active - initialize with URL parameter if available
+  const [activeTab, setActiveTab] = useState(tabFromUrl && ["regular", "accelerated", "lower_payment", "new_rate"].includes(tabFromUrl) 
+    ? tabFromUrl 
+    : "regular")
   
   // Add state to track saved scenario with localStorage persistence
   const [savedScenario, setSavedScenario] = useState(() => {
@@ -94,10 +97,11 @@ export default function EditMortgage() {
   
   // Add effect to set active tab to match the saved scenario when component loads
   useEffect(() => {
-    if (savedScenario && savedScenario !== activeTab) {
+    // Only update activeTab based on savedScenario if we didn't come from a direct URL with tab parameter
+    if (savedScenario && savedScenario !== activeTab && !tabFromUrl) {
       setActiveTab(savedScenario);
     }
-  }, [savedScenario, activeTab]);
+  }, [savedScenario, activeTab, tabFromUrl]);
 
   // Load bonus rules
   useEffect(() => {
@@ -1337,7 +1341,7 @@ export default function EditMortgage() {
                 </div>
               ) : (
                 <Tabs 
-                  defaultValue="regular" 
+                  defaultValue={activeTab} 
                   className="w-full"
                   onValueChange={setActiveTab}
                 >
