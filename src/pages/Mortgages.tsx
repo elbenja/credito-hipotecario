@@ -22,6 +22,7 @@ import { BonusRule } from "@/components/properties/types"
 import type { Property, Mortgage } from "../types"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
+import { useMortgageCapture } from "@/services/mortgages/mortgage-capture.service"
 
 export default function Mortgages() {
   const navigate = useNavigate()
@@ -34,6 +35,7 @@ export default function Mortgages() {
   const { t } = useTranslation('properties')
   const [open, setOpen] = useState(false)
   const { data: exchangeRate } = useExchangeRate()
+  const { captureMortgage } = useMortgageCapture();
 
   // Add subscription limits hook
   const {
@@ -169,71 +171,17 @@ export default function Mortgages() {
 
   const handleDuplicate = useCallback(async (e: React.MouseEvent, mortgage: Mortgage) => {
     e.stopPropagation()
-    try {
-      if (!mortgage.property_id) {
-        console.error("Missing property_id in mortgage:", mortgage)
-        throw new Error("Property ID is missing")
+    
+    // Use the previously initialized mortgage capture service
+    await captureMortgage({
+      mortgageId: mortgage.id,
+      successCallback: () => {
+        // Refresh the data after capture
+        queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
       }
-
-      // Check if user has reached their mortgage limit
-      const limitReached = await checkMortgageLimits();
-      
-      if (limitReached) {
-        console.log("Mortgage limit reached, cannot duplicate");
-        toast({
-          variant: "destructive",
-          title: tGlobal('ui.error'),
-          description: tMortgages('messages.plan_limit_reached', "You have reached your plan limit for mortgages"),
-        })
-        return;
-      }
-
-      // Create duplicate with only the fields needed for the amortizations table
-      const duplicatedMortgage = {
-        name: `${mortgage.name} (${tGlobal('ui.copy')})`,
-        property_id: mortgage.property_id,
-        user_id: user?.id,
-        loan_amount: mortgage.loan_amount,
-        down_payment: mortgage.down_payment,
-        interest_rate: mortgage.interest_rate,
-        term_years: mortgage.term_years,
-        installments_per_year: mortgage.installments_per_year,
-        loan_protection_type: mortgage.loan_protection_type,
-        loan_protection_insurance: mortgage.loan_protection_insurance,
-        first_installment_date: mortgage.first_installment_date,
-        saved_scenario: mortgage.saved_scenario || "regular",
-        saved_scenario_total_interest_and_insurance: mortgage.saved_scenario_total_interest_and_insurance,
-        saved_scenario_total_months: mortgage.saved_scenario_total_months,
-        saved_scenario_monthly_payment: mortgage.saved_scenario_monthly_payment,
-        saved_scenario_breakeven_point: mortgage.saved_scenario_breakeven_point
-      }
-
-      // Explicitly use the amortizations table instead of the mortgages view
-      // until the migration is complete
-      const { data, error } = await supabase
-        .from("amortizations")
-        .insert(duplicatedMortgage)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      toast({
-        title: tGlobal('ui.success'),
-        description: tMortgages('messages.amortization_duplicated'),
-      })
-
-      // Refresh the data
-      queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
-    } catch (error) {
-      console.error("Error duplicating mortgage:", error)
-      toast({
-        variant: "destructive",
-        title: tGlobal('ui.error'),
-        description: tMortgages('messages.error_duplicating_amortization'),
-      })
-    }
-  }, [tGlobal, tMortgages, user, queryClient, toast, checkMortgageLimits])
+    });
+    
+  }, [captureMortgage, queryClient])
 
   const handleDelete = useCallback(async (e: React.MouseEvent, mortgage: Mortgage) => {
     e.stopPropagation()

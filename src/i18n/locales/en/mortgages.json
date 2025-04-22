@@ -114,6 +114,15 @@
     "amortization_updated": "Mortgage updated successfully",
     "amortization_added": "Mortgage added successfully",
     "error_saving": "There was an error saving the mortgage",
-    "error_deleting": "There was an error deleting the mortgage"
+    "error_deleting": "There was an error deleting the mortgage",
+    "success_create": "Mortgage created successfully",
+    "no_mortgages": "You don't have any mortgages yet",
+    "error_loading": "Error loading mortgage data",
+    "error_calculating": "Error calculating scenarios",
+    "error_saving_scenario": "Error saving scenario",
+    "scenario_saved": "Scenario saved as default",
+    "plan_limit_reached": "You have reached your plan limit for mortgages",
+    "scenario_captured": "Scenario captured: {{name}}",
+    "error_capturing_scenario": "Error capturing scenario"
   }
 } 

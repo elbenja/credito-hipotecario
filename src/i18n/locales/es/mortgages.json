@@ -114,6 +114,15 @@
     "amortization_updated": "Hipoteca actualizada exitosamente",
     "amortization_added": "Hipoteca agregada exitosamente",
     "error_saving": "Hubo un error al guardar la hipoteca",
-    "error_deleting": "Hubo un error al eliminar la hipoteca"
+    "error_deleting": "Hubo un error al eliminar la hipoteca",
+    "success_create": "Hipoteca creada exitosamente",
+    "no_mortgages": "Aún no tienes hipotecas",
+    "error_loading": "Error al cargar los datos de la hipoteca",
+    "error_calculating": "Error al calcular escenarios",
+    "error_saving_scenario": "Error al guardar el escenario",
+    "scenario_saved": "Escenario guardado como predeterminado",
+    "plan_limit_reached": "Has alcanzado el límite de hipotecas de tu plan",
+    "scenario_captured": "Escenario capturado: {{name}}",
+    "error_capturing_scenario": "Error al capturar el escenario"
   }
 } 

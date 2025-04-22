@@ -54,7 +54,9 @@
       "total_cost": "Total: Property + Interest + Insurances",
       "saved_scenario": "Saved scenario",
       "save_scenario": "Save scenario",
-      "capture_scenario": "Capture scenario"
+      "capture_scenario": "Capture scenario",
+      "capture_scenario_success": "Scenario successfully captured",
+      "capture_scenario_error": "Error capturing scenario"
     },
     "regular": {
       "title": "Regular Scenario",

@@ -44,17 +44,19 @@
   },
   "scenario_graphs": {
     "common": {
-      "sum_interest_insurance": "Pago de Interes y Seguros",
+      "sum_interest_insurance": "Suma Interés & Seguros",
       "months": "Meses",
       "years": "Años",
       "monthly_payment": "Pago Mensual",
       "principal": "Capital",
       "interest_insurance": "Intereses y Seguros",
-      "break_even_point": "Punto de Equilibrio",
-      "total_cost": "Costo Total: Propiedad + Intereses + Seguros",
-      "saved_scenario": "Escenario Favorito",
-      "save_scenario": "Volver Favorito",
-      "capture_scenario": "Capturar Escenario"
+      "break_even_point": "Punto de equilibrio",
+      "total_cost": "Total: Propiedad + Interés + Seguros",
+      "saved_scenario": "Escenario guardado",
+      "save_scenario": "Guardar escenario",
+      "capture_scenario": "Capturar escenario",
+      "capture_scenario_success": "Escenario capturado exitosamente",
+      "capture_scenario_error": "Error al capturar escenario"
     },
     "regular": {
       "title": " Regular",

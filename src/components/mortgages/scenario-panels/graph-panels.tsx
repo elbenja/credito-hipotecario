@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { SVGfixed } from "@/components/ui/svg-fixed"
+import { useMortgageCapture } from "@/services/mortgages/mortgage-capture.service"
+import { useParams, useNavigate } from "react-router-dom"
 
 type Currency = "USD" | "PEN"
 
@@ -144,6 +146,10 @@ const ScenarioPanel = ({
   onSaveScenario
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
   const { t } = useTranslation()
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { captureMortgage } = useMortgageCapture()
+
   // Add state for the toggle buttons
   const [isButtonOn, setIsButtonOn] = useState(() => {
     // Initialize state from localStorage
@@ -404,6 +410,19 @@ const ScenarioPanel = ({
     }
   }, [breakEvenPoint, installmentsPerYear, chartData]);
 
+  // Add the handler function for capturing scenarios
+  const handleCaptureScenario = async () => {
+    if (!id) return;
+    
+    await captureMortgage({ 
+      mortgageId: id,
+      successCallback: () => {
+        // Redirect the user to the mortgages page
+        navigate("/mortgages");
+      }
+    });
+  };
+
   return (
     
     <div className="">
@@ -437,11 +456,13 @@ const ScenarioPanel = ({
 
 
 
-        <Button variant="outline" className=" "
-             >
-              {t('scenario_graphs.common.capture_scenario', 'Capture scenario', { ns: 'components' })}
-              <Camera className="size-4 ml-2" />
-            </Button>
+        <Button 
+          variant="outline" 
+          onClick={handleCaptureScenario}
+        >
+          {t('scenario_graphs.common.capture_scenario', 'Capture scenario', { ns: 'components' })}
+          <Camera className="size-4 ml-2" />
+        </Button>
 
           {isThisScenarioSaved ? (
             <Button variant="secondary" className="border border-input">             
