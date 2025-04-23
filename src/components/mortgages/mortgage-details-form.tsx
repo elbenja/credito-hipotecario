@@ -22,7 +22,7 @@ import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
 import { cn, normalizeDate, formatCurrency, handleInputFocus } from "@/lib/utils"
 import type { Property } from "./property-select"
 import type { MortgageFormValues as AmortizationFormValues } from "./schema"
-import { LoanCalculator } from "@/services/amortization/calculations/loan"
+import { LoanCalculator } from "@/services/mortgages/calculations/loan"
 import { Separator } from "@/components/ui/separator"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useState, useEffect, useMemo } from "react"
@@ -56,6 +56,14 @@ export function AmortizationDetailsForm({
   const { t } = useTranslation(['mortgages', 'global', 'components'])
   const { data: exchangeRate } = useExchangeRate()
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
+  const loanCalculator = new LoanCalculator()
+  
+  // Set the exchange rate in the calculator
+  useEffect(() => {
+    if (exchangeRate) {
+      loanCalculator.setExchangeRate(exchangeRate);
+    }
+  }, [exchangeRate, loanCalculator]);
 
   // Load bonus rules
   useEffect(() => {
@@ -76,46 +84,39 @@ export function AmortizationDetailsForm({
     loadBonusRules();
   }, []);
 
-  // Helper function to convert currency to PEN
-  const convertToPEN = (amount: number, currency: string): number => {
-    if (currency === 'PEN') return amount;
-    return amount * (exchangeRate || 3.7167);
-  };
-
-  // Helper function to calculate bonus - same as in property-select.tsx
-  const calculateBonus = (property: Property): number | null => {
-    if (!property.is_first_home) return null;
-
-    // Convert property value to PEN for bonus calculation without rounding
-    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency);
-    
-    const applicableRule = bonusRules.find(
-      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
-    );
-
-    if (!applicableRule) return null;
-
-    // Return the exact bonus amount - rounding will be handled in display
-    return property.is_sustainable 
-      ? applicableRule.sustainable_bonus 
-      : applicableRule.traditional_bonus;
+  // Helper function to create a property compatible with LoanCalculator
+  const createCalculatorProperty = (property: Property) => {
+    return {
+      id: property.id,
+      name: property.name,
+      price_cost: property.price_cost,
+      currency: property.currency,
+      property_insurance: property.property_insurance || 0,
+      property_insurance_type: property.property_insurance_type || 'auto',
+      is_first_home: property.is_first_home || false,
+      is_sustainable: property.is_sustainable || false,
+      bonus_rules: bonusRules
+    };
   };
 
   // Watch the down payment field for real-time calculation
   const downPayment = form.watch("down_payment")
   const numericDownPayment = parseFloat(downPayment?.replace(/[^0-9.]/g, "") || "0")
 
-  // Calculate loan amount using the same bonus calculation
+  // Calculate loan amount using LoanCalculator
   const loanAmount = useMemo(() => {
     if (!selectedProperty) return 0;
 
-    const bonus = calculateBonus(selectedProperty);
-    const bonusInPropertyCurrency = bonus && selectedProperty.currency === 'USD'
-      ? bonus / (exchangeRate || 3.7167)
-      : bonus || 0;
+    // Create a property object compatible with LoanCalculator
+    const propertyForCalculator = createCalculatorProperty(selectedProperty);
 
-    return selectedProperty.price_cost - bonusInPropertyCurrency - numericDownPayment;
-  }, [selectedProperty, numericDownPayment, bonusRules, exchangeRate]);
+    // Use the LoanCalculator service to calculate the loan amount
+    return loanCalculator.calculateLoanAmount(
+      propertyForCalculator, 
+      numericDownPayment, 
+      bonusRules
+    );
+  }, [selectedProperty, numericDownPayment, bonusRules, loanCalculator]);
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

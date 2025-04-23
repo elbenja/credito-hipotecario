@@ -41,8 +41,9 @@ import { useMemo, useCallback, useEffect, useState } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { Heart } from "lucide-react"
-import { ScenarioResult } from "@/services/amortization/types/common"
+import { ScenarioResult } from "@/services/mortgages/types/common"
 import SVGfixed from "@/components/ui/svg-fixed"
+import { LoanCalculator } from "@/services/mortgages/calculations/loan"
 
 // Add type for BonusRule
 type BonusRule = {
@@ -126,30 +127,6 @@ export default function EditMortgage() {
     fetchBonusRules();
   }, []);
 
-  // Helper function to convert currency to PEN
-  const convertToPEN = (amount: number, currency: string): number => {
-    if (currency === 'PEN') return amount;
-    return amount * (exchangeRate || 3.7167); // Use the exchange rate from the hook with fallback
-  };
-
-  // Helper function to calculate bonus
-  const calculateBonus = (property: Property, rules: BonusRule[]): number | null => {
-    if (!property.is_first_home) return null;
-
-    // Convert property value to PEN for bonus calculation
-    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency);
-    
-    const applicableRule = rules.find(
-      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
-    );
-
-    if (!applicableRule) return null;
-
-    return property.is_sustainable 
-      ? applicableRule.sustainable_bonus 
-      : applicableRule.traditional_bonus;
-  };
-
   const mortgageForm = useForm<MortgageFormValues>({
     resolver: zodResolver(mortgageFormSchema),
     // Set initial values for new mortgage if we have property from URL
@@ -166,7 +143,32 @@ export default function EditMortgage() {
     }
   })
 
-  // Handle property update callback - Modified to update loan amount
+  // Add a loan calculator instance for the entire component
+  const loanCalculator = new LoanCalculator();
+  
+  // Update the exchange rate in the calculator when it changes
+  useEffect(() => {
+    if (exchangeRate) {
+      loanCalculator.setExchangeRate(exchangeRate);
+    }
+  }, [exchangeRate]);
+
+  // Helper function to create a property compatible with LoanCalculator
+  const createCalculatorProperty = (property: Property) => {
+    return {
+      id: property.id,
+      name: property.name,
+      price_cost: property.price_cost,
+      currency: property.currency,
+      property_insurance: property.property_insurance || 0,
+      property_insurance_type: property.property_insurance_type || 'auto',
+      is_first_home: property.is_first_home || false,
+      is_sustainable: property.is_sustainable || false,
+      bonus_rules: []
+    };
+  };
+
+  // Handle property update callback - Modified to use LoanCalculator
   const handlePropertyUpdate = useCallback(async (updatedProperty: Property) => {
     if (!id || !user) {
       // Just invalidate the query for new mortgages
@@ -175,43 +177,30 @@ export default function EditMortgage() {
     }
     
     try {
-      // Get current mortgage data for down payment
+      // Create a compatible property object for the LoanCalculator
+      const propertyForCalculator = createCalculatorProperty(updatedProperty);
+      
+      // Get current mortgage for down payment
       const { data: mortgageData, error: mortgageError } = await supabase
         .from("mortgages")
         .select("down_payment")
         .eq("id", id)
         .single();
-        
+      
       if (mortgageError) throw mortgageError;
+      const downPayment = mortgageData?.down_payment || 0;
       
-      const currentDownPayment = mortgageData?.down_payment || 0;
-      
-      // Calculate bonus if applicable
-      const bonus = calculateBonus(updatedProperty, bonusRules);
-      
-      // Calculate new loan amount including bonus
-      const newLoanAmount = updatedProperty.price_cost - currentDownPayment - (bonus || 0);
-      
-      console.log("Updating loan amount:", {
-        propertyPrice: updatedProperty.price_cost,
-        downPayment: currentDownPayment,
-        bonus: bonus,
-        newLoanAmount: newLoanAmount
-      });
-      
-      // Update the mortgage record with the new loan amount
-      const { error: updateError } = await supabase
-        .from("mortgages")
-        .update({ loan_amount: newLoanAmount })
-        .eq('id', id);
-        
-      if (updateError) throw updateError;
+      // Use the new recalculateMortgageFromProperty method
+      await loanCalculator.recalculateMortgageFromProperty(supabase, propertyForCalculator.id, propertyForCalculator);
       
       // Then invalidate all relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["mortgage", id] });
       queryClient.invalidateQueries({ queryKey: ["scenarios", id] });
       
       // Update local scenario inputs state
+      const bonusRules = await loanCalculator.fetchBonusRules(supabase);
+      const newLoanAmount = loanCalculator.calculateLoanAmount(propertyForCalculator, downPayment, bonusRules);
+      
       setScenarioInputs(prev => ({
         ...prev,
         loanAmount: newLoanAmount,
@@ -221,7 +210,7 @@ export default function EditMortgage() {
     } catch (error) {
       console.error("Error updating mortgage after property update:", error);
     }
-  }, [queryClient, id, user, bonusRules, exchangeRate]);
+  }, [queryClient, id, user, loanCalculator]);
 
   // Fetch property if propertyId is provided in URL
   useEffect(() => {
@@ -456,7 +445,8 @@ export default function EditMortgage() {
         const loanAmount = mortgage.property.price_cost - downPayment;
         
         // Calculate and subtract bonus if applicable
-        const bonus = calculateBonus(mortgage.property, bonusRules);
+        const propertyForCalculator = createCalculatorProperty(mortgage.property);
+        const bonus = loanCalculator.calculateBonus(propertyForCalculator, bonusRules);
         const adjustedLoanAmount = bonus ? loanAmount - bonus : loanAmount;
         
         const interestRate = parseFloat(values.interest_rate || "0");
@@ -502,7 +492,7 @@ export default function EditMortgage() {
     });
     
     return () => subscription.unsubscribe();
-  }, [mortgageForm, id, mortgage?.property, bonusRules, calculateBonus]);
+  }, [mortgageForm, id, mortgage?.property, loanCalculator, bonusRules]);
 
   const { data: scenarios, isLoading: isLoadingScenarios, error: scenariosError } = useScenarioCalculations(scenarioInputs)
 
@@ -645,7 +635,8 @@ export default function EditMortgage() {
         const loanAmount = selectedPropertyFromUrl.price_cost - downPayment;
         
         // Calculate bonus if applicable
-        const bonus = calculateBonus(selectedPropertyFromUrl, bonusRules);
+        const propertyForCalculator = createCalculatorProperty(selectedPropertyFromUrl);
+        const bonus = loanCalculator.calculateBonus(propertyForCalculator, bonusRules);
         
         // Apply bonus to loan amount if applicable
         const finalLoanAmount = bonus ? loanAmount - bonus : loanAmount;
@@ -763,7 +754,8 @@ export default function EditMortgage() {
         const loanAmount = mortgage.property.price_cost - downPayment;
         
         // Calculate bonus if applicable
-        const bonus = calculateBonus(mortgage.property, bonusRules);
+        const propertyForCalculator = createCalculatorProperty(mortgage.property);
+        const bonus = loanCalculator.calculateBonus(propertyForCalculator, bonusRules);
         
         // Apply bonus to loan amount if applicable
         const finalLoanAmount = bonus ? loanAmount - bonus : loanAmount;

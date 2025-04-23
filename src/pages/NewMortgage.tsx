@@ -39,12 +39,13 @@ import {
   defaultValues, 
   type MortgageFormValues 
 } from "@/components/mortgages/schema"
-import { LoanCalculator } from "@/services/amortization/calculations/loan"
+import { LoanCalculator } from "@/services/mortgages/calculations/loan"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
-import type { ScenarioResult } from "@/services/amortization/types/common"
+import type { ScenarioResult } from "@/services/mortgages/types/common"
 import { NoMoreSpace } from "@/components/common/NoMoreSpace"
 import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
+import { useExchangeRate } from "@/hooks/use-exchange-rate"
 
 export default function NewMortgage() {
   const { t } = useTranslation(['mortgages', 'dashboard', 'global'])
@@ -53,6 +54,7 @@ export default function NewMortgage() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const location = useLocation()
+  const { data: exchangeRate } = useExchangeRate()
   
   // Extract propertyId from URL query parameters
   const queryParams = new URLSearchParams(location.search)
@@ -235,6 +237,28 @@ export default function NewMortgage() {
 
   const loanCalculator = new LoanCalculator()
 
+  // Set the exchange rate whenever it changes
+  useEffect(() => {
+    if (exchangeRate?.data) {
+      loanCalculator.setExchangeRate(exchangeRate.data);
+    }
+  }, [exchangeRate, loanCalculator]);
+
+  // Helper function to create a property object compatible with LoanCalculator
+  const createCalculatorProperty = (property: Property) => {
+    return {
+      id: property.id,
+      name: property.name,
+      price_cost: property.price_cost,
+      currency: property.currency,
+      property_insurance: property.property_insurance || 0,
+      property_insurance_type: property.property_insurance_type || 'auto',
+      is_first_home: property.is_first_home || false,
+      is_sustainable: property.is_sustainable || false,
+      bonus_rules: []
+    };
+  };
+
   const calculateScenarios = (values: Partial<MortgageFormValues>) => {
     if (!selectedProperty || !values.down_payment || !values.interest_rate || !values.term_years || !values.installments_per_year || !values.first_installment_date) {
       return {
@@ -256,8 +280,7 @@ export default function NewMortgage() {
       property_insurance: selectedProperty.property_insurance || 0,
       property_insurance_type: selectedProperty.property_insurance_type,
       is_first_home: selectedProperty.is_first_home || false,
-      is_sustainable: selectedProperty.is_sustainable || false,
-      bonus: 0
+      is_sustainable: selectedProperty.is_sustainable || false
     }
 
     const baseValues = {
@@ -692,8 +715,30 @@ export default function NewMortgage() {
                             throw new Error("Invalid installments per year")
                           }
 
-                          // Calculate loan amount
-                          const loanAmount = selectedProperty.price_cost - downPayment
+                          // Use the regularScenario's loan_amount which already has the correct calculation
+                          let loanAmount: number;
+                          
+                          // Prepare a property object compatible with the LoanCalculator
+                          const propertyForCalculator = createCalculatorProperty(selectedProperty);
+                          
+                          // Fetch bonus rules from the database
+                          const { data: bonusRulesData, error: bonusRulesError } = await supabase
+                            .from("bonus_rules")
+                            .select("*")
+                            .order('min_value', { ascending: true });
+                            
+                          if (bonusRulesError) {
+                            console.error("Error fetching bonus rules:", bonusRulesError);
+                          }
+                          
+                          // Calculate loan amount using the LoanCalculator
+                          loanAmount = loanCalculator.calculateLoanAmount(
+                            propertyForCalculator, 
+                            downPayment, 
+                            bonusRulesData || []
+                          );
+                          
+                          console.log('Calculated loan amount:', loanAmount);
 
                           // Validate loan amount
                           if (loanAmount <= 0) {
