@@ -5,7 +5,7 @@ import { useDebounce } from "./use-debounce"
 import { ScenarioCalculator } from "@/services/amortization/services/scenarioCalculator"
 import type { Database } from "@/types/supabase"
 import { addMonths, startOfMonth } from "date-fns"
-import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios } from "@/services/amortization/types/common"
+import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios } from "@/services/mortgages/types/common"
 
 type ScenarioType = Database["public"]["Enums"]["scenario_type"]
 

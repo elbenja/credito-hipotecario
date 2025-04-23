@@ -6,7 +6,7 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, Refe
 import { ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart"
 import { ChartThemeWrapper } from "@/components/ui/chart/theme-wrapper"
 import { format } from "date-fns"
-import { PaymentRow, ScenarioResult } from "@/services/amortization/types/common"
+import { PaymentRow, ScenarioResult } from "@/services/mortgages/types/common"
 import { useTranslation } from "react-i18next"
 import { Calendar, Landmark, MousePointerClick, ChevronRight as ChevronRightIcon, Heart, Camera } from "lucide-react"
 import {

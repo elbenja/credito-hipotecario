@@ -1337,7 +1337,7 @@ export default function EditMortgage() {
                   className="w-full"
                   onValueChange={setActiveTab}
                 >
-                  <TabsList className="w-screen sm:w-full items-center justify-start flex inline-flex overflow-x-auto h-14 px-2 lg:px-3 xl:px-4">
+                  <TabsList className="w-screen sm:w-full items-center justify-start flex inline-flex overflow-x-auto h-14 px-2 lg:px-3 xl:px-4 rounded-none">
                     <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2 flex items-center gap-1.5" value="regular">
                       {t("scenarios.regular.title", { ns: "mortgages" })}
                       {savedScenario === "regular" && (

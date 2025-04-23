@@ -65,7 +65,12 @@ export default {
         '80': '20rem',
         '120': '30rem',
       },
-      width: {
+      spacing: {
+        '72': '18rem',
+        '84': '21rem',
+        '96': '24rem',
+        '80': '20rem',
+        '120': '30rem',
         '360': '90rem',
       },
       height: {
