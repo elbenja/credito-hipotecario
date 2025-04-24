@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { useAuth } from "@/context/auth-context"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { Button } from "@/components/ui/button"
+
 import { useTranslation } from "react-i18next"
 import {
   Form,
@@ -25,15 +25,8 @@ import {
 } from "@/components/ui/breadcrumb"
 import { PropertySelect, type Property } from "@/components/mortgages/property-select"
 import { AmortizationDetailsForm } from "@/components/mortgages/mortgage-details-form"
-import { 
-  RegularPanelGraph, 
-  AcceleratedPanelGraph, 
-  LowerPaymentPanelGraph, 
-  NewRatePanelGraph 
-} from '@/components/mortgages/scenario-panels/graph-panels'
-import { ExtraInstallmentsSection } from '@/components/mortgages/extra-installments-section'
-import { NewRateForm } from '@/components/mortgages/new-rate-form'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+
+
 import { 
   mortgageFormSchema, 
   defaultValues, 
@@ -42,10 +35,12 @@ import {
 import { LoanCalculator } from "@/services/mortgages/calculations/loan"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
-import type { ScenarioResult } from "@/services/mortgages/types/common"
+import type { ScenarioResult, BonusRule, BaseAmortizationValues } from "@/services/mortgages/types/common"
 import { NoMoreSpace } from "@/components/common/NoMoreSpace"
 import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
+import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
+import { normalizeDate } from "@/lib/utils"
 
 export default function NewMortgage() {
   const { t } = useTranslation(['mortgages', 'dashboard', 'global'])
@@ -74,25 +69,25 @@ export default function NewMortgage() {
   const hasPlanBeenChecked = useRef(false);
   
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
-  const [regularScenario, setRegularScenario] = useState<ScenarioResult | null>(null)
   const [interestRateLimits] = useState({
     min_rate: 4,
     max_rate: 18,
     by_default: 8.5
   })
-  const [activeTab, setActiveTab] = useState("regular")
-  const [isLoadingScenarios, setIsLoadingScenarios] = useState(false)
-  const [scenarios, setScenarios] = useState<{
-    regular: ScenarioResult | null;
-    accelerated: ScenarioResult | null;
-    lower_payment: ScenarioResult | null;
-    new_rate: ScenarioResult | null;
-  }>({
-    regular: null,
-    accelerated: null,
-    lower_payment: null,
-    new_rate: null
-  })
+  
+  // State for scenario calculations
+  const [scenarioInputs, setScenarioInputs] = useState({
+    loanAmount: 0,
+    interestRate: 0,
+    termYears: 0,
+    installmentsPerYear: 12,
+    firstInstallmentDate: normalizeDate(new Date()),
+    propertyInsurance: 0,
+    loanInsurance: 0
+  });
+  
+  // Use the same scenario calculations hook as EditMortgage.tsx
+  const { data: scenarios, isLoading: isLoadingScenarios } = useScenarioCalculations(scenarioInputs);
   
   // Subscription limits hook
   const {
@@ -245,7 +240,7 @@ export default function NewMortgage() {
   }, [exchangeRate, loanCalculator]);
 
   // Helper function to create a property object compatible with LoanCalculator
-  const createCalculatorProperty = (property: Property) => {
+  const createCalculatorProperty = (property: Property, bonusRules: BonusRule[] = []) => {
     return {
       id: property.id,
       name: property.name,
@@ -255,217 +250,70 @@ export default function NewMortgage() {
       property_insurance_type: property.property_insurance_type || 'auto',
       is_first_home: property.is_first_home || false,
       is_sustainable: property.is_sustainable || false,
-      bonus_rules: []
+      bonus_rules: bonusRules // Use the passed bonus rules instead of empty array
     };
   };
 
-  const calculateScenarios = (values: Partial<MortgageFormValues>) => {
-    if (!selectedProperty || !values.down_payment || !values.interest_rate || !values.term_years || !values.installments_per_year || !values.first_installment_date) {
-      return {
-        regular: null,
-        accelerated: null,
-        lower_payment: null,
-        new_rate: null
-      }
-    }
-
-    setIsLoadingScenarios(true)
-
-    const mockProperty = {
-      id: selectedProperty.id,
-      name: selectedProperty.name,
-      price_cost: selectedProperty.price_cost,
-      cost: selectedProperty.price_cost,
-      currency: selectedProperty.currency,
-      property_insurance: selectedProperty.property_insurance || 0,
-      property_insurance_type: selectedProperty.property_insurance_type,
-      is_first_home: selectedProperty.is_first_home || false,
-      is_sustainable: selectedProperty.is_sustainable || false
-    }
-
-    const baseValues = {
-      property_id: selectedProperty.id,
-      down_payment: parseFloat(values.down_payment),
-      down_payment_percentage: (parseFloat(values.down_payment) / selectedProperty.price_cost) * 100,
-      interest_rate: parseFloat(values.interest_rate),
-      term_years: parseInt(values.term_years),
-      installments_per_year: parseInt(values.installments_per_year) as 12 | 14,
-      first_installment_date: values.first_installment_date,
-      loan_protection_type: values.loan_protection_type as "individual" | "joint" | "none" | "custom",
-      loan_protection_insurance: parseFloat(values.loan_protection_insurance || "0")
-    }
-
-    // Regular scenario
-    const regularResults = loanCalculator.calculateResults(mockProperty, baseValues)
-    const regular = transformToScenarioResult(regularResults) as ScenarioResult
-    
-    // Accelerated scenario - higher payments (15% increase)
-    // We need to simulate accelerated payments by increasing the monthly payment
-    const acceleratedBaseValues = { ...baseValues }
-    const acceleratedMultiplier = 1.15 // 15% higher payments
-    const regularBasePayment = regularResults.base_monthly_payment
-    const acceleratedBasePayment = regularBasePayment * acceleratedMultiplier
-    const acceleratedResults = simulateAcceleratedPayments(
-      regularResults.loan_amount, 
-      acceleratedBasePayment, 
-      baseValues, 
-      mockProperty
-    )
-    const accelerated = transformToScenarioResult(acceleratedResults) as ScenarioResult
-    
-    // Lower payment scenario - longer term (5 years more)
-    const lowerPaymentBaseValues = { 
-      ...baseValues,
-      term_years: Math.min(baseValues.term_years + 5, 40) // Add 5 years but don't exceed 40
-    }
-    const lowerPaymentResults = loanCalculator.calculateResults(mockProperty, lowerPaymentBaseValues)
-    const lower_payment = transformToScenarioResult(lowerPaymentResults) as ScenarioResult
-    
-    // New rate scenario - 1% higher rate
-    const newRateBaseValues = { 
-      ...baseValues,
-      interest_rate: baseValues.interest_rate + 1 // 1% higher rate
-    }
-    const newRateResults = loanCalculator.calculateResults(mockProperty, newRateBaseValues)
-    const new_rate = transformToScenarioResult(newRateResults) as ScenarioResult
-
-    setIsLoadingScenarios(false)
-    
-    return {
-      regular,
-      accelerated,
-      lower_payment,
-      new_rate
-    }
-  }
-
-  // Helper function to simulate accelerated payments
-  const simulateAcceleratedPayments = (
-    loanAmount: number,
-    acceleratedPayment: number,
-    baseValues: any,
-    property: any
-  ): any => {
-    // Clone the loan calculator results structure but with accelerated payments
-    // This is a simplified simulation for the UI demo
-    const monthlyRate = Math.pow(1 + baseValues.interest_rate/100, 1/12) - 1
-    const originalSchedule = loanCalculator.generatePaymentSchedule(loanAmount, baseValues, property)
-    const schedule: any[] = []
-    
-    let remainingBalance = loanAmount
-    let currentDate = new Date(baseValues.first_installment_date)
-    let paymentNumber = 1
-    
-    // Continue until balance is effectively zero
-    while (remainingBalance > 0.01 && paymentNumber <= 600) { // 50 years max
-      const isDoublePayment = baseValues.installments_per_year === 14 && 
-        (currentDate.getMonth() === 6 || currentDate.getMonth() === 11)
-      
-      // Base payment without insurance
-      const currentBasePayment = isDoublePayment ? acceleratedPayment * 2 : acceleratedPayment
-      
-      // Insurance amounts (monthly)
-      const monthlyPropertyInsurance = Number(property.property_insurance || 0)
-      const monthlyLoanProtection = Number(baseValues.loan_protection_insurance || 0)
-      
-      // Double the insurance for double payment months
-      const currentPropertyInsurance = isDoublePayment ? monthlyPropertyInsurance * 2 : monthlyPropertyInsurance
-      const currentLoanProtection = isDoublePayment ? monthlyLoanProtection * 2 : monthlyLoanProtection
-      
-      const interestPayment = remainingBalance * monthlyRate
-      let principalPayment = currentBasePayment - interestPayment
-      
-      // Adjust final payment to match remaining balance
-      if (principalPayment > remainingBalance) {
-        principalPayment = remainingBalance
-      }
-      
-      const endingBalance = Math.max(0, remainingBalance - principalPayment)
-      
-      // Total payment includes base payment plus both insurances
-      const totalPayment = principalPayment + interestPayment + currentPropertyInsurance + currentLoanProtection
-      
-      const payment = {
-        date: new Date(currentDate),
-        payment_number: paymentNumber,
-        beginning_balance: remainingBalance,
-        scheduled_payment: totalPayment,
-        extra_payment: 0,
-        total_payment: totalPayment,
-        principal: principalPayment,
-        interest: interestPayment,
-        ending_balance: endingBalance,
-        property_insurance: currentPropertyInsurance,
-        loan_insurance: currentLoanProtection,
-        is_extra_payment: false,
-        is_double_payment: isDoublePayment
-      }
-      
-      schedule.push(payment)
-      remainingBalance = endingBalance
-      
-      // Move to next payment date
-      currentDate.setMonth(currentDate.getMonth() + 1)
-      paymentNumber++
-      
-      // Exit if we've paid off the loan
-      if (endingBalance <= 0) break
-    }
-    
-    // Calculate total interest and insurance
-    const totalInterestAndInsurance = schedule.reduce((sum, payment) => 
-      sum + payment.interest + payment.property_insurance + payment.loan_insurance, 0
-    )
-    
-    return {
-      loan_amount: loanAmount,
-      total_interest_and_insurance: totalInterestAndInsurance,
-      total_months: schedule.length,
-      base_monthly_payment: acceleratedPayment,
-      monthly_payment: acceleratedPayment + 
-        Number(property.property_insurance || 0) + 
-        Number(baseValues.loan_protection_insurance || 0),
-      payment_schedule: schedule
-    }
-  }
-
-  // Helper function to transform results to the format expected by ScenarioResult
-  const transformToScenarioResult = (results: any): ScenarioResult => {
-    return {
-      summary: {
-        total_interest_and_insurance: results.total_interest_and_insurance,
-        total_months: results.total_months,
-        monthly_payment: results.monthly_payment
-      },
-      payments: results.payment_schedule.map((payment: any) => ({
-        payment_date: payment.date,
-        capital: payment.principal,
-        interest: payment.interest,
-        property_insurance: payment.property_insurance,
-        loan_insurance: payment.loan_insurance,
-        monthly_payment: payment.total_payment,
-        is_different_from_base: false,
-        beginning_balance: payment.beginning_balance,
-        ending_balance: payment.ending_balance
-      }))
-    }
-  }
-
-  // Update scenarios when form values change
-  const handleFormChange = () => {
-    const values = form.getValues()
-    const calculatedScenarios = calculateScenarios(values)
-    setScenarios(calculatedScenarios)
-    setRegularScenario(calculatedScenarios.regular)
-    // console.log('Scenarios updated:', { calculatedScenarios, selectedProperty })
-  }
-
-  // Subscribe to form changes
+  // Update scenario inputs when form values change
   useEffect(() => {
-    const subscription = form.watch(handleFormChange)
-    return () => subscription.unsubscribe()
-  }, [form, selectedProperty])
-
+    if (!selectedProperty) return;
+    
+    const subscription = form.watch((values) => {
+      if (!values) return;
+      
+      try {
+        // Get current values
+        const downPayment = parseFloat(values.down_payment?.replace(/[^0-9.]/g, "") || "0");
+        const interestRate = parseFloat(values.interest_rate || "0");
+        const termYears = parseInt(values.term_years || "0");
+        const installmentsPerYear = parseInt(values.installments_per_year || "12");
+        
+        // Handle loan protection insurance based on type
+        let loanInsurance = 0;
+        switch (values.loan_protection_type) {
+          case "individual":
+            loanInsurance = 0.028;
+            break;
+          case "joint":
+            loanInsurance = 0.052;
+            break;
+          case "custom":
+            loanInsurance = parseFloat(values.loan_protection_insurance || "0");
+            break;
+          case "none":
+            loanInsurance = 0;
+            break;
+        }
+        
+        // Get first installment date
+        let firstInstallmentDate = normalizeDate(new Date());
+        if (values.first_installment_date) {
+          firstInstallmentDate = normalizeDate(new Date(values.first_installment_date));
+        }
+        
+        // Calculate proper loan amount using LoanCalculator
+        // Create property object for calculator
+        const calculatorProperty = createCalculatorProperty(selectedProperty);
+        const loanAmount = loanCalculator.calculateLoanAmount(calculatorProperty, downPayment);
+        
+        // Update scenario inputs
+        setScenarioInputs({
+          loanAmount: loanAmount,
+          interestRate,
+          termYears,
+          installmentsPerYear,
+          firstInstallmentDate,
+          propertyInsurance: selectedProperty.property_insurance || 0,
+          loanInsurance
+        });
+      } catch (error) {
+        console.error("Error updating scenario inputs:", error);
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form, selectedProperty, loanCalculator]);
+  
   // Handle property selection
   const handlePropertyChange = useCallback((property: Property | null) => {
     setSelectedProperty(property)
@@ -643,13 +491,13 @@ export default function NewMortgage() {
                       selectedProperty={selectedProperty}
                       onSubmit={async (values) => {
                         try {
-                          if (!selectedProperty || !regularScenario) {
+                          if (!selectedProperty) {
                             toast({
                               variant: "destructive",
                               title: t("ui.error", { ns: "global" }),
                               description: t("messages.please_complete_all_fields", { ns: "mortgages" }),
-                            })
-                            return
+                            });
+                            return;
                           }
 
                           // Check for limits one more time before submitting
@@ -715,12 +563,6 @@ export default function NewMortgage() {
                             throw new Error("Invalid installments per year")
                           }
 
-                          // Use the regularScenario's loan_amount which already has the correct calculation
-                          let loanAmount: number;
-                          
-                          // Prepare a property object compatible with the LoanCalculator
-                          const propertyForCalculator = createCalculatorProperty(selectedProperty);
-                          
                           // Fetch bonus rules from the database
                           const { data: bonusRulesData, error: bonusRulesError } = await supabase
                             .from("bonus_rules")
@@ -731,14 +573,15 @@ export default function NewMortgage() {
                             console.error("Error fetching bonus rules:", bonusRulesError);
                           }
                           
+                          // Create property with bonus rules
+                          const propertyForCalculator = createCalculatorProperty(selectedProperty, bonusRulesData || []);
+                          
                           // Calculate loan amount using the LoanCalculator
-                          loanAmount = loanCalculator.calculateLoanAmount(
+                          const loanAmount = loanCalculator.calculateLoanAmount(
                             propertyForCalculator, 
                             downPayment, 
                             bonusRulesData || []
                           );
-                          
-                          console.log('Calculated loan amount:', loanAmount);
 
                           // Validate loan amount
                           if (loanAmount <= 0) {
@@ -749,28 +592,52 @@ export default function NewMortgage() {
                           const inputDate = new Date(values.first_installment_date);
                           const dateString = `${inputDate.getFullYear()}-${String(inputDate.getMonth() + 1).padStart(2, '0')}-${String(inputDate.getDate()).padStart(2, '0')}`;
 
-                          // Extract regular scenario values if available
-                          let regularScenarioValues = {};
-                          if (regularScenario?.summary) {
-                            console.log("Setting regular scenario values during creation:", regularScenario.summary);
+                          // Calculate values from scenarios if available, or use loan calculator directly
+                          let totalInterestAndInsurance = scenarios?.regular?.summary?.total_interest_and_insurance;
+                          let totalMonths = scenarios?.regular?.summary?.total_months;
+                          let monthlyPayment = scenarios?.regular?.summary?.monthly_payment;
+                          let breakEvenPoint = null;
+                          
+                          // If scenarios data is not available or values are 0, calculate directly
+                          if (!totalInterestAndInsurance || !monthlyPayment) {
+                            // Create base values for calculator with proper types
+                            const installmentsPer: 12 | 14 = installmentsPerYear === 12 ? 12 : 14;
+                            const baseValues: BaseAmortizationValues = {
+                              interest_rate: interestRate,
+                              term_years: termYears,
+                              installments_per_year: installmentsPer,
+                              down_payment: downPayment,
+                              down_payment_percentage: (downPayment / selectedProperty.price_cost) * 100,
+                              first_installment_date: new Date(dateString),
+                              loan_protection_type: values.loan_protection_type,
+                              loan_protection_insurance: loanProtectionInsurance,
+                              property_id: selectedProperty.id
+                            };
+                            
+                            // Get direct calculation results
+                            const results = loanCalculator.calculateResults(propertyForCalculator, baseValues);
+                            
+                            // Use the direct calculation results
+                            totalInterestAndInsurance = results.total_interest_and_insurance;
+                            totalMonths = results.total_months;
+                            monthlyPayment = results.monthly_payment;
                             
                             // Calculate breakeven point
-                            let breakEvenPoint = null;
-                            if (regularScenario.payments && regularScenario.payments.length > 0) {
-                              // Find the point where principal becomes greater than interest+insurance
-                              for (let i = 0; i < regularScenario.payments.length - 1; i++) {
-                                const current = regularScenario.payments[i];
-                                const next = regularScenario.payments[i + 1];
+                            const schedule = results.payment_schedule;
+                            if (schedule && schedule.length > 0) {
+                              for (let i = 0; i < schedule.length - 1; i++) {
+                                const current = schedule[i];
+                                const next = schedule[i + 1];
                                 
-                                const currentPrincipal = current.capital || 0;
+                                const currentPrincipal = current.principal || 0;
                                 const currentInterest = (current.interest || 0) + 
-                                                  (current.property_insurance || 0) + 
-                                                  (current.loan_insurance || 0);
+                                                (current.property_insurance || 0) + 
+                                                (current.loan_protection_insurance || 0);
                                 
-                                const nextPrincipal = next.capital || 0;
+                                const nextPrincipal = next.principal || 0;
                                 const nextInterest = (next.interest || 0) + 
-                                                (next.property_insurance || 0) + 
-                                                (next.loan_insurance || 0);
+                                              (next.property_insurance || 0) + 
+                                              (next.loan_protection_insurance || 0);
                                 
                                 // Found the crossover point
                                 if (currentPrincipal <= currentInterest && nextPrincipal > nextInterest) {
@@ -779,23 +646,42 @@ export default function NewMortgage() {
                                   break;
                                 }
                                 
-                                // Alternative check for when principal already exceeds interest
+                                // Alternative check when principal already exceeds interest
                                 if (i === 0 && currentPrincipal >= currentInterest) {
                                   breakEvenPoint = 0;
                                   break;
                                 }
                               }
                             }
-                            
-                            regularScenarioValues = {
-                              saved_scenario: "regular",
-                              saved_scenario_total_interest_and_insurance: regularScenario.summary.total_interest_and_insurance || 0,
-                              saved_scenario_total_months: regularScenario.summary.total_months || 0,
-                              saved_scenario_monthly_payment: regularScenario.summary.monthly_payment || 0,
-                              saved_scenario_breakeven_point: breakEvenPoint
-                            };
-                          } else {
-                            console.log("No regular scenario summary available during creation");
+                          } else if (scenarios?.regular?.payments && scenarios.regular.payments.length > 0) {
+                            // Calculate breakeven from scenarios if available
+                            for (let i = 0; i < scenarios.regular.payments.length - 1; i++) {
+                              const current = scenarios.regular.payments[i];
+                              const next = scenarios.regular.payments[i + 1];
+                              
+                              const currentPrincipal = current.capital || 0;
+                              const currentInterest = (current.interest || 0) + 
+                                              (current.property_insurance || 0) + 
+                                              (current.loan_insurance || 0);
+                              
+                              const nextPrincipal = next.capital || 0;
+                              const nextInterest = (next.interest || 0) + 
+                                            (next.property_insurance || 0) + 
+                                            (next.loan_insurance || 0);
+                              
+                              // Found the crossover point
+                              if (currentPrincipal <= currentInterest && nextPrincipal > nextInterest) {
+                                // Return year value with one decimal
+                                breakEvenPoint = (i + 1) / 12;
+                                break;
+                              }
+                              
+                              // Alternative check when principal already exceeds interest
+                              if (i === 0 && currentPrincipal >= currentInterest) {
+                                breakEvenPoint = 0;
+                                break;
+                              }
+                            }
                           }
 
                           const amortizationData = {
@@ -810,10 +696,13 @@ export default function NewMortgage() {
                             loan_protection_type: values.loan_protection_type,
                             loan_protection_insurance: loanProtectionInsurance,
                             first_installment_date: dateString,
-                            ...regularScenarioValues  // Include regular scenario values
+                            saved_scenario: "regular",
+                            saved_scenario_total_interest_and_insurance: totalInterestAndInsurance,
+                            saved_scenario_total_months: totalMonths,
+                            saved_scenario_monthly_payment: monthlyPayment,
+                            saved_scenario_breakeven_point: breakEvenPoint
                           }
 
-                          console.log('Saving amortization data:', amortizationData)
                           const { data, error } = await supabase
                             .from("mortgages")
                             .insert(amortizationData)
@@ -861,8 +750,6 @@ export default function NewMortgage() {
                       </div>
                     </div>
               </div>
-                
-           
             </div>
           </div>
         </div>

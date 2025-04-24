@@ -61,6 +61,17 @@ export function useScenarioCalculations({
   // Use mortgageId with fallback to amortizationId for backward compatibility
   const id = mortgageId || amortizationId;
   
+  // console.log("=== useScenarioCalculations HOOK INPUTS ===");
+  // console.log("mortgageId:", mortgageId);
+  // console.log("loanAmount:", loanAmount);
+  // console.log("interestRate:", interestRate);
+  // console.log("termYears:", termYears);
+  // console.log("installmentsPerYear:", installmentsPerYear);
+  // console.log("firstInstallmentDate:", firstInstallmentDate);
+  // console.log("propertyInsurance:", propertyInsurance);
+  // console.log("loanInsurance:", loanInsurance);
+  // console.log("==========================================");
+  
   // Set up a subscription to changes in the new_rates table
   useEffect(() => {
     if (!id) return;
@@ -102,17 +113,27 @@ export function useScenarioCalculations({
 
   // Add validation for input values
   const isValidInput = useMemo(() => {
+    console.log("Validating scenario inputs:", {
+      loanAmount: debouncedLoanAmount,
+      interestRate: debouncedInterestRate,
+      termYears: debouncedTermYears,
+      installmentsPerYear: debouncedInstallmentsPerYear,
+      hasFirstInstallmentDate: !!debouncedFirstInstallmentDate
+    });
+    
     return (
       debouncedLoanAmount > 0 &&
       debouncedInterestRate > 0 &&
       debouncedTermYears > 0 &&
-      [12, 14].includes(debouncedInstallmentsPerYear)
+      [12, 14].includes(debouncedInstallmentsPerYear) &&
+      !!debouncedFirstInstallmentDate // Make sure first installment date exists
     );
   }, [
     debouncedLoanAmount,
     debouncedInterestRate,
     debouncedTermYears,
-    debouncedInstallmentsPerYear
+    debouncedInstallmentsPerYear,
+    debouncedFirstInstallmentDate // Add to dependencies
   ]);
 
   return useQuery<Scenarios, Error>({
@@ -131,8 +152,19 @@ export function useScenarioCalculations({
       try {
         // Return default scenarios if input values are invalid
         if (!isValidInput) {
+          console.log("Invalid input values, returning default scenarios");
           return getDefaultScenarios();
         }
+
+        // console.log("=== useScenarioCalculations QUERY FUNCTION ===");
+        // console.log("Using debounced values for calculation:");
+        // console.log("loanAmount:", debouncedLoanAmount);
+        // console.log("interestRate:", debouncedInterestRate);
+        // console.log("termYears:", debouncedTermYears);
+        // console.log("installmentsPerYear:", debouncedInstallmentsPerYear);
+        // console.log("firstInstallmentDate:", debouncedFirstInstallmentDate);
+        // console.log("propertyInsurance:", debouncedPropertyInsurance);
+        // console.log("loanInsurance:", debouncedLoanInsurance);
 
         // Fetch extra installments and rate changes from Supabase
         const [extraInstallmentsResult, newRatesResult] = await Promise.all([
@@ -150,6 +182,9 @@ export function useScenarioCalculations({
 
         if (extraInstallmentsResult.error) throw extraInstallmentsResult.error
         if (newRatesResult.error) throw newRatesResult.error
+
+        console.log("Fetched extra installments:", extraInstallmentsResult.data.length);
+        console.log("Fetched rate changes:", newRatesResult.data.length);
 
         // Improved handling of extra installments to preserve exact dates
         const extraInstallments = extraInstallmentsResult.data.map(ei => {
@@ -239,12 +274,20 @@ export function useScenarioCalculations({
             ? scenarios.new_rate
             : scenarios.regular
 
-        return {
+        const result = {
           regular: scenarios.regular,
           accelerated: scenarios.accelerated,
           lower_payment: scenarios.lower_payment,
           new_rate: newRateScenario
         };
+
+        // console.log("=== useScenarioCalculations RESULTS ===");
+        // console.log("Regular scenario monthly payment:", result.regular.summary.monthly_payment);
+        // console.log("Regular scenario total months:", result.regular.summary.total_months);
+        // console.log("Regular scenario total interest:", result.regular.summary.total_interest_and_insurance);
+        // console.log("=====================================");
+
+        return result;
       } catch (error) {
         console.error("Error calculating scenarios:", error);
         return getDefaultScenarios();

@@ -1,31 +1,22 @@
-import { cn } from "@/lib/utils";
+import { cn, normalizeDate } from "@/lib/utils";
 
 import { es } from 'date-fns/locale';
 import { useTranslation } from "react-i18next";
 import { SVGfixed } from "@/components/ui/svg-fixed";
 import { Button } from "@/components/ui/button";
 import SVGillustration from "@/components/ui/SVGillustration";
+import { Input } from "@/components/ui/input";
+import { isBefore } from "date-fns";
+import { isAfter } from "date-fns";
+import { CalendarDatePicker } from "@/components/ui/calendar-date-picker";
+import { isSameDay } from "date-fns";
+import { addYears } from "date-fns";
+import { subYears } from "date-fns";
+import { startOfDay } from "date-fns";
 
 
-const chartData = [
-  { name: "Jan", visitors: 275 },
-  { name: "Feb", visitors: 200 },
-  { name: "Mar", visitors: 187 },
-  { name: "Apr", visitors: 230, breakEven: true },
-  { name: "May", visitors: 120 },
-  { name: "Jun", visitors: 190 },
-];
 
-const chartConfig = {
-  visitors: {
-    label: "Visitors",
-    color: "hsl(var(--primary))",
-  },
-} satisfies ChartConfig;
 
-type FormValues = {
-  datePicker: DateRange;
-};
 
 export default function Test() {
   const { i18n, t } = useTranslation();
@@ -62,6 +53,9 @@ export default function Test() {
 
 </div>
 
+<Input type="date" name="begin" 
+           placeholder="dd-mm-yyyy" value="" 
+           min="2000-01-01" max="2030-12-31"  />
       {/* <FeatureCounts /> */}
       {/* <PropertyCards /> */}
       {/* {isThisScenarioSaved ? (
@@ -76,6 +70,41 @@ export default function Test() {
                         <Heart className="size-4 " />
                   </Button>
                 )} */}
+
+<CalendarDatePicker
+                      date={{
+                        from: new Date(),
+                        to: new Date()
+                      }}
+                      onDateSelect={({ from }) => {
+                        if (from) {
+                    
+                        }
+                      }}
+                      variant="outline"
+                      numberOfMonths={1}
+                      yearsRange={35} // 15 years back + 20 years forward
+                      fromYear={new Date().getFullYear() - 15}
+                      disabled={(date) => {
+                        const startOfDate = startOfDay(date)
+                        const fifteenYearsAgo = startOfDay(subYears(new Date(), 15))
+                        const twentyYearsFromNow = startOfDay(addYears(new Date(), 20))
+                        
+                        return (
+                          isBefore(startOfDate, fifteenYearsAgo) || 
+                          isAfter(startOfDate, twentyYearsFromNow) ||
+                          isSameDay(startOfDate, fifteenYearsAgo) || 
+                          isSameDay(startOfDate, twentyYearsFromNow)
+                        )
+                      }}
+                      className={cn(
+                        "w-full justify-start text-left font-normal form-control-focus",
+                    
+                      )}
+                    />
+
+                    
+
 <Button variant="outline" className="border-none">
   <SVGfixed name="heartFilled" strokeClassName="text-brand" fillClassName="fill-brand" /> 
  

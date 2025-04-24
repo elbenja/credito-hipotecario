@@ -1,7 +1,7 @@
 import * as z from "zod"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { addYears, subYears, startOfDay, isBefore, isAfter, isSameDay } from "date-fns"
+import { addYears, subYears, startOfDay, isBefore, isAfter, isSameDay, format, isValid } from "date-fns"
 import {
   FormField,
   FormItem,
@@ -58,6 +58,52 @@ export function AmortizationDetailsForm({
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
   const loanCalculator = new LoanCalculator()
   
+  // Normalize the first_installment_date when component mounts
+  // This fixes timezone issues with date handling
+  useEffect(() => {
+    const currentDate = form.getValues("first_installment_date");
+    if (currentDate) {
+      console.log("======== DATE NORMALIZATION DEBUG ========");
+      console.log("Original Date:", currentDate);
+      console.log("Original Date toString():", currentDate.toString());
+      console.log("Original Date Month:", currentDate.getMonth());
+      console.log("Original Date ISO:", currentDate.toISOString());
+      
+      // Current local timezone offset in minutes
+      const timezoneOffsetMinutes = new Date().getTimezoneOffset();
+      console.log("Local Timezone Offset (minutes):", timezoneOffsetMinutes);
+      console.log("Local Timezone Offset (hours):", timezoneOffsetMinutes / 60);
+      
+      // Extract the date from the ISO string to avoid timezone issues
+      // This gets the YYYY-MM-DD part which represents the intended date without timezone shift
+      const isoString = currentDate.toISOString();
+      const dateParts = isoString.split('T')[0].split('-');
+      const year = parseInt(dateParts[0], 10);
+
+      const month = parseInt(dateParts[1], 10) ;
+      
+      console.log("ISO Date String:", isoString);
+      console.log("Date parts from ISO:", dateParts);
+      console.log("Extracted Year from ISO:", year);
+
+      console.log("Month Name:", ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][month]);
+      
+      // Create the normalized date with noon time to avoid any timezone issues
+      // Using the month directly from the ISO date parts ensures we get the correct month
+      const normalizedDate = new Date(year, month, 1, 12, 0, 0, 0);
+      
+      console.log("Normalized Date:", normalizedDate);
+      console.log("Normalized Date toString():", normalizedDate.toString());
+      console.log("Normalized Date Month:", normalizedDate.getMonth());
+      console.log("Normalized Month Name:", ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][normalizedDate.getMonth()]);
+      console.log("Normalized Date ISO:", normalizedDate.toISOString());
+      console.log("Normalized format(MMM):", format(normalizedDate, "MMM"));
+      console.log("=====================================");
+      
+      form.setValue("first_installment_date", normalizedDate);
+    }
+  }, [form]);
+
   // Set the exchange rate in the calculator
   useEffect(() => {
     if (exchangeRate) {
@@ -67,6 +113,36 @@ export function AmortizationDetailsForm({
 
   // Load bonus rules
   useEffect(() => {
+    // Log any mortgage data coming from the database directly
+    const initialFormValues = form.getValues();
+    console.log("========= DATABASE DATE VALUES =========");
+    console.log("Raw Form Values:", initialFormValues);
+    if (initialFormValues.first_installment_date) {
+      console.log("DB First Installment Date (raw):", initialFormValues.first_installment_date);
+      if (initialFormValues.first_installment_date instanceof Date) {
+        console.log("DB Date is a JavaScript Date object");
+        console.log("DB Date toString():", initialFormValues.first_installment_date.toString());
+        console.log("DB Date toISOString():", initialFormValues.first_installment_date.toISOString());
+        console.log("DB Date getFullYear():", initialFormValues.first_installment_date.getFullYear());
+
+        console.log("DB Date getDate():", initialFormValues.first_installment_date.getDate());
+        console.log("DB Date in MMM format:", format(initialFormValues.first_installment_date, "MMM"));
+      } else {
+        console.log("DB Date is NOT a JavaScript Date object, type:", typeof initialFormValues.first_installment_date);
+        try {
+          // If it's a string, try to parse it
+          const parsedDate = new Date(initialFormValues.first_installment_date);
+          console.log("Parsed DB Date:", parsedDate);
+          console.log("Parsed DB Date in MMM format:", format(parsedDate, "MMM"));
+        } catch (error) {
+          console.error("Error parsing DB date:", error);
+        }
+      }
+    } else {
+      console.log("No first_installment_date found in form values");
+    }
+    console.log("=======================================");
+
     const loadBonusRules = async () => {
       const { data, error } = await supabase
         .from("bonus_rules")
@@ -86,7 +162,12 @@ export function AmortizationDetailsForm({
 
   // Helper function to create a property compatible with LoanCalculator
   const createCalculatorProperty = (property: Property) => {
-    return {
+    // console.log('==== CREATE CALCULATOR PROPERTY DEBUG ====');
+    // console.log('Original Property:', property);
+    // console.log('Bonus Rules available:', bonusRules);
+    // console.log('Bonus Rules length:', bonusRules.length);
+    
+    const calculatorProperty = {
       id: property.id,
       name: property.name,
       price_cost: property.price_cost,
@@ -97,6 +178,12 @@ export function AmortizationDetailsForm({
       is_sustainable: property.is_sustainable || false,
       bonus_rules: bonusRules
     };
+    
+    // console.log('Calculator Property Created:', calculatorProperty);
+    // console.log('Bonus Rules attached to property:', calculatorProperty.bonus_rules);
+    // console.log('================================');
+    
+    return calculatorProperty;
   };
 
   // Watch the down payment field for real-time calculation
@@ -416,38 +503,106 @@ export function AmortizationDetailsForm({
                 <FormItem>
                   <FormLabel>{t('amortization.first_date', { ns: 'mortgages' })}</FormLabel>
                   <FormControl>
-                    <CalendarDatePicker
-                      date={{
-                        from: field.value,
-                        to: field.value
-                      }}
-                      onDateSelect={({ from }) => {
-                        if (from) {
-                          field.onChange(normalizeDate(from))
-                          form.trigger("first_installment_date")
-                        }
-                      }}
-                      variant="outline"
-                      numberOfMonths={1}
-                      yearsRange={35} // 15 years back + 20 years forward
-                      fromYear={new Date().getFullYear() - 15}
-                      disabled={(date) => {
-                        const startOfDate = startOfDay(date)
-                        const fifteenYearsAgo = startOfDay(subYears(new Date(), 15))
-                        const twentyYearsFromNow = startOfDay(addYears(new Date(), 20))
-                        
-                        return (
-                          isBefore(startOfDate, fifteenYearsAgo) || 
-                          isAfter(startOfDate, twentyYearsFromNow) ||
-                          isSameDay(startOfDate, fifteenYearsAgo) || 
-                          isSameDay(startOfDate, twentyYearsFromNow)
-                        )
-                      }}
-                      className={cn(
-                        "w-full justify-start text-left font-normal form-control-focus",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Select
+                        value={field.value ? (() => {
+                          const monthValue = format(field.value, "MMM");
+                          console.log("========= DROPDOWN DISPLAY DEBUG =========");
+                          console.log("Dropdown Date:", field.value);
+                          console.log("Dropdown Date toString():", field.value.toString());
+              
+                          console.log("Dropdown Month Name:", ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][field.value.getMonth()]);
+                          console.log("format(date, 'MMM') result:", monthValue);
+                          console.log("=========================================");
+                          return monthValue;
+                        })() : format(new Date(), "MMM")}
+                        onValueChange={(month) => {
+                          try {
+                            const currentDate = field.value || new Date();
+                            if (!isValid(currentDate)) {
+                              const today = new Date();
+                              field.onChange(normalizeDate(today));
+                              return;
+                            }
+                            
+                            const targetMonth = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(month);
+                            const currentYear = currentDate.getFullYear();
+                            
+                            // Always use day 1
+                            const newDate = new Date(currentYear, targetMonth, 1, 12, 0, 0, 0);
+                            
+                            // Ensure the date is valid
+                            if (!isValid(newDate)) {
+                              console.error("Generated invalid date with month:", month);
+                              return;
+                            }
+                            
+                            field.onChange(normalizeDate(newDate));
+                            form.trigger("first_installment_date");
+                          } catch (error) {
+                            console.error("Error changing month:", error);
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Month" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((month) => (
+                            <SelectItem key={month} value={month}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      <Select
+                        value={field.value ? format(field.value, "yyyy") : format(new Date(), "yyyy")}
+                        onValueChange={(year) => {
+                          try {
+                            const currentDate = field.value || new Date();
+                            if (!isValid(currentDate)) {
+                              const today = new Date();
+                              field.onChange(normalizeDate(today));
+                              return;
+                            }
+                            
+                            const currentMonth = currentDate.getMonth();
+                            
+                            // Always use day 1
+                            const newDate = new Date(parseInt(year), currentMonth, 1, 12, 0, 0, 0);
+                            
+                            // Ensure the date is valid
+                            if (!isValid(newDate)) {
+                              console.error("Generated invalid date with year:", year);
+                              return;
+                            }
+                            
+                            field.onChange(normalizeDate(newDate));
+                            form.trigger("first_installment_date");
+                          } catch (error) {
+                            console.error("Error changing year:", error);
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(() => {
+                            const currentYear = new Date().getFullYear();
+                            const startYear = currentYear - 15; // 15 years back
+                            const endYear = currentYear + 20;   // 20 years forward
+                            const yearsRange = endYear - startYear + 1;
+                            return Array.from({ length: yearsRange }, (_, i) => startYear + i);
+                          })().map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

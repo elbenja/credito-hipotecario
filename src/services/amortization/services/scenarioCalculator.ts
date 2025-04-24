@@ -53,7 +53,17 @@ export class ScenarioCalculator {
       rate_changes = []
     } = input
 
-
+    // console.log("=== ScenarioCalculator.calculateScenarios INPUTS ===");
+    // console.log("loan_amount:", loan_amount);
+    // console.log("interest_rate:", interest_rate);
+    // console.log("term_years:", term_years);
+    // console.log("installments_per_year:", installments_per_year);
+    // console.log("first_installment_date:", first_installment_date);
+    // console.log("property_insurance:", property_insurance);
+    // console.log("loan_insurance:", loan_insurance);
+    // console.log("extra_installments count:", extra_installments.length);
+    // console.log("rate_changes count:", rate_changes.length);
+    // console.log("=================================================");
 
     // Normalize the first installment date
     const normalizedFirstInstallmentDate = first_installment_date ? normalizeDate(first_installment_date) : normalizeDate(new Date());

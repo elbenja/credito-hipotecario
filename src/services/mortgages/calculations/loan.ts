@@ -31,22 +31,45 @@ export class LoanCalculator {
 
   // Change from private to public so it can be used by components
   calculateBonus(property: Property, externalBonusRules?: BonusRule[]): number {
-    if (!property || !property.is_first_home) return 0;
+    // console.log('==== CALCULATE BONUS DEBUG ====');
+    // console.log('Property is First Home:', property?.is_first_home);
+    
+    if (!property || !property.is_first_home) {
+      // console.log('Early return - not a first home or no property provided');
+      // console.log('=============================');
+      return 0;
+    }
 
     const propertyValueInPEN = this.convertToPEN(property.price_cost, property.currency);
+    // console.log('Property Value in PEN:', propertyValueInPEN);
     
     // Use provided external rules or property's bonus rules
     const bonusRules = externalBonusRules || property.bonus_rules || [];
+    // console.log('Bonus Rules being used:', bonusRules);
+    // console.log('Number of rules:', bonusRules.length);
     
     const applicableRule = bonusRules.find(
       (rule: BonusRule) => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
     );
+    
+    // console.log('Applicable Rule found:', applicableRule ? 'Yes' : 'No');
+    // console.log('Applicable Rule:', applicableRule);
 
-    if (!applicableRule) return 0;
+    if (!applicableRule) {
+      console.log('No applicable rule found, returning 0 bonus');
+      console.log('=============================');
+      return 0;
+    }
 
-    return property.is_sustainable 
+    const bonusValue = property.is_sustainable 
       ? applicableRule.sustainable_bonus 
       : applicableRule.traditional_bonus;
+      
+    // console.log('Property is Sustainable:', property.is_sustainable);
+    // console.log('Bonus Value Selected:', bonusValue);
+    // console.log('=============================');
+    
+    return bonusValue;
   }
 
   // New method to fetch bonus rules from the database
@@ -58,13 +81,13 @@ export class LoanCalculator {
         .order('min_value', { ascending: true });
 
       if (error) {
-        console.error("Error loading bonus rules:", error);
+        // console.error("Error loading bonus rules:", error);
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error("Error loading bonus rules:", error);
+      // console.error("Error loading bonus rules:", error);
       return [];
     }
   }
@@ -73,12 +96,26 @@ export class LoanCalculator {
   calculateLoanAmount(property: Property, downPayment: number, externalBonusRules?: BonusRule[]): number {
     if (!property) return 0;
 
+    // console.log('==== CALCULATE LOAN AMOUNT DEBUG ====');
+    // console.log('Property:', property);
+    // console.log('Down Payment:', downPayment);
+    // console.log('External Bonus Rules provided:', externalBonusRules ? `Yes (${externalBonusRules.length} rules)` : 'No');
+    // console.log('External Bonus Rules:', externalBonusRules);
+    
     const bonus = this.calculateBonus(property, externalBonusRules);
+    // console.log('Calculated Bonus (in PEN):', bonus);
+    
     const bonusInPropertyCurrency = property.currency === 'USD' 
       ? bonus / this.exchangeRate
       : bonus;
-
-    return property.price_cost - bonusInPropertyCurrency - downPayment;
+    // console.log('Bonus in Property Currency:', bonusInPropertyCurrency);
+    // console.log('Exchange Rate:', this.exchangeRate);
+    
+    const loanAmount = property.price_cost - bonusInPropertyCurrency - downPayment;
+    // console.log('Final Loan Amount:', loanAmount);
+    // console.log('================================');
+    
+    return loanAmount;
   }
 
   // New method to handle property price updates and recalculate mortgage values

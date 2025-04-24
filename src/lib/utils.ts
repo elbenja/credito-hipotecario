@@ -30,6 +30,47 @@ export function normalizeDate(date: Date): Date {
 }
 
 /**
+ * Safe date parser for database dates - use this for dates coming from database
+ * This function ensures consistent date handling regardless of navigation path
+ * or browser timezone settings
+ */
+export function parseDatabaseDate(dateStr: string | Date | null): Date {
+  if (!dateStr) return new Date();
+  
+  try {
+    // If it's already a Date object, extract components
+    if (dateStr instanceof Date) {
+      // Keep the date on the correct day by constructing a new local date
+      return new Date(
+        dateStr.getFullYear(),
+        dateStr.getMonth(),
+        dateStr.getDate(),
+        12, 0, 0, 0
+      );
+    }
+    
+    // Handle ISO string or YYYY-MM-DD format
+    // Extract date components directly to avoid timezone issues
+    let year, month, day;
+    
+    if (dateStr.includes('T')) {
+      // ISO format "2019-04-01T00:00:00Z" 
+      const datePart = dateStr.split('T')[0];
+      [year, month, day] = datePart.split('-').map(n => parseInt(n, 10));
+    } else {
+      // Simple YYYY-MM-DD format
+      [year, month, day] = dateStr.split('-').map(n => parseInt(n, 10));
+    }
+    
+    // JavaScript months are 0-indexed
+    return new Date(year, month - 1, day, 12, 0, 0, 0);
+  } catch (error) {
+    console.error("Error parsing database date:", error);
+    return normalizeDate(new Date());
+  }
+}
+
+/**
  * Create a local date from a date string or ISO string
  * This is used to ensure we have a consistent date representation
  */

@@ -27,7 +27,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { mortgageFormSchema, type MortgageFormValues } from "@/components/mortgages/schema"
 import { useToast } from "@/components/ui/use-toast"
-import { createLocalDate, normalizeDate } from "@/lib/utils"
+import { createLocalDate, normalizeDate, parseDatabaseDate } from "@/lib/utils"
 import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
 import { 
   RegularPanelGraph,
@@ -155,7 +155,11 @@ export default function EditMortgage() {
 
   // Helper function to create a property compatible with LoanCalculator
   const createCalculatorProperty = (property: Property) => {
-    return {
+    console.log("=== EditMortgage: createCalculatorProperty ===");
+    console.log("Original property:", property);
+    console.log("Available bonus rules:", bonusRules);
+    
+    const calculatorProperty = {
       id: property.id,
       name: property.name,
       price_cost: property.price_cost,
@@ -164,8 +168,13 @@ export default function EditMortgage() {
       property_insurance_type: property.property_insurance_type || 'auto',
       is_first_home: property.is_first_home || false,
       is_sustainable: property.is_sustainable || false,
-      bonus_rules: []
+      bonus_rules: bonusRules
     };
+    
+    console.log("Created calculator property with bonus_rules:", calculatorProperty);
+    console.log("==============================================");
+    
+    return calculatorProperty;
   };
 
   // Handle property update callback - Modified to use LoanCalculator
@@ -177,8 +186,13 @@ export default function EditMortgage() {
     }
     
     try {
+      console.log("=== EditMortgage: handlePropertyUpdate ===");
+      console.log("Updated property:", updatedProperty);
+      console.log("Available bonus rules:", bonusRules);
+      
       // Create a compatible property object for the LoanCalculator
       const propertyForCalculator = createCalculatorProperty(updatedProperty);
+      console.log("Property for calculator with bonus rules:", propertyForCalculator);
       
       // Get current mortgage for down payment
       const { data: mortgageData, error: mortgageError } = await supabase
@@ -189,6 +203,7 @@ export default function EditMortgage() {
       
       if (mortgageError) throw mortgageError;
       const downPayment = mortgageData?.down_payment || 0;
+      console.log("Down payment from mortgage:", downPayment);
       
       // Use the new recalculateMortgageFromProperty method
       await loanCalculator.recalculateMortgageFromProperty(supabase, propertyForCalculator.id, propertyForCalculator);
@@ -198,19 +213,28 @@ export default function EditMortgage() {
       queryClient.invalidateQueries({ queryKey: ["scenarios", id] });
       
       // Update local scenario inputs state
-      const bonusRules = await loanCalculator.fetchBonusRules(supabase);
+      const fetchedBonusRules = await loanCalculator.fetchBonusRules(supabase);
+      console.log("Fetched bonus rules:", fetchedBonusRules);
       const newLoanAmount = loanCalculator.calculateLoanAmount(propertyForCalculator, downPayment, bonusRules);
+      console.log("Calculated new loan amount:", newLoanAmount);
       
-      setScenarioInputs(prev => ({
-        ...prev,
-        loanAmount: newLoanAmount,
-        propertyInsurance: updatedProperty.property_insurance || 0
-      }));
+      console.log("Updating scenario inputs");
+      console.log("==============================================");
+      
+      setScenarioInputs(prev => {
+        const newInputs = {
+          ...prev,
+          loanAmount: newLoanAmount,
+          propertyInsurance: updatedProperty.property_insurance || 0
+        };
+        console.log("New scenario inputs:", newInputs);
+        return newInputs;
+      });
       
     } catch (error) {
       console.error("Error updating mortgage after property update:", error);
     }
-  }, [queryClient, id, user, loanCalculator]);
+  }, [queryClient, id, user, loanCalculator, bonusRules, createCalculatorProperty]);
 
   // Fetch property if propertyId is provided in URL
   useEffect(() => {
@@ -364,7 +388,7 @@ export default function EditMortgage() {
           interest_rate: data.interest_rate?.toString() || "",
           term_years: data.term_years?.toString() || "",
           installments_per_year: data.installments_per_year?.toString() || "",
-          first_installment_date: normalizeDate(new Date(data.first_installment_date)),
+          first_installment_date: parseDatabaseDate(data.first_installment_date),
           loan_protection_type: data.loan_protection_type as "none" | "custom" | "individual" | "joint",
           loan_protection_insurance: data.loan_protection_insurance?.toString() || "",
         }, {
@@ -403,7 +427,7 @@ export default function EditMortgage() {
         interest_rate: mortgage.interest_rate?.toString() || "",
         term_years: mortgage.term_years?.toString() || "",
         installments_per_year: mortgage.installments_per_year?.toString() || "",
-        first_installment_date: mortgage.first_installment_date ? normalizeDate(new Date(mortgage.first_installment_date)) : new Date(),
+        first_installment_date: mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : new Date(),
         loan_protection_type: mortgage.loan_protection_type as "none" | "custom" | "individual" | "joint",
         loan_protection_insurance: mortgage.loan_protection_insurance?.toString() || "",
       }, {
@@ -423,7 +447,7 @@ export default function EditMortgage() {
         interestRate: mortgage.interest_rate || 0,
         termYears: mortgage.term_years || 0,
         installmentsPerYear: mortgage.installments_per_year || 12,
-        firstInstallmentDate: mortgage.first_installment_date ? normalizeDate(new Date(mortgage.first_installment_date)) : undefined,
+        firstInstallmentDate: mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined,
         propertyInsurance: mortgage.property?.property_insurance || 0,
         loanInsurance: mortgage.loan_protection_insurance || 0
       });
@@ -448,6 +472,16 @@ export default function EditMortgage() {
         const propertyForCalculator = createCalculatorProperty(mortgage.property);
         const bonus = loanCalculator.calculateBonus(propertyForCalculator, bonusRules);
         const adjustedLoanAmount = bonus ? loanAmount - bonus : loanAmount;
+        
+        console.log("=== EditMortgage: Calculating scenarioInputs ===");
+        console.log("Property from mortgage:", mortgage.property);
+        console.log("Down payment from form:", downPayment);
+        console.log("Property price:", mortgage.property.price_cost);
+        console.log("Raw loan amount (before bonus):", loanAmount);
+        console.log("Property for calculator:", propertyForCalculator);
+        console.log("Available bonus rules:", bonusRules);
+        console.log("Calculated bonus:", bonus);
+        console.log("Final adjusted loan amount:", adjustedLoanAmount);
         
         const interestRate = parseFloat(values.interest_rate || "0");
         const termYears = parseInt(values.term_years || "0");
@@ -476,7 +510,7 @@ export default function EditMortgage() {
           firstInstallmentDate = normalizeDate(new Date(values.first_installment_date));
         }
 
-        setScenarioInputs({
+        const newInputs = {
           mortgageId: id || "",
           loanAmount: adjustedLoanAmount,
           interestRate,
@@ -485,7 +519,12 @@ export default function EditMortgage() {
           firstInstallmentDate,
           propertyInsurance: mortgage.property.property_insurance || 0,
           loanInsurance
-        });
+        };
+        
+        console.log("Updating scenario inputs to:", newInputs);
+        console.log("==============================================");
+
+        setScenarioInputs(newInputs);
       } catch (error) {
         console.error("Error updating scenario inputs:", error);
       }
@@ -636,10 +675,17 @@ export default function EditMortgage() {
         
         // Calculate bonus if applicable
         const propertyForCalculator = createCalculatorProperty(selectedPropertyFromUrl);
+        console.log("=== EditMortgage: onUpdateMortgage ===");
+        console.log("Property for calculator:", propertyForCalculator);
+        console.log("Available bonus rules:", bonusRules);
+        
         const bonus = loanCalculator.calculateBonus(propertyForCalculator, bonusRules);
+        console.log("Calculated bonus:", bonus);
         
         // Apply bonus to loan amount if applicable
         const finalLoanAmount = bonus ? loanAmount - bonus : loanAmount;
+        console.log("Final loan amount (after bonus):", finalLoanAmount);
+        console.log("==============================================");
 
         // Validate loan amount
         if (finalLoanAmount <= 0) {
@@ -755,10 +801,17 @@ export default function EditMortgage() {
         
         // Calculate bonus if applicable
         const propertyForCalculator = createCalculatorProperty(mortgage.property);
+        console.log("=== EditMortgage: onUpdateMortgage ===");
+        console.log("Property for calculator:", propertyForCalculator);
+        console.log("Available bonus rules:", bonusRules);
+        
         const bonus = loanCalculator.calculateBonus(propertyForCalculator, bonusRules);
+        console.log("Calculated bonus:", bonus);
         
         // Apply bonus to loan amount if applicable
         const finalLoanAmount = bonus ? loanAmount - bonus : loanAmount;
+        console.log("Final loan amount (after bonus):", finalLoanAmount);
+        console.log("==============================================");
 
         // Validate loan amount
         if (finalLoanAmount <= 0) {
@@ -1396,7 +1449,7 @@ export default function EditMortgage() {
                             currency={mortgage.property.currency}
                             loanAmount={mortgage.loan_amount}
                             onInstallmentsChange={handleInstallmentsChange}
-                            firstInstallmentDate={mortgage.first_installment_date ? normalizeDate(new Date(mortgage.first_installment_date)) : undefined}
+                            firstInstallmentDate={mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined}
                           />
                         </div>
                       </>
@@ -1422,7 +1475,7 @@ export default function EditMortgage() {
                             currency={mortgage.property.currency}
                             loanAmount={mortgage.loan_amount}
                             onInstallmentsChange={handleInstallmentsChange}
-                            firstInstallmentDate={mortgage.first_installment_date ? normalizeDate(new Date(mortgage.first_installment_date)) : undefined}
+                            firstInstallmentDate={mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined}
                           />
                         </div>
                       </>
@@ -1471,7 +1524,7 @@ export default function EditMortgage() {
                               checkNewRates();
                             }}
                             className="space-y-4"
-                            firstInstallmentDate={mortgage.first_installment_date ? normalizeDate(new Date(mortgage.first_installment_date)) : undefined}
+                            firstInstallmentDate={mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined}
                           />
                         </div>
                       </>

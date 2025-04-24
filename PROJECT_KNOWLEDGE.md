@@ -67,16 +67,69 @@ src/
 - Range 144,000-239,800: S/26,500
 - Range 239,800-355,100: S/13,600
 
-### 2. Amortization Tools
+#### Database Function for Bonus Calculation
+To optimize performance and reduce direct calls to the database for bonus calculation, a PostgreSQL function `property_bonus` has been implemented.
+
+- **Purpose:** Calculates the applicable first-home bonus for a given property based on its price, type (traditional/sustainable), and eligibility (must be a first home).
+- **Inputs:**
+  - `p_property_id UUID`: The UUID of the property to calculate the bonus for.
+- **Output:**
+  - `NUMERIC`: The calculated bonus amount. Returns `0` if the property is not eligible (not a first home) or does not fall into any bonus bracket.
+- **Usage:**
+  ```sql
+  SELECT property_bonus('your-property-uuid-here');
+  ```
+- **Implementation:**
+  ```sql
+  CREATE OR REPLACE FUNCTION property_bonus(p_property_id UUID)
+  RETURNS NUMERIC AS $$
+  DECLARE
+    p_price_cost NUMERIC;
+    p_is_first_home BOOLEAN;
+    p_is_sustainable BOOLEAN;
+    bonus_value NUMERIC := 0;
+    bonus_record RECORD;
+  BEGIN
+    -- Get property details
+    SELECT price_cost, is_first_home, is_sustainable
+    INTO p_price_cost, p_is_first_home, p_is_sustainable
+    FROM properties
+    WHERE id = p_property_id;
+
+    -- Check if eligible for bonus (must be first home)
+    IF p_is_first_home = TRUE THEN
+      -- Find matching bonus bracket
+      SELECT *
+      INTO bonus_record
+      FROM bonus_rules
+      WHERE p_price_cost >= min_value AND p_price_cost < max_value
+      LIMIT 1;
+
+      -- Determine bonus amount based on property type
+      IF FOUND THEN
+        IF p_is_sustainable = TRUE THEN
+          bonus_value := bonus_record.sustainable_bonus;
+        ELSE
+          bonus_value := bonus_record.traditional_bonus;
+        END IF;
+      END IF;
+    END IF;
+
+    RETURN bonus_value;
+  END;
+  $$ LANGUAGE plpgsql;
+  ```
+
+### 2. Mortgages Tools
 
 #### 2.1 Core Services and Organization
 
-The amortization system is organized into the following structure:
+The mortgages system is organized into the following structure:
 
 ```
 src/
 ├── services/
-│   └── amortization/
+│   └── mortgages/
 │       ├── calculations/
 │       │   ├── loan.ts         # Core loan calculations
 │       │   ├── scenarios.ts    # Scenario-specific calculations
