@@ -61,17 +61,6 @@ export function useScenarioCalculations({
   // Use mortgageId with fallback to amortizationId for backward compatibility
   const id = mortgageId || amortizationId;
   
-  // console.log("=== useScenarioCalculations HOOK INPUTS ===");
-  // console.log("mortgageId:", mortgageId);
-  // console.log("loanAmount:", loanAmount);
-  // console.log("interestRate:", interestRate);
-  // console.log("termYears:", termYears);
-  // console.log("installmentsPerYear:", installmentsPerYear);
-  // console.log("firstInstallmentDate:", firstInstallmentDate);
-  // console.log("propertyInsurance:", propertyInsurance);
-  // console.log("loanInsurance:", loanInsurance);
-  // console.log("==========================================");
-  
   // Set up a subscription to changes in the new_rates table
   useEffect(() => {
     if (!id) return;
@@ -85,7 +74,7 @@ export function useScenarioCalculations({
           event: '*',
           schema: 'public',
           table: 'new_rates',
-          filter: `amortization_id=eq.${id}`
+          filter: `mortgage_id=eq.${id}`
         },
         (payload) => {
           // When there's a change, invalidate the scenario query
@@ -156,16 +145,6 @@ export function useScenarioCalculations({
           return getDefaultScenarios();
         }
 
-        // console.log("=== useScenarioCalculations QUERY FUNCTION ===");
-        // console.log("Using debounced values for calculation:");
-        // console.log("loanAmount:", debouncedLoanAmount);
-        // console.log("interestRate:", debouncedInterestRate);
-        // console.log("termYears:", debouncedTermYears);
-        // console.log("installmentsPerYear:", debouncedInstallmentsPerYear);
-        // console.log("firstInstallmentDate:", debouncedFirstInstallmentDate);
-        // console.log("propertyInsurance:", debouncedPropertyInsurance);
-        // console.log("loanInsurance:", debouncedLoanInsurance);
-
         // Fetch extra installments and rate changes from Supabase
         const [extraInstallmentsResult, newRatesResult] = await Promise.all([
           supabase
@@ -235,7 +214,6 @@ export function useScenarioCalculations({
             effectiveDate = `${rc.effective_date.getFullYear()}-${String(rc.effective_date.getMonth() + 1).padStart(2, '0')}-${String(rc.effective_date.getDate()).padStart(2, '0')}`;
           } else {
             // Handle unexpected case
-            console.error("Invalid date format in rate change:", rc.effective_date);
             // Use current date as fallback
             const today = new Date();
             effectiveDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -243,7 +221,7 @@ export function useScenarioCalculations({
           
           return {
             id: rc.id,
-            mortgage_id: rc.mortgage_id || rc.amortization_id, // Support both old and new field names
+            mortgage_id: rc.mortgage_id || rc.amortization_id, // Support both old and new field names, but list mortgage_id first
             new_interest_rate: rc.new_interest_rate,
             new_term_years: rc.new_term_years,
             effective_date: effectiveDate,
@@ -280,12 +258,6 @@ export function useScenarioCalculations({
           lower_payment: scenarios.lower_payment,
           new_rate: newRateScenario
         };
-
-        // console.log("=== useScenarioCalculations RESULTS ===");
-        // console.log("Regular scenario monthly payment:", result.regular.summary.monthly_payment);
-        // console.log("Regular scenario total months:", result.regular.summary.total_months);
-        // console.log("Regular scenario total interest:", result.regular.summary.total_interest_and_insurance);
-        // console.log("=====================================");
 
         return result;
       } catch (error) {

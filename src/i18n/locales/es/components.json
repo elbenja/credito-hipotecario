@@ -93,7 +93,7 @@
       "new_term": "Nuevo Plazo",
       "remaining": "Plazo Restante",
       "years": "{{value}} años",
-      "start_date": "Fecha de Inicio",
+      "start_date": "Nueva Fecha de Inicio",
       "add_button": "Agregar",
       "table": {
         "number": "#",

@@ -9,20 +9,15 @@ import { PropertySelect, Property, PropertyDisplay } from "@/components/mortgage
 import { SEO } from "@/components/seo"
 import { amortizationFormSchema, type AmortizationFormValues, defaultValues } from "@/components/mortgages/schema"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CalendarIcon } from "lucide-react"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+
+
 import { cn, formatCurrency, formatDate, normalizeDate, createLocalDate } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
 import { ExtraInstallmentsSection } from "@/components/mortgages/extra-installments-section"
-import { ScenarioTable } from "@/components/amortizations/scenario-table"
-import { LoanCalculator } from "@/services/mortgages/calculations/loan"
+
 import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
 import type { Database } from "@/types/supabase"
-import { CollapsibleScenarioPanel } from "@/components/amortizations/collapsible-scenario-panel"
+
 import { NewRateForm } from "@/components/mortgages/new-rate-form"
 import { useTranslation } from "react-i18next"
 import {
@@ -33,11 +28,10 @@ import {
 } from "@/components/amortizations/scenario-panels"
 import { useNavigate } from "react-router-dom"
 import React from "react"
-import { addYears, subYears, startOfDay, isBefore, isAfter, isSameDay } from "date-fns"
-import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
+
 import { AmortizationDetailsForm } from "@/components/mortgages/mortgage-details-form"
 
-type Amortization = Database['public']['Tables']['amortizations']['Row']
+type Mortgage = Database['public']['Tables']['mortgages']['Row']
 type ExtraInstallment = Database['public']['Tables']['extra_installments']['Row']
 type RateChange = Database['public']['Tables']['rate_changes']['Row']
 
@@ -78,7 +72,7 @@ export default function TestExtraInstallments() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [isEditing, setIsEditing] = useState(true)
-  const [selectedAmortization, setSelectedAmortization] = useState<Amortization | null>(null)
+  const [selectedMortgage, setSelectedMortgage] = useState<Mortgage | null>(null)
   const { toast } = useToast()
   const queryClient = useQueryClient()
   
@@ -86,59 +80,59 @@ export default function TestExtraInstallments() {
     resolver: zodResolver(amortizationFormSchema),
     defaultValues: {
       ...defaultValues,
-      name: "Test Amortization"
+      name: "Test Mortgage"
     },
   })
 
-  const amortizationForm = useForm<AmortizationFormValues>({
+  const mortgageForm = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
   })
 
   // Add effect to handle loan protection insurance rates
   React.useEffect(() => {
-    const type = amortizationForm.watch("loan_protection_type");
+    const type = mortgageForm.watch("loan_protection_type");
     
     // Only set default rates when type changes, not for manual inputs
     switch (type) {
       case "individual":
-        amortizationForm.setValue("loan_protection_insurance", "0.028", {
+        mortgageForm.setValue("loan_protection_insurance", "0.028", {
           shouldValidate: true,
           shouldDirty: true
         });
         break;
       case "joint":
-        amortizationForm.setValue("loan_protection_insurance", "0.052", {
+        mortgageForm.setValue("loan_protection_insurance", "0.052", {
           shouldValidate: true,
           shouldDirty: true
         });
         break;
       case "none":
-        amortizationForm.setValue("loan_protection_insurance", "0", {
+        mortgageForm.setValue("loan_protection_insurance", "0", {
           shouldValidate: true,
           shouldDirty: true
         });
         break;
       // For custom type, don't override the value
     }
-  }, [amortizationForm.watch("loan_protection_type")]);
+  }, [mortgageForm.watch("loan_protection_type")]);
 
-  const { data: linkedAmortizations = [], isLoading: isLoadingAmortizations } = useQuery({
-    queryKey: ["linked-amortizations", selectedProperty?.id],
+  const { data: linkedMortgages = [], isLoading: isLoadingMortgages } = useQuery({
+    queryKey: ["linked-mortgages", selectedProperty?.id],
     queryFn: async () => {
       if (!user || !selectedProperty) return []
 
       const { data, error } = await supabase
-        .from("amortizations")
+        .from("mortgages")
         .select("*")
         .eq("property_id", selectedProperty.id)
         .eq("user_id", user.id)
 
       if (error) {
-        console.error("Error fetching amortizations:", error)
+        console.error("Error fetching mortgages:", error)
         return []
       }
 
-      return data as Amortization[]
+      return data as Mortgage[]
     },
     enabled: !!user && !!selectedProperty?.id,
   })
@@ -154,7 +148,7 @@ export default function TestExtraInstallments() {
       if (error || !user) {
         toast({
           variant: "destructive",
-          title: t('please_login')
+          title: t("ui.error", { message: "Please login" })
         })
         navigate('/')
         return
@@ -169,7 +163,7 @@ export default function TestExtraInstallments() {
       if (profileError) {
         toast({
           variant: "destructive",
-          title: t('error_fetching_profile')
+          title: t("ui.error", { message: "Error fetching profile" })
         })
         navigate('/')
         return
@@ -178,7 +172,7 @@ export default function TestExtraInstallments() {
       if (!profile.is_admin) {
         toast({
           variant: "destructive",
-          title: t('admin_only')
+          title: t("ui.error", { message: "Admin access only" })
         })
         navigate('/')
         return
@@ -188,7 +182,7 @@ export default function TestExtraInstallments() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: t('error_checking_admin')
+        title: t("ui.error", { message: "Error checking admin status" })
       })
       navigate('/')
     }
@@ -198,38 +192,38 @@ export default function TestExtraInstallments() {
   if (isAdmin === null || !isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg">{t("loading")}...</p>
+        <p className="text-lg">{t("ui.loading")}</p>
       </div>
     )
   }
 
   const handlePropertyChange = (property: Property | null) => {
     setSelectedProperty(property)
-    setSelectedAmortization(null)
+    setSelectedMortgage(null)
     if (property) {
       setIsEditing(false)
     }
   }
 
-  const handleAmortizationSelect = (amortization: Amortization) => {
-    setSelectedAmortization(amortization)
-    amortizationForm.reset({
-      name: amortization.name || "",
-      property_id: amortization.property_id,
-      down_payment: amortization.down_payment.toString(),
-      interest_rate: amortization.interest_rate.toString(),
-      term_years: amortization.term_years.toString(),
-      installments_per_year: amortization.installments_per_year.toString(),
-      first_installment_date: createLocalDate(amortization.first_installment_date),
-      loan_protection_type: amortization.loan_protection_type as "none" | "custom" | "individual" | "joint",
-      loan_protection_insurance: amortization.loan_protection_insurance?.toString(),
+  const handleMortgageSelect = (mortgage: Mortgage) => {
+    setSelectedMortgage(mortgage)
+    mortgageForm.reset({
+      name: mortgage.name || "",
+      property_id: mortgage.property_id,
+      down_payment: mortgage.down_payment.toString(),
+      interest_rate: mortgage.interest_rate.toString(),
+      term_years: mortgage.term_years.toString(),
+      installments_per_year: mortgage.installments_per_year.toString(),
+      first_installment_date: createLocalDate(mortgage.first_installment_date),
+      loan_protection_type: mortgage.loan_protection_type as "none" | "custom" | "individual" | "joint",
+      loan_protection_insurance: mortgage.loan_protection_insurance?.toString(),
     })
   }
 
-  const onUpdateAmortization = async (values: AmortizationFormValues) => {
+  const onUpdateMortgage = async (values: AmortizationFormValues) => {
     try {
-      if (!selectedAmortization || !selectedProperty) {
-        throw new Error("No amortization or property selected")
+      if (!selectedMortgage || !selectedProperty) {
+        throw new Error("No mortgage or property selected")
       }
 
       // Parse numeric values safely
@@ -285,12 +279,23 @@ export default function TestExtraInstallments() {
         throw new Error("Invalid loan protection insurance amount")
       }
 
-      // Calculate loan amount
-      const loanAmount = selectedProperty.price_cost - downPayment
+      // Get property bonus from the database
+      const { data: bonusData, error: bonusError } = await supabase
+        .rpc('property_bonus', { p_property_id: selectedProperty.id });
+      
+      if (bonusError) {
+        console.error("Error calculating property bonus:", bonusError);
+        throw new Error("Error calculating property bonus");
+      }
+      
+      const bonus = bonusData || 0;
+      
+      // Calculate loan amount properly: (propertyCost - bonus) - downPayment
+      const loanAmount = (selectedProperty.price_cost - bonus) - downPayment;
 
       // Validate loan amount
       if (loanAmount <= 0) {
-        throw new Error("Down payment cannot be greater than property cost")
+        throw new Error("Down payment cannot be greater than property cost minus applicable bonus")
       }
 
       // CRITICAL FIX: Ensure we preserve the exact date by using YYYY-MM-DD format
@@ -332,7 +337,7 @@ export default function TestExtraInstallments() {
       const { error: updateError } = await supabase
         .from("mortgages")
         .update(mortgageData)
-        .eq('id', selectedAmortization.id)
+        .eq('id', selectedMortgage.id)
 
       if (updateError) {
         console.error("Error updating mortgage:", updateError)
@@ -341,10 +346,10 @@ export default function TestExtraInstallments() {
 
       // Invalidate queries to refresh data
       await queryClient.invalidateQueries({
-        queryKey: ["linked-amortizations", selectedProperty.id]
+        queryKey: ["linked-mortgages", selectedProperty.id]
       })
       await queryClient.invalidateQueries({
-        queryKey: ["scenarios", selectedAmortization.id]
+        queryKey: ["scenarios", selectedMortgage.id]
       })
 
       toast({
@@ -366,7 +371,7 @@ export default function TestExtraInstallments() {
   return (
     <DashboardLayout
       header={{
-        title: <h1 className="text-3xl font-bold">{t("test_extra_installments")}</h1>,
+        title: <h1 className="text-xl font-bold">{t("dashboard:sections.test_extra_installments")}</h1>
       }}
     >
       <div className="max-w-[1600px] mx-auto py-8 px-8">
@@ -398,9 +403,9 @@ export default function TestExtraInstallments() {
                         property={selectedProperty} 
                         onPropertyUpdate={(updatedProperty) => {
                           setSelectedProperty(updatedProperty);
-                          // Refresh linked amortizations if needed
+                          // Refresh linked mortgages if needed
                           queryClient.invalidateQueries({
-                            queryKey: ["linked-amortizations", updatedProperty.id]
+                            queryKey: ["linked-mortgages", updatedProperty.id]
                           });
                         }}
                       />
@@ -435,22 +440,22 @@ export default function TestExtraInstallments() {
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold mb-4">Linked Mortgages</h3>
                 <div className="space-y-4">
-                  {isLoadingAmortizations ? (
+                  {isLoadingMortgages ? (
                     <p className="text-muted-foreground">Loading mortgages...</p>
-                  ) : linkedAmortizations.length > 0 ? (
-                    linkedAmortizations.map((amortization) => (
+                  ) : linkedMortgages.length > 0 ? (
+                    linkedMortgages.map((mortgage) => (
                       <div
-                        key={amortization.id}
+                        key={mortgage.id}
                         className={`p-4 border rounded-lg hover:border-primary cursor-pointer transition-colors ${
-                          selectedAmortization?.id === amortization.id ? 'border-primary' : ''
+                          selectedMortgage?.id === mortgage.id ? 'border-primary' : ''
                         }`}
-                        onClick={() => handleAmortizationSelect(amortization)}
+                        onClick={() => handleMortgageSelect(mortgage)}
                       >
-                        <h4 className="font-medium">{amortization.name || "Unnamed"}</h4>
+                        <h4 className="font-medium">{mortgage.name || "Unnamed"}</h4>
                         <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                          <p>Loan Amount: {formatCurrency(amortization.loan_amount || 0, selectedProperty.currency)}</p>
-                          <p>Interest Rate: {amortization.interest_rate}%</p>
-                          <p>First Payment: {formatDate(createLocalDate(amortization.first_installment_date))}</p>
+                          <p>Loan Amount: {formatCurrency(mortgage.loan_amount || 0, selectedProperty.currency)}</p>
+                          <p>Interest Rate: {mortgage.interest_rate}%</p>
+                          <p>First Payment: {formatDate(createLocalDate(mortgage.first_installment_date))}</p>
                         </div>
                       </div>
                     ))
@@ -463,12 +468,12 @@ export default function TestExtraInstallments() {
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold mb-4">Mortgage Details</h3>
                 <div className="p-6 border rounded-lg">
-                  {selectedAmortization ? (
-                    <Form {...amortizationForm}>
+                  {selectedMortgage ? (
+                    <Form {...mortgageForm}>
                       <AmortizationDetailsForm
-                        form={amortizationForm}
+                        form={mortgageForm}
                         selectedProperty={selectedProperty}
-                        onSubmit={onUpdateAmortization}
+                        onSubmit={onUpdateMortgage}
                         submitLabel="Update"
                       />
                     </Form>
@@ -481,45 +486,45 @@ export default function TestExtraInstallments() {
           </div>
         )}
 
-        {selectedAmortization && selectedProperty && (
+        {selectedMortgage && selectedProperty && (
           <>
             <div className="mt-8">
               <ExtraInstallmentsSection
-                mortgageId={selectedAmortization.id}
+                mortgageId={selectedMortgage.id}
                 currency={selectedProperty.currency}
-                loanAmount={selectedAmortization.loan_amount}
+                loanAmount={selectedMortgage.loan_amount}
                 onInstallmentsChange={() => {
                   queryClient.invalidateQueries({
-                    queryKey: ["linked-amortizations", selectedProperty.id]
+                    queryKey: ["linked-mortgages", selectedProperty.id]
                   })
                   queryClient.invalidateQueries({
-                    queryKey: ["scenarios", selectedAmortization.id]
+                    queryKey: ["scenarios", selectedMortgage.id]
                   })
                 }}
-                firstInstallmentDate={selectedAmortization.first_installment_date ? new Date(selectedAmortization.first_installment_date) : undefined}
+                firstInstallmentDate={selectedMortgage.first_installment_date ? new Date(selectedMortgage.first_installment_date) : undefined}
               />
             </div>
 
             <div className="mt-8">
               <NewRateForm
-                mortgageId={selectedAmortization.id}
+                mortgageId={selectedMortgage.id}
                 onSuccess={() => {
                   queryClient.invalidateQueries({
-                    queryKey: ["linked-amortizations", selectedProperty.id]
+                    queryKey: ["linked-mortgages", selectedProperty.id]
                   })
                   queryClient.invalidateQueries({
-                    queryKey: ["scenarios", selectedAmortization.id]
+                    queryKey: ["scenarios", selectedMortgage.id]
                   })
                 }}
                 className="space-y-4"
-                firstInstallmentDate={selectedAmortization.first_installment_date ? new Date(selectedAmortization.first_installment_date) : undefined}
+                firstInstallmentDate={selectedMortgage.first_installment_date ? new Date(selectedMortgage.first_installment_date) : undefined}
               />
             </div>
 
             <ScenarioCalculationsSection 
-              amortization={selectedAmortization}
+              mortgage={selectedMortgage}
               property={selectedProperty}
-              form={amortizationForm}
+              form={mortgageForm}
             />
           </>
         )}
@@ -529,11 +534,11 @@ export default function TestExtraInstallments() {
 }
 
 function ScenarioCalculationsSection({ 
-  amortization,
+  mortgage,
   property,
   form
 }: { 
-  amortization: Amortization
+  mortgage: Mortgage
   property: Property
   form: ReturnType<typeof useForm<AmortizationFormValues>>
 }) {
@@ -546,17 +551,17 @@ function ScenarioCalculationsSection({
   const firstInstallmentDebug = useMemo(() => {
     // We no longer need this debug information
     return null;
-  }, [amortization?.first_installment_date]);
+  }, [mortgage?.first_installment_date]);
 
   // Add effect to fetch rate changes
   useEffect(() => {
-    if (!amortization?.id) return;
+    if (!mortgage?.id) return;
     
     const fetchRateChanges = async () => {
       const { data, error } = await supabase
         .from("new_rates")
         .select("*")
-        .eq("mortgage_id", amortization.id)
+        .eq("mortgage_id", mortgage.id)
         .order("effective_date", { ascending: true });
         
       if (error) {
@@ -568,27 +573,27 @@ function ScenarioCalculationsSection({
     };
     
     fetchRateChanges();
-  }, [amortization?.id]);
+  }, [mortgage?.id]);
 
   // Add subscription to rate changes
   useEffect(() => {
-    if (!amortization?.id) return;
+    if (!mortgage?.id) return;
     
     // Subscribe to changes to new_rates table for this mortgage
     const channel = supabase
-      .channel(`new_rates_mortgage_${amortization.id}_changes`)
+      .channel(`new_rates_mortgage_${mortgage.id}_changes`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'new_rates',
-          filter: `mortgage_id=eq.${amortization.id}`
+          filter: `mortgage_id=eq.${mortgage.id}`
         },
         (payload) => {
           // Force a refetch of scenarios when rates change
           queryClient.invalidateQueries({
-            queryKey: ["scenarios", amortization.id]
+            queryKey: ["scenarios", mortgage.id]
           });
           
           // Update key to force re-render
@@ -599,7 +604,7 @@ function ScenarioCalculationsSection({
             const { data, error } = await supabase
               .from("new_rates")
               .select("*")
-              .eq("mortgage_id", amortization.id)
+              .eq("mortgage_id", mortgage.id)
               .order("effective_date", { ascending: true });
               
             if (error) {
@@ -619,16 +624,16 @@ function ScenarioCalculationsSection({
       // Clean up subscription
       channel.unsubscribe();
     };
-  }, [amortization?.id, queryClient]);
+  }, [mortgage?.id, queryClient]);
 
   // Create a local state to track form values for live calculations
   const [formValues, setFormValues] = useState(() => {
     // Parse the first installment date properly to avoid timezone shifts
     let firstInstallmentDate;
     
-    if (amortization.first_installment_date) {
+    if (mortgage.first_installment_date) {
       // Check if the date is in YYYY-MM-DD format
-      const dateMatch = amortization.first_installment_date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      const dateMatch = mortgage.first_installment_date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
       if (dateMatch) {
         // Create a date from parts to avoid timezone issues
         const year = parseInt(dateMatch[1]);
@@ -637,7 +642,7 @@ function ScenarioCalculationsSection({
         firstInstallmentDate = new Date(year, month, day, 12, 0, 0, 0);
       } else {
         // Fallback to regular date parsing
-        firstInstallmentDate = new Date(amortization.first_installment_date);
+        firstInstallmentDate = new Date(mortgage.first_installment_date);
         // Ensure noon time to avoid timezone shifts
         firstInstallmentDate.setHours(12, 0, 0, 0);
       }
@@ -648,13 +653,13 @@ function ScenarioCalculationsSection({
     
     // Return properly initialized state
     return {
-      loanAmount: amortization.loan_amount || 0,
-      interestRate: amortization.interest_rate,
-      termYears: amortization.term_years,
-      installmentsPerYear: amortization.installments_per_year,
+      loanAmount: mortgage.loan_amount || 0,
+      interestRate: mortgage.interest_rate,
+      termYears: mortgage.term_years,
+      installmentsPerYear: mortgage.installments_per_year,
       firstInstallmentDate: firstInstallmentDate,
       propertyInsurance: property.property_insurance || 0,
-      loanInsurance: amortization.loan_protection_insurance || 0
+      loanInsurance: mortgage.loan_protection_insurance || 0
     };
   });
   
@@ -665,7 +670,40 @@ function ScenarioCalculationsSection({
       
       // Parse form values
       const downPayment = parseFloat(values.down_payment?.replace(/[^0-9.]/g, "") || "0");
-      const loanAmount = property.price_cost - downPayment;
+      
+      // Calculate loan amount based on property price, bonus, and down payment
+      let loanAmount: number;
+      
+      // If we're modifying an existing mortgage, check if its loan amount should be used
+      if (mortgage.loan_amount && !form.formState.dirtyFields.down_payment) {
+        // Use the stored loan amount if down payment hasn't changed
+        loanAmount = mortgage.loan_amount;
+      } else {
+        // Need to fetch the bonus and calculate the loan amount
+        // We'll use a state variable to track this asynchronous operation
+        loanAmount = property.price_cost - downPayment; // Default calculation
+        
+        // Fetch property bonus asynchronously
+        supabase.rpc('property_bonus', { p_property_id: property.id })
+          .then(({ data: bonusData, error: bonusError }) => {
+            if (bonusError) {
+              console.error("Error calculating property bonus:", bonusError);
+              return;
+            }
+            
+            const bonus = bonusData || 0;
+            const updatedLoanAmount = (property.price_cost - bonus) - downPayment;
+            
+            // Only update if different to avoid infinite loops
+            if (updatedLoanAmount !== loanAmount) {
+              setFormValues(prev => ({
+                ...prev,
+                loanAmount: updatedLoanAmount
+              }));
+            }
+          });
+      }
+      
       const interestRate = parseFloat(values.interest_rate || "0");
       const termYears = parseInt(values.term_years || "0");
       const installmentsPerYear = parseInt(values.installments_per_year || "12");
@@ -697,25 +735,27 @@ function ScenarioCalculationsSection({
       const loanInsurance = parseFloat(values.loan_protection_insurance || "0");
       
       // Update the local state with new values
-      setFormValues({
-        loanAmount: loanAmount,
+      setFormValues(prev => ({
+        ...prev,
         interestRate: interestRate,
         termYears: termYears,
         installmentsPerYear: installmentsPerYear,
         firstInstallmentDate: firstInstallmentDate,
         propertyInsurance: property.property_insurance || 0,
-        loanInsurance: loanInsurance
-      });
+        loanInsurance: loanInsurance,
+        // Only update loanAmount if we're using the immediate calculation
+        ...(mortgage.loan_amount && !form.formState.dirtyFields.down_payment ? {} : { loanAmount })
+      }));
     });
     
     // Cleanup subscription on unmount
     return () => subscription.unsubscribe();
-  }, [form, property]);
+  }, [form, property, mortgage.loan_amount]);
 
   // Use the useScenarioCalculations hook with the tracked form values
   // Include rateChangeKey as part of the dependencies to force refresh when rates change
   const { data: scenarios, isLoading, error } = useScenarioCalculations({
-    mortgageId: amortization.id,
+    mortgageId: mortgage.id,
     loanAmount: formValues.loanAmount,
     interestRate: formValues.interestRate,
     termYears: formValues.termYears,

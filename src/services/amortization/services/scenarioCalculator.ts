@@ -1,6 +1,6 @@
 import { GoalSeekService } from "./goalSeek"
 import { FixedPaymentsService } from "./fixedPayments"
-import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios } from "../types/common"
+import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios } from "@/services/mortgages/types/common"
 import { normalizeDate } from "@/lib/utils"
 
 interface ExtraInstallment {
@@ -11,6 +11,7 @@ interface ExtraInstallment {
 
 interface RateChange {
   id?: string
+  mortgage_id?: string
   amortization_id?: string
   new_interest_rate: number
   new_term_years?: number
@@ -53,18 +54,6 @@ export class ScenarioCalculator {
       rate_changes = []
     } = input
 
-    // console.log("=== ScenarioCalculator.calculateScenarios INPUTS ===");
-    // console.log("loan_amount:", loan_amount);
-    // console.log("interest_rate:", interest_rate);
-    // console.log("term_years:", term_years);
-    // console.log("installments_per_year:", installments_per_year);
-    // console.log("first_installment_date:", first_installment_date);
-    // console.log("property_insurance:", property_insurance);
-    // console.log("loan_insurance:", loan_insurance);
-    // console.log("extra_installments count:", extra_installments.length);
-    // console.log("rate_changes count:", rate_changes.length);
-    // console.log("=================================================");
-
     // Normalize the first installment date
     const normalizedFirstInstallmentDate = first_installment_date ? normalizeDate(first_installment_date) : normalizeDate(new Date());
 
@@ -101,7 +90,9 @@ export class ScenarioCalculator {
     // Normalize dates in rate changes
     const normalizedRateChanges = rate_changes.map(change => ({
       ...change,
-      effective_date: normalizeDate(change.effective_date)
+      effective_date: typeof change.effective_date === 'string' 
+        ? new Date(change.effective_date) // Convert string to Date first
+        : normalizeDate(change.effective_date)
     }));
     
     // Calculate each scenario independently
@@ -474,9 +465,12 @@ export class ScenarioCalculator {
           ending_balance: 0,
           monthly_payment: extraAmount,
           monthly_interest: 0,
+          interest: 0,         // Add for compatibility
           principal: extraAmount,
+          capital: extraAmount, // Add for compatibility
           property_insurance: 0,
           monthly_loan_insurance: 0,
+          loan_insurance: 0,    // Add for compatibility
           is_different_from_base: true
         });
         break;
@@ -677,8 +671,13 @@ export class ScenarioCalculator {
    */
   private static calculateSummary(payments: PaymentRow[], originalTotalMonths?: number): ScenarioSummaryResult {
     const totalInterestAndInsurance = payments.reduce(
-      (sum, payment) => 
-        sum + payment.monthly_interest + payment.property_insurance + payment.monthly_loan_insurance,
+      (sum, payment) => {
+        // Use either property name based on which is available
+        const interest = payment.monthly_interest !== undefined ? payment.monthly_interest : payment.interest;
+        const loanInsurance = payment.monthly_loan_insurance !== undefined ? payment.monthly_loan_insurance : payment.loan_insurance;
+        
+        return sum + interest + payment.property_insurance + loanInsurance;
+      },
       0
     )
 

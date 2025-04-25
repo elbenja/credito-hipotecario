@@ -29,93 +29,54 @@ export class LoanCalculator {
     return amount * this.exchangeRate;
   }
 
-  // Change from private to public so it can be used by components
-  calculateBonus(property: Property, externalBonusRules?: BonusRule[]): number {
-    // console.log('==== CALCULATE BONUS DEBUG ====');
-    // console.log('Property is First Home:', property?.is_first_home);
+  // Get bonus using the PostgreSQL property_bonus function
+  async getPropertyBonus(supabase: any, propertyId: string): Promise<number> {
+    if (!propertyId) return 0;
     
-    if (!property || !property.is_first_home) {
-      // console.log('Early return - not a first home or no property provided');
-      // console.log('=============================');
-      return 0;
-    }
-
-    const propertyValueInPEN = this.convertToPEN(property.price_cost, property.currency);
-    // console.log('Property Value in PEN:', propertyValueInPEN);
-    
-    // Use provided external rules or property's bonus rules
-    const bonusRules = externalBonusRules || property.bonus_rules || [];
-    // console.log('Bonus Rules being used:', bonusRules);
-    // console.log('Number of rules:', bonusRules.length);
-    
-    const applicableRule = bonusRules.find(
-      (rule: BonusRule) => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
-    );
-    
-    // console.log('Applicable Rule found:', applicableRule ? 'Yes' : 'No');
-    // console.log('Applicable Rule:', applicableRule);
-
-    if (!applicableRule) {
-      console.log('No applicable rule found, returning 0 bonus');
-      console.log('=============================');
-      return 0;
-    }
-
-    const bonusValue = property.is_sustainable 
-      ? applicableRule.sustainable_bonus 
-      : applicableRule.traditional_bonus;
-      
-    // console.log('Property is Sustainable:', property.is_sustainable);
-    // console.log('Bonus Value Selected:', bonusValue);
-    // console.log('=============================');
-    
-    return bonusValue;
-  }
-
-  // New method to fetch bonus rules from the database
-  async fetchBonusRules(supabase: any): Promise<BonusRule[]> {
     try {
       const { data, error } = await supabase
-        .from("bonus_rules")
-        .select("*")
-        .order('min_value', { ascending: true });
-
+        .rpc('property_bonus', { p_property_id: propertyId });
+        
       if (error) {
-        // console.error("Error loading bonus rules:", error);
-        return [];
+        console.error('Error calling property_bonus function:', error);
+        return 0;
       }
-
-      return data || [];
+      
+      return data || 0;
     } catch (error) {
-      // console.error("Error loading bonus rules:", error);
-      return [];
+      console.error('Exception calling property_bonus function:', error);
+      return 0;
     }
   }
 
-  // Calculate loan amount with option to provide external bonus rules
-  calculateLoanAmount(property: Property, downPayment: number, externalBonusRules?: BonusRule[]): number {
+  // Calculate loan amount with optional cached bonus amount
+  async calculateLoanAmount(supabase: any, property: Property, downPayment: number, cachedBonus?: number): Promise<number> {
     if (!property) return 0;
 
-    // console.log('==== CALCULATE LOAN AMOUNT DEBUG ====');
-    // console.log('Property:', property);
-    // console.log('Down Payment:', downPayment);
-    // console.log('External Bonus Rules provided:', externalBonusRules ? `Yes (${externalBonusRules.length} rules)` : 'No');
-    // console.log('External Bonus Rules:', externalBonusRules);
+    // Use cached bonus if provided, otherwise fetch from database
+    let bonus = cachedBonus;
+    if (bonus === undefined) {
+      bonus = await this.getPropertyBonus(supabase, property.id);
+    }
     
-    const bonus = this.calculateBonus(property, externalBonusRules);
-    // console.log('Calculated Bonus (in PEN):', bonus);
-    
+    // Convert bonus to property currency if needed
     const bonusInPropertyCurrency = property.currency === 'USD' 
       ? bonus / this.exchangeRate
       : bonus;
-    // console.log('Bonus in Property Currency:', bonusInPropertyCurrency);
-    // console.log('Exchange Rate:', this.exchangeRate);
     
-    const loanAmount = property.price_cost - bonusInPropertyCurrency - downPayment;
-    // console.log('Final Loan Amount:', loanAmount);
-    // console.log('================================');
+    return property.price_cost - bonusInPropertyCurrency - downPayment;
+  }
+
+  // Synchronous version for when bonus is already known
+  calculateLoanAmountSync(property: Property, downPayment: number, bonus: number = 0): number {
+    if (!property) return 0;
     
-    return loanAmount;
+    // Convert bonus to property currency if needed
+    const bonusInPropertyCurrency = property.currency === 'USD' 
+      ? bonus / this.exchangeRate
+      : bonus;
+    
+    return property.price_cost - bonusInPropertyCurrency - downPayment;
   }
 
   // New method to handle property price updates and recalculate mortgage values
@@ -129,12 +90,12 @@ export class LoanCalculator {
         
       if (mortgagesError) throw mortgagesError;
       
-      // 2. Get bonus rules
-      const bonusRules = await this.fetchBonusRules(supabase);
+      // 2. Get property bonus using the PostgreSQL function
+      const bonus = await this.getPropertyBonus(supabase, propertyId);
       
       // 3. Update each mortgage with the new loan amount
       for (const mortgage of mortgages || []) {
-        const newLoanAmount = this.calculateLoanAmount(updatedProperty, mortgage.down_payment, bonusRules);
+        const newLoanAmount = this.calculateLoanAmountSync(updatedProperty, mortgage.down_payment, bonus);
         
         // Update the mortgage with the new loan amount
         const { error: updateError } = await supabase
@@ -250,6 +211,16 @@ export class LoanCalculator {
 
     const totalPayments = baseValues.term_years * baseValues.installments_per_year;
 
+    console.log("LOAN CALCULATOR - Generating payment schedule:", {
+      loanAmount,
+      interestRate: baseValues.interest_rate,
+      baseMonthlyPayment,
+      propertyInsurance: property.property_insurance,
+      loanProtectionInsurance: baseValues.loan_protection_insurance,
+      firstInstallmentDate: baseValues.first_installment_date,
+      installmentsPerYear: baseValues.installments_per_year
+    });
+
     for (let i = 1; i <= totalPayments; i++) {
       const isDoublePayment = baseValues.installments_per_year === 14 && 
         (paymentDate.getMonth() === 6 || paymentDate.getMonth() === 11);
@@ -298,11 +269,14 @@ export class LoanCalculator {
     return schedule;
   }
 
-  calculateResults(
+  // This needs to be updated to use the async calculateLoanAmount or a pre-fetched bonus
+  async calculateResults(
+    supabase: any,
     property: Property,
-    baseValues: BaseAmortizationValues
-  ): CalculationResults {
-    const loanAmount = this.calculateLoanAmount(property, baseValues.down_payment);
+    baseValues: BaseAmortizationValues,
+    cachedBonus?: number
+  ): Promise<CalculationResults> {
+    const loanAmount = await this.calculateLoanAmount(supabase, property, baseValues.down_payment, cachedBonus);
     
     // Calculate base monthly payment (without insurances)
     const baseMonthlyPayment = this.calculateMonthlyPayment(
@@ -324,6 +298,65 @@ export class LoanCalculator {
       sum + payment.interest + payment.property_insurance + payment.loan_protection_insurance,
       0
     );
+
+    return {
+      loan_amount: loanAmount,
+      total_interest_and_insurance: totalInterestAndInsurance,
+      total_months: totalMonths,
+      base_monthly_payment: baseMonthlyPayment,
+      monthly_payment: totalMonthlyPayment,
+      payment_schedule: schedule
+    };
+  }
+
+  // Synchronous version for when bonus is already known
+  calculateResultsSync(
+    property: Property,
+    baseValues: BaseAmortizationValues,
+    bonus: number = 0
+  ): CalculationResults {
+    const loanAmount = this.calculateLoanAmountSync(property, baseValues.down_payment, bonus);
+    
+    // Calculate base monthly payment (without insurances)
+    const baseMonthlyPayment = this.calculateMonthlyPayment(
+      loanAmount,
+      baseValues.interest_rate,
+      baseValues.term_years,
+      baseValues.installments_per_year
+    );
+
+    // Add monthly insurance amounts to get total monthly payment
+    const monthlyPropertyInsurance = Number(property.property_insurance || 0);
+    const monthlyLoanProtection = Number(baseValues.loan_protection_insurance || 0);
+    const totalMonthlyPayment = Number((baseMonthlyPayment + monthlyPropertyInsurance + monthlyLoanProtection).toFixed(10));
+
+    console.log("LOAN CALCULATOR - Monthly payment components:", {
+      baseMonthlyPayment,
+      monthlyPropertyInsurance,
+      monthlyLoanProtection,
+      totalMonthlyPayment,
+      property_insurance_type: property.property_insurance_type
+    });
+
+    const schedule = this.generatePaymentSchedule(loanAmount, baseValues, property);
+    const totalMonths = baseValues.term_years * LoanCalculator.MONTHS_IN_YEAR;
+
+    const totalInterestAndInsurance = schedule.reduce((sum, payment) => 
+      sum + payment.interest + payment.property_insurance + payment.loan_protection_insurance,
+      0
+    );
+
+    console.log("LOAN CALCULATOR - Total calculation results:", {
+      loan_amount: loanAmount,
+      total_interest_and_insurance: totalInterestAndInsurance,
+      total_months: totalMonths,
+      monthly_payment: totalMonthlyPayment,
+      propertyInsurance: property.property_insurance,
+      firstPaymentInfo: schedule.length > 0 ? {
+        property_insurance: schedule[0].property_insurance,
+        loan_insurance: schedule[0].loan_protection_insurance
+      } : null
+    });
 
     return {
       loan_amount: loanAmount,

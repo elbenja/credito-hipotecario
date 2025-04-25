@@ -358,7 +358,7 @@ export function NewRateForm({
                     name="effective_date"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('payment_scenarios.new_rate_form.start_date', 'Start Date', { ns: 'components' })}</FormLabel>
+                        <FormLabel>{t('payment_scenarios.new_rate_form.start_date', 'New Start Date', { ns: 'components' })}</FormLabel>
                         <div className="grid grid-cols-2 gap-2">
                           <Select
                             onValueChange={(month) => {

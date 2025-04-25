@@ -117,13 +117,11 @@ export default function NewMortgage() {
         .eq("user_id", user.id);
 
       if (error) {
-        console.error("Error counting mortgages:", error);
         return 0;
       }
 
       return count || 0;
     } catch (e) {
-      console.error("Exception counting mortgages:", e);
       return 0;
     }
   }, [user]);
@@ -135,8 +133,6 @@ export default function NewMortgage() {
     limitCheckRef.current = true;
     
     try {
-      console.log("Performing one-time mortgage limit check");
-      
       // 1. Get direct count from database
       const { count, error } = await supabase
         .from("mortgages")
@@ -144,30 +140,25 @@ export default function NewMortgage() {
         .eq("user_id", user?.id || '');
 
       if (error) {
-        console.error("Error counting mortgages:", error);
         return false;
       }
       
       // Store the count
       const currentCount = count || 0;
       setMortgageCount(currentCount);
-      console.log("Direct mortgage count from database:", currentCount);
       
       // 2. Determine the user's plan limit
       // Use planLimit from the hook or fall back to plan defaults
       const limitValue = planLimit > 0 ? planLimit : 
-                         (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3);
-      console.log(`User plan: ${currentPlan}, Mortgage limit: ${limitValue}`);
+                        (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3);
       
       // 3. Simple comparison to determine if limit is reached
       const limitReached = currentCount >= limitValue;
-      console.log(`Limit check result: ${currentCount} >= ${limitValue} = ${limitReached}`);
       
       // 4. Set state based on the check
       setIsLimitReached(limitReached);
       return limitReached;
     } catch (err) {
-      console.error("Limit check failed:", err);
       return false;
     } finally {
       setIsLimitCheckDone(true);
@@ -195,7 +186,6 @@ export default function NewMortgage() {
     }
     
     if (currentPlan && hasPlanBeenChecked.current) {
-      console.log("Plan changed, rechecking limits");
       checkLimitOnce();
     }
   }, [currentPlan, checkLimitOnce]);
@@ -240,7 +230,7 @@ export default function NewMortgage() {
   }, [exchangeRate, loanCalculator]);
 
   // Helper function to create a property object compatible with LoanCalculator
-  const createCalculatorProperty = (property: Property, bonusRules: BonusRule[] = []) => {
+  const createCalculatorProperty = (property: Property) => {
     return {
       id: property.id,
       name: property.name,
@@ -249,14 +239,21 @@ export default function NewMortgage() {
       property_insurance: property.property_insurance || 0,
       property_insurance_type: property.property_insurance_type || 'auto',
       is_first_home: property.is_first_home || false,
-      is_sustainable: property.is_sustainable || false,
-      bonus_rules: bonusRules // Use the passed bonus rules instead of empty array
+      is_sustainable: property.is_sustainable || false
     };
   };
 
   // Update scenario inputs when form values change
   useEffect(() => {
     if (!selectedProperty) return;
+    
+    // console.log("NEWMORTGAGE - Selected property:", {
+    //   id: selectedProperty.id,
+    //   name: selectedProperty.name,
+    //   price: selectedProperty.price_cost,
+    //   insurance: selectedProperty.property_insurance,
+    //   insuranceType: selectedProperty.property_insurance_type
+    // });
     
     const subscription = form.watch((values) => {
       if (!values) return;
@@ -294,25 +291,70 @@ export default function NewMortgage() {
         // Calculate proper loan amount using LoanCalculator
         // Create property object for calculator
         const calculatorProperty = createCalculatorProperty(selectedProperty);
-        const loanAmount = loanCalculator.calculateLoanAmount(calculatorProperty, downPayment);
         
-        // Update scenario inputs
-        setScenarioInputs({
-          loanAmount: loanAmount,
-          interestRate,
-          termYears,
-          installmentsPerYear,
-          firstInstallmentDate,
-          propertyInsurance: selectedProperty.property_insurance || 0,
-          loanInsurance
-        });
+        // console.log("NEWMORTGAGE - Property object for loan calculation:", {
+        //   id: calculatorProperty.id,
+        //   price: calculatorProperty.price_cost,
+        //   insurance: calculatorProperty.property_insurance,
+        //   insuranceType: calculatorProperty.property_insurance_type
+        // });
+        
+        // Use the async method to calculate loan amount
+        loanCalculator.getPropertyBonus(supabase, selectedProperty.id)
+          .then(bonus => {
+            const loanAmount = loanCalculator.calculateLoanAmountSync(calculatorProperty, downPayment, bonus);
+            
+            const newScenarioInputs = {
+              loanAmount: loanAmount,
+              interestRate,
+              termYears,
+              installmentsPerYear,
+              firstInstallmentDate,
+              propertyInsurance: selectedProperty.property_insurance || 0,
+              loanInsurance
+            };
+            
+            // console.log("NEWMORTGAGE - Setting scenario inputs:", newScenarioInputs);
+            
+            // Update scenario inputs
+            setScenarioInputs(newScenarioInputs);
+          })
+          .catch(error => {
+            // Silent error handling
+          });
       } catch (error) {
-        console.error("Error updating scenario inputs:", error);
+        // Silent error handling
       }
     });
     
     return () => subscription.unsubscribe();
-  }, [form, selectedProperty, loanCalculator]);
+  }, [form, selectedProperty, loanCalculator, supabase]);
+  
+  // Enhance the existing scenarios effect to better track total_interest_and_insurance
+  useEffect(() => {
+    if (scenarios?.regular?.summary) {
+      console.log("NEWMORTGAGE - Scenario calculation updated:", {
+        total_interest_and_insurance: scenarios.regular.summary.total_interest_and_insurance,
+        monthly_payment: scenarios.regular.summary.monthly_payment,
+        total_months: scenarios.regular.summary.total_months,
+        loanAmount: scenarioInputs.loanAmount,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [scenarios, scenarioInputs]);
+  
+  // Add a new effect to track scenarioInputs changes during typing
+  useEffect(() => {
+    // console.log("NEWMORTGAGE - Scenario inputs changed:", {
+    //   loanAmount: scenarioInputs.loanAmount,
+    //   interestRate: scenarioInputs.interestRate,
+    //   termYears: scenarioInputs.termYears,
+    //   installmentsPerYear: scenarioInputs.installmentsPerYear,
+    //   propertyInsurance: scenarioInputs.propertyInsurance,
+    //   loanInsurance: scenarioInputs.loanInsurance,
+    //   timestamp: new Date().toISOString()
+    // });
+  }, [scenarioInputs]);
   
   // Handle property selection
   const handlePropertyChange = useCallback((property: Property | null) => {
@@ -356,7 +398,7 @@ export default function NewMortgage() {
           form.setValue("name", defaultMortgageName, { shouldValidate: true })
         }
       } catch (error) {
-        console.error("Error fetching property:", error)
+        // Silent error handling
       }
     }
     
@@ -500,6 +542,15 @@ export default function NewMortgage() {
                             return;
                           }
 
+                          // Log selected property details
+                          console.log("NEWMORTGAGE - Creating mortgage with property:", {
+                            id: selectedProperty.id,
+                            name: selectedProperty.name,
+                            price: selectedProperty.price_cost,
+                            insurance: selectedProperty.property_insurance,
+                            insuranceType: selectedProperty.property_insurance_type
+                          });
+
                           // Check for limits one more time before submitting
                           // Get a fresh count directly from the database
                           const currentCount = await getMortgageCount();
@@ -508,7 +559,6 @@ export default function NewMortgage() {
                           
                           // Final check right before submission
                           if (currentCount >= limitValue) {
-                            console.log(`Submission blocked: Current count ${currentCount} >= Limit ${limitValue}`);
                             toast({
                               variant: "destructive",
                               title: t("ui.error", { ns: "global" }),
@@ -562,25 +612,18 @@ export default function NewMortgage() {
                           if (![12, 14].includes(installmentsPerYear)) {
                             throw new Error("Invalid installments per year")
                           }
-
-                          // Fetch bonus rules from the database
-                          const { data: bonusRulesData, error: bonusRulesError } = await supabase
-                            .from("bonus_rules")
-                            .select("*")
-                            .order('min_value', { ascending: true });
-                            
-                          if (bonusRulesError) {
-                            console.error("Error fetching bonus rules:", bonusRulesError);
-                          }
                           
-                          // Create property with bonus rules
-                          const propertyForCalculator = createCalculatorProperty(selectedProperty, bonusRulesData || []);
+                          // Create property object
+                          const propertyForCalculator = createCalculatorProperty(selectedProperty);
+                          
+                          // Get the property bonus
+                          const bonus = await loanCalculator.getPropertyBonus(supabase, selectedProperty.id);
                           
                           // Calculate loan amount using the LoanCalculator
-                          const loanAmount = loanCalculator.calculateLoanAmount(
+                          const loanAmount = loanCalculator.calculateLoanAmountSync(
                             propertyForCalculator, 
-                            downPayment, 
-                            bonusRulesData || []
+                            downPayment,
+                            bonus
                           );
 
                           // Validate loan amount
@@ -614,8 +657,24 @@ export default function NewMortgage() {
                               property_id: selectedProperty.id
                             };
                             
-                            // Get direct calculation results
-                            const results = loanCalculator.calculateResults(propertyForCalculator, baseValues);
+                            // Get direct calculation results (using the cached bonus value)
+                            const results = loanCalculator.calculateResultsSync(propertyForCalculator, baseValues, bonus);
+                            
+                            console.log("NEWMORTGAGE - Direct calculation results:", {
+                              loanAmount: results.loan_amount,
+                              totalInterestAndInsurance: results.total_interest_and_insurance,
+                              monthlyPayment: results.monthly_payment,
+                              propertyInsurance: selectedProperty.property_insurance,
+                              firstPayment: results.payment_schedule && results.payment_schedule.length > 0 ? {
+                                date: results.payment_schedule[0].date,
+                                beginning_balance: results.payment_schedule[0].beginning_balance,
+                                property_insurance: results.payment_schedule[0].property_insurance,
+                                loan_insurance: results.payment_schedule[0].loan_protection_insurance,
+                                interest: results.payment_schedule[0].interest,
+                                principal: results.payment_schedule[0].principal,
+                                monthly_payment: results.payment_schedule[0].scheduled_payment
+                              } : null
+                            });
                             
                             // Use the direct calculation results
                             totalInterestAndInsurance = results.total_interest_and_insurance;
@@ -710,7 +769,6 @@ export default function NewMortgage() {
                             .single()
 
                           if (error) {
-                            console.error('Supabase error details:', error)
                             throw error
                           }
 
@@ -726,7 +784,6 @@ export default function NewMortgage() {
                           
                           navigate(`/mortgages/${data.id}`)
                         } catch (error) {
-                          console.error("Error saving amortization:", error)
                           toast({
                             variant: "destructive",
                             title: t("ui.error", { ns: "global" }),
@@ -743,6 +800,13 @@ export default function NewMortgage() {
 
             {/* Right Container */}
             <div className="w-full overflow-hidden flex-1 p-1 md:p-2 lg:p-4">
+
+
+
+
+
+
+              
               <div className="flex w-full flex-1 p-1 md:p-2 lg:p-4 items-center justify-center h-full">
                 <div className="flex flex-col gap-4 p-4 rounded-md border border-amber-400/10 bg-amber-500/5 -mt-16 w-3/4">
                       <div className="text-sm text-amber-600">

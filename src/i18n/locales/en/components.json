@@ -93,7 +93,7 @@
       "new_term": "New Term",
       "remaining": "Remaining Term",
       "years": "{{value}} years",
-      "start_date": "Start Date",
+      "start_date": "New Start Date",
       "add_button": "Add",
       "table": {
         "number": "#",

@@ -139,7 +139,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             console.error("Error fetching plan:", planError);
           } else if (planData) {
             currentPlanName = planData.name.toLowerCase();
-            console.log(`SUBSCRIPTION: User has ${currentPlanName} plan`);
+            // console.log(`SUBSCRIPTION: User has ${currentPlanName} plan`);
           }
         } else {
           console.log("SUBSCRIPTION: No active subscription found, using Personal plan");
@@ -277,6 +277,44 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const isLimitReached = async (resourceType: 'property' | 'mortgage' | 'rental'): Promise<boolean> => {
     if (!user) return false;
     
+    // Map our resource type to the feature name in the database
+    const featureMap: Record<string, string> = {
+      'property': 'properties',
+      'mortgage': 'mortgages',
+      'rental': 'rentals'
+    };
+    
+    const featureName = featureMap[resourceType];
+    
+    try {
+      // Call the database function to check if limit is reached
+      const { data, error } = await supabase
+        .rpc('check_user_feature_limit', {
+          p_user_id: user.id,
+          p_feature_name: featureName
+        });
+      
+      if (error) {
+        console.error("Error checking feature limit:", error);
+        // Fall back to the old method if the RPC call fails
+        return fallbackLimitCheck(resourceType);
+      }
+      
+      // The function returns TRUE if user CAN create more (under the limit)
+      // So we need to invert it - return TRUE if limit is reached
+      const limitReached = !data;
+      console.log(`SUBSCRIPTION: ${resourceType} limit check using DB function: ${limitReached ? 'REACHED' : 'not reached'}`);
+      
+      return limitReached;
+    } catch (error) {
+      console.error("Error with check_user_feature_limit RPC:", error);
+      // Fall back to the old method
+      return fallbackLimitCheck(resourceType);
+    }
+  };
+  
+  // Fallback limit check function (using the old method)
+  const fallbackLimitCheck = async (resourceType: 'property' | 'mortgage' | 'rental'): Promise<boolean> => {
     // Not checking if still loading limits
     if (isLoading || !isLimitsFetched) {
       console.log("SUBSCRIPTION: Limits not loaded yet, assuming not reached");
@@ -300,7 +338,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       
       // Check if limit is reached
       const reached = usage >= limit;
-      console.log(`SUBSCRIPTION: ${resourceType} limit check: ${usage}/${limit} = ${reached ? 'REACHED' : 'not reached'}`);
+      console.log(`SUBSCRIPTION: ${resourceType} limit check (fallback): ${usage}/${limit} = ${reached ? 'REACHED' : 'not reached'}`);
       
       return reached;
     } catch (error) {

@@ -83,6 +83,10 @@ export interface PaymentRow {
   is_different_from_base: boolean
   beginning_balance?: number
   ending_balance?: number
+  // Add aliases for compatibility with scenarioCalculator.ts
+  monthly_interest?: number  // Alias for interest
+  monthly_loan_insurance?: number  // Alias for loan_insurance
+  principal?: number  // Alias for capital
 }
 
 /**

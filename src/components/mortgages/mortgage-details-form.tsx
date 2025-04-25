@@ -31,13 +31,6 @@ import { CurrencyInput } from "@/components/ui/currency-input"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { mortgageFormSchema, type MortgageFormValues } from "./schema"
 
-type BonusRule = {
-  min_value: number
-  max_value: number
-  traditional_bonus: number
-  sustainable_bonus: number
-}
-
 interface AmortizationDetailsFormProps {
   form: ReturnType<typeof useForm<MortgageFormValues>>
   selectedProperty: Property
@@ -55,7 +48,7 @@ export function AmortizationDetailsForm({
 }: AmortizationDetailsFormProps) {
   const { t } = useTranslation(['mortgages', 'global', 'components'])
   const { data: exchangeRate } = useExchangeRate()
-  const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
+  const [cachedBonus, setCachedBonus] = useState<number | null>(null)
   const loanCalculator = new LoanCalculator()
   
   // Normalize the first_installment_date when component mounts
@@ -63,44 +56,7 @@ export function AmortizationDetailsForm({
   useEffect(() => {
     const currentDate = form.getValues("first_installment_date");
     if (currentDate) {
-      console.log("======== DATE NORMALIZATION DEBUG ========");
-      console.log("Original Date:", currentDate);
-      console.log("Original Date toString():", currentDate.toString());
-      console.log("Original Date Month:", currentDate.getMonth());
-      console.log("Original Date ISO:", currentDate.toISOString());
-      
-      // Current local timezone offset in minutes
-      const timezoneOffsetMinutes = new Date().getTimezoneOffset();
-      console.log("Local Timezone Offset (minutes):", timezoneOffsetMinutes);
-      console.log("Local Timezone Offset (hours):", timezoneOffsetMinutes / 60);
-      
-      // Extract the date from the ISO string to avoid timezone issues
-      // This gets the YYYY-MM-DD part which represents the intended date without timezone shift
-      const isoString = currentDate.toISOString();
-      const dateParts = isoString.split('T')[0].split('-');
-      const year = parseInt(dateParts[0], 10);
-
-      const month = parseInt(dateParts[1], 10) ;
-      
-      console.log("ISO Date String:", isoString);
-      console.log("Date parts from ISO:", dateParts);
-      console.log("Extracted Year from ISO:", year);
-
-      console.log("Month Name:", ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][month]);
-      
-      // Create the normalized date with noon time to avoid any timezone issues
-      // Using the month directly from the ISO date parts ensures we get the correct month
-      const normalizedDate = new Date(year, month, 1, 12, 0, 0, 0);
-      
-      console.log("Normalized Date:", normalizedDate);
-      console.log("Normalized Date toString():", normalizedDate.toString());
-      console.log("Normalized Date Month:", normalizedDate.getMonth());
-      console.log("Normalized Month Name:", ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][normalizedDate.getMonth()]);
-      console.log("Normalized Date ISO:", normalizedDate.toISOString());
-      console.log("Normalized format(MMM):", format(normalizedDate, "MMM"));
-      console.log("=====================================");
-      
-      form.setValue("first_installment_date", normalizedDate);
+      form.setValue("first_installment_date", normalizeDate(currentDate));
     }
   }, [form]);
 
@@ -111,62 +67,20 @@ export function AmortizationDetailsForm({
     }
   }, [exchangeRate, loanCalculator]);
 
-  // Load bonus rules
+  // Get property bonus when property changes
   useEffect(() => {
-    // Log any mortgage data coming from the database directly
-    const initialFormValues = form.getValues();
-    console.log("========= DATABASE DATE VALUES =========");
-    console.log("Raw Form Values:", initialFormValues);
-    if (initialFormValues.first_installment_date) {
-      console.log("DB First Installment Date (raw):", initialFormValues.first_installment_date);
-      if (initialFormValues.first_installment_date instanceof Date) {
-        console.log("DB Date is a JavaScript Date object");
-        console.log("DB Date toString():", initialFormValues.first_installment_date.toString());
-        console.log("DB Date toISOString():", initialFormValues.first_installment_date.toISOString());
-        console.log("DB Date getFullYear():", initialFormValues.first_installment_date.getFullYear());
-
-        console.log("DB Date getDate():", initialFormValues.first_installment_date.getDate());
-        console.log("DB Date in MMM format:", format(initialFormValues.first_installment_date, "MMM"));
-      } else {
-        console.log("DB Date is NOT a JavaScript Date object, type:", typeof initialFormValues.first_installment_date);
-        try {
-          // If it's a string, try to parse it
-          const parsedDate = new Date(initialFormValues.first_installment_date);
-          console.log("Parsed DB Date:", parsedDate);
-          console.log("Parsed DB Date in MMM format:", format(parsedDate, "MMM"));
-        } catch (error) {
-          console.error("Error parsing DB date:", error);
-        }
-      }
-    } else {
-      console.log("No first_installment_date found in form values");
+    if (selectedProperty?.id) {
+      const getBonus = async () => {
+        const bonus = await loanCalculator.getPropertyBonus(supabase, selectedProperty.id);
+        setCachedBonus(bonus);
+      };
+      
+      getBonus();
     }
-    console.log("=======================================");
-
-    const loadBonusRules = async () => {
-      const { data, error } = await supabase
-        .from("bonus_rules")
-        .select("*")
-        .order('min_value', { ascending: true });
-
-      if (error) {
-        console.error("Error loading bonus rules:", error);
-        return;
-      }
-
-      setBonusRules(data || []);
-    };
-
-    loadBonusRules();
-  }, []);
+  }, [selectedProperty?.id, loanCalculator]);
 
   // Helper function to create a property compatible with LoanCalculator
   const createCalculatorProperty = (property: Property) => {
-    // console.log('==== CREATE CALCULATOR PROPERTY DEBUG ====');
-    // console.log('Original Property:', property);
-    // console.log('Bonus Rules available:', bonusRules);
-    // console.log('Bonus Rules length:', bonusRules.length);
-    
     const calculatorProperty = {
       id: property.id,
       name: property.name,
@@ -175,13 +89,8 @@ export function AmortizationDetailsForm({
       property_insurance: property.property_insurance || 0,
       property_insurance_type: property.property_insurance_type || 'auto',
       is_first_home: property.is_first_home || false,
-      is_sustainable: property.is_sustainable || false,
-      bonus_rules: bonusRules
+      is_sustainable: property.is_sustainable || false
     };
-    
-    // console.log('Calculator Property Created:', calculatorProperty);
-    // console.log('Bonus Rules attached to property:', calculatorProperty.bonus_rules);
-    // console.log('================================');
     
     return calculatorProperty;
   };
@@ -196,14 +105,49 @@ export function AmortizationDetailsForm({
 
     // Create a property object compatible with LoanCalculator
     const propertyForCalculator = createCalculatorProperty(selectedProperty);
+    
+    // console.log("MORTGAGE-FORM - Property for loan calculation:", {
+    //   id: propertyForCalculator.id,
+    //   price: propertyForCalculator.price_cost,
+    //   insurance: propertyForCalculator.property_insurance,
+    //   insuranceType: propertyForCalculator.property_insurance_type,
+    //   downPayment: numericDownPayment,
+    //   bonus: cachedBonus || 0
+    // });
 
-    // Use the LoanCalculator service to calculate the loan amount
-    return loanCalculator.calculateLoanAmount(
+    // Use the synchronous version with cached bonus
+    const calculatedAmount = loanCalculator.calculateLoanAmountSync(
       propertyForCalculator, 
       numericDownPayment, 
-      bonusRules
+      cachedBonus || 0
     );
-  }, [selectedProperty, numericDownPayment, bonusRules, loanCalculator]);
+    
+    // console.log("MORTGAGE-FORM - Calculated loan amount:", calculatedAmount);
+    
+    return calculatedAmount;
+  }, [selectedProperty, numericDownPayment, cachedBonus, loanCalculator]);
+
+  // Add console log to track form value changes
+  useEffect(() => {
+    // Create a subscription to all form value changes
+    const subscription = form.watch((values) => {
+      if (!values) return;
+      
+      // Log changes to key form fields that affect calculations
+      // console.log("MORTGAGE-FORM - Form values changed:", {
+      //   down_payment: values.down_payment,
+      //   interest_rate: values.interest_rate,
+      //   term_years: values.term_years,
+      //   installments_per_year: values.installments_per_year,
+      //   loan_protection_type: values.loan_protection_type,
+      //   loan_protection_insurance: values.loan_protection_insurance,
+      //   timestamp: new Date().toISOString()
+      // });
+    });
+    
+    // Clean up subscription on unmount
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -217,11 +161,11 @@ export function AmortizationDetailsForm({
         <div className="text-xs ">
           {t('amortization.loan_amount_formula', { ns: 'mortgages' })}
         </div>
-        {/* {selectedProperty && calculateBonus(selectedProperty) && (
+        {cachedBonus && cachedBonus > 0 && (
           <div className="text-sm text-muted-foreground">
-            {t("includes_bonus")}: {formatCurrency(calculateBonus(selectedProperty) || 0, "PEN")}
+            {t('amortization.includes_bonus', 'Includes bonus', { ns: 'mortgages' })}: {formatCurrency(cachedBonus, "PEN")}
           </div>
-        )} */}
+        )}
       </div>
       <Separator />
 
@@ -310,6 +254,7 @@ export function AmortizationDetailsForm({
                     <CurrencyInput 
                       value={field.value || ''}
                       onChange={(value) => {
+                        console.log("MORTGAGE-FORM - Down payment changed:", value);
                         field.onChange(value)
                         form.trigger("down_payment")
                       }}
@@ -465,9 +410,6 @@ export function AmortizationDetailsForm({
                       
                       // Apply a more comprehensive update with timeout to ensure state propagation
                       setTimeout(() => {
-                        // Log for debugging
-                        console.log(`Installments value changed to: ${value}`);
-                        
                         // Force a complete form update with all events triggered
                         form.setValue("installments_per_year", value, {
                           shouldDirty: true,
@@ -507,13 +449,6 @@ export function AmortizationDetailsForm({
                       <Select
                         value={field.value ? (() => {
                           const monthValue = format(field.value, "MMM");
-                          console.log("========= DROPDOWN DISPLAY DEBUG =========");
-                          console.log("Dropdown Date:", field.value);
-                          console.log("Dropdown Date toString():", field.value.toString());
-              
-                          console.log("Dropdown Month Name:", ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][field.value.getMonth()]);
-                          console.log("format(date, 'MMM') result:", monthValue);
-                          console.log("=========================================");
                           return monthValue;
                         })() : format(new Date(), "MMM")}
                         onValueChange={(month) => {
@@ -533,14 +468,13 @@ export function AmortizationDetailsForm({
                             
                             // Ensure the date is valid
                             if (!isValid(newDate)) {
-                              console.error("Generated invalid date with month:", month);
                               return;
                             }
                             
                             field.onChange(normalizeDate(newDate));
                             form.trigger("first_installment_date");
                           } catch (error) {
-                            console.error("Error changing month:", error);
+                            // Handle error silently
                           }
                         }}
                       >
@@ -574,14 +508,13 @@ export function AmortizationDetailsForm({
                             
                             // Ensure the date is valid
                             if (!isValid(newDate)) {
-                              console.error("Generated invalid date with year:", year);
                               return;
                             }
                             
                             field.onChange(normalizeDate(newDate));
                             form.trigger("first_installment_date");
                           } catch (error) {
-                            console.error("Error changing year:", error);
+                            // Handle error silently
                           }
                         }}
                       >

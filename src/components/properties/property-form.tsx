@@ -253,10 +253,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
       
       console.log(`Found ${mortgages.length} dependent mortgages to update`);
       
-      // Step B: Get bonus rules
-      const bonusRules = await loanCalculator.fetchBonusRules(supabase);
-      
-      // Step C: Create a compatible property object for LoanCalculator
+      // Create a compatible property object for LoanCalculator
       const propertyForCalculator = {
         id: property.id,
         name: property.name,
@@ -265,19 +262,21 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
         property_insurance: property.property_insurance || 0,
         property_insurance_type: property.property_insurance_type,
         is_first_home: property.is_first_home,
-        is_sustainable: property.is_sustainable,
-        bonus_rules: bonusRules
+        is_sustainable: property.is_sustainable
       };
       
       // Step D: Process each mortgage
       for (const mortgage of mortgages) {
         console.log(`Processing mortgage ${mortgage.id}`);
         
+        // Get the property bonus
+        const bonus = await loanCalculator.getPropertyBonus(supabase, property.id);
+        
         // Calculate new loan amount
-        const newLoanAmount = loanCalculator.calculateLoanAmount(
+        const newLoanAmount = loanCalculator.calculateLoanAmountSync(
           propertyForCalculator,
           mortgage.down_payment,
-          bonusRules
+          bonus
         );
         
         // Prepare base values for scenario calculation
@@ -294,7 +293,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
         };
         
         // Calculate new scenario results
-        const scenarioResults = loanCalculator.calculateResults(propertyForCalculator, baseValues);
+        const scenarioResults = loanCalculator.calculateResultsSync(propertyForCalculator, baseValues, bonus);
         
         // If there are extra installments or rate changes, we need to calculate those too
         const { data: extraInstallments } = await supabase

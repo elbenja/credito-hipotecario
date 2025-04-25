@@ -45,14 +45,6 @@ import { ScenarioResult } from "@/services/mortgages/types/common"
 import SVGfixed from "@/components/ui/svg-fixed"
 import { LoanCalculator } from "@/services/mortgages/calculations/loan"
 
-// Add type for BonusRule
-type BonusRule = {
-  min_value: number
-  max_value: number
-  traditional_bonus: number
-  sustainable_bonus: number
-}
-
 export default function EditMortgage() {
   const { t } = useTranslation()
   const { t: tMortgages } = useTranslation('mortgages')
@@ -62,9 +54,6 @@ export default function EditMortgage() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const location = useLocation()
-  
-  // Add state for bonus rules
-  const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
   
   // Extract propertyId from URL query parameters
   const queryParams = new URLSearchParams(location.search)
@@ -104,29 +93,6 @@ export default function EditMortgage() {
     }
   }, [savedScenario, activeTab, tabFromUrl]);
 
-  // Load bonus rules
-  useEffect(() => {
-    const fetchBonusRules = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("bonus_rules")
-          .select("*")
-          .order('min_value', { ascending: true });
-
-        if (error) {
-          console.error("Error loading bonus rules:", error);
-          return;
-        }
-
-        setBonusRules(data || []);
-      } catch (error) {
-        console.error("Error loading bonus rules:", error);
-      }
-    };
-
-    fetchBonusRules();
-  }, []);
-
   const mortgageForm = useForm<MortgageFormValues>({
     resolver: zodResolver(mortgageFormSchema),
     // Set initial values for new mortgage if we have property from URL
@@ -157,7 +123,6 @@ export default function EditMortgage() {
   const createCalculatorProperty = (property: Property) => {
     console.log("=== EditMortgage: createCalculatorProperty ===");
     console.log("Original property:", property);
-    console.log("Available bonus rules:", bonusRules);
     
     const calculatorProperty = {
       id: property.id,
@@ -167,11 +132,10 @@ export default function EditMortgage() {
       property_insurance: property.property_insurance || 0,
       property_insurance_type: property.property_insurance_type || 'auto',
       is_first_home: property.is_first_home || false,
-      is_sustainable: property.is_sustainable || false,
-      bonus_rules: bonusRules
+      is_sustainable: property.is_sustainable || false
     };
     
-    console.log("Created calculator property with bonus_rules:", calculatorProperty);
+    console.log("Created calculator property:", calculatorProperty);
     console.log("==============================================");
     
     return calculatorProperty;
@@ -188,11 +152,10 @@ export default function EditMortgage() {
     try {
       console.log("=== EditMortgage: handlePropertyUpdate ===");
       console.log("Updated property:", updatedProperty);
-      console.log("Available bonus rules:", bonusRules);
       
       // Create a compatible property object for the LoanCalculator
       const propertyForCalculator = createCalculatorProperty(updatedProperty);
-      console.log("Property for calculator with bonus rules:", propertyForCalculator);
+      console.log("Property for calculator:", propertyForCalculator);
       
       // Get current mortgage for down payment
       const { data: mortgageData, error: mortgageError } = await supabase
@@ -212,29 +175,27 @@ export default function EditMortgage() {
       queryClient.invalidateQueries({ queryKey: ["mortgage", id] });
       queryClient.invalidateQueries({ queryKey: ["scenarios", id] });
       
-      // Update local scenario inputs state
-      const fetchedBonusRules = await loanCalculator.fetchBonusRules(supabase);
-      console.log("Fetched bonus rules:", fetchedBonusRules);
-      const newLoanAmount = loanCalculator.calculateLoanAmount(propertyForCalculator, downPayment, bonusRules);
+      // Get the property bonus
+      const bonus = await loanCalculator.getPropertyBonus(supabase, propertyForCalculator.id);
+      console.log("Property bonus:", bonus);
+      
+      // Calculate new loan amount
+      const newLoanAmount = loanCalculator.calculateLoanAmountSync(propertyForCalculator, downPayment, bonus);
       console.log("Calculated new loan amount:", newLoanAmount);
       
       console.log("Updating scenario inputs");
       console.log("==============================================");
       
-      setScenarioInputs(prev => {
-        const newInputs = {
-          ...prev,
-          loanAmount: newLoanAmount,
-          propertyInsurance: updatedProperty.property_insurance || 0
-        };
-        console.log("New scenario inputs:", newInputs);
-        return newInputs;
-      });
+      setScenarioInputs(prev => ({
+        ...prev,
+        loanAmount: newLoanAmount,
+        propertyInsurance: updatedProperty.property_insurance || 0
+      }));
       
     } catch (error) {
       console.error("Error updating mortgage after property update:", error);
     }
-  }, [queryClient, id, user, loanCalculator, bonusRules, createCalculatorProperty]);
+  }, [queryClient, id, user, loanCalculator]);
 
   // Fetch property if propertyId is provided in URL
   useEffect(() => {
@@ -454,7 +415,7 @@ export default function EditMortgage() {
     }
   }, [id, mortgage]);
 
-  // Add form value watching effect with proper dependency array
+  // Update effect that watches mortgage form values
   useEffect(() => {
     if (!mortgage?.property) return;
     
@@ -468,70 +429,77 @@ export default function EditMortgage() {
         // Calculate total loan amount
         const loanAmount = mortgage.property.price_cost - downPayment;
         
-        // Calculate and subtract bonus if applicable
-        const propertyForCalculator = createCalculatorProperty(mortgage.property);
-        const bonus = loanCalculator.calculateBonus(propertyForCalculator, bonusRules);
-        const adjustedLoanAmount = bonus ? loanAmount - bonus : loanAmount;
-        
-        console.log("=== EditMortgage: Calculating scenarioInputs ===");
-        console.log("Property from mortgage:", mortgage.property);
-        console.log("Down payment from form:", downPayment);
-        console.log("Property price:", mortgage.property.price_cost);
-        console.log("Raw loan amount (before bonus):", loanAmount);
-        console.log("Property for calculator:", propertyForCalculator);
-        console.log("Available bonus rules:", bonusRules);
-        console.log("Calculated bonus:", bonus);
-        console.log("Final adjusted loan amount:", adjustedLoanAmount);
-        
-        const interestRate = parseFloat(values.interest_rate || "0");
-        const termYears = parseInt(values.term_years || "0");
-        const installmentsPerYear = parseInt(values.installments_per_year || "12");
-        
-        // Handle loan protection insurance based on type
-        let loanInsurance = 0;
-        switch (values.loan_protection_type) {
-          case "individual":
-            loanInsurance = 0.028;
-            break;
-          case "joint":
-            loanInsurance = 0.052;
-            break;
-          case "custom":
-            loanInsurance = parseFloat(values.loan_protection_insurance || "0");
-            break;
-          case "none":
-            loanInsurance = 0;
-            break;
-        }
+        // Get the property bonus directly from the database
+        loanCalculator.getPropertyBonus(supabase, mortgage.property.id)
+          .then(bonus => {
+            // Create property for calculator
+            const propertyForCalculator = createCalculatorProperty(mortgage.property);
+            
+            // Calculate the adjusted loan amount
+            const adjustedLoanAmount = bonus ? loanAmount - bonus : loanAmount;
+            
+            console.log("=== EditMortgage: Calculating scenarioInputs ===");
+            console.log("Property from mortgage:", mortgage.property);
+            console.log("Down payment from form:", downPayment);
+            console.log("Property price:", mortgage.property.price_cost);
+            console.log("Raw loan amount (before bonus):", loanAmount);
+            console.log("Property for calculator:", propertyForCalculator);
+            console.log("Calculated bonus:", bonus);
+            console.log("Final adjusted loan amount:", adjustedLoanAmount);
+            
+            const interestRate = parseFloat(values.interest_rate || "0");
+            const termYears = parseInt(values.term_years || "0");
+            const installmentsPerYear = parseInt(values.installments_per_year || "12");
+            
+            // Handle loan protection insurance based on type
+            let loanInsurance = 0;
+            switch (values.loan_protection_type) {
+              case "individual":
+                loanInsurance = 0.028;
+                break;
+              case "joint":
+                loanInsurance = 0.052;
+                break;
+              case "custom":
+                loanInsurance = parseFloat(values.loan_protection_insurance || "0");
+                break;
+              case "none":
+                loanInsurance = 0;
+                break;
+            }
 
-        // Handle date properly to preserve the day of month
-        let firstInstallmentDate;
-        if (values.first_installment_date) {
-          firstInstallmentDate = normalizeDate(new Date(values.first_installment_date));
-        }
+            // Handle date properly to preserve the day of month
+            let firstInstallmentDate;
+            if (values.first_installment_date) {
+              firstInstallmentDate = normalizeDate(new Date(values.first_installment_date));
+            }
 
-        const newInputs = {
-          mortgageId: id || "",
-          loanAmount: adjustedLoanAmount,
-          interestRate,
-          termYears,
-          installmentsPerYear,
-          firstInstallmentDate,
-          propertyInsurance: mortgage.property.property_insurance || 0,
-          loanInsurance
-        };
-        
-        console.log("Updating scenario inputs to:", newInputs);
-        console.log("==============================================");
+            const newInputs = {
+              mortgageId: id || "",
+              loanAmount: adjustedLoanAmount,
+              interestRate,
+              termYears,
+              installmentsPerYear,
+              firstInstallmentDate,
+              propertyInsurance: mortgage.property.property_insurance || 0,
+              loanInsurance
+            };
+            
+            console.log("Updating scenario inputs to:", newInputs);
+            console.log("==============================================");
 
-        setScenarioInputs(newInputs);
+            setScenarioInputs(newInputs);
+          })
+          .catch(error => {
+            console.error("Error getting property bonus:", error);
+          });
       } catch (error) {
         console.error("Error updating scenario inputs:", error);
       }
     });
     
     return () => subscription.unsubscribe();
-  }, [mortgageForm, id, mortgage?.property, loanCalculator, bonusRules]);
+  }, [mortgageForm, id, mortgage?.property, loanCalculator, supabase]);
 
   const { data: scenarios, isLoading: isLoadingScenarios, error: scenariosError } = useScenarioCalculations(scenarioInputs)
 
@@ -673,13 +641,12 @@ export default function EditMortgage() {
         // Get loan amount from the form component calculation
         const loanAmount = selectedPropertyFromUrl.price_cost - downPayment;
         
-        // Calculate bonus if applicable
+        // Get the property bonus
         const propertyForCalculator = createCalculatorProperty(selectedPropertyFromUrl);
         console.log("=== EditMortgage: onUpdateMortgage ===");
         console.log("Property for calculator:", propertyForCalculator);
-        console.log("Available bonus rules:", bonusRules);
         
-        const bonus = loanCalculator.calculateBonus(propertyForCalculator, bonusRules);
+        const bonus = await loanCalculator.getPropertyBonus(supabase, propertyForCalculator.id);
         console.log("Calculated bonus:", bonus);
         
         // Apply bonus to loan amount if applicable
@@ -799,13 +766,12 @@ export default function EditMortgage() {
         // Get loan amount from the form component calculation
         const loanAmount = mortgage.property.price_cost - downPayment;
         
-        // Calculate bonus if applicable
+        // Get the property bonus
         const propertyForCalculator = createCalculatorProperty(mortgage.property);
         console.log("=== EditMortgage: onUpdateMortgage ===");
         console.log("Property for calculator:", propertyForCalculator);
-        console.log("Available bonus rules:", bonusRules);
         
-        const bonus = loanCalculator.calculateBonus(propertyForCalculator, bonusRules);
+        const bonus = await loanCalculator.getPropertyBonus(supabase, propertyForCalculator.id);
         console.log("Calculated bonus:", bonus);
         
         // Apply bonus to loan amount if applicable
