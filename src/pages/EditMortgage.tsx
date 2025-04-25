@@ -522,11 +522,8 @@ export default function EditMortgage() {
         return;
       }
       
-      // Calculate breakeven point
-      let breakEvenPoint = null;
-      if (scenarios.regular.payments && scenarios.regular.payments.length > 0) {
-        breakEvenPoint = findBreakEvenPoint(scenarios.regular.payments);
-      }
+      // Get breakeven point directly from the summary
+      const breakEvenPoint = scenarios.regular.summary.breakeven_point || null;
       
       // Update mortgage with regular scenario values
       const { error: updateError } = await supabase
@@ -847,7 +844,7 @@ export default function EditMortgage() {
           if (rateChangesError) throw rateChangesError;
           
           // Import the ScenarioCalculator
-          const { ScenarioCalculator } = await import("@/services/amortization/services/scenarioCalculator");
+          const { ScenarioCalculator } = await import("@/services/mortgages/services/scenarioCalculator");
           
           // Calculate updated scenarios with the new parameters
           const updatedScenarios = ScenarioCalculator.calculateScenarios({
@@ -863,7 +860,7 @@ export default function EditMortgage() {
             // Calculate breakeven point
             let breakEvenPoint = null;
             if (scenarioData.payments && scenarioData.payments.length > 0) {
-              breakEvenPoint = findBreakEvenPoint(scenarioData.payments);
+              breakEvenPoint = scenarioData.summary.breakeven_point;
             }
             
             // Update the scenario data
@@ -964,37 +961,25 @@ export default function EditMortgage() {
         totalInterest = scenarios.regular.summary.total_interest_and_insurance || 0;
         totalMonths = scenarios.regular.summary.total_months || 0;
         monthlyPayment = scenarios.regular.summary.monthly_payment || 0;
-        
-        if (scenarios.regular.payments && scenarios.regular.payments.length > 0) {
-          breakEvenPoint = findBreakEvenPoint(scenarios.regular.payments);
-        }
+        breakEvenPoint = scenarios.regular.summary.breakeven_point || null;
       } 
       else if (scenarioType === "accelerated" && scenarios?.accelerated?.summary) {
         totalInterest = scenarios.accelerated.summary.total_interest_and_insurance || 0;
         totalMonths = scenarios.accelerated.summary.total_months || 0;
         monthlyPayment = scenarios.accelerated.summary.monthly_payment || 0;
-        
-        if (scenarios.accelerated.payments && scenarios.accelerated.payments.length > 0) {
-          breakEvenPoint = findBreakEvenPoint(scenarios.accelerated.payments);
-        }
+        breakEvenPoint = scenarios.accelerated.summary.breakeven_point || null;
       }
       else if (scenarioType === "lower_payment" && scenarios?.lower_payment?.summary) {
         totalInterest = scenarios.lower_payment.summary.total_interest_and_insurance || 0;
         totalMonths = scenarios.lower_payment.summary.total_months || 0;
         monthlyPayment = scenarios.lower_payment.summary.monthly_payment || 0;
-        
-        if (scenarios.lower_payment.payments && scenarios.lower_payment.payments.length > 0) {
-          breakEvenPoint = findBreakEvenPoint(scenarios.lower_payment.payments);
-        }
+        breakEvenPoint = scenarios.lower_payment.summary.breakeven_point || null;
       }
       else if (scenarioType === "new_rate" && scenarios?.new_rate?.summary) {
         totalInterest = scenarios.new_rate.summary.total_interest_and_insurance || 0;
         totalMonths = scenarios.new_rate.summary.total_months || 0;
         monthlyPayment = scenarios.new_rate.summary.monthly_payment || 0;
-        
-        if (scenarios.new_rate.payments && scenarios.new_rate.payments.length > 0) {
-          breakEvenPoint = findBreakEvenPoint(scenarios.new_rate.payments);
-        }
+        breakEvenPoint = scenarios.new_rate.summary.breakeven_point || null;
       }
       
       // Save to database if we have an ID
@@ -1028,40 +1013,6 @@ export default function EditMortgage() {
     }
   }
   
-  // Helper function to find the breakeven point from payments data
-  const findBreakEvenPoint = (payments: any[]) => {
-    if (!payments || payments.length === 0) return null;
-    
-    // Look for the point where principal becomes greater than interest+insurance
-    for (let i = 0; i < payments.length - 1; i++) {
-      const current = payments[i];
-      const next = payments[i + 1];
-      
-      const currentPrincipal = current.principal || current.capital || 0;
-      const currentInterest = (current.monthly_interest || current.interest || 0) + 
-                             (current.property_insurance || 0) + 
-                             (current.monthly_loan_insurance || current.loan_insurance || 0);
-      
-      const nextPrincipal = next.principal || next.capital || 0;
-      const nextInterest = (next.monthly_interest || next.interest || 0) + 
-                          (next.property_insurance || 0) + 
-                          (next.monthly_loan_insurance || next.loan_insurance || 0);
-      
-      // Found the crossover point
-      if (currentPrincipal <= currentInterest && nextPrincipal > nextInterest) {
-        // Return year value with one decimal
-        return (i + 1) / 12;
-      }
-      
-      // Alternative check for when principal already exceeds interest
-      if (currentPrincipal >= currentInterest) {
-        return i / 12;
-      }
-    }
-    
-    return null;
-  }
-
   // Add effect to fetch and update new rates state
   useEffect(() => {
     const fetchNewRates = async () => {

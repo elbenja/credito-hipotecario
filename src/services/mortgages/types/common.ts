@@ -96,6 +96,7 @@ export interface ScenarioSummaryResult {
   total_interest_and_insurance: number
   total_months: number
   monthly_payment: number
+  breakeven_point?: number | null
 }
 
 /**

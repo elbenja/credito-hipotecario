@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { useDebounce } from "./use-debounce"
-import { ScenarioCalculator } from "@/services/amortization/services/scenarioCalculator"
+import { ScenarioCalculator } from "@/services/mortgages/services/scenarioCalculator"
 import type { Database } from "@/types/supabase"
 import { addMonths, startOfMonth } from "date-fns"
 import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios } from "@/services/mortgages/types/common"
@@ -162,8 +162,8 @@ export function useScenarioCalculations({
         if (extraInstallmentsResult.error) throw extraInstallmentsResult.error
         if (newRatesResult.error) throw newRatesResult.error
 
-        console.log("Fetched extra installments:", extraInstallmentsResult.data.length);
-        console.log("Fetched rate changes:", newRatesResult.data.length);
+        // console.log("Fetched extra installments:", extraInstallmentsResult.data.length);
+        // console.log("Fetched rate changes:", newRatesResult.data.length);
 
         // Improved handling of extra installments to preserve exact dates
         const extraInstallments = extraInstallmentsResult.data.map(ei => {
