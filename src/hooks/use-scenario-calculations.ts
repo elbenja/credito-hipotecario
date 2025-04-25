@@ -102,14 +102,6 @@ export function useScenarioCalculations({
 
   // Add validation for input values
   const isValidInput = useMemo(() => {
-    console.log("Validating scenario inputs:", {
-      loanAmount: debouncedLoanAmount,
-      interestRate: debouncedInterestRate,
-      termYears: debouncedTermYears,
-      installmentsPerYear: debouncedInstallmentsPerYear,
-      hasFirstInstallmentDate: !!debouncedFirstInstallmentDate
-    });
-    
     return (
       debouncedLoanAmount > 0 &&
       debouncedInterestRate > 0 &&
@@ -141,7 +133,6 @@ export function useScenarioCalculations({
       try {
         // Return default scenarios if input values are invalid
         if (!isValidInput) {
-          console.log("Invalid input values, returning default scenarios");
           return getDefaultScenarios();
         }
 

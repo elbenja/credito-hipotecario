@@ -26,7 +26,6 @@ import {
 import { PropertySelect, type Property } from "@/components/mortgages/property-select"
 import { AmortizationDetailsForm } from "@/components/mortgages/mortgage-details-form"
 
-
 import { 
   mortgageFormSchema, 
   defaultValues, 
@@ -35,12 +34,11 @@ import {
 import { LoanCalculator } from "@/services/mortgages/calculations/loan"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
-import type { ScenarioResult, BonusRule, BaseAmortizationValues } from "@/services/mortgages/types/common"
+import type { ScenarioResult, BonusRule } from "@/services/mortgages/types/common"
 import { NoMoreSpace } from "@/components/common/NoMoreSpace"
 import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
-import { useExchangeRate } from "@/hooks/use-exchange-rate"
-import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
 import { normalizeDate } from "@/lib/utils"
+import { ScenarioCalculator } from "@/services/mortgages/services/scenarioCalculator" 
 
 export default function NewMortgage() {
   const { t } = useTranslation(['mortgages', 'dashboard', 'global'])
@@ -49,13 +47,12 @@ export default function NewMortgage() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const location = useLocation()
-  const { data: exchangeRate } = useExchangeRate()
   
   // Extract propertyId from URL query parameters
   const queryParams = new URLSearchParams(location.search)
   const propertyIdFromUrl = queryParams.get('propertyId')
   
-  // Form setup
+  // Form setup with default values
   const form = useForm<MortgageFormValues>({
     resolver: zodResolver(mortgageFormSchema),
     defaultValues: {
@@ -65,31 +62,16 @@ export default function NewMortgage() {
     mode: "onChange"
   })
   
-  // Reference for tracking plan changes
-  const hasPlanBeenChecked = useRef(false);
-  
+  // Property selection state
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
-  const [interestRateLimits] = useState({
-    min_rate: 4,
-    max_rate: 18,
-    by_default: 8.5
-  })
   
-  // State for scenario calculations
-  const [scenarioInputs, setScenarioInputs] = useState({
-    loanAmount: 0,
-    interestRate: 0,
-    termYears: 0,
-    installmentsPerYear: 12,
-    firstInstallmentDate: normalizeDate(new Date()),
-    propertyInsurance: 0,
-    loanInsurance: 0
-  });
+  // Property bonus state
+  const [propertyBonus, setPropertyBonus] = useState<number | null>(null)
   
-  // Use the same scenario calculations hook as EditMortgage.tsx
-  const { data: scenarios, isLoading: isLoadingScenarios } = useScenarioCalculations(scenarioInputs);
+  // Loan amount calculation (derived from property, down payment, and bonus)
+  const [loanAmount, setLoanAmount] = useState(0)
   
-  // Subscription limits hook
+  // Subscription limits hooks and state
   const {
     isLoading: isCheckingLimits,
     hasReachedLimit,
@@ -100,13 +82,32 @@ export default function NewMortgage() {
     checkLimit
   } = useSubscriptionLimits();
   
-  // State for limit checking
   const [isLimitCheckDone, setIsLimitCheckDone] = useState(false);
   const [isLimitReached, setIsLimitReached] = useState(false);
   const [mortgageCount, setMortgageCount] = useState(0);
   const limitCheckRef = useRef(false);
-
-  // Direct count from database for checking
+  
+  // State to track if form is being submitted
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Initialize loan calculator
+  const loanCalculator = new LoanCalculator();
+  
+  // Helper function to create property object for calculator
+  const createCalculatorProperty = (property: Property) => {
+    return {
+      id: property.id,
+      name: property.name,
+      price_cost: property.price_cost,
+      currency: property.currency,
+      property_insurance: property.property_insurance || 0,
+      property_insurance_type: property.property_insurance_type || 'auto',
+      is_first_home: property.is_first_home || false,
+      is_sustainable: property.is_sustainable || false
+    };
+  };
+  
+  // Direct count from database for checking limits
   const getMortgageCount = useCallback(async (): Promise<number> => {
     if (!user) return 0;
 
@@ -126,7 +127,7 @@ export default function NewMortgage() {
     }
   }, [user]);
 
-  // Single function to check limits once
+  // Function to check limits once
   const checkLimitOnce = useCallback(async () => {
     // Prevent multiple simultaneous checks
     if (limitCheckRef.current) return false;
@@ -148,7 +149,6 @@ export default function NewMortgage() {
       setMortgageCount(currentCount);
       
       // 2. Determine the user's plan limit
-      // Use planLimit from the hook or fall back to plan defaults
       const limitValue = planLimit > 0 ? planLimit : 
                         (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3);
       
@@ -162,209 +162,93 @@ export default function NewMortgage() {
       return false;
     } finally {
       setIsLimitCheckDone(true);
-      // Don't reset limitCheckRef.current so the check only runs once
     }
   }, [user?.id, planLimit, currentPlan]);
   
-  // Run the check only once when component mounts
+  // Run the limit check when component mounts
   useEffect(() => {
-    // Only run if:
-    // 1. We haven't done a check yet AND
-    // 2. We have a user ID AND
-    // 3. Current plan information is available
     if (!isLimitCheckDone && user?.id && currentPlan) {
       checkLimitOnce();
     }
   }, [checkLimitOnce, isLimitCheckDone, user?.id, currentPlan]);
 
-  // Add a separate effect for currentPlan changes to avoid infinite loops
-  useEffect(() => {
-    // Skip the first render and only run when plan actually changes
-    if (currentPlan && !hasPlanBeenChecked.current) {
-      hasPlanBeenChecked.current = true;
-      return;
-    }
-    
-    if (currentPlan && hasPlanBeenChecked.current) {
-      checkLimitOnce();
-    }
-  }, [currentPlan, checkLimitOnce]);
-
-  // Add loan protection type watcher effect
-  useEffect(() => {
-    const type = form.watch("loan_protection_type");
-    
-    switch (type) {
-      case "individual":
-        form.setValue("loan_protection_insurance", "0.028", {
-          shouldValidate: true,
-          shouldDirty: true
-        });
-        break;
-      case "joint":
-        form.setValue("loan_protection_insurance", "0.052", {
-          shouldValidate: true,
-          shouldDirty: true
-        });
-        break;
-      case "none":
-        form.setValue("loan_protection_insurance", "0", {
-          shouldValidate: true,
-          shouldDirty: true
-        });
-        break;
-      // For custom type, don't override the value
-    }
-  }, [form.watch("loan_protection_type"), form]);
-
-  // Watch for name changes to update breadcrumb
-  const amortizationName = form.watch("name")
-
-  const loanCalculator = new LoanCalculator()
-
-  // Set the exchange rate whenever it changes
-  useEffect(() => {
-    if (exchangeRate?.data) {
-      loanCalculator.setExchangeRate(exchangeRate.data);
-    }
-  }, [exchangeRate, loanCalculator]);
-
-  // Helper function to create a property object compatible with LoanCalculator
-  const createCalculatorProperty = (property: Property) => {
-    return {
-      id: property.id,
-      name: property.name,
-      price_cost: property.price_cost,
-      currency: property.currency,
-      property_insurance: property.property_insurance || 0,
-      property_insurance_type: property.property_insurance_type || 'auto',
-      is_first_home: property.is_first_home || false,
-      is_sustainable: property.is_sustainable || false
-    };
-  };
-
-  // Update scenario inputs when form values change
+  // Effect to fetch property bonus when property changes
   useEffect(() => {
     if (!selectedProperty) return;
     
-    // console.log("NEWMORTGAGE - Selected property:", {
-    //   id: selectedProperty.id,
-    //   name: selectedProperty.name,
-    //   price: selectedProperty.price_cost,
-    //   insurance: selectedProperty.property_insurance,
-    //   insuranceType: selectedProperty.property_insurance_type
-    // });
-    
-    const subscription = form.watch((values) => {
-      if (!values) return;
-      
+    const fetchBonus = async () => {
       try {
-        // Get current values
-        const downPayment = parseFloat(values.down_payment?.replace(/[^0-9.]/g, "") || "0");
-        const interestRate = parseFloat(values.interest_rate || "0");
-        const termYears = parseInt(values.term_years || "0");
-        const installmentsPerYear = parseInt(values.installments_per_year || "12");
+        const bonus = await loanCalculator.getPropertyBonus(supabase, selectedProperty.id);
+        setPropertyBonus(bonus);
+        console.log("Property bonus fetched:", bonus);
         
-        // Handle loan protection insurance based on type
-        let loanInsurance = 0;
-        switch (values.loan_protection_type) {
+        // Update loan amount when bonus is fetched
+        updateLoanAmount();
+      } catch (error) {
+        console.error("Error fetching property bonus:", error);
+      }
+    };
+    
+    fetchBonus();
+  }, [selectedProperty]);
+  
+  // Function to update loan amount based on property, bonus, and down payment
+  const updateLoanAmount = useCallback(() => {
+    if (!selectedProperty) return;
+    
+    const downPayment = parseFloat(form.getValues("down_payment")?.replace(/[^0-9.]/g, "") || "0");
+    const bonus = propertyBonus || 0;
+    
+    // Calculate loan amount: (property_cost - bonus) - down_payment
+    const calculatedLoanAmount = (selectedProperty.price_cost - bonus) - downPayment;
+    
+    setLoanAmount(calculatedLoanAmount > 0 ? calculatedLoanAmount : 0);
+  }, [selectedProperty, propertyBonus, form]);
+  
+  // Update loan amount when form fields change
+  useEffect(() => {
+    // Subscribe to form changes with a WatchObserver callback
+    const subscription = form.watch(() => {
+      updateLoanAmount();
+    });
+    
+    // Clean up subscription on unmount
+    return () => subscription.unsubscribe();
+  }, [form, updateLoanAmount]);
+
+  // Add loan protection type watcher effect
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      // Only respond to loan_protection_type changes
+      if (name === 'loan_protection_type') {
+        const type = value.loan_protection_type;
+        
+        switch (type) {
           case "individual":
-            loanInsurance = 0.028;
+            form.setValue("loan_protection_insurance", "0.028", {
+              shouldValidate: true,
+              shouldDirty: true
+            });
             break;
           case "joint":
-            loanInsurance = 0.052;
-            break;
-          case "custom":
-            loanInsurance = parseFloat(values.loan_protection_insurance || "0");
+            form.setValue("loan_protection_insurance", "0.052", {
+              shouldValidate: true,
+              shouldDirty: true
+            });
             break;
           case "none":
-            loanInsurance = 0;
+            form.setValue("loan_protection_insurance", "0", {
+              shouldValidate: true,
+              shouldDirty: true
+            });
             break;
+          // For custom type, don't override the value
         }
-        
-        // Get first installment date
-        let firstInstallmentDate = normalizeDate(new Date());
-        if (values.first_installment_date) {
-          firstInstallmentDate = normalizeDate(new Date(values.first_installment_date));
-        }
-        
-        // Calculate proper loan amount using LoanCalculator
-        // Create property object for calculator
-        const calculatorProperty = createCalculatorProperty(selectedProperty);
-        
-        // console.log("NEWMORTGAGE - Property object for loan calculation:", {
-        //   id: calculatorProperty.id,
-        //   price: calculatorProperty.price_cost,
-        //   insurance: calculatorProperty.property_insurance,
-        //   insuranceType: calculatorProperty.property_insurance_type
-        // });
-        
-        // Use the async method to calculate loan amount
-        loanCalculator.getPropertyBonus(supabase, selectedProperty.id)
-          .then(bonus => {
-            const loanAmount = loanCalculator.calculateLoanAmountSync(calculatorProperty, downPayment, bonus);
-            
-            const newScenarioInputs = {
-              loanAmount: loanAmount,
-              interestRate,
-              termYears,
-              installmentsPerYear,
-              firstInstallmentDate,
-              propertyInsurance: selectedProperty.property_insurance || 0,
-              loanInsurance
-            };
-            
-            // console.log("NEWMORTGAGE - Setting scenario inputs:", newScenarioInputs);
-            
-            // Update scenario inputs
-            setScenarioInputs(newScenarioInputs);
-          })
-          .catch(error => {
-            // Silent error handling
-          });
-      } catch (error) {
-        // Silent error handling
       }
     });
     
     return () => subscription.unsubscribe();
-  }, [form, selectedProperty, loanCalculator, supabase]);
-  
-  // Enhance the existing scenarios effect to better track total_interest_and_insurance
-  useEffect(() => {
-    if (scenarios?.regular?.summary) {
-      console.log("NEWMORTGAGE - Scenario calculation updated:", {
-        total_interest_and_insurance: scenarios.regular.summary.total_interest_and_insurance,
-        monthly_payment: scenarios.regular.summary.monthly_payment,
-        total_months: scenarios.regular.summary.total_months,
-        loanAmount: scenarioInputs.loanAmount,
-        timestamp: new Date().toISOString()
-      });
-    }
-  }, [scenarios, scenarioInputs]);
-  
-  // Add a new effect to track scenarioInputs changes during typing
-  useEffect(() => {
-    // console.log("NEWMORTGAGE - Scenario inputs changed:", {
-    //   loanAmount: scenarioInputs.loanAmount,
-    //   interestRate: scenarioInputs.interestRate,
-    //   termYears: scenarioInputs.termYears,
-    //   installmentsPerYear: scenarioInputs.installmentsPerYear,
-    //   propertyInsurance: scenarioInputs.propertyInsurance,
-    //   loanInsurance: scenarioInputs.loanInsurance,
-    //   timestamp: new Date().toISOString()
-    // });
-  }, [scenarioInputs]);
-  
-  // Handle property selection
-  const handlePropertyChange = useCallback((property: Property | null) => {
-    setSelectedProperty(property)
-    if (property) {
-      form.setValue("property_id", property.id, { shouldValidate: true })
-    } else {
-      form.setValue("property_id", "", { shouldValidate: true })
-    }
-  }, [form])
+  }, [form]);
   
   // Fetch property if propertyId is provided in URL
   useEffect(() => {
@@ -403,7 +287,172 @@ export default function NewMortgage() {
     }
     
     fetchPropertyFromUrl()
-  }, [propertyIdFromUrl, user, form, handlePropertyChange, t])
+  }, [propertyIdFromUrl, user, form, t]);
+
+  // Handler for property selection
+  const handlePropertyChange = useCallback((property: Property | null) => {
+    setSelectedProperty(property)
+    if (property) {
+      form.setValue("property_id", property.id, { shouldValidate: true })
+    } else {
+      form.setValue("property_id", "", { shouldValidate: true })
+    }
+  }, [form]);
+
+  // Watch the form's name field for breadcrumb display
+  const amortizationName = form.watch("name")
+  
+  // Handle form submission
+  const handleFormSubmit = async (values: MortgageFormValues) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
+    try {
+      if (!selectedProperty) {
+        toast({
+          variant: "destructive",
+          title: t("ui.error", { ns: "global" }),
+          description: t("messages.please_complete_all_fields", { ns: "mortgages" }),
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Check limits before proceeding
+      const currentCount = await getMortgageCount();
+      const limitValue = planLimit > 0 ? planLimit : 
+                        (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3);
+      
+      if (currentCount >= limitValue) {
+        toast({
+          variant: "destructive",
+          title: t("ui.error", { ns: "global" }),
+          description: "You have reached your plan limit for mortgages",
+        });
+        setIsLimitReached(true);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Parse form values
+      const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, ""));
+      const interestRate = parseFloat(values.interest_rate);
+      const termYears = parseInt(values.term_years);
+      const installmentsPerYear = parseInt(values.installments_per_year);
+      
+      // Check for valid values
+      if (isNaN(downPayment) || downPayment < 0) {
+        throw new Error("Invalid down payment amount");
+      }
+      if (isNaN(interestRate) || interestRate <= 0) {
+        throw new Error("Invalid interest rate");
+      }
+      if (isNaN(termYears) || termYears <= 0) {
+        throw new Error("Invalid term years");
+      }
+      if (![12, 14].includes(installmentsPerYear)) {
+        throw new Error("Invalid installments per year");
+      }
+      
+      // Handle date
+      const firstInstallmentDate = values.first_installment_date ? 
+        normalizeDate(new Date(values.first_installment_date)) : 
+        normalizeDate(new Date());
+      
+      // Format date for database
+      const dateString = `${firstInstallmentDate.getFullYear()}-${String(firstInstallmentDate.getMonth() + 1).padStart(2, '0')}-${String(firstInstallmentDate.getDate()).padStart(2, '0')}`;
+      
+      // Handle loan protection insurance
+      let loanProtectionInsurance: number;
+      switch (values.loan_protection_type) {
+        case "individual":
+          loanProtectionInsurance = 0.028;
+          break;
+        case "joint":
+          loanProtectionInsurance = 0.052;
+          break;
+        case "custom":
+          const customValue = parseFloat(values.loan_protection_insurance || "0");
+          if (isNaN(customValue) || customValue < 0 || customValue > 1) {
+            throw new Error("Invalid loan protection insurance amount");
+          }
+          loanProtectionInsurance = customValue;
+          break;
+        case "none":
+        default:
+          loanProtectionInsurance = 0;
+          break;
+      }
+      
+      // Calculate scenario values using ScenarioCalculator
+      const scenarios = ScenarioCalculator.calculateScenarios({
+        loan_amount: loanAmount,
+        interest_rate: interestRate,
+        term_years: termYears,
+        installments_per_year: installmentsPerYear,
+        first_installment_date: firstInstallmentDate,
+        property_insurance: selectedProperty.property_insurance || 0,
+        loan_insurance: loanProtectionInsurance
+      });
+      
+      // Get the regular scenario
+      const regularScenario = scenarios.regular;
+      
+      console.log("Calculated scenario:", {
+        total_interest_and_insurance: regularScenario.summary.total_interest_and_insurance,
+        total_months: regularScenario.summary.total_months,
+        monthly_payment: regularScenario.summary.monthly_payment,
+        breakeven_point: regularScenario.summary.breakeven_point
+      });
+      
+      // Create mortgage object
+      const mortgageData = {
+        name: values.name,
+        property_id: selectedProperty.id,
+        user_id: user?.id,
+        loan_amount: loanAmount,
+        down_payment: downPayment,
+        interest_rate: interestRate,
+        term_years: termYears,
+        installments_per_year: installmentsPerYear,
+        loan_protection_type: values.loan_protection_type,
+        loan_protection_insurance: loanProtectionInsurance,
+        first_installment_date: dateString,
+        saved_scenario: "regular",
+        saved_scenario_total_interest_and_insurance: regularScenario.summary.total_interest_and_insurance || 0,
+        saved_scenario_total_months: regularScenario.summary.total_months || 0,
+        saved_scenario_monthly_payment: regularScenario.summary.monthly_payment || 0,
+        saved_scenario_breakeven_point: regularScenario.summary.breakeven_point || null
+      };
+      
+      // Save mortgage to database
+      const { data, error } = await supabase
+        .from("mortgages")
+        .insert(mortgageData)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      toast({
+        title: t("ui.success", { ns: "global" }),
+        description: t("messages.amortization_created", { ns: "mortgages" }),
+      });
+      
+      // Navigate to the new mortgage
+      navigate(`/mortgages/${data.id}`);
+      
+    } catch (error) {
+      console.error("Error creating mortgage:", error);
+      toast({
+        variant: "destructive",
+        title: t("ui.error", { ns: "global" }),
+        description: error instanceof Error ? error.message : t("messages.error_creating_amortization", { ns: "mortgages" }),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // If we haven't checked limits yet, show a loading state
   if (!isLimitCheckDone) {
@@ -531,266 +580,8 @@ export default function NewMortgage() {
                     <AmortizationDetailsForm
                       form={form}
                       selectedProperty={selectedProperty}
-                      onSubmit={async (values) => {
-                        try {
-                          if (!selectedProperty) {
-                            toast({
-                              variant: "destructive",
-                              title: t("ui.error", { ns: "global" }),
-                              description: t("messages.please_complete_all_fields", { ns: "mortgages" }),
-                            });
-                            return;
-                          }
-
-                          // Log selected property details
-                          console.log("NEWMORTGAGE - Creating mortgage with property:", {
-                            id: selectedProperty.id,
-                            name: selectedProperty.name,
-                            price: selectedProperty.price_cost,
-                            insurance: selectedProperty.property_insurance,
-                            insuranceType: selectedProperty.property_insurance_type
-                          });
-
-                          // Check for limits one more time before submitting
-                          // Get a fresh count directly from the database
-                          const currentCount = await getMortgageCount();
-                          const limitValue = planLimit > 0 ? planLimit : 
-                                           (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3);
-                          
-                          // Final check right before submission
-                          if (currentCount >= limitValue) {
-                            toast({
-                              variant: "destructive",
-                              title: t("ui.error", { ns: "global" }),
-                              description: "You have reached your plan limit for mortgages",
-                            });
-                            setIsLimitReached(true);
-                            return;
-                          }
-
-                          // Parse numeric values safely
-                          const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, ""))
-                          const interestRate = parseFloat(values.interest_rate)
-                          const termYears = parseInt(values.term_years)
-                          const installmentsPerYear = parseInt(values.installments_per_year)
-                          
-                          // Handle loan protection insurance based on type
-                          let loanProtectionInsurance = null;
-                          const loanProtectionType = values.loan_protection_type;
-                          
-                          switch (loanProtectionType) {
-                            case "individual":
-                              loanProtectionInsurance = 0.028;
-                              break;
-                            case "joint":
-                              loanProtectionInsurance = 0.052;
-                              break;
-                            case "custom":
-                              const rawValue = parseFloat(values.loan_protection_insurance || "0");
-                              if (isNaN(rawValue) || rawValue < 0 || rawValue > 1) {
-                                throw new Error("Invalid loan protection insurance amount (must be between 0 and 1)");
-                              }
-                              loanProtectionInsurance = rawValue;
-                              break;
-                            case "none":
-                              loanProtectionInsurance = 0;
-                              break;
-                            default:
-                              throw new Error("Invalid loan protection type");
-                          }
-
-                          // Validate numeric values
-                          if (isNaN(downPayment) || downPayment < 0) {
-                            throw new Error("Invalid down payment amount")
-                          }
-                          if (isNaN(interestRate) || interestRate < 0) {
-                            throw new Error("Invalid interest rate")
-                          }
-                          if (isNaN(termYears) || termYears < 1) {
-                            throw new Error("Invalid term years")
-                          }
-                          if (![12, 14].includes(installmentsPerYear)) {
-                            throw new Error("Invalid installments per year")
-                          }
-                          
-                          // Create property object
-                          const propertyForCalculator = createCalculatorProperty(selectedProperty);
-                          
-                          // Get the property bonus
-                          const bonus = await loanCalculator.getPropertyBonus(supabase, selectedProperty.id);
-                          
-                          // Calculate loan amount using the LoanCalculator
-                          const loanAmount = loanCalculator.calculateLoanAmountSync(
-                            propertyForCalculator, 
-                            downPayment,
-                            bonus
-                          );
-
-                          // Validate loan amount
-                          if (loanAmount <= 0) {
-                            throw new Error("Down payment cannot be greater than property cost")
-                          }
-
-                          // Create a proper ISO date string preserving the exact date
-                          const inputDate = new Date(values.first_installment_date);
-                          const dateString = `${inputDate.getFullYear()}-${String(inputDate.getMonth() + 1).padStart(2, '0')}-${String(inputDate.getDate()).padStart(2, '0')}`;
-
-                          // Calculate values from scenarios if available, or use loan calculator directly
-                          let totalInterestAndInsurance = scenarios?.regular?.summary?.total_interest_and_insurance;
-                          let totalMonths = scenarios?.regular?.summary?.total_months;
-                          let monthlyPayment = scenarios?.regular?.summary?.monthly_payment;
-                          let breakEvenPoint = null;
-                          
-                          // If scenarios data is not available or values are 0, calculate directly
-                          if (!totalInterestAndInsurance || !monthlyPayment) {
-                            // Create base values for calculator with proper types
-                            const installmentsPer: 12 | 14 = installmentsPerYear === 12 ? 12 : 14;
-                            const baseValues: BaseAmortizationValues = {
-                              interest_rate: interestRate,
-                              term_years: termYears,
-                              installments_per_year: installmentsPer,
-                              down_payment: downPayment,
-                              down_payment_percentage: (downPayment / selectedProperty.price_cost) * 100,
-                              first_installment_date: new Date(dateString),
-                              loan_protection_type: values.loan_protection_type,
-                              loan_protection_insurance: loanProtectionInsurance,
-                              property_id: selectedProperty.id
-                            };
-                            
-                            // Get direct calculation results (using the cached bonus value)
-                            const results = loanCalculator.calculateResultsSync(propertyForCalculator, baseValues, bonus);
-                            
-                            console.log("NEWMORTGAGE - Direct calculation results:", {
-                              loanAmount: results.loan_amount,
-                              totalInterestAndInsurance: results.total_interest_and_insurance,
-                              monthlyPayment: results.monthly_payment,
-                              propertyInsurance: selectedProperty.property_insurance,
-                              firstPayment: results.payment_schedule && results.payment_schedule.length > 0 ? {
-                                date: results.payment_schedule[0].date,
-                                beginning_balance: results.payment_schedule[0].beginning_balance,
-                                property_insurance: results.payment_schedule[0].property_insurance,
-                                loan_insurance: results.payment_schedule[0].loan_protection_insurance,
-                                interest: results.payment_schedule[0].interest,
-                                principal: results.payment_schedule[0].principal,
-                                monthly_payment: results.payment_schedule[0].scheduled_payment
-                              } : null
-                            });
-                            
-                            // Use the direct calculation results
-                            totalInterestAndInsurance = results.total_interest_and_insurance;
-                            totalMonths = results.total_months;
-                            monthlyPayment = results.monthly_payment;
-                            
-                            // Calculate breakeven point
-                            const schedule = results.payment_schedule;
-                            if (schedule && schedule.length > 0) {
-                              for (let i = 0; i < schedule.length - 1; i++) {
-                                const current = schedule[i];
-                                const next = schedule[i + 1];
-                                
-                                const currentPrincipal = current.principal || 0;
-                                const currentInterest = (current.interest || 0) + 
-                                                (current.property_insurance || 0) + 
-                                                (current.loan_protection_insurance || 0);
-                                
-                                const nextPrincipal = next.principal || 0;
-                                const nextInterest = (next.interest || 0) + 
-                                              (next.property_insurance || 0) + 
-                                              (next.loan_protection_insurance || 0);
-                                
-                                // Found the crossover point
-                                if (currentPrincipal <= currentInterest && nextPrincipal > nextInterest) {
-                                  // Return year value with one decimal
-                                  breakEvenPoint = (i + 1) / 12;
-                                  break;
-                                }
-                                
-                                // Alternative check when principal already exceeds interest
-                                if (i === 0 && currentPrincipal >= currentInterest) {
-                                  breakEvenPoint = 0;
-                                  break;
-                                }
-                              }
-                            }
-                          } else if (scenarios?.regular?.payments && scenarios.regular.payments.length > 0) {
-                            // Calculate breakeven from scenarios if available
-                            for (let i = 0; i < scenarios.regular.payments.length - 1; i++) {
-                              const current = scenarios.regular.payments[i];
-                              const next = scenarios.regular.payments[i + 1];
-                              
-                              const currentPrincipal = current.capital || 0;
-                              const currentInterest = (current.interest || 0) + 
-                                              (current.property_insurance || 0) + 
-                                              (current.loan_insurance || 0);
-                              
-                              const nextPrincipal = next.capital || 0;
-                              const nextInterest = (next.interest || 0) + 
-                                            (next.property_insurance || 0) + 
-                                            (next.loan_insurance || 0);
-                              
-                              // Found the crossover point
-                              if (currentPrincipal <= currentInterest && nextPrincipal > nextInterest) {
-                                // Return year value with one decimal
-                                breakEvenPoint = (i + 1) / 12;
-                                break;
-                              }
-                              
-                              // Alternative check when principal already exceeds interest
-                              if (i === 0 && currentPrincipal >= currentInterest) {
-                                breakEvenPoint = 0;
-                                break;
-                              }
-                            }
-                          }
-
-                          const amortizationData = {
-                            name: values.name,
-                            property_id: selectedProperty.id,
-                            user_id: user?.id,
-                            loan_amount: loanAmount,
-                            down_payment: downPayment,
-                            interest_rate: interestRate,
-                            term_years: termYears,
-                            installments_per_year: installmentsPerYear,
-                            loan_protection_type: values.loan_protection_type,
-                            loan_protection_insurance: loanProtectionInsurance,
-                            first_installment_date: dateString,
-                            saved_scenario: "regular",
-                            saved_scenario_total_interest_and_insurance: totalInterestAndInsurance,
-                            saved_scenario_total_months: totalMonths,
-                            saved_scenario_monthly_payment: monthlyPayment,
-                            saved_scenario_breakeven_point: breakEvenPoint
-                          }
-
-                          const { data, error } = await supabase
-                            .from("mortgages")
-                            .insert(amortizationData)
-                            .select()
-                            .single()
-
-                          if (error) {
-                            throw error
-                          }
-
-                          toast({
-                            title: t("ui.success", { ns: "global" }),
-                            description: t("messages.amortization_created", { ns: "mortgages" }),
-                          })
-
-                          // After successful creation, immediately check limits again
-                          // to ensure the UI state is updated
-                          await getMortgageCount();
-                          checkLimitOnce();
-                          
-                          navigate(`/mortgages/${data.id}`)
-                        } catch (error) {
-                          toast({
-                            variant: "destructive",
-                            title: t("ui.error", { ns: "global" }),
-                            description: error instanceof Error ? error.message : t("messages.error_creating_amortization", { ns: "mortgages" }),
-                          })
-                        }
-                      }}
+                      onSubmit={handleFormSubmit}
+                      isSubmitting={isSubmitting}
                       submitLabel={t("ui.create", { ns: "global" })}
                     />
                   </>
@@ -800,19 +591,12 @@ export default function NewMortgage() {
 
             {/* Right Container */}
             <div className="w-full overflow-hidden flex-1 p-1 md:p-2 lg:p-4">
-
-
-
- 
-
-
-
               <div className="flex w-full flex-1 p-1 md:p-2 lg:p-4 items-center justify-center h-full">
                 <div className="flex flex-col gap-4 p-4 rounded-md border border-amber-400/10 bg-amber-500/5 -mt-16 w-3/4">
-                      <div className="text-sm text-amber-600">
-                        {t("messages.save_to_access_all_features", { ns: "mortgages" })}
-                      </div>
-                    </div>
+                  <div className="text-sm text-amber-600">
+                    {t("messages.save_to_access_all_features", { ns: "mortgages" })}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

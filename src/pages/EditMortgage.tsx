@@ -438,14 +438,14 @@ export default function EditMortgage() {
             // Calculate the adjusted loan amount
             const adjustedLoanAmount = bonus ? loanAmount - bonus : loanAmount;
             
-            console.log("=== EditMortgage: Calculating scenarioInputs ===");
-            console.log("Property from mortgage:", mortgage.property);
-            console.log("Down payment from form:", downPayment);
-            console.log("Property price:", mortgage.property.price_cost);
-            console.log("Raw loan amount (before bonus):", loanAmount);
-            console.log("Property for calculator:", propertyForCalculator);
-            console.log("Calculated bonus:", bonus);
-            console.log("Final adjusted loan amount:", adjustedLoanAmount);
+            // console.log("=== EditMortgage: Calculating scenarioInputs ===");
+            // console.log("Property from mortgage:", mortgage.property);
+            // console.log("Down payment from form:", downPayment);
+            // console.log("Property price:", mortgage.property.price_cost);
+            // console.log("Raw loan amount (before bonus):", loanAmount);
+            // console.log("Property for calculator:", propertyForCalculator);
+            // console.log("Calculated bonus:", bonus);
+            // console.log("Final adjusted loan amount:", adjustedLoanAmount);
             
             const interestRate = parseFloat(values.interest_rate || "0");
             const termYears = parseInt(values.term_years || "0");
