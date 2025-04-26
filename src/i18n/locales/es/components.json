@@ -79,7 +79,8 @@
     "tooltip": {
       "break_even_point_title": "¿Punto de Equilibrio?",
       "break_even_point": "Pasando el punto de equilibrio, amortizar a genera ahorro real.",
-      "investment_advice": "Después del punto de equilibrio, te sale más a cuenta invertir que seguir amortizando."
+      "investment_advice": "La gráfica muestra que al inicio gran parte de tu cuota va al interés y muy poco a tu saldo capital. Esta proporción se iguala justo en el punto de equilibrio. ",
+      "investment_advice_2": "Por eso, te recomendamos amortizar lo antes posible y no pasarte de tu punto de equilibrio"
     }
   },
   "payment_scenarios": {

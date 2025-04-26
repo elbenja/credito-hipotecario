@@ -376,18 +376,18 @@ const ScenarioPanel = ({
         <div className="flex items-center gap-2">
         <Dialog>
           <DialogTrigger className="flex items-center gap-2 px-4 h-10 rounded-md text-sm border border-input hover:bg-accent hover:text-accent-foreground mr-auto">
-            <div className=" size-2.5 rounded-full border-2 border-muted-foreground"></div> 
+         
           {t('scenario_graphs.tooltip.break_even_point_title', 'Punto de Equilibrio', { ns: 'components' })}
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="mb-2">
               {t('scenario_graphs.tooltip.break_even_point_title', 'Punto de Equilibrio', { ns: 'components' })}
 
               </DialogTitle>
               <DialogDescription>
-              <p>{t('scenario_graphs.tooltip.investment_advice', 'Sin embargo, si puedes invertir ese dinero y obtener un rendimiento mayor que el ahorro en intereses, te conviene más invertir.', { ns: 'components' })}</p>
-
+              <p className="mb-2">{t('scenario_graphs.tooltip.investment_advice', 'Sin embargo, si puedes invertir ese dinero y obtener un rendimiento mayor que el ahorro en intereses, te conviene más invertir.', { ns: 'components' })}</p>
+              <p>{t('scenario_graphs.tooltip.investment_advice_2', 'Por eso recomendamos amortizar lo antes posible y no pasar del punto de equilibrio.', { ns: 'components' })}</p>
 
               </DialogDescription>
             </DialogHeader>

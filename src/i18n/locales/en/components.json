@@ -79,7 +79,8 @@
     "tooltip": {
       "break_even_point_title": "Break-even Point?",
       "break_even_point": "After the break-even point, making extra payments starts generating real savings.",
-      "investment_advice": "After the break-even point, it makes more sense to invest than to keep making extra mortgage payments."
+      "investment_advice": "The graph shows that, at first, most of your payment goes toward interest and very little toward your principal balance. This proportion evens out exactly at the breakeven point.",
+      "investment_advice_2": "That ’s why we recommend amortizing as early as possible and not going past your breakeven point."
     }
   },
   "payment_scenarios": {
