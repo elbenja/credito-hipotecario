@@ -749,13 +749,30 @@ export class ScenarioCalculator {
   private static findBreakEvenPoint(payments: PaymentRow[]): number | null {
     if (!payments || payments.length === 0) return null;
     
+    // Determine if we're using bi-weekly payments (14 installments per year)
+    // We can check if there are both July and December payments in the data
+    const hasJulyPayment = payments.some(p => p.payment_date && new Date(p.payment_date).getMonth() === 6);
+    const hasDecemberPayment = payments.some(p => p.payment_date && new Date(p.payment_date).getMonth() === 11);
+    const isDoublePaymentScheme = hasJulyPayment && hasDecemberPayment;
+    
     // Look for the point where principal becomes greater than interest+insurance
     for (let i = 0; i < payments.length - 1; i++) {
       const current = payments[i];
       const next = payments[i + 1];
       
-      // Skip if any payment is undefined
-      if (!current || !next) continue;
+      // Skip if any payment is undefined or doesn't have a payment date
+      if (!current || !next || !current.payment_date || !next.payment_date) continue;
+      
+      // Skip July and December payments for Double option (14 installments per year)
+      if (isDoublePaymentScheme) {
+        const currentDate = new Date(current.payment_date);
+        const currentMonth = currentDate.getMonth();
+        if (currentMonth === 6 || currentMonth === 11) continue; // Skip July (6) and December (11)
+        
+        const nextDate = new Date(next.payment_date);
+        const nextMonth = nextDate.getMonth();
+        if (nextMonth === 6 || nextMonth === 11) continue; // Skip if next is July or December
+      }
       
       const currentPrincipal = current.principal || current.capital || 0;
       const currentInterest = (current.monthly_interest !== undefined ? current.monthly_interest : current.interest || 0) + 

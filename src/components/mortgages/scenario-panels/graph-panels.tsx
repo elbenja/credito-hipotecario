@@ -33,6 +33,7 @@ interface ScenarioSummaryResult {
   total_interest_and_insurance: number
   total_months: number
   monthly_payment: number
+  breakeven_point?: number | null
 }
 
 interface ScenarioPanelProps {
@@ -54,7 +55,6 @@ const transformPaymentsToChartData = (payments: ExtendedPaymentRow[], totalMonth
     date: string;
     principal: number;
     interest_insurance: number;
-    breakEven?: boolean;
     isJulyOrDecember?: boolean;
   };
   
@@ -63,7 +63,6 @@ const transformPaymentsToChartData = (payments: ExtendedPaymentRow[], totalMonth
     date: "",  // Use empty string instead of null
     principal: 0,
     interest_insurance: 0,
-    breakEven: false, // Initialize all points as not break-even
   }));
   
   // Fill in actual payment data where available
@@ -126,10 +125,6 @@ const transformPaymentsToChartData = (payments: ExtendedPaymentRow[], totalMonth
     }
   }
   
-  // Important: We no longer calculate break-even point here
-  // That is now handled by the useMemo hook in the component
-  // This ensures break-even is recalculated when installmentsPerYear changes
-  
   return result;
 }
 
@@ -187,7 +182,8 @@ const ScenarioPanel = ({
   const {
     total_interest_and_insurance = 0,
     total_months = 0,
-    monthly_payment = 0
+    monthly_payment = 0,
+    breakeven_point = null
   } = scenario.summary || {};
 
   // Determine the total months to display
@@ -203,10 +199,8 @@ const ScenarioPanel = ({
     try {
       // Force recalculation when installmentsPerYear changes
       // by adding it explicitly to the dependency array
-      // console.log(`Recalculating chart data with ${installmentsPerYear} installments per year`);
       return transformPaymentsToChartData(scenario.payments, totalMonthsToDisplay, installmentsPerYear);
     } catch (error) {
-      // console.error("Error transforming payments data:", error);
       return [];
     }
   }, [scenario.payments, totalMonthsToDisplay, installmentsPerYear]);
@@ -250,6 +244,10 @@ const ScenarioPanel = ({
       payment: getDifference(
         monthly_payment,
         regularScenario?.summary?.monthly_payment
+      ),
+      breakeven: getDifference(
+        breakeven_point || 0,
+        regularScenario?.summary?.breakeven_point || 0
       )
     };
   }, [
@@ -258,9 +256,11 @@ const ScenarioPanel = ({
     propertyCost,
     total_months,
     monthly_payment,
+    breakeven_point,
     regularScenario?.summary?.total_interest_and_insurance,
     regularScenario?.summary?.total_months,
-    regularScenario?.summary?.monthly_payment
+    regularScenario?.summary?.monthly_payment,
+    regularScenario?.summary?.breakeven_point
   ]);
 
   const getBadgeVariant = (difference: number | null, isMonths = false): "default" | "destructive" | "primary" | "outline" | "blue" | "green" => {
@@ -287,128 +287,66 @@ const ScenarioPanel = ({
     }
   } satisfies ChartConfig
 
-  // Find the break-even data point
-  const breakEvenPoint = useMemo(() => {
-    // When installmentsPerYear changes, we need to force a recalculation of the break-even point
-    // Log for debugging purposes
-    // console.log(`Finding break-even point with ${installmentsPerYear} installments per year`);
+  // Find approximate chart point for breakeven
+  const breakEvenChartPoint = useMemo(() => {
+    if (!breakeven_point || !chartData.length) return null;
     
-    // If we don't have chart data, return undefined
-    if (!chartData.length) return undefined;
+    // Calculate the month index based on years
+    const breakEvenMonthIndex = Math.round(breakeven_point * 12) - 1;
     
-    // Clear any existing break-even flags (important when switching payment schemas)
-    const resetData = chartData.map(point => ({...point, breakEven: false}));
+    // Ensure the index is within range
+    if (breakEvenMonthIndex < 0 || breakEvenMonthIndex >= chartData.length) return null;
     
-    // Find the first valid break-even point (ignoring July/December for Double)
-    let breakEvenIdx = -1;
-    
-    for (let i = 0; i < resetData.length - 1; i++) {
-      const current = resetData[i];
-      if (!current.date) continue;
+    // Make sure we skip July/December for double payment option
+    if (installmentsPerYear === 14) {
+      // Find closest point that isn't in July/December
+      let indexToUse = breakEvenMonthIndex;
+      let found = false;
       
-      const currentDate = new Date(current.date);
-      const currentMonth = currentDate.getMonth();
-      
-      // Skip July and December for Double option
-      if (installmentsPerYear === 14 && (currentMonth === 6 || currentMonth === 11)) {
-        continue;
-      }
-      
-      // Check for crossover point
-      if (i + 1 < resetData.length) {
-        const next = resetData[i + 1];
-        if (!next.date) continue;
-        
-        const nextDate = new Date(next.date);
-        const nextMonth = nextDate.getMonth();
-        
-        // Skip if next month is July/December for Double option
-        if (installmentsPerYear === 14 && (nextMonth === 6 || nextMonth === 11)) {
-          continue;
+      // Try to find a point near the calculated index
+      for (let offset = 0; offset < 5; offset++) {
+        // Try points before and after the calculated index
+        for (const direction of [-1, 1]) {
+          const tryIndex = breakEvenMonthIndex + (offset * direction);
+          
+          // Skip if out of range
+          if (tryIndex < 0 || tryIndex >= chartData.length) continue;
+          
+          const point = chartData[tryIndex];
+          if (!point.date) continue;
+          
+          const date = new Date(point.date);
+          const month = date.getMonth();
+          
+          // Skip July and December for double payment option
+          if (month !== 6 && month !== 11) {
+            indexToUse = tryIndex;
+            found = true;
+            break;
+          }
         }
-        
-        // Found the crossover point
-        if (current.principal <= current.interest_insurance && 
-            next.principal > next.interest_insurance) {
-          breakEvenIdx = i + 1;
-          break;
-        }
+        if (found) break;
       }
       
-      // Alternatively, check for equality/already crossed over
-      if (current.principal >= current.interest_insurance) {
-        breakEvenIdx = i;
-        break;
-      }
+      return chartData[indexToUse];
     }
     
-    // Mark the break-even point if found
-    if (breakEvenIdx >= 0 && breakEvenIdx < resetData.length) {
-      resetData[breakEvenIdx].breakEven = true;
-    }
-    
-    // Return the new break-even point
-    return resetData.find(point => point.breakEven);
-  }, [chartData, installmentsPerYear]);
-
-  // Calculate the month-index for the break-even point
-  const breakEvenIndex = useMemo(() => {
-    if (!breakEvenPoint) return -1;
-    return chartData.findIndex(point => point === breakEvenPoint || 
-      (point.date === breakEvenPoint.date && 
-       point.principal === breakEvenPoint.principal && 
-       point.interest_insurance === breakEvenPoint.interest_insurance));
-  }, [chartData, breakEvenPoint]);
-  
-  // Calculate break-even year correctly based on point index
-  const breakEvenYear = useMemo(() => {
-    if (breakEvenIndex === -1) return "0.0";
-    
-    // For any payment option, we should count all months up to the break-even point
-    // This gives us the actual elapsed time including July/December for double payments
-    const monthsToBreakEven = breakEvenIndex + 1;
-    return (monthsToBreakEven / 12).toFixed(1);
-  }, [breakEvenIndex]);
+    return chartData[breakEvenMonthIndex];
+  }, [breakeven_point, chartData, installmentsPerYear]);
 
   const yearsLabel = t('scenario_graphs.common.years', 'years', { ns: 'components' });
   
   // Get actual month and year for the break-even point
   const breakEvenMonthYear = useMemo(() => {
-    if (!breakEvenPoint || !breakEvenPoint.date) return '';
+    if (!breakEvenChartPoint || !breakEvenChartPoint.date) return '';
     
     try {
-      const date = new Date(breakEvenPoint.date);
-      
-      // Validate the break-even point isn't in July/December for Double payment option
-      if (installmentsPerYear === 14) {
-        const month = date.getMonth();
-        
-        // This should never happen with our new calculation approach, but keep the check for safety
-        if (month === 6 || month === 11) {
-          console.warn('Critical error: Break-even point is in July or December with Double payment option');
-          
-          // Try to find the next non-July/December month with principal > interest
-          for (let i = 0; i < chartData.length; i++) {
-            const point = chartData[i];
-            if (!point.date) continue;
-            
-            const pointDate = new Date(point.date);
-            const pointMonth = pointDate.getMonth();
-            
-            if (pointMonth !== 6 && pointMonth !== 11 && point.principal > point.interest_insurance) {
-              // Found a valid alternative break-even point
-              return format(pointDate, 'MMM yyyy');
-            }
-          }
-        }
-      }
-      
+      const date = new Date(breakEvenChartPoint.date);
       return format(date, 'MMM yyyy');
     } catch (error) {
-      console.error("Error formatting break-even date:", error);
       return '';
     }
-  }, [breakEvenPoint, installmentsPerYear, chartData]);
+  }, [breakEvenChartPoint]);
 
   // Add the handler function for capturing scenarios
   const handleCaptureScenario = async () => {
@@ -723,22 +661,19 @@ py-4 xl:py-5 2xl:py-6">
                   />
                   
                   {/* Break-even point marker with integrated label */}
-                  {breakEvenPoint && (
+                  {breakeven_point && breakEvenChartPoint && (
                     <ReferenceDot
-                      x={breakEvenPoint.date}
-                      y={(breakEvenPoint.principal + breakEvenPoint.interest_insurance) / 2}
+                      x={breakEvenChartPoint.date}
+                      y={(breakEvenChartPoint.principal + breakEvenChartPoint.interest_insurance) / 2}
                       r={6}
-                      // fill={installmentsPerYear === 14 ? "#000" : "#fff"} 
-                      // stroke={installmentsPerYear === 14 ? "#10b981" : "var(--color-principal)"}
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={2}
                     >
                       <Label
-                        value={`${breakEvenYear} ${yearsLabel}: ${t('scenario_graphs.common.break_even_point', 'Break-even point', { ns: 'components' })}`}
+                        value={`${breakeven_point?.toFixed(1)} ${yearsLabel}: ${t('scenario_graphs.common.break_even_point', 'Break-even point', { ns: 'components' })}`}
                         position="top"
                         offset={20}
-                        // fill={installmentsPerYear === 14 ? "#10b981" : "currentColor"}
                         fill="currentColor" 
                         fontSize={13}
                         fontWeight="500"

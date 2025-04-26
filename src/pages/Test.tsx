@@ -40,6 +40,8 @@ export default function Test() {
 <div className="flex flex-col items-center justify-center w-72">
 
   <div className="flex flex-col items-center justify-center size-120 ">
+  <SVGillustration variant="keyhole" className="size-120" />
+
   <SVGillustration variant="astroGirl" className="size-120" />
   </div>
 
