@@ -19,6 +19,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { SVGfixed } from "@/components/ui/svg-fixed"
 import { useMortgageCapture } from "@/services/mortgages/mortgage-capture.service"
 import { useParams, useNavigate } from "react-router-dom"
+import { useToast } from "@/components/ui/use-toast"
 
 type Currency = "USD" | "PEN"
 
@@ -36,6 +37,19 @@ interface ScenarioSummaryResult {
   breakeven_point?: number | null
 }
 
+// Add this interface to communicate with parent component
+export interface MortgageFormValues {
+  loan_amount: number;
+  down_payment: number;
+  interest_rate: number;
+  term_years: number;
+  installments_per_year: number;
+  loan_protection_type: string;
+  loan_protection_insurance: number;
+  first_installment_date: string | Date;
+}
+
+// Update ScenarioPanelProps to include form values
 interface ScenarioPanelProps {
   scenario: ScenarioResult | undefined
   regularScenario?: ScenarioResult | undefined
@@ -45,6 +59,7 @@ interface ScenarioPanelProps {
   scenarioType?: string
   isThisScenarioSaved?: boolean
   onSaveScenario?: (scenarioType: string) => void
+  formValues?: MortgageFormValues  // Add this to receive form values from parent
 }
 
 // Memoize the data transformation function to avoid recalculating on every render
@@ -138,12 +153,14 @@ const ScenarioPanel = ({
   propertyCost = 0,
   scenarioType = "regular",
   isThisScenarioSaved = false,
-  onSaveScenario
+  onSaveScenario,
+  formValues  // Add this to the destructuring
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
   const { t } = useTranslation()
   const { id } = useParams()
   const navigate = useNavigate()
-  const { captureMortgage } = useMortgageCapture()
+  const { captureMortgage, captureCurrentScenario } = useMortgageCapture()
+  const { toast } = useToast()
 
   // Add state for the toggle buttons
   const [isButtonOn, setIsButtonOn] = useState(() => {
@@ -348,24 +365,73 @@ const ScenarioPanel = ({
     }
   }, [breakEvenChartPoint]);
 
-  // Add the handler function for capturing scenarios
+  // Update the handler function for capturing scenarios
   const handleCaptureScenario = async () => {
-    if (!id) return;
-    
-    // First, save the current scenario as favorite (this will also save form values)
-    if (onSaveScenario && scenarioType) {
-      await onSaveScenario(scenarioType);
+    // Remove debug logging
+    if (!id) {
+      console.error("No mortgage ID available for capture");
+      toast({
+        variant: "destructive",
+        title: t('scenario_graphs.common.error', 'Error', { ns: 'components' }),
+        description: t('scenario_graphs.common.error_no_id', 'Cannot capture scenario: No mortgage ID available', { ns: 'components' })
+      });
+      return;
     }
     
-    // Then capture the mortgage (duplicate it) but don't navigate away
-    await captureMortgage({ 
-      mortgageId: id,
-      successCallback: () => {
-        // Don't navigate, just show success message
-        // The toast will be shown by the captureMortgage function
-      },
-      stayOnPage: true // Add this flag to indicate we want to stay on the current page
-    });
+    if (!scenario?.summary) {
+      console.error("No scenario summary available for capture");
+      toast({
+        variant: "destructive",
+        title: t('scenario_graphs.common.error', 'Error', { ns: 'components' }),
+        description: t('scenario_graphs.common.error_no_scenario', 'Cannot capture scenario: No scenario data available', { ns: 'components' })
+      });
+      return;
+    }
+    
+    if (!formValues) {
+      console.error("No form values provided for capture");
+      toast({
+        variant: "destructive",
+        title: t('scenario_graphs.common.error', 'Error', { ns: 'components' }),
+        description: t('scenario_graphs.common.error_no_form_values', 'Cannot capture scenario: No form values available', { ns: 'components' })
+      });
+      return;
+    }
+    
+    try {
+      // Create a properly formatted object for capture
+      const captureData = {
+        mortgageId: id,
+        currentValues: {
+          loan_amount: formValues.loan_amount,
+          down_payment: formValues.down_payment,
+          interest_rate: formValues.interest_rate,
+          term_years: formValues.term_years,
+          installments_per_year: formValues.installments_per_year,
+          loan_protection_type: formValues.loan_protection_type,
+          loan_protection_insurance: formValues.loan_protection_insurance,
+          first_installment_date: formValues.first_installment_date
+        },
+        scenarioType: scenarioType,
+        scenarioSummary: {
+          total_interest_and_insurance: scenario.summary.total_interest_and_insurance,
+          total_months: scenario.summary.total_months,
+          monthly_payment: scenario.summary.monthly_payment,
+          breakeven_point: scenario.summary.breakeven_point
+        },
+        stayOnPage: true
+      };
+      
+      // Use the formValues from parent component
+      await captureCurrentScenario(captureData);
+    } catch (error) {
+      console.error("Error capturing scenario:", error);
+      toast({
+        variant: "destructive",
+        title: t('scenario_graphs.common.error', 'Error', { ns: 'components' }),
+        description: t('scenario_graphs.common.error_during_capture', 'Error capturing scenario', { ns: 'components' })
+      });
+    }
   };
 
   return (

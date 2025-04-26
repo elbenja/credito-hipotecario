@@ -37,6 +37,7 @@ interface AmortizationDetailsFormProps {
   onSubmit: (values: MortgageFormValues) => Promise<void>
   submitLabel?: string
   isSubmitting?: boolean
+  onLoanAmountChange?: (amount: number) => void
 }
 
 export function AmortizationDetailsForm({
@@ -44,7 +45,8 @@ export function AmortizationDetailsForm({
   selectedProperty,
   onSubmit,
   submitLabel = 'save',
-  isSubmitting
+  isSubmitting,
+  onLoanAmountChange
 }: AmortizationDetailsFormProps) {
   const { t } = useTranslation(['mortgages', 'global', 'components'])
   const { data: exchangeRate } = useExchangeRate()
@@ -106,15 +108,6 @@ export function AmortizationDetailsForm({
     // Create a property object compatible with LoanCalculator
     const propertyForCalculator = createCalculatorProperty(selectedProperty);
     
-    // console.log("MORTGAGE-FORM - Property for loan calculation:", {
-    //   id: propertyForCalculator.id,
-    //   price: propertyForCalculator.price_cost,
-    //   insurance: propertyForCalculator.property_insurance,
-    //   insuranceType: propertyForCalculator.property_insurance_type,
-    //   downPayment: numericDownPayment,
-    //   bonus: cachedBonus || 0
-    // });
-
     // Use the synchronous version with cached bonus
     const calculatedAmount = loanCalculator.calculateLoanAmountSync(
       propertyForCalculator, 
@@ -122,32 +115,13 @@ export function AmortizationDetailsForm({
       cachedBonus || 0
     );
     
-    // console.log("MORTGAGE-FORM - Calculated loan amount:", calculatedAmount);
+    // Call the callback to update loan amount in parent component
+    if (onLoanAmountChange) {
+      onLoanAmountChange(calculatedAmount);
+    }
     
     return calculatedAmount;
-  }, [selectedProperty, numericDownPayment, cachedBonus, loanCalculator]);
-
-  // Add console log to track form value changes
-  useEffect(() => {
-    // Create a subscription to all form value changes
-    const subscription = form.watch((values) => {
-      if (!values) return;
-      
-      // Log changes to key form fields that affect calculations
-      // console.log("MORTGAGE-FORM - Form values changed:", {
-      //   down_payment: values.down_payment,
-      //   interest_rate: values.interest_rate,
-      //   term_years: values.term_years,
-      //   installments_per_year: values.installments_per_year,
-      //   loan_protection_type: values.loan_protection_type,
-      //   loan_protection_insurance: values.loan_protection_insurance,
-      //   timestamp: new Date().toISOString()
-      // });
-    });
-    
-    // Clean up subscription on unmount
-    return () => subscription.unsubscribe();
-  }, [form]);
+  }, [selectedProperty, numericDownPayment, cachedBonus, loanCalculator, onLoanAmountChange]);
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -254,7 +228,6 @@ export function AmortizationDetailsForm({
                     <CurrencyInput 
                       value={field.value || ''}
                       onChange={(value) => {
-                        console.log("MORTGAGE-FORM - Down payment changed:", value);
                         field.onChange(value)
                         form.trigger("down_payment")
                       }}

@@ -611,6 +611,71 @@ For component-specific implementation details, refer to:
 - System is designed to be extensible for future feature additions
 - Payment processing is integrated with external payment providers
 
+#### Database Function for Feature Limit Checking
+To optimize performance and enforce subscription limits at the database level, a PostgreSQL function `check_user_feature_limit` has been implemented.
+
+- **Purpose:** Determines if a user has reached their limit for a specific feature based on their subscription plan. Returns true if under limit, false if at or over limit.
+- **Inputs:**
+  - `p_user_id UUID`: The user ID to check limits for.
+  - `p_feature_name TEXT`: The feature to check (e.g., 'properties', 'mortgages', 'rentals').
+- **Output:**
+  - `BOOLEAN`: Returns true if the user is under their limit, false if they've reached or exceeded it.
+- **Usage:**
+  ```sql
+  SELECT check_user_feature_limit('user-uuid-here', 'properties');
+  ```
+- **Implementation:**
+  ```sql
+  CREATE OR REPLACE FUNCTION check_user_feature_limit(
+    p_user_id UUID,
+    p_feature_name TEXT
+  )
+  RETURNS BOOLEAN
+  SECURITY DEFINER
+  SET search_path = public
+  LANGUAGE plpgsql
+  AS $$
+  DECLARE
+    v_limit INTEGER;
+    v_count INTEGER;
+  BEGIN
+    -- Get the user's feature limit from their subscription
+    SELECT pf.feature_limit INTO v_limit
+    FROM user_subscriptions us
+    JOIN plan_features pf ON us.plan_id = pf.plan_id
+    WHERE us.user_id = p_user_id
+    AND us.status = 'active'
+    AND pf.feature_name = p_feature_name;
+    
+    -- If no subscription or feature found, return false
+    IF v_limit IS NULL THEN
+      RETURN FALSE;
+    END IF;
+    
+    -- If unlimited (-1), return true
+    IF v_limit = -1 THEN
+      RETURN TRUE;
+    END IF;
+    
+    -- Count current usage based on feature name
+    IF p_feature_name = 'properties' THEN
+      SELECT COUNT(*) INTO v_count FROM properties WHERE user_id = p_user_id;
+    ELSIF p_feature_name = 'mortgages' THEN
+      SELECT COUNT(*) INTO v_count FROM amortizations WHERE user_id = p_user_id;
+    ELSIF p_feature_name = 'rentals' THEN
+      -- Assuming you have a rentals table
+      SELECT COUNT(*) INTO v_count FROM rental_properties WHERE user_id = p_user_id;
+    ELSE
+      -- Unknown feature
+      RETURN FALSE;
+    END IF;
+    
+    -- Return true if under limit, false if at or over limit
+    RETURN v_count < v_limit;
+  END;
+  $$;
+  ```
+
 ## Admin Features
 - Bonus bracket configuration
 - Translation management

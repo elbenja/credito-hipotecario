@@ -63,6 +63,8 @@ export default function EditMortgage() {
   const [isCreatingNew, setIsCreatingNew] = useState(!id)
   // Add state to track if extra installments exist
   const [hasExtraInstallments, setHasExtraInstallments] = useState(false)
+  // Add state to store calculated loan amount from form
+  const [calculatedLoanAmount, setCalculatedLoanAmount] = useState<number>(0)
   
   // Get the current exchange rate
   const { data: exchangeRate } = useExchangeRate()
@@ -121,8 +123,7 @@ export default function EditMortgage() {
 
   // Helper function to create a property compatible with LoanCalculator
   const createCalculatorProperty = (property: Property) => {
-    console.log("=== EditMortgage: createCalculatorProperty ===");
-    console.log("Original property:", property);
+
     
     const calculatorProperty = {
       id: property.id,
@@ -135,8 +136,7 @@ export default function EditMortgage() {
       is_sustainable: property.is_sustainable || false
     };
     
-    console.log("Created calculator property:", calculatorProperty);
-    console.log("==============================================");
+
     
     return calculatorProperty;
   };
@@ -415,6 +415,21 @@ export default function EditMortgage() {
     }
   }, [id, mortgage]);
 
+  // Helper function to get consistently formatted mortgage form values
+  const getFormattedMortgageValues = () => {
+    return {
+      mortgageId: id || "",
+      loanAmount: calculatedLoanAmount,
+      downPayment: parseFloat(mortgageForm.getValues().down_payment?.replace(/[^0-9.]/g, "") || "0"),
+      interestRate: parseFloat(mortgageForm.getValues().interest_rate || "0"),
+      termYears: parseInt(mortgageForm.getValues().term_years || "0"),
+      installmentsPerYear: parseInt(mortgageForm.getValues().installments_per_year || "12"),
+      loanProtectionType: mortgageForm.getValues().loan_protection_type,
+      loanProtectionInsurance: parseFloat(mortgageForm.getValues().loan_protection_insurance || "0"),
+      firstInstallmentDate: mortgageForm.getValues().first_installment_date || new Date()
+    };
+  };
+
   // Update effect that watches mortgage form values
   useEffect(() => {
     if (!mortgage?.property) return;
@@ -423,11 +438,8 @@ export default function EditMortgage() {
       if (!values) return;
       
       try {
-        // Only call this function when we have meaningful changes
-        const downPayment = parseFloat(values.down_payment?.replace(/[^0-9.]/g, "") || "0");
-        
-        // Calculate total loan amount
-        const loanAmount = mortgage.property.price_cost - downPayment;
+        // Get the formatted values
+        const formValues = getFormattedMortgageValues();
         
         // Get the property bonus directly from the database
         loanCalculator.getPropertyBonus(supabase, mortgage.property.id)
@@ -435,58 +447,19 @@ export default function EditMortgage() {
             // Create property for calculator
             const propertyForCalculator = createCalculatorProperty(mortgage.property);
             
-            // Calculate the adjusted loan amount
-            const adjustedLoanAmount = bonus ? loanAmount - bonus : loanAmount;
+            // Calculate the adjusted loan amount (use calculated amount directly)
+            const adjustedLoanAmount = formValues.loanAmount;
             
-            // console.log("=== EditMortgage: Calculating scenarioInputs ===");
-            // console.log("Property from mortgage:", mortgage.property);
-            // console.log("Down payment from form:", downPayment);
-            // console.log("Property price:", mortgage.property.price_cost);
-            // console.log("Raw loan amount (before bonus):", loanAmount);
-            // console.log("Property for calculator:", propertyForCalculator);
-            // console.log("Calculated bonus:", bonus);
-            // console.log("Final adjusted loan amount:", adjustedLoanAmount);
-            
-            const interestRate = parseFloat(values.interest_rate || "0");
-            const termYears = parseInt(values.term_years || "0");
-            const installmentsPerYear = parseInt(values.installments_per_year || "12");
-            
-            // Handle loan protection insurance based on type
-            let loanInsurance = 0;
-            switch (values.loan_protection_type) {
-              case "individual":
-                loanInsurance = 0.028;
-                break;
-              case "joint":
-                loanInsurance = 0.052;
-                break;
-              case "custom":
-                loanInsurance = parseFloat(values.loan_protection_insurance || "0");
-                break;
-              case "none":
-                loanInsurance = 0;
-                break;
-            }
-
-            // Handle date properly to preserve the day of month
-            let firstInstallmentDate;
-            if (values.first_installment_date) {
-              firstInstallmentDate = normalizeDate(new Date(values.first_installment_date));
-            }
-
             const newInputs = {
-              mortgageId: id || "",
+              mortgageId: formValues.mortgageId,
               loanAmount: adjustedLoanAmount,
-              interestRate,
-              termYears,
-              installmentsPerYear,
-              firstInstallmentDate,
+              interestRate: formValues.interestRate,
+              termYears: formValues.termYears,
+              installmentsPerYear: formValues.installmentsPerYear,
+              firstInstallmentDate: formValues.firstInstallmentDate,
               propertyInsurance: mortgage.property.property_insurance || 0,
-              loanInsurance
+              loanInsurance: formValues.loanProtectionInsurance
             };
-            
-            console.log("Updating scenario inputs to:", newInputs);
-            console.log("==============================================");
 
             setScenarioInputs(newInputs);
           })
@@ -499,22 +472,11 @@ export default function EditMortgage() {
     });
     
     return () => subscription.unsubscribe();
-  }, [mortgageForm, id, mortgage?.property, loanCalculator, supabase]);
+  }, [mortgageForm, id, mortgage?.property, loanCalculator, supabase, calculatedLoanAmount]);
 
   const { data: scenarios, isLoading: isLoadingScenarios, error: scenariosError } = useScenarioCalculations(scenarioInputs)
 
-  // Add debug logs for scenarios calculation
-  useEffect(() => {
-    if (scenarios && scenarios.regular) {
-      console.log("Scenarios calculated:", { 
-        hasSavedScenario: !!savedScenario,
-        hasRegularScenario: !!scenarios.regular,
-        regularSummary: scenarios.regular.summary
-      });
-    }
-  }, [scenarios, savedScenario]);
-
-  // Effect to update default scenario values when scenarios are first calculated
+  // Add effect to update default scenario values when scenarios are first calculated
   useEffect(() => {
     const setDefaultScenario = async () => {
       // Only run if we have mortgage data, scenarios calculated, and no saved scenario yet
@@ -1275,6 +1237,9 @@ export default function EditMortgage() {
                     onSubmit={onUpdateMortgage}
                     isSubmitting={isSubmitting}
                     submitLabel={isCreatingNew ? t("ui.create", "Create", { ns: "global" }) : t("ui.save", { ns: "global" })}
+                    onLoanAmountChange={(amount: number) => {
+                      setCalculatedLoanAmount(amount);
+                    }}
                   />
                 </Form>
               )}
@@ -1343,6 +1308,16 @@ export default function EditMortgage() {
                         propertyCost={mortgage.property.price_cost}
                         isThisScenarioSaved={savedScenario === "regular"}
                         onSaveScenario={handleSaveScenario}
+                        formValues={{
+                          loan_amount: calculatedLoanAmount,
+                          down_payment: getFormattedMortgageValues().downPayment,
+                          interest_rate: getFormattedMortgageValues().interestRate,
+                          term_years: getFormattedMortgageValues().termYears,
+                          installments_per_year: getFormattedMortgageValues().installmentsPerYear,
+                          loan_protection_type: getFormattedMortgageValues().loanProtectionType,
+                          loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
+                          first_installment_date: getFormattedMortgageValues().firstInstallmentDate
+                        }}
                       />
                     )}
                   </TabsContent>
@@ -1354,17 +1329,27 @@ export default function EditMortgage() {
                             scenario={scenarios.accelerated}
                             regularScenario={scenarios.regular}
                             currency={mortgage.property.currency}
-                            installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
+                            installmentsPerYear={getFormattedMortgageValues().installmentsPerYear}
                             propertyCost={mortgage.property.price_cost}
                             isThisScenarioSaved={savedScenario === "accelerated"}
                             onSaveScenario={handleSaveScenario}
+                            formValues={{
+                              loan_amount: calculatedLoanAmount,
+                              down_payment: getFormattedMortgageValues().downPayment,
+                              interest_rate: getFormattedMortgageValues().interestRate,
+                              term_years: getFormattedMortgageValues().termYears,
+                              installments_per_year: getFormattedMortgageValues().installmentsPerYear,
+                              loan_protection_type: getFormattedMortgageValues().loanProtectionType,
+                              loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
+                              first_installment_date: getFormattedMortgageValues().firstInstallmentDate
+                            }}
                           />
                         ) : null}
                         <div className="mt-8">
                           <ExtraInstallmentsSection
-                            mortgageId={id || ""}
+                            mortgageId={getFormattedMortgageValues().mortgageId}
                             currency={mortgage.property.currency}
-                            loanAmount={mortgage.loan_amount}
+                            loanAmount={calculatedLoanAmount}
                             onInstallmentsChange={handleInstallmentsChange}
                             firstInstallmentDate={mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined}
                           />
@@ -1380,17 +1365,27 @@ export default function EditMortgage() {
                             scenario={scenarios.lower_payment}
                             regularScenario={scenarios.regular}
                             currency={mortgage.property.currency}
-                            installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
+                            installmentsPerYear={getFormattedMortgageValues().installmentsPerYear}
                             propertyCost={mortgage.property.price_cost}
                             isThisScenarioSaved={savedScenario === "lower_payment"}
                             onSaveScenario={handleSaveScenario}
+                            formValues={{
+                              loan_amount: calculatedLoanAmount,
+                              down_payment: getFormattedMortgageValues().downPayment,
+                              interest_rate: getFormattedMortgageValues().interestRate,
+                              term_years: getFormattedMortgageValues().termYears,
+                              installments_per_year: getFormattedMortgageValues().installmentsPerYear,
+                              loan_protection_type: getFormattedMortgageValues().loanProtectionType,
+                              loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
+                              first_installment_date: getFormattedMortgageValues().firstInstallmentDate
+                            }}
                           />
                         ) : null}
                         <div className="mt-8">
                           <ExtraInstallmentsSection
-                            mortgageId={id || ""}
+                            mortgageId={getFormattedMortgageValues().mortgageId}
                             currency={mortgage.property.currency}
-                            loanAmount={mortgage.loan_amount}
+                            loanAmount={calculatedLoanAmount}
                             onInstallmentsChange={handleInstallmentsChange}
                             firstInstallmentDate={mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined}
                           />
@@ -1406,15 +1401,25 @@ export default function EditMortgage() {
                             scenario={scenarios.new_rate}
                             regularScenario={scenarios.regular}
                             currency={mortgage.property.currency}
-                            installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
+                            installmentsPerYear={getFormattedMortgageValues().installmentsPerYear}
                             propertyCost={mortgage.property.price_cost}
                             isThisScenarioSaved={savedScenario === "new_rate"}
                             onSaveScenario={handleSaveScenario}
+                            formValues={{
+                              loan_amount: calculatedLoanAmount,
+                              down_payment: getFormattedMortgageValues().downPayment,
+                              interest_rate: getFormattedMortgageValues().interestRate,
+                              term_years: getFormattedMortgageValues().termYears,
+                              installments_per_year: getFormattedMortgageValues().installmentsPerYear,
+                              loan_protection_type: getFormattedMortgageValues().loanProtectionType,
+                              loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
+                              first_installment_date: getFormattedMortgageValues().firstInstallmentDate
+                            }}
                           />
                         ) : null}
                         <div className="mt-8">
                           <NewRateForm
-                            mortgageId={id || ""}
+                            mortgageId={getFormattedMortgageValues().mortgageId}
                             onSuccess={() => {
                               queryClient.invalidateQueries({
                                 queryKey: ["scenarios", id]
