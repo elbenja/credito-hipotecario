@@ -254,8 +254,6 @@ export const useMortgageCapture = () => {
     stayOnPage = false 
   }: CurrentScenarioCapture) => {
     try {
-      console.log("captureCurrentScenario called with mortgageId:", mortgageId);
-      
       if (!mortgageId) {
         console.error("No mortgage ID provided to captureCurrentScenario");
         toast({
@@ -297,8 +295,6 @@ export const useMortgageCapture = () => {
         `)
         .eq("id", mortgageId)
         .single();
-        
-      console.log("Original mortgage fetch result:", originalMortgage ? "success" : "failed", mortgageError);
 
       if (mortgageError || !originalMortgage) {
         console.error("Error fetching mortgage data:", mortgageError);

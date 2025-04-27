@@ -44,6 +44,7 @@ import { Heart } from "lucide-react"
 import { ScenarioResult } from "@/services/mortgages/types/common"
 import SVGfixed from "@/components/ui/svg-fixed"
 import { LoanCalculator } from "@/services/mortgages/calculations/loan"
+import React from "react"
 
 export default function EditMortgage() {
   const { t } = useTranslation()
@@ -75,9 +76,11 @@ export default function EditMortgage() {
   const [formIsReady, setFormIsReady] = useState(false);
   
   // Add state to track which tab is active - initialize with URL parameter if available
+  // Initialize with a ref to avoid re-renders during initialization
+  const initialTabSet = React.useRef(false);
   const [activeTab, setActiveTab] = useState(tabFromUrl && ["regular", "accelerated", "lower_payment", "new_rate"].includes(tabFromUrl) 
     ? tabFromUrl 
-    : "regular")
+    : "regular");
   
   // Add state to track saved scenario with localStorage persistence
   const [savedScenario, setSavedScenario] = useState(() => {
@@ -87,12 +90,21 @@ export default function EditMortgage() {
     return savedValue || "regular";
   });
   
-  // Add effect to set active tab to match the saved scenario when component loads
+  // Revised effect to set active tab to match the saved scenario when component loads
+  // This prevents infinite loops by only running once
   useEffect(() => {
-    // Only update activeTab based on savedScenario if we didn't come from a direct URL with tab parameter
-    if (savedScenario && savedScenario !== activeTab && !tabFromUrl) {
+    // Skip if we've already set the initial tab or we have a tab from URL
+    if (initialTabSet.current || tabFromUrl) {
+      return;
+    }
+    
+    // If we have a saved scenario, use it
+    if (savedScenario && savedScenario !== activeTab) {
       setActiveTab(savedScenario);
     }
+    
+    // Mark as initialized
+    initialTabSet.current = true;
   }, [savedScenario, activeTab, tabFromUrl]);
 
   const mortgageForm = useForm<MortgageFormValues>({
@@ -123,8 +135,6 @@ export default function EditMortgage() {
 
   // Helper function to create a property compatible with LoanCalculator
   const createCalculatorProperty = (property: Property) => {
-
-    
     const calculatorProperty = {
       id: property.id,
       name: property.name,
@@ -135,8 +145,6 @@ export default function EditMortgage() {
       is_first_home: property.is_first_home || false,
       is_sustainable: property.is_sustainable || false
     };
-    
-
     
     return calculatorProperty;
   };
@@ -150,12 +158,8 @@ export default function EditMortgage() {
     }
     
     try {
-      console.log("=== EditMortgage: handlePropertyUpdate ===");
-      console.log("Updated property:", updatedProperty);
-      
       // Create a compatible property object for the LoanCalculator
       const propertyForCalculator = createCalculatorProperty(updatedProperty);
-      console.log("Property for calculator:", propertyForCalculator);
       
       // Get current mortgage for down payment
       const { data: mortgageData, error: mortgageError } = await supabase
@@ -166,7 +170,6 @@ export default function EditMortgage() {
       
       if (mortgageError) throw mortgageError;
       const downPayment = mortgageData?.down_payment || 0;
-      console.log("Down payment from mortgage:", downPayment);
       
       // Use the new recalculateMortgageFromProperty method
       await loanCalculator.recalculateMortgageFromProperty(supabase, propertyForCalculator.id, propertyForCalculator);
@@ -177,14 +180,9 @@ export default function EditMortgage() {
       
       // Get the property bonus
       const bonus = await loanCalculator.getPropertyBonus(supabase, propertyForCalculator.id);
-      console.log("Property bonus:", bonus);
       
       // Calculate new loan amount
       const newLoanAmount = loanCalculator.calculateLoanAmountSync(propertyForCalculator, downPayment, bonus);
-      console.log("Calculated new loan amount:", newLoanAmount);
-      
-      console.log("Updating scenario inputs");
-      console.log("==============================================");
       
       setScenarioInputs(prev => ({
         ...prev,
@@ -317,12 +315,6 @@ export default function EditMortgage() {
         if (error) throw error
         if (!data) return null
 
-        // console.log("Fetched mortgage data:", { 
-        //   id: data.id, 
-        //   name: data.name, 
-        //   saved_scenario: data.saved_scenario 
-        // });
-
         const property = data.property as unknown as Property
         
         // Update saved scenario if one exists in the database
@@ -362,6 +354,19 @@ export default function EditMortgage() {
           setFormIsReady(true);
         }, 100);
 
+        // Immediately initialize scenario inputs with database values
+        // This prevents waiting for the form to calculate values
+        setScenarioInputs({
+          mortgageId: id,
+          loanAmount: data.loan_amount || 0,
+          interestRate: data.interest_rate || 0,
+          termYears: data.term_years || 0,
+          installmentsPerYear: data.installments_per_year || 12,
+          firstInstallmentDate: data.first_installment_date ? parseDatabaseDate(data.first_installment_date) : undefined,
+          propertyInsurance: propertyWithDefaults.property_insurance || 0,
+          loanInsurance: data.loan_protection_insurance || 0
+        });
+
         return {
           ...data,
           property: propertyWithDefaults
@@ -376,44 +381,6 @@ export default function EditMortgage() {
     retry: 1, // Only retry once to avoid infinite loading states
     refetchOnWindowFocus: false // Prevent unexpected refetches
   })
-
-  // Update scenario inputs when mortgage data changes
-  useEffect(() => {
-    if (mortgage) {
-      // Ensure form is reset with the correct data
-      mortgageForm.reset({
-        name: mortgage.name || "",
-        property_id: mortgage.property.id,
-        down_payment: mortgage.down_payment?.toString() || "",
-        interest_rate: mortgage.interest_rate?.toString() || "",
-        term_years: mortgage.term_years?.toString() || "",
-        installments_per_year: mortgage.installments_per_year?.toString() || "",
-        first_installment_date: mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : new Date(),
-        loan_protection_type: mortgage.loan_protection_type as "none" | "custom" | "individual" | "joint",
-        loan_protection_insurance: mortgage.loan_protection_insurance?.toString() || "",
-      }, {
-        keepDirty: false,
-        keepValues: false,
-      });
-      
-      // Set form as ready with a slight delay to ensure DOM updates
-      setTimeout(() => {
-        setFormIsReady(true);
-      }, 100);
-      
-      // Update scenario inputs
-      setScenarioInputs({
-        mortgageId: id || "",
-        loanAmount: mortgage.loan_amount || 0,
-        interestRate: mortgage.interest_rate || 0,
-        termYears: mortgage.term_years || 0,
-        installmentsPerYear: mortgage.installments_per_year || 12,
-        firstInstallmentDate: mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined,
-        propertyInsurance: mortgage.property?.property_insurance || 0,
-        loanInsurance: mortgage.loan_protection_insurance || 0
-      });
-    }
-  }, [id, mortgage]);
 
   // Helper function to get consistently formatted mortgage form values
   const getFormattedMortgageValues = () => {
@@ -430,12 +397,13 @@ export default function EditMortgage() {
     };
   };
 
-  // Update effect that watches mortgage form values
+  // The watch effect for form changes can now be optimized to only update when form values change, 
+  // not to initialize values
   useEffect(() => {
     if (!mortgage?.property) return;
     
     const subscription = mortgageForm.watch((values) => {
-      if (!values) return;
+      if (!values || !formIsReady) return;
       
       try {
         // Get the formatted values
@@ -472,11 +440,18 @@ export default function EditMortgage() {
     });
     
     return () => subscription.unsubscribe();
-  }, [mortgageForm, id, mortgage?.property, loanCalculator, supabase, calculatedLoanAmount]);
+  }, [mortgageForm, id, mortgage?.property, loanCalculator, supabase, calculatedLoanAmount, formIsReady]);
 
   const { data: scenarios, isLoading: isLoadingScenarios, error: scenariosError } = useScenarioCalculations(scenarioInputs)
 
-  // Add effect to update default scenario values when scenarios are first calculated
+  // Add debug logs for scenarios calculation
+  useEffect(() => {
+    if (scenarios && scenarios.regular) {
+      // Handle default scenario logic
+    }
+  }, [scenarios, savedScenario]);
+
+  // Effect to update default scenario values when scenarios are first calculated
   useEffect(() => {
     const setDefaultScenario = async () => {
       // Only run if we have mortgage data, scenarios calculated, and no saved scenario yet
@@ -503,8 +478,6 @@ export default function EditMortgage() {
           console.error("Error setting default scenario:", updateError);
           return;
         }
-        
-        console.log("Successfully set default scenario to regular");
         
         // Update state
         setSavedScenario("regular");
@@ -602,16 +575,11 @@ export default function EditMortgage() {
         
         // Get the property bonus
         const propertyForCalculator = createCalculatorProperty(selectedPropertyFromUrl);
-        console.log("=== EditMortgage: onUpdateMortgage ===");
-        console.log("Property for calculator:", propertyForCalculator);
         
         const bonus = await loanCalculator.getPropertyBonus(supabase, propertyForCalculator.id);
-        console.log("Calculated bonus:", bonus);
         
         // Apply bonus to loan amount if applicable
         const finalLoanAmount = bonus ? loanAmount - bonus : loanAmount;
-        console.log("Final loan amount (after bonus):", finalLoanAmount);
-        console.log("==============================================");
 
         // Validate loan amount
         if (finalLoanAmount <= 0) {
@@ -727,16 +695,11 @@ export default function EditMortgage() {
         
         // Get the property bonus
         const propertyForCalculator = createCalculatorProperty(mortgage.property);
-        console.log("=== EditMortgage: onUpdateMortgage ===");
-        console.log("Property for calculator:", propertyForCalculator);
         
         const bonus = await loanCalculator.getPropertyBonus(supabase, propertyForCalculator.id);
-        console.log("Calculated bonus:", bonus);
         
         // Apply bonus to loan amount if applicable
         const finalLoanAmount = bonus ? loanAmount - bonus : loanAmount;
-        console.log("Final loan amount (after bonus):", finalLoanAmount);
-        console.log("==============================================");
 
         // Validate loan amount
         if (finalLoanAmount <= 0) {
@@ -766,8 +729,6 @@ export default function EditMortgage() {
           loan_protection_type: values.loan_protection_type,
           loan_protection_insurance: loanProtectionInsurance,
         }
-
-        // console.log("Updating mortgage with installments_per_year:", installmentsPerYear);
 
         // Get updated scenario values based on current saved scenario type
         let updatedScenarioData = {};
@@ -1051,8 +1012,6 @@ export default function EditMortgage() {
         // This will run whenever the installments_per_year field changes
         const newValue = mortgageForm.getValues("installments_per_year");
         
-        console.log(`Installments field changed from ${currentValue} to ${newValue}`);
-        
         // Only proceed if there's a value and it's changed
         if (newValue && parseInt(newValue) !== parseInt(currentValue || "12")) {
           // Force immediate scenario update
@@ -1081,7 +1040,6 @@ export default function EditMortgage() {
       // Only respond to installments_per_year changes
       if (name === 'installments_per_year') {
         const installmentsValue = value.installments_per_year;
-        console.log(`Installments field watched change: ${installmentsValue}`);
         
         // Immediately update the scenarioInputs to trigger recalculation
         if (mortgage && installmentsValue) {
@@ -1103,6 +1061,14 @@ export default function EditMortgage() {
     // Cleanup the subscription when component unmounts
     return () => subscription.unsubscribe();
   }, [mortgageForm, id, queryClient, mortgage]);
+
+  // Update the handler for tab changes to avoid unnecessary re-renders
+  const handleTabChange = (value: string) => {
+    // Only update if the value is different
+    if (value !== activeTab) {
+      setActiveTab(value);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -1268,9 +1234,9 @@ export default function EditMortgage() {
                 </div>
               ) : (
                 <Tabs 
-                  defaultValue={activeTab} 
+                  value={activeTab} 
                   className="w-full"
-                  onValueChange={setActiveTab}
+                  onValueChange={handleTabChange}
                 >
                   <TabsList className="w-screen sm:w-full items-center justify-start flex inline-flex overflow-x-auto h-14 px-2 lg:px-3 xl:px-4 rounded-none">
                     <TabsTrigger className="flex-shrink-0 px-3 lg:px-4 xl:px-5 py-2 flex items-center gap-1.5" value="regular">

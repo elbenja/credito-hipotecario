@@ -135,11 +135,11 @@ export function AmortizationDetailsForm({
         <div className="text-xs ">
           {t('amortization.loan_amount_formula', { ns: 'mortgages' })}
         </div>
-        {cachedBonus && cachedBonus > 0 && (
+        {/* {cachedBonus && cachedBonus > 0 && (
           <div className="text-sm text-muted-foreground">
             {t('amortization.includes_bonus', 'Includes bonus', { ns: 'mortgages' })}: {formatCurrency(cachedBonus, "PEN")}
           </div>
-        )}
+        )} */}
       </div>
       <Separator />
 
