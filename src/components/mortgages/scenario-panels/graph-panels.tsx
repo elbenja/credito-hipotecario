@@ -424,6 +424,16 @@ const ScenarioPanel = ({
       
       // Use the formValues from parent component
       await captureCurrentScenario(captureData);
+      
+      // Update the URL to include the tab parameter without causing a full page reload
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', scenarioType);
+      window.history.pushState({}, '', url);
+      
+      // Call the onSaveScenario handler to update the parent component's state
+      if (onSaveScenario) {
+        onSaveScenario(scenarioType);
+      }
     } catch (error) {
       console.error("Error capturing scenario:", error);
       toast({
