@@ -36,6 +36,7 @@ export default function Mortgages() {
   const [open, setOpen] = useState(false)
   const { data: exchangeRate } = useExchangeRate()
   const { captureMortgage } = useMortgageCapture();
+  const [bonusValues, setBonusValues] = useState<Record<string, number | null>>({});
 
   // Add subscription limits hook
   const {
@@ -100,22 +101,27 @@ export default function Mortgages() {
     return amount * (exchangeRate || 3.7167)
   }, [exchangeRate])
 
-  // Helper function to calculate bonus - memoize to prevent recreation on each render
-  const calculateBonus = useCallback((property: Property): number | null => {
-    if (!property.is_first_home) return null
+  // Replaced client-side bonus calculation with database function call
+  const calculateBonus = useCallback(async (property: Property): Promise<number | null> => {
+    if (!property.is_first_home || !property.id) return null;
 
-    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency)
-    
-    const applicableRule = bonusRules.find(
-      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
-    )
-
-    if (!applicableRule) return null
-
-    return property.is_sustainable 
-      ? applicableRule.sustainable_bonus 
-      : applicableRule.traditional_bonus
-  }, [bonusRules, convertToPEN])
+    try {
+      // Use the database function directly instead of client-side calculation
+      const { data, error } = await supabase.rpc('property_bonus', {
+        p_property_id: property.id
+      });
+      
+      if (error) {
+        console.error("Error calculating bonus:", error);
+        return null;
+      }
+      
+      return data || null;
+    } catch (error) {
+      console.error("Error in bonus calculation:", error);
+      return null;
+    }
+  }, []);
 
   const { data: propertiesWithMortgages, isLoading } = useQuery({
     queryKey: ["properties-with-mortgages", user?.id],
@@ -145,6 +151,31 @@ export default function Mortgages() {
     },
     enabled: !!user,
   })
+  
+  // Add effect to load all bonuses when properties load
+  useEffect(() => {
+    if (propertiesWithMortgages?.length) {
+      // Load all bonuses in parallel
+      const loadBonuses = async () => {
+        const bonusPromises = propertiesWithMortgages
+          .filter(p => p.is_first_home)
+          .map(async (property) => {
+            const bonus = await calculateBonus(property);
+            return { id: property.id, bonus };
+          });
+        
+        const results = await Promise.all(bonusPromises);
+        const newBonusValues = results.reduce((acc, { id, bonus }) => {
+          acc[id] = bonus;
+          return acc;
+        }, {} as Record<string, number | null>);
+        
+        setBonusValues(newBonusValues);
+      };
+      
+      loadBonuses();
+    }
+  }, [propertiesWithMortgages, calculateBonus]);
 
   useEffect(() => {
     let propertiesChannel: RealtimeChannel | null = null
@@ -270,9 +301,9 @@ export default function Mortgages() {
                 </span>
                 {property.is_first_home && (
                   <>
-                    {calculateBonus(property) && (
+                    {bonusValues[property.id] !== undefined && (
                       <Badge variant="outline" className="ml-4 text-sm font-medium">
-                        {t('bonus.amount_short')}: S/ {Number(calculateBonus(property)).toLocaleString('en-US')}
+                        {t('bonus.amount_short')}: S/ {Number(bonusValues[property.id]).toLocaleString('en-US')}
                       </Badge>
                     )}
                   </>

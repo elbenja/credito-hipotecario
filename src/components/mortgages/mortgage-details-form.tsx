@@ -53,6 +53,12 @@ export function AmortizationDetailsForm({
   const [cachedBonus, setCachedBonus] = useState<number | null>(null)
   const loanCalculator = new LoanCalculator()
   
+  // Add tracking of previous values to avoid unnecessary recalculations
+  const [prevProperty, setPrevProperty] = useState<string | null>(null)
+  const [prevDownPayment, setPrevDownPayment] = useState<number>(0)
+  const [prevBonus, setPrevBonus] = useState<number | null>(null)
+  const [prevLoanAmount, setPrevLoanAmount] = useState<number>(0)
+  
   // Normalize the first_installment_date when component mounts
   // This fixes timezone issues with date handling
   useEffect(() => {
@@ -69,17 +75,32 @@ export function AmortizationDetailsForm({
     }
   }, [exchangeRate, loanCalculator]);
 
-  // Get property bonus when property changes
+  // Replace the useEffect for property bonus with database function call
   useEffect(() => {
     if (selectedProperty?.id) {
       const getBonus = async () => {
-        const bonus = await loanCalculator.getPropertyBonus(supabase, selectedProperty.id);
-        setCachedBonus(bonus);
+        try {
+          // Use the database function directly
+          const { data, error } = await supabase.rpc('property_bonus', {
+            p_property_id: selectedProperty.id
+          });
+          
+          if (error) {
+            console.error("Error getting property bonus:", error);
+            setCachedBonus(0);
+            return;
+          }
+          
+          setCachedBonus(data || 0);
+        } catch (error) {
+          console.error("Error fetching property bonus:", error);
+          setCachedBonus(0);
+        }
       };
       
       getBonus();
     }
-  }, [selectedProperty?.id, loanCalculator]);
+  }, [selectedProperty?.id]);
 
   // Helper function to create a property compatible with LoanCalculator
   const createCalculatorProperty = (property: Property) => {
@@ -101,19 +122,25 @@ export function AmortizationDetailsForm({
   const downPayment = form.watch("down_payment")
   const numericDownPayment = parseFloat(downPayment?.replace(/[^0-9.]/g, "") || "0")
 
-  // Calculate loan amount using LoanCalculator
+  // Optimize loan amount calculation with memoization and caching
   const loanAmount = useMemo(() => {
     if (!selectedProperty) return 0;
-
-    // Create a property object compatible with LoanCalculator
-    const propertyForCalculator = createCalculatorProperty(selectedProperty);
     
-    // Use the synchronous version with cached bonus
-    const calculatedAmount = loanCalculator.calculateLoanAmountSync(
-      propertyForCalculator, 
-      numericDownPayment, 
-      cachedBonus || 0
-    );
+    // Skip recalculation when not necessary
+    if (prevProperty === selectedProperty.id && 
+        prevDownPayment === numericDownPayment && 
+        prevBonus === cachedBonus) {
+      return prevLoanAmount;
+    }
+    
+    // Use a simplified direct calculation when possible
+    const calculatedAmount = selectedProperty.price_cost - numericDownPayment - (cachedBonus || 0);
+    
+    // Update previous values to enable future skipping
+    setPrevProperty(selectedProperty.id);
+    setPrevDownPayment(numericDownPayment);
+    setPrevBonus(cachedBonus);
+    setPrevLoanAmount(calculatedAmount);
     
     // Call the callback to update loan amount in parent component
     if (onLoanAmountChange) {
@@ -121,7 +148,8 @@ export function AmortizationDetailsForm({
     }
     
     return calculatedAmount;
-  }, [selectedProperty, numericDownPayment, cachedBonus, loanCalculator, onLoanAmountChange]);
+  }, [selectedProperty, numericDownPayment, cachedBonus, onLoanAmountChange, 
+      prevProperty, prevDownPayment, prevBonus, prevLoanAmount]);
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

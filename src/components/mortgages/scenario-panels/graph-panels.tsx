@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react"
+import React, { useMemo, useState, useEffect, useRef } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
@@ -161,30 +161,33 @@ const ScenarioPanel = ({
   const navigate = useNavigate()
   const { captureMortgage, captureCurrentScenario } = useMortgageCapture()
   const { toast } = useToast()
+  
+  // Add a ref for caching chart data to avoid unnecessary transformations
+  const chartDataCache = useRef<Record<string, any[]>>({});
 
-  // Add state for the toggle buttons
-  const [isButtonOn, setIsButtonOn] = useState(() => {
-    // Initialize state from localStorage
-    const savedState = localStorage.getItem('isButtonOn');
-    return savedState ? JSON.parse(savedState) : false;
+  // Update localStorage operations by batching state
+  const [uiState, setUiState] = useState(() => {
+    // Read all localStorage values at once
+    return {
+      isButtonOn: JSON.parse(localStorage.getItem('isButtonOn') || 'false'),
+      isTotalViewOn: JSON.parse(localStorage.getItem('isTotalViewOn') || 'true')
+    };
   });
 
-  // Add a second toggle state for the first set of buttons
-  const [isTotalViewOn, setIsTotalViewOn] = useState(() => {
-    // Initialize state from localStorage
-    const savedState = localStorage.getItem('isTotalViewOn');
-    return savedState ? JSON.parse(savedState) : true;
-  });
+  // Batch update function for UI states
+  const updateUiState = (updates: Partial<typeof uiState>) => {
+    setUiState(prev => ({ ...prev, ...updates }));
+  };
 
-  // Update localStorage whenever isButtonOn changes
+  // Debounced localStorage writes
   useEffect(() => {
-    localStorage.setItem('isButtonOn', JSON.stringify(isButtonOn));
-  }, [isButtonOn]);
-
-  // Update localStorage whenever isTotalViewOn changes
-  useEffect(() => {
-    localStorage.setItem('isTotalViewOn', JSON.stringify(isTotalViewOn));
-  }, [isTotalViewOn]);
+    const handler = setTimeout(() => {
+      localStorage.setItem('isButtonOn', JSON.stringify(uiState.isButtonOn));
+      localStorage.setItem('isTotalViewOn', JSON.stringify(uiState.isTotalViewOn));
+    }, 300);
+    
+    return () => clearTimeout(handler);
+  }, [uiState]);
   
   // Handle null or undefined scenario gracefully
   if (!scenario?.summary) {
@@ -210,17 +213,39 @@ const ScenarioPanel = ({
     ? total_months
     : (regularScenario?.summary?.total_months || 360);
 
-  // Memoize chart data to prevent unnecessary recalculations
+  // Optimize chart data transformation with better memoization and caching
   const chartData = useMemo(() => {
     if (!scenario?.payments?.length) return [];
+    
+    // Create a unique cache key without relying on scenario.id property
+    const cacheKey = `${scenarioType}-${totalMonthsToDisplay}-${installmentsPerYear}`;
+    
+    // Check if we already have this cached
+    if (chartDataCache.current[cacheKey]) {
+      return chartDataCache.current[cacheKey];
+    }
+    
     try {
-      // Force recalculation when installmentsPerYear changes
-      // by adding it explicitly to the dependency array
-      return transformPaymentsToChartData(scenario.payments, totalMonthsToDisplay, installmentsPerYear);
+      // Calculate and cache the result
+      const result = transformPaymentsToChartData(
+        scenario.payments, 
+        totalMonthsToDisplay, 
+        installmentsPerYear
+      );
+      
+      // Store in cache with a maximum of 10 cache entries
+      const cacheKeys = Object.keys(chartDataCache.current);
+      if (cacheKeys.length >= 10) {
+        delete chartDataCache.current[cacheKeys[0]];
+      }
+      
+      chartDataCache.current[cacheKey] = result;
+      return result;
     } catch (error) {
+      console.error("Error transforming chart data:", error);
       return [];
     }
-  }, [scenario.payments, totalMonthsToDisplay, installmentsPerYear]);
+  }, [scenario?.payments, totalMonthsToDisplay, installmentsPerYear, scenarioType]);
 
   // Bail early if we don't have chart data
   if (!chartData.length) {
@@ -507,10 +532,10 @@ const ScenarioPanel = ({
 
 <div className="flex flex-col items-stretch space-y-0 border-t border-b p-0 sm:flex-row">
 
-  {isTotalViewOn ? (
+  {uiState.isTotalViewOn ? (
     <button className="flex flex-1 text-left justify-top gap-2 hover:bg-card/50 px-4 xl:px-6 2xl:px-8
 py-4 xl:py-5 2xl:py-6"
-      onClick={() => setIsTotalViewOn(false)}
+      onClick={() => updateUiState({ isTotalViewOn: !uiState.isTotalViewOn })}
     >
       <div className="flex flex-col justify-start items-start gap-2">
         <span className="text-xs text-muted-foreground">
@@ -544,7 +569,7 @@ py-4 xl:py-5 2xl:py-6"
   ) : (
     <button className="flex flex-1 text-left justify-top gap-2 hover:bg-card/50 px-4 xl:px-6 2xl:px-8
 py-4 xl:py-5 2xl:py-6"
-      onClick={() => setIsTotalViewOn(true)}
+      onClick={() => updateUiState({ isTotalViewOn: !uiState.isTotalViewOn })}
     >
       <div className="flex flex-col justify-start items-start gap-2">
         <span className="text-xs text-muted-foreground">
@@ -578,10 +603,10 @@ py-4 xl:py-5 2xl:py-6"
   )}
 
   <div className="flex">
-               {isButtonOn ? (
+               {uiState.isButtonOn ? (
                  <button className="flex justify-top gap-2 border-t  text-left even:border-l sm:border-l sm:border-t-0 hover:bg-card/50 px-4 xl:px-6 2xl:px-8
 py-4 xl:py-5 2xl:py-6 "
-                   onClick={() => setIsButtonOn(false)}
+                   onClick={() => updateUiState({ isButtonOn: !uiState.isButtonOn })}
                  >
                  <div className="flex flex-col justify-start items-start gap-2">
                    <span className="text-xs text-muted-foreground">
@@ -606,7 +631,7 @@ py-4 xl:py-5 2xl:py-6 "
                 ) : (
                   <button className="flex justify-top gap-2 border-t  text-left even:border-l sm:border-l sm:border-t-0 hover:bg-card/50 px-4 xl:px-6 2xl:px-8
 py-4 xl:py-5 2xl:py-6"
-                    onClick={() => setIsButtonOn(true)}
+                    onClick={() => updateUiState({ isButtonOn: !uiState.isButtonOn })}
                   >
                  
                  <div className="flex flex-col justify-start items-start gap-2">

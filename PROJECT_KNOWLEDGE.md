@@ -120,6 +120,62 @@ To optimize performance and reduce direct calls to the database for bonus calcul
   $$ LANGUAGE plpgsql;
   ```
 
+#### Database Function for Property Update and Mortgage Recalculation
+To optimize performance by reducing multiple database calls when updating property details, a database function `update_property_and_calculate` has been implemented.
+
+- **Purpose:** Updates a property's details and recalculates the associated mortgage values in a single database call, reducing round trips between client and server.
+- **Inputs:**
+  - `p_property_id UUID`: The UUID of the property to update.
+  - `p_mortgage_id UUID`: The UUID of the mortgage to recalculate.
+- **Output:**
+  - `JSONB`: An object containing the updated loan amount, property bonus, and property details.
+- **Usage:**
+  ```sql
+  SELECT update_property_and_calculate('property-uuid-here', 'mortgage-uuid-here');
+  ```
+- **Implementation:**
+  ```sql
+  CREATE OR REPLACE FUNCTION update_property_and_calculate(
+    p_property_id UUID,
+    p_mortgage_id UUID
+  ) RETURNS JSONB AS $$
+  DECLARE
+    v_mortgage RECORD;
+    v_property RECORD;
+    v_bonus NUMERIC;
+    v_loan_amount NUMERIC;
+  BEGIN
+    -- Get the mortgage data
+    SELECT * INTO v_mortgage FROM mortgages WHERE id = p_mortgage_id;
+    
+    -- Get the property data
+    SELECT * INTO v_property FROM properties WHERE id = p_property_id;
+    
+    -- Calculate bonus using the existing function
+    SELECT property_bonus(p_property_id) INTO v_bonus;
+    
+    -- Calculate loan amount
+    v_loan_amount := v_property.price_cost - v_mortgage.down_payment - v_bonus;
+    
+    -- Update mortgage if needed
+    UPDATE mortgages 
+    SET loan_amount = v_loan_amount
+    WHERE id = p_mortgage_id;
+    
+    -- Return the calculated values
+    RETURN jsonb_build_object(
+      'loan_amount', v_loan_amount,
+      'bonus', v_bonus,
+      'property', jsonb_build_object(
+        'id', v_property.id,
+        'price_cost', v_property.price_cost,
+        'property_insurance', v_property.property_insurance
+      )
+    );
+  END;
+  $$ LANGUAGE plpgsql;
+  ```
+
 ### 2. Mortgages Tools
 
 #### 2.1 Core Services and Organization
@@ -211,6 +267,15 @@ src/
    - Debounced updates (500ms default)
    - Automatic recalculation on value changes
    - Real-time UI updates
+
+6. **Performance Optimizations**
+   - **Database Functions**: Using `property_bonus` and `update_property_and_calculate` functions to offload calculations to the database layer
+   - **Debounced Form Watches**: Input changes are debounced (300ms) to prevent excessive recalculations during rapid input changes
+   - **Memoized Chart Data**: Chart data transformations are memoized and cached with key-based lookup to avoid unnecessary recalculations
+   - **Batched State Updates**: UI state changes are batched to minimize renders
+   - **Cached Bonus Calculations**: Property bonus values are calculated once per session and cached
+   - **LocalStorage Optimization**: Debounced writes to localStorage to prevent performance issues during rapid state changes
+   - **Smart Dependency Tracking**: Dependencies in useEffect and useMemo hooks are carefully managed to prevent unnecessary rerenders
 
 **Core Services:**
 
