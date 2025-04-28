@@ -32,16 +32,13 @@ export class LoanCalculator {
   // Get bonus using the PostgreSQL property_bonus function
   async getPropertyBonus(supabase: any, propertyId: string): Promise<number> {
     if (!propertyId) return 0;
-    
     try {
       const { data, error } = await supabase
         .rpc('property_bonus', { p_property_id: propertyId });
-        
       if (error) {
         console.error('Error calling property_bonus function:', error);
         return 0;
       }
-      
       return data || 0;
     } catch (error) {
       console.error('Exception calling property_bonus function:', error);
@@ -49,33 +46,15 @@ export class LoanCalculator {
     }
   }
 
-  // Calculate loan amount with optional cached bonus amount
-  async calculateLoanAmount(supabase: any, property: Property, downPayment: number, cachedBonus?: number): Promise<number> {
+  // Calculate loan amount always using the property_bonus database function
+  async calculateLoanAmount(supabase: any, property: Property, downPayment: number): Promise<number> {
     if (!property) return 0;
-
-    // Use cached bonus if provided, otherwise fetch from database
-    let bonus = cachedBonus;
-    if (bonus === undefined) {
-      bonus = await this.getPropertyBonus(supabase, property.id);
-    }
-    
+    // Always fetch bonus from the database
+    const bonus = await this.getPropertyBonus(supabase, property.id);
     // Convert bonus to property currency if needed
     const bonusInPropertyCurrency = property.currency === 'USD' 
       ? bonus / this.exchangeRate
       : bonus;
-    
-    return property.price_cost - bonusInPropertyCurrency - downPayment;
-  }
-
-  // Synchronous version for when bonus is already known
-  calculateLoanAmountSync(property: Property, downPayment: number, bonus: number = 0): number {
-    if (!property) return 0;
-    
-    // Convert bonus to property currency if needed
-    const bonusInPropertyCurrency = property.currency === 'USD' 
-      ? bonus / this.exchangeRate
-      : bonus;
-    
     return property.price_cost - bonusInPropertyCurrency - downPayment;
   }
 
@@ -87,24 +66,16 @@ export class LoanCalculator {
         .from("mortgages")
         .select("id, down_payment")
         .eq("property_id", propertyId);
-        
       if (mortgagesError) throw mortgagesError;
-      
-      // 2. Get property bonus using the PostgreSQL function
-      const bonus = await this.getPropertyBonus(supabase, propertyId);
-      
-      // 3. Update each mortgage with the new loan amount
+      // 2. Update each mortgage with the new loan amount
       for (const mortgage of mortgages || []) {
-        const newLoanAmount = this.calculateLoanAmountSync(updatedProperty, mortgage.down_payment, bonus);
-        
+        const newLoanAmount = await this.calculateLoanAmount(supabase, updatedProperty, mortgage.down_payment);
         // Update the mortgage with the new loan amount
         const { error: updateError } = await supabase
           .from("mortgages")
           .update({ loan_amount: newLoanAmount })
           .eq('id', mortgage.id);
-          
         if (updateError) throw updateError;
-        
         console.log(`Updated mortgage ${mortgage.id} with new loan amount: ${newLoanAmount}`);
       }
     } catch (error) {
@@ -276,7 +247,7 @@ export class LoanCalculator {
     baseValues: BaseAmortizationValues,
     cachedBonus?: number
   ): Promise<CalculationResults> {
-    const loanAmount = await this.calculateLoanAmount(supabase, property, baseValues.down_payment, cachedBonus);
+    const loanAmount = await this.calculateLoanAmount(supabase, property, baseValues.down_payment);
     
     // Calculate base monthly payment (without insurances)
     const baseMonthlyPayment = this.calculateMonthlyPayment(
@@ -307,6 +278,22 @@ export class LoanCalculator {
       monthly_payment: totalMonthlyPayment,
       payment_schedule: schedule
     };
+  }
+
+  // Synchronous version of calculateLoanAmount for when bonus is already known
+  calculateLoanAmountSync(
+    property: Property,
+    downPayment: number,
+    bonus: number = 0
+  ): number {
+    if (!property) return 0;
+    
+    // Convert bonus to property currency if needed
+    const bonusInPropertyCurrency = property.currency === 'USD' 
+      ? bonus / this.exchangeRate
+      : bonus;
+      
+    return property.price_cost - bonusInPropertyCurrency - downPayment;
   }
 
   // Synchronous version for when bonus is already known

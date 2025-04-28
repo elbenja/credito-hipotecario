@@ -149,6 +149,58 @@ export default function EditMortgage() {
     return calculatorProperty;
   };
 
+  // Add state for cached property values
+  const [cachedPropertyData, setCachedPropertyData] = useState<{
+    price_cost: number;
+    bonus: number;
+    id: string;
+  } | null>(null);
+
+  // Update the fetchPropertyFromUrl function to cache the property data
+  const fetchPropertyFromUrl = async () => {
+    if (!propertyIdFromUrl || !user) return
+    
+    try {
+      const { data, error } = await supabase
+        .from("properties")
+        .select(`
+          id,
+          name,
+          description,
+          currency,
+          price_cost,
+          is_first_home,
+          is_sustainable,
+          property_insurance,
+          property_insurance_type
+        `)
+        .eq("id", propertyIdFromUrl)
+        .single()
+        
+      if (error) throw error
+      if (data) {
+        setSelectedPropertyFromUrl(data as unknown as Property)
+        
+        // Update form with property information
+        mortgageForm.setValue("property_id", data.id, { shouldValidate: true })
+        
+        // Set a default name for the mortgage based on the property name
+        const defaultMortgageName = `${data.name} Mortgage`
+        mortgageForm.setValue("name", defaultMortgageName, { shouldValidate: true })
+
+        // Fetch and cache the bonus
+        const bonus = await loanCalculator.getPropertyBonus(supabase, data.id);
+        setCachedPropertyData({
+          price_cost: data.price_cost,
+          bonus,
+          id: data.id
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching property:", error)
+    }
+  }
+
   // Handle property update callback - Modified to use LoanCalculator
   const handlePropertyUpdate = useCallback(async (updatedProperty: Property) => {
     if (!id || !user) {
@@ -179,10 +231,10 @@ export default function EditMortgage() {
       queryClient.invalidateQueries({ queryKey: ["scenarios", id] });
       
       // Get the property bonus
-      const bonus = await loanCalculator.getPropertyBonus(supabase, propertyForCalculator.id);
+      const bonusAmount = await loanCalculator.getPropertyBonus(supabase, propertyForCalculator.id);
       
       // Calculate new loan amount
-      const newLoanAmount = loanCalculator.calculateLoanAmountSync(propertyForCalculator, downPayment, bonus);
+      const newLoanAmount = await loanCalculator.calculateLoanAmount(supabase, propertyForCalculator, downPayment);
       
       setScenarioInputs(prev => ({
         ...prev,
@@ -190,10 +242,33 @@ export default function EditMortgage() {
         propertyInsurance: updatedProperty.property_insurance || 0
       }));
       
+      // Update the cached values
+      setCachedPropertyData({
+        price_cost: updatedProperty.price_cost,
+        bonus: bonusAmount,
+        id: updatedProperty.id
+      });
+      
     } catch (error) {
       console.error("Error updating mortgage after property update:", error);
     }
   }, [queryClient, id, user, loanCalculator]);
+
+  // Helper function to get bonus without database call
+  const getPropertyBonusFromCache = (propertyId: string): number => {
+    if (cachedPropertyData && cachedPropertyData.id === propertyId) {
+      return cachedPropertyData.bonus;
+    }
+    return 0; // Default value if no cached data
+  };
+  
+  // Helper function to get property price from cache
+  const getPropertyPriceFromCache = (propertyId: string): number => {
+    if (cachedPropertyData && cachedPropertyData.id === propertyId) {
+      return cachedPropertyData.price_cost;
+    }
+    return 0; // Default value if no cached data
+  };
 
   // Fetch property if propertyId is provided in URL
   useEffect(() => {
@@ -410,30 +485,20 @@ export default function EditMortgage() {
         const formValues = getFormattedMortgageValues();
         
         // Get the property bonus directly from the database
-        loanCalculator.getPropertyBonus(supabase, mortgage.property.id)
-          .then(bonus => {
-            // Create property for calculator
-            const propertyForCalculator = createCalculatorProperty(mortgage.property);
-            
-            // Calculate the adjusted loan amount (use calculated amount directly)
-            const adjustedLoanAmount = formValues.loanAmount;
-            
-            const newInputs = {
-              mortgageId: formValues.mortgageId,
-              loanAmount: adjustedLoanAmount,
-              interestRate: formValues.interestRate,
-              termYears: formValues.termYears,
-              installmentsPerYear: formValues.installmentsPerYear,
-              firstInstallmentDate: formValues.firstInstallmentDate,
-              propertyInsurance: mortgage.property.property_insurance || 0,
-              loanInsurance: formValues.loanProtectionInsurance
-            };
+        const bonus = getPropertyBonusFromCache(mortgage.property.id);
+        
+        const newInputs = {
+          mortgageId: formValues.mortgageId,
+          loanAmount: formValues.loanAmount,
+          interestRate: formValues.interestRate,
+          termYears: formValues.termYears,
+          installmentsPerYear: formValues.installmentsPerYear,
+          firstInstallmentDate: formValues.firstInstallmentDate,
+          propertyInsurance: mortgage.property.property_insurance || 0,
+          loanInsurance: formValues.loanProtectionInsurance
+        };
 
-            setScenarioInputs(newInputs);
-          })
-          .catch(error => {
-            console.error("Error getting property bonus:", error);
-          });
+        setScenarioInputs(newInputs);
       } catch (error) {
         console.error("Error updating scenario inputs:", error);
       }
@@ -573,13 +638,22 @@ export default function EditMortgage() {
         // Get loan amount from the form component calculation
         const loanAmount = selectedPropertyFromUrl.price_cost - downPayment;
         
-        // Get the property bonus
-        const propertyForCalculator = createCalculatorProperty(selectedPropertyFromUrl);
+        // Get the property bonus from cache or fetch if needed
+        let cachedBonus = getPropertyBonusFromCache(selectedPropertyFromUrl.id);
         
-        const bonus = await loanCalculator.getPropertyBonus(supabase, propertyForCalculator.id);
+        // Fetch if not in cache
+        if (cachedBonus === 0 && !cachedPropertyData) {
+          cachedBonus = await loanCalculator.getPropertyBonus(supabase, selectedPropertyFromUrl.id);
+          // Update cache
+          setCachedPropertyData({
+            price_cost: selectedPropertyFromUrl.price_cost,
+            bonus: cachedBonus,
+            id: selectedPropertyFromUrl.id
+          });
+        }
         
         // Apply bonus to loan amount if applicable
-        const finalLoanAmount = bonus ? loanAmount - bonus : loanAmount;
+        const finalLoanAmount = cachedBonus ? loanAmount - cachedBonus : loanAmount;
 
         // Validate loan amount
         if (finalLoanAmount <= 0) {
@@ -693,13 +767,11 @@ export default function EditMortgage() {
         // Get loan amount from the form component calculation
         const loanAmount = mortgage.property.price_cost - downPayment;
         
-        // Get the property bonus
-        const propertyForCalculator = createCalculatorProperty(mortgage.property);
-        
-        const bonus = await loanCalculator.getPropertyBonus(supabase, propertyForCalculator.id);
+        // Get the property bonus from cache
+        const cachedBonus = getPropertyBonusFromCache(mortgage.property.id);
         
         // Apply bonus to loan amount if applicable
-        const finalLoanAmount = bonus ? loanAmount - bonus : loanAmount;
+        const finalLoanAmount = cachedBonus ? loanAmount - cachedBonus : loanAmount;
 
         // Validate loan amount
         if (finalLoanAmount <= 0) {
@@ -1069,6 +1141,24 @@ export default function EditMortgage() {
       setActiveTab(value);
     }
   };
+
+  // Effect to initialize property data from mortgage
+  useEffect(() => {
+    if (mortgage?.property && !cachedPropertyData) {
+      // Initialize cache with property data when mortgage loads
+      loanCalculator.getPropertyBonus(supabase, mortgage.property.id)
+        .then(bonusAmount => {
+          setCachedPropertyData({
+            price_cost: mortgage.property.price_cost,
+            bonus: bonusAmount,
+            id: mortgage.property.id
+          });
+        })
+        .catch(error => {
+          console.error("Error initializing property data cache:", error);
+        });
+    }
+  }, [mortgage?.property, cachedPropertyData, loanCalculator, supabase]);
 
   if (isLoading) {
     return (

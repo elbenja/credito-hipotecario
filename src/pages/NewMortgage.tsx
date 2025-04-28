@@ -38,7 +38,15 @@ import type { ScenarioResult, BonusRule } from "@/services/mortgages/types/commo
 import { NoMoreSpace } from "@/components/common/NoMoreSpace"
 import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
 import { normalizeDate } from "@/lib/utils"
-import { ScenarioCalculator } from "@/services/mortgages/services/scenarioCalculator" 
+import { ScenarioCalculator } from "@/services/mortgages/services/scenarioCalculator"
+
+// Add property cache interface
+interface PropertyCache {
+  [propertyId: string]: {
+    price_cost: number;
+    bonus: number;
+  }
+}
 
 export default function NewMortgage() {
   const { t } = useTranslation(['mortgages', 'dashboard', 'global'])
@@ -65,8 +73,8 @@ export default function NewMortgage() {
   // Property selection state
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   
-  // Property bonus state
-  const [propertyBonus, setPropertyBonus] = useState<number | null>(null)
+  // Replace property bonus state with property cache
+  const [propertyCache, setPropertyCache] = useState<PropertyCache>({})
   
   // Loan amount calculation (derived from property, down payment, and bonus)
   const [loanAmount, setLoanAmount] = useState(0)
@@ -106,6 +114,51 @@ export default function NewMortgage() {
       is_sustainable: property.is_sustainable || false
     };
   };
+  
+  // Add method to fetch and cache property bonus
+  const fetchAndCachePropertyBonus = useCallback(async (propertyId: string): Promise<number> => {
+    // Return cached bonus if available
+    if (propertyCache[propertyId]?.bonus !== undefined) {
+      return propertyCache[propertyId].bonus;
+    }
+    
+    // Otherwise fetch from database
+    try {
+      const { data, error } = await supabase
+        .rpc('property_bonus', { p_property_id: propertyId });
+      
+      if (error) {
+        console.error("Error calculating property bonus:", error);
+        return 0;
+      }
+      
+      const bonus = data || 0;
+      
+      // Update cache with the fetched bonus
+      setPropertyCache(prev => ({
+        ...prev,
+        [propertyId]: {
+          ...prev[propertyId],
+          bonus
+        }
+      }));
+      
+      return bonus;
+    } catch (error) {
+      console.error("Error fetching property bonus:", error);
+      return 0;
+    }
+  }, [propertyCache]);
+
+  // Get property price from cache or return default value
+  const getPropertyPriceFromCache = useCallback((propertyId: string): number => {
+    return propertyCache[propertyId]?.price_cost || 0;
+  }, [propertyCache]);
+
+  // Get property bonus from cache or return default value
+  const getPropertyBonusFromCache = useCallback((propertyId: string): number => {
+    return propertyCache[propertyId]?.bonus || 0;
+  }, [propertyCache]);
   
   // Direct count from database for checking limits
   const getMortgageCount = useCallback(async (): Promise<number> => {
@@ -172,24 +225,23 @@ export default function NewMortgage() {
     }
   }, [checkLimitOnce, isLimitCheckDone, user?.id, currentPlan]);
 
-  // Effect to fetch property bonus when property changes
+  // Replace property bonus effect with updateLoanAmount using cache
   useEffect(() => {
     if (!selectedProperty) return;
     
-    const fetchBonus = async () => {
-      try {
-        const bonus = await loanCalculator.getPropertyBonus(supabase, selectedProperty.id);
-        setPropertyBonus(bonus);
-        console.log("Property bonus fetched:", bonus);
-        
-        // Update loan amount when bonus is fetched
-        updateLoanAmount();
-      } catch (error) {
-        console.error("Error fetching property bonus:", error);
+    // Cache property price when a property is selected
+    setPropertyCache(prev => ({
+      ...prev,
+      [selectedProperty.id]: {
+        ...prev[selectedProperty.id],
+        price_cost: selectedProperty.price_cost
       }
-    };
+    }));
     
-    fetchBonus();
+    // Fetch and cache bonus, then update loan amount
+    fetchAndCachePropertyBonus(selectedProperty.id)
+      .then(() => updateLoanAmount());
+      
   }, [selectedProperty]);
   
   // Function to update loan amount based on property, bonus, and down payment
@@ -197,13 +249,16 @@ export default function NewMortgage() {
     if (!selectedProperty) return;
     
     const downPayment = parseFloat(form.getValues("down_payment")?.replace(/[^0-9.]/g, "") || "0");
-    const bonus = propertyBonus || 0;
+    
+    // Use cached values for property price and bonus
+    const propertyPrice = getPropertyPriceFromCache(selectedProperty.id) || selectedProperty.price_cost;
+    const bonus = getPropertyBonusFromCache(selectedProperty.id);
     
     // Calculate loan amount: (property_cost - bonus) - down_payment
-    const calculatedLoanAmount = (selectedProperty.price_cost - bonus) - downPayment;
+    const calculatedLoanAmount = (propertyPrice - bonus) - downPayment;
     
     setLoanAmount(calculatedLoanAmount > 0 ? calculatedLoanAmount : 0);
-  }, [selectedProperty, propertyBonus, form]);
+  }, [selectedProperty, getPropertyPriceFromCache, getPropertyBonusFromCache, form]);
   
   // Update loan amount when form fields change
   useEffect(() => {
@@ -294,10 +349,22 @@ export default function NewMortgage() {
     setSelectedProperty(property)
     if (property) {
       form.setValue("property_id", property.id, { shouldValidate: true })
+      
+      // Cache property price when a property is selected
+      setPropertyCache(prev => ({
+        ...prev,
+        [property.id]: {
+          ...prev[property.id],
+          price_cost: property.price_cost
+        }
+      }));
+      
+      // Fetch and cache bonus
+      fetchAndCachePropertyBonus(property.id);
     } else {
       form.setValue("property_id", "", { shouldValidate: true })
     }
-  }, [form]);
+  }, [form, fetchAndCachePropertyBonus]);
 
   // Watch the form's name field for breadcrumb display
   const amortizationName = form.watch("name")

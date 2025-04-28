@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -31,9 +31,18 @@ import React from "react"
 
 import { AmortizationDetailsForm } from "@/components/mortgages/mortgage-details-form"
 
-type Mortgage = Database['public']['Tables']['mortgages']['Row']
-type ExtraInstallment = Database['public']['Tables']['extra_installments']['Row']
-type RateChange = Database['public']['Tables']['rate_changes']['Row']
+// Fix DB types if needed (this is a temporary fix until types are updated)
+type Mortgage = any; 
+type ExtraInstallment = any;
+type RateChange = any;
+
+// Add property price and bonus cache interface
+interface PropertyCache {
+  [propertyId: string]: {
+    price_cost: number;
+    bonus: number;
+  }
+}
 
 interface PaymentRow {
   payment_date: string | Date
@@ -75,6 +84,9 @@ export default function TestExtraInstallments() {
   const [selectedMortgage, setSelectedMortgage] = useState<Mortgage | null>(null)
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  
+  // Add property cache state
+  const [propertyCache, setPropertyCache] = useState<PropertyCache>({})
   
   const propertyForm = useForm<AmortizationFormValues>({
     resolver: zodResolver(amortizationFormSchema),
@@ -141,6 +153,51 @@ export default function TestExtraInstallments() {
     checkAdminStatus()
   }, [])
 
+  // Add a method to fetch and cache property bonus
+  const fetchAndCachePropertyBonus = useCallback(async (propertyId: string): Promise<number> => {
+    // Return cached bonus if available
+    if (propertyCache[propertyId]?.bonus !== undefined) {
+      return propertyCache[propertyId].bonus;
+    }
+    
+    // Otherwise fetch from database
+    try {
+      const { data, error } = await supabase
+        .rpc('property_bonus', { p_property_id: propertyId });
+      
+      if (error) {
+        console.error("Error calculating property bonus:", error);
+        return 0;
+      }
+      
+      const bonus = data || 0;
+      
+      // Update cache with the fetched bonus
+      setPropertyCache(prev => ({
+        ...prev,
+        [propertyId]: {
+          ...prev[propertyId],
+          bonus
+        }
+      }));
+      
+      return bonus;
+    } catch (error) {
+      console.error("Error fetching property bonus:", error);
+      return 0;
+    }
+  }, [propertyCache]);
+
+  // Get property price from cache or return default value
+  const getPropertyPriceFromCache = useCallback((propertyId: string): number => {
+    return propertyCache[propertyId]?.price_cost || 0;
+  }, [propertyCache]);
+
+  // Get property bonus from cache or return default value
+  const getPropertyBonusFromCache = useCallback((propertyId: string): number => {
+    return propertyCache[propertyId]?.bonus || 0;
+  }, [propertyCache]);
+
   const checkAdminStatus = async () => {
     try {
       const { data: { user }, error } = await supabase.auth.getUser()
@@ -202,6 +259,18 @@ export default function TestExtraInstallments() {
     setSelectedMortgage(null)
     if (property) {
       setIsEditing(false)
+      
+      // Cache property price when a property is selected
+      setPropertyCache(prev => ({
+        ...prev,
+        [property.id]: {
+          ...prev[property.id],
+          price_cost: property.price_cost
+        }
+      }));
+      
+      // Fetch and cache bonus
+      fetchAndCachePropertyBonus(property.id);
     }
   }
 
@@ -279,19 +348,15 @@ export default function TestExtraInstallments() {
         throw new Error("Invalid loan protection insurance amount")
       }
 
-      // Get property bonus from the database
-      const { data: bonusData, error: bonusError } = await supabase
-        .rpc('property_bonus', { p_property_id: selectedProperty.id });
-      
-      if (bonusError) {
-        console.error("Error calculating property bonus:", bonusError);
-        throw new Error("Error calculating property bonus");
+      // Get property bonus from cache or fetch if not available
+      let bonus = getPropertyBonusFromCache(selectedProperty.id);
+      if (bonus === 0) {
+        bonus = await fetchAndCachePropertyBonus(selectedProperty.id);
       }
       
-      const bonus = bonusData || 0;
-      
-      // Calculate loan amount properly: (propertyCost - bonus) - downPayment
-      const loanAmount = (selectedProperty.price_cost - bonus) - downPayment;
+      // Calculate loan amount properly using cached values: (propertyCost - bonus) - downPayment
+      const propertyCost = getPropertyPriceFromCache(selectedProperty.id) || selectedProperty.price_cost;
+      const loanAmount = (propertyCost - bonus) - downPayment;
 
       // Validate loan amount
       if (loanAmount <= 0) {
@@ -371,7 +436,7 @@ export default function TestExtraInstallments() {
   return (
     <DashboardLayout
       header={{
-        title: <h1 className="text-xl font-bold">{t("dashboard:sections.test_extra_installments")}</h1>
+        title: <h1 className="text-xl font-bold">Test Extra Installments</h1>
       }}
     >
       <div className="max-w-[1600px] mx-auto py-8 px-8">
@@ -402,6 +467,18 @@ export default function TestExtraInstallments() {
                       <PropertyDisplay 
                         property={selectedProperty} 
                         onPropertyUpdate={(updatedProperty) => {
+                          // Update the cache with the new property values
+                          setPropertyCache(prev => ({
+                            ...prev,
+                            [updatedProperty.id]: {
+                              ...prev[updatedProperty.id],
+                              price_cost: updatedProperty.price_cost
+                            }
+                          }));
+                          
+                          // Fetch and update bonus for the updated property
+                          fetchAndCachePropertyBonus(updatedProperty.id);
+                          
                           setSelectedProperty(updatedProperty);
                           // Refresh linked mortgages if needed
                           queryClient.invalidateQueries({
@@ -425,6 +502,7 @@ export default function TestExtraInstallments() {
                   <p><span className="font-medium">Price:</span> {selectedProperty.price_cost} {selectedProperty.currency}</p>
                   <p><span className="font-medium">First Home:</span> {selectedProperty.is_first_home ? "Yes" : "No"}</p>
                   <p><span className="font-medium">Sustainable:</span> {selectedProperty.is_sustainable ? "Yes" : "No"}</p>
+                  <p><span className="font-medium">Cached Bonus:</span> {getPropertyBonusFromCache(selectedProperty.id)}</p>
                 </div>
               ) : (
                 <p className="text-muted-foreground">No property selected</p>
@@ -525,6 +603,8 @@ export default function TestExtraInstallments() {
               mortgage={selectedMortgage}
               property={selectedProperty}
               form={mortgageForm}
+              propertyCache={propertyCache}
+              getPropertyBonusFromCache={getPropertyBonusFromCache}
             />
           </>
         )}
@@ -536,11 +616,15 @@ export default function TestExtraInstallments() {
 function ScenarioCalculationsSection({ 
   mortgage,
   property,
-  form
+  form,
+  propertyCache,
+  getPropertyBonusFromCache
 }: { 
   mortgage: Mortgage
   property: Property
   form: ReturnType<typeof useForm<AmortizationFormValues>>
+  propertyCache: PropertyCache
+  getPropertyBonusFromCache: (propertyId: string) => number
 }) {
   // Add state to track the current rate changes
   const [rateChangeKey, setRateChangeKey] = useState(0);
@@ -671,7 +755,7 @@ function ScenarioCalculationsSection({
       // Parse form values
       const downPayment = parseFloat(values.down_payment?.replace(/[^0-9.]/g, "") || "0");
       
-      // Calculate loan amount based on property price, bonus, and down payment
+      // Calculate loan amount based on property price, bonus, and down payment using cached values
       let loanAmount: number;
       
       // If we're modifying an existing mortgage, check if its loan amount should be used
@@ -679,29 +763,12 @@ function ScenarioCalculationsSection({
         // Use the stored loan amount if down payment hasn't changed
         loanAmount = mortgage.loan_amount;
       } else {
-        // Need to fetch the bonus and calculate the loan amount
-        // We'll use a state variable to track this asynchronous operation
-        loanAmount = property.price_cost - downPayment; // Default calculation
+        // Use cached property price and bonus for calculation
+        const propertyPrice = propertyCache[property.id]?.price_cost || property.price_cost;
+        const bonus = getPropertyBonusFromCache(property.id);
         
-        // Fetch property bonus asynchronously
-        supabase.rpc('property_bonus', { p_property_id: property.id })
-          .then(({ data: bonusData, error: bonusError }) => {
-            if (bonusError) {
-              console.error("Error calculating property bonus:", bonusError);
-              return;
-            }
-            
-            const bonus = bonusData || 0;
-            const updatedLoanAmount = (property.price_cost - bonus) - downPayment;
-            
-            // Only update if different to avoid infinite loops
-            if (updatedLoanAmount !== loanAmount) {
-              setFormValues(prev => ({
-                ...prev,
-                loanAmount: updatedLoanAmount
-              }));
-            }
-          });
+        // Calculate loan amount using cached values
+        loanAmount = (propertyPrice - bonus) - downPayment;
       }
       
       const interestRate = parseFloat(values.interest_rate || "0");
@@ -750,7 +817,7 @@ function ScenarioCalculationsSection({
     
     // Cleanup subscription on unmount
     return () => subscription.unsubscribe();
-  }, [form, property, mortgage.loan_amount]);
+  }, [form, property, mortgage.loan_amount, propertyCache, getPropertyBonusFromCache]);
 
   // Use the useScenarioCalculations hook with the tracked form values
   // Include rateChangeKey as part of the dependencies to force refresh when rates change
