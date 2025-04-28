@@ -21,37 +21,33 @@ import {
 import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
 import { cn, normalizeDate, formatCurrency, handleInputFocus } from "@/lib/utils"
 import type { Property } from "./property-select"
-import type { MortgageFormValues as AmortizationFormValues } from "./schema"
-import { LoanCalculator } from "@/services/mortgages/calculations/loan"
+import type { MortgageFormValues } from "./schema"
 import { Separator } from "@/components/ui/separator"
-import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useState, useEffect, useMemo } from "react"
-import { supabase } from "@/integrations/supabase/client"
 import { CurrencyInput } from "@/components/ui/currency-input"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { mortgageFormSchema, type MortgageFormValues } from "./schema"
+import { mortgageFormSchema } from "./schema"
 
-interface AmortizationDetailsFormProps {
+interface MortgageDetailsFormProps {
   form: ReturnType<typeof useForm<MortgageFormValues>>
   selectedProperty: Property
   onSubmit: (values: MortgageFormValues) => Promise<void>
   submitLabel?: string
   isSubmitting?: boolean
   onLoanAmountChange?: (amount: number) => void
+  propertyBonus?: number // Property bonus passed from parent
 }
 
-export function AmortizationDetailsForm({
+export function MortgageDetailsForm({
   form,
   selectedProperty,
   onSubmit,
   submitLabel = 'save',
   isSubmitting,
-  onLoanAmountChange
-}: AmortizationDetailsFormProps) {
+  onLoanAmountChange,
+  propertyBonus = 0 // Default to 0 if not provided
+}: MortgageDetailsFormProps) {
   const { t } = useTranslation(['mortgages', 'global', 'components'])
-  const { data: exchangeRate } = useExchangeRate()
-  const [cachedBonus, setCachedBonus] = useState<number | null>(null)
-  const loanCalculator = new LoanCalculator()
   
   // Add tracking of previous values to avoid unnecessary recalculations
   const [prevProperty, setPrevProperty] = useState<string | null>(null)
@@ -68,56 +64,6 @@ export function AmortizationDetailsForm({
     }
   }, [form]);
 
-  // Set the exchange rate in the calculator
-  useEffect(() => {
-    if (exchangeRate) {
-      loanCalculator.setExchangeRate(exchangeRate);
-    }
-  }, [exchangeRate, loanCalculator]);
-
-  // Replace the useEffect for property bonus with database function call
-  useEffect(() => {
-    if (selectedProperty?.id) {
-      const getBonus = async () => {
-        try {
-          // Use the database function directly
-          const { data, error } = await supabase.rpc('property_bonus', {
-            p_property_id: selectedProperty.id
-          });
-          
-          if (error) {
-            console.error("Error getting property bonus:", error);
-            setCachedBonus(0);
-            return;
-          }
-          
-          setCachedBonus(data || 0);
-        } catch (error) {
-          console.error("Error fetching property bonus:", error);
-          setCachedBonus(0);
-        }
-      };
-      
-      getBonus();
-    }
-  }, [selectedProperty?.id]);
-
-  // Helper function to create a property compatible with LoanCalculator
-  const createCalculatorProperty = (property: Property) => {
-    const calculatorProperty = {
-      id: property.id,
-      name: property.name,
-      price_cost: property.price_cost,
-      currency: property.currency,
-      property_insurance: property.property_insurance || 0,
-      property_insurance_type: property.property_insurance_type || 'auto',
-      is_first_home: property.is_first_home || false,
-      is_sustainable: property.is_sustainable || false
-    };
-    
-    return calculatorProperty;
-  };
-
   // Watch the down payment field for real-time calculation
   const downPayment = form.watch("down_payment")
   const numericDownPayment = parseFloat(downPayment?.replace(/[^0-9.]/g, "") || "0")
@@ -129,17 +75,17 @@ export function AmortizationDetailsForm({
     // Skip recalculation when not necessary
     if (prevProperty === selectedProperty.id && 
         prevDownPayment === numericDownPayment && 
-        prevBonus === cachedBonus) {
+        prevBonus === propertyBonus) {
       return prevLoanAmount;
     }
     
     // Use a simplified direct calculation when possible
-    const calculatedAmount = selectedProperty.price_cost - numericDownPayment - (cachedBonus || 0);
+    const calculatedAmount = selectedProperty.price_cost - numericDownPayment - propertyBonus;
     
     // Update previous values to enable future skipping
     setPrevProperty(selectedProperty.id);
     setPrevDownPayment(numericDownPayment);
-    setPrevBonus(cachedBonus);
+    setPrevBonus(propertyBonus);
     setPrevLoanAmount(calculatedAmount);
     
     // Call the callback to update loan amount in parent component
@@ -148,27 +94,24 @@ export function AmortizationDetailsForm({
     }
     
     return calculatedAmount;
-  }, [selectedProperty, numericDownPayment, cachedBonus, onLoanAmountChange, 
+  }, [selectedProperty, numericDownPayment, propertyBonus, onLoanAmountChange, 
       prevProperty, prevDownPayment, prevBonus, prevLoanAmount]);
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
       {/* Loan Amount Display */}
       <div className="space-y-2">
-        <h4 className=" font-medium ">{t('amortization.loan_amount', { ns: 'mortgages' })}</h4>
+        <h4 className="font-medium">{t('amortization.loan_amount', { ns: 'mortgages' })}</h4>
         <div className="text-xl xl:text-2xl 2xl:text-3xl font-bold">
           {formatCurrency(Math.round(loanAmount), selectedProperty?.currency || "PEN")}
-          {/* brackets */}
         </div>
-        <div className="text-xs ">
+        <div className="text-xs">
           {t('amortization.loan_amount_formula', { ns: 'mortgages' })}
         </div>
-  
       </div>
       <Separator />
 
       <div>
-        {/* <h4 className="font-medium mb-4">{t('amortization.title', { ns: 'mortgages' })}</h4> */}
         <div className="space-y-6 sm:space-y-4">
         <div className="mt-4">           
           <h4 className="font-medium"> {t('amortization.down_payment', { ns: 'mortgages' })}   </h4>

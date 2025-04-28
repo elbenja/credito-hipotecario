@@ -24,7 +24,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { PropertySelect, type Property } from "@/components/mortgages/property-select"
-import { AmortizationDetailsForm } from "@/components/mortgages/mortgage-details-form"
+import { MortgageDetailsForm } from "@/components/mortgages/mortgage-details-form"
 
 import { 
   mortgageFormSchema, 
@@ -644,12 +644,13 @@ export default function NewMortgage() {
                   <>
                     <Separator />
                     
-                    <AmortizationDetailsForm
+                    <MortgageDetailsForm
                       form={form}
                       selectedProperty={selectedProperty}
                       onSubmit={handleFormSubmit}
                       isSubmitting={isSubmitting}
                       submitLabel={t("ui.create", { ns: "global" })}
+                      propertyBonus={getPropertyBonusFromCache(selectedProperty.id || '')}
                     />
                   </>
                 )}

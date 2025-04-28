@@ -29,7 +29,7 @@ import {
 import { useNavigate } from "react-router-dom"
 import React from "react"
 
-import { AmortizationDetailsForm } from "@/components/mortgages/mortgage-details-form"
+import { MortgageDetailsForm } from "@/components/mortgages/mortgage-details-form"
 
 // Fix DB types if needed (this is a temporary fix until types are updated)
 type Mortgage = any; 
@@ -433,6 +433,10 @@ export default function TestExtraInstallments() {
     }
   }
 
+  const [mortgageSum, setMortgageSum] = useState<number>(0);
+  const [calculatedLoanAmount, setCalculatedLoanAmount] = useState<number>(0);
+  const [mortgageNotFoundError, setMortgageNotFoundError] = useState<boolean>(false);
+
   return (
     <DashboardLayout
       header={{
@@ -548,11 +552,15 @@ export default function TestExtraInstallments() {
                 <div className="p-6 border rounded-lg">
                   {selectedMortgage ? (
                     <Form {...mortgageForm}>
-                      <AmortizationDetailsForm
+                      <MortgageDetailsForm
                         form={mortgageForm}
                         selectedProperty={selectedProperty}
                         onSubmit={onUpdateMortgage}
                         submitLabel="Update"
+                        onLoanAmountChange={(amount: number) => {
+                          setCalculatedLoanAmount(amount);
+                        }}
+                        propertyBonus={getPropertyBonusFromCache(selectedProperty.id || '')}
                       />
                     </Form>
                   ) : (

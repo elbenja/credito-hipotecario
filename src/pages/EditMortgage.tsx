@@ -22,7 +22,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form"
-import { AmortizationDetailsForm } from "@/components/mortgages/mortgage-details-form"
+import { MortgageDetailsForm } from "@/components/mortgages/mortgage-details-form"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { mortgageFormSchema, type MortgageFormValues } from "@/components/mortgages/schema"
@@ -1287,7 +1287,7 @@ export default function EditMortgage() {
 
               {((isCreatingNew && selectedPropertyFromUrl) || (!isCreatingNew && mortgage)) && (
                 <Form {...mortgageForm}>
-                  <AmortizationDetailsForm
+                  <MortgageDetailsForm
                     form={mortgageForm}
                     selectedProperty={isCreatingNew ? selectedPropertyFromUrl as Property : mortgage?.property}
                     onSubmit={onUpdateMortgage}
@@ -1296,6 +1296,9 @@ export default function EditMortgage() {
                     onLoanAmountChange={(amount: number) => {
                       setCalculatedLoanAmount(amount);
                     }}
+                    propertyBonus={isCreatingNew ? 
+                      getPropertyBonusFromCache(selectedPropertyFromUrl?.id || '') : 
+                      getPropertyBonusFromCache(mortgage?.property.id || '')}
                   />
                 </Form>
               )}
