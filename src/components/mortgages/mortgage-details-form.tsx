@@ -484,7 +484,7 @@ export function MortgageDetailsForm({
           </div>
         </div>
       </div>
-      <div className=" sm:mb-16 sm:h-80" >
+      <div className=" sm:h-16" >
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? (
