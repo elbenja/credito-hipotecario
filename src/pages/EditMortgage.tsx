@@ -156,50 +156,75 @@ export default function EditMortgage() {
     id: string;
   } | null>(null);
 
-  // Update the fetchPropertyFromUrl function to cache the property data
-  const fetchPropertyFromUrl = async () => {
-    if (!propertyIdFromUrl || !user) return
-    
-    try {
-      const { data, error } = await supabase
-        .from("properties")
-        .select(`
-          id,
-          name,
-          description,
-          currency,
-          price_cost,
-          is_first_home,
-          is_sustainable,
-          property_insurance,
-          property_insurance_type
-        `)
-        .eq("id", propertyIdFromUrl)
-        .single()
-        
-      if (error) throw error
-      if (data) {
-        setSelectedPropertyFromUrl(data as unknown as Property)
-        
-        // Update form with property information
-        mortgageForm.setValue("property_id", data.id, { shouldValidate: true })
-        
-        // Set a default name for the mortgage based on the property name
-        const defaultMortgageName = `${data.name} Mortgage`
-        mortgageForm.setValue("name", defaultMortgageName, { shouldValidate: true })
-
-        // Fetch and cache the bonus
-        const bonus = await loanCalculator.getPropertyBonus(supabase, data.id);
-        setCachedPropertyData({
-          price_cost: data.price_cost,
-          bonus,
-          id: data.id
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching property:", error)
+  // Replace the getPropertyBonusFromCache function to use the bundle
+  const getPropertyBonusFromCache = (propertyId: string): number => {
+    if (!mortgageBundle || mortgageBundle.property.id !== propertyId) {
+      return 0;
     }
-  }
+    return mortgageBundle.property.bonus || 0;
+  };
+
+  // Replace the getPropertyPriceFromCache function to use the bundle
+  const getPropertyPriceFromCache = (propertyId: string): number => {
+    if (!mortgageBundle || mortgageBundle.property.id !== propertyId) {
+      return 0;
+    }
+    return mortgageBundle.property.price_cost || 0;
+  };
+
+  // Update the property fetch effect for new mortgages
+  useEffect(() => {
+    if (isCreatingNew && propertyIdFromUrl && user) {
+      // We're creating a new mortgage with a property ID from URL
+      // We'll need to fetch the property directly since we don't have a bundle
+      const fetchProperty = async () => {
+        try {
+          const { data, error } = await supabase
+            .from("properties")
+            .select(`
+              id,
+              name,
+              description,
+              currency,
+              price_cost,
+              is_first_home,
+              is_sustainable,
+              property_insurance,
+              property_insurance_type
+            `)
+            .eq("id", propertyIdFromUrl)
+            .single();
+            
+          if (error) throw error;
+          if (data) {
+            // Set the selected property
+            setSelectedPropertyFromUrl(data as unknown as Property);
+            
+            // Update form with property information
+            mortgageForm.setValue("property_id", data.id, { shouldValidate: true });
+            
+            // Set a default name for the mortgage based on the property name
+            const defaultMortgageName = `${data.name} Mortgage`;
+            mortgageForm.setValue("name", defaultMortgageName, { shouldValidate: true });
+            
+            // Calculate bonus
+            const bonus = await loanCalculator.getPropertyBonus(supabase, data.id);
+            
+            // Update cached data
+            setCachedPropertyData({
+              price_cost: data.price_cost,
+              bonus,
+              id: data.id
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching property:", error);
+        }
+      };
+      
+      fetchProperty();
+    }
+  }, [propertyIdFromUrl, user, mortgageForm, isCreatingNew]);
 
   // Handle property update callback - Modified to use LoanCalculator
   const handlePropertyUpdate = useCallback(async (updatedProperty: Property) => {
@@ -253,65 +278,6 @@ export default function EditMortgage() {
       console.error("Error updating mortgage after property update:", error);
     }
   }, [queryClient, id, user, loanCalculator]);
-
-  // Helper function to get bonus without database call
-  const getPropertyBonusFromCache = (propertyId: string): number => {
-    if (cachedPropertyData && cachedPropertyData.id === propertyId) {
-      return cachedPropertyData.bonus;
-    }
-    return 0; // Default value if no cached data
-  };
-  
-  // Helper function to get property price from cache
-  const getPropertyPriceFromCache = (propertyId: string): number => {
-    if (cachedPropertyData && cachedPropertyData.id === propertyId) {
-      return cachedPropertyData.price_cost;
-    }
-    return 0; // Default value if no cached data
-  };
-
-  // Fetch property if propertyId is provided in URL
-  useEffect(() => {
-    const fetchPropertyFromUrl = async () => {
-      if (!propertyIdFromUrl || !user) return
-      
-      try {
-        const { data, error } = await supabase
-          .from("properties")
-          .select(`
-            id,
-            name,
-            description,
-            currency,
-            price_cost,
-            is_first_home,
-            is_sustainable,
-            property_insurance,
-            property_insurance_type
-          `)
-          .eq("id", propertyIdFromUrl)
-          .single()
-          
-        if (error) throw error
-        if (data) {
-          setSelectedPropertyFromUrl(data as unknown as Property)
-          
-          // Update form with property information
-          mortgageForm.setValue("property_id", data.id, { shouldValidate: true })
-          
-          // Set a default name for the mortgage based on the property name
-          const defaultMortgageName = `${data.name} Mortgage`
-          mortgageForm.setValue("name", defaultMortgageName, { shouldValidate: true })
-        }
-      } catch (error) {
-        console.error("Error fetching property:", error)
-      }
-    }
-    
-    if (isCreatingNew) {
-      fetchPropertyFromUrl()
-    }
-  }, [propertyIdFromUrl, user, mortgageForm, isCreatingNew, tMortgages])
 
   // Initial state for scenario inputs
   const [scenarioInputs, setScenarioInputs] = useState({
@@ -479,18 +445,6 @@ export default function EditMortgage() {
       return null;
     }
   }, [mortgage?.installments_per_year]);
-
-  // Declare hasExtraInstallments and hasNewRates here (not redeclaring)
-  const [hasExtraInstallments, setHasExtraInstallments] = useState(false);
-  const [hasNewRates, setHasNewRates] = useState(false);
-
-  // Add effect to update these states when bundle changes
-  useEffect(() => {
-    if (mortgageBundle) {
-      setHasExtraInstallments(mortgageBundle.extraInstallments?.length > 0 || false);
-      setHasNewRates(mortgageBundle.newRates?.length > 0 || false);
-    }
-  }, [mortgageBundle]);
 
   // Update the onUpdateMortgage function to invalidate the bundle query after successful update
   const onUpdateMortgage = async (values: MortgageFormValues) => {
@@ -846,9 +800,6 @@ export default function EditMortgage() {
         });
     }
   }, [mortgage?.property, cachedPropertyData, loanCalculator, supabase]);
-
-  // Add an effect to initialize the form when the mortgageBundle is loaded - around line 305
-  // After the hasExtraInstallments and hasNewRates effect
 
   // Effect to initialize form with fetched data
   useEffect(() => {
@@ -1224,7 +1175,7 @@ export default function EditMortgage() {
                   <TabsContent value="accelerated" className="m-0">
                     {scenarios.accelerated && (
                       <>
-                        {hasExtraInstallments && (
+                        {mortgageBundle?.extraInstallments?.length > 0 && (
                           <AcceleratedPanelGraph
                             scenario={scenarios.accelerated}
                             regularScenario={scenarios.regular}
@@ -1261,7 +1212,7 @@ export default function EditMortgage() {
                   <TabsContent value="lower_payment" className="m-0">
                     {scenarios.lower_payment && (
                       <>
-                        {hasExtraInstallments && (
+                        {mortgageBundle?.extraInstallments?.length > 0 && (
                           <LowerPaymentPanelGraph
                             scenario={scenarios.lower_payment}
                             regularScenario={scenarios.regular}
@@ -1298,7 +1249,7 @@ export default function EditMortgage() {
                   <TabsContent value="new_rate" className="m-0">
                     {scenarios.new_rate && (
                       <>
-                        {hasNewRates && (
+                        {mortgageBundle?.newRates?.length > 0 && (
                           <NewRatePanelGraph
                             scenario={scenarios.new_rate}
                             regularScenario={scenarios.regular}
