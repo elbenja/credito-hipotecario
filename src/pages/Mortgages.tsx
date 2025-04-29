@@ -23,6 +23,7 @@ import type { Property, Mortgage } from "../types"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
 import { useMortgageCapture } from "@/services/mortgages/mortgage-capture.service"
+import { useMortgageBundle } from "@/hooks/useMortgageBundle"
 
 export default function Mortgages() {
   const navigate = useNavigate()
@@ -209,6 +210,12 @@ export default function Mortgages() {
       successCallback: () => {
         // Refresh the data after capture
         queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
+        
+        // Also invalidate the mortgage bundle for the duplicated mortgage
+        queryClient.invalidateQueries({ 
+          queryKey: ["mortgage-bundle", mortgage.id],
+          exact: true
+        })
       },
       stayOnPage: false // Always redirect when duplicating from the mortgages list
     });

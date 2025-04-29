@@ -7,7 +7,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { EditableHeading } from "@/components/ui/editable-heading"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { PropertyDisplay, type Property } from "@/components/mortgages/property-select"
+import { PropertyDisplay } from "@/components/mortgages/property-select"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -45,6 +45,8 @@ import { ScenarioResult } from "@/services/mortgages/types/common"
 import SVGfixed from "@/components/ui/svg-fixed"
 import { LoanCalculator } from "@/services/mortgages/calculations/loan"
 import React from "react"
+import { useMortgageBundle } from "@/hooks/useMortgageBundle"
+import type { Property } from "@/components/mortgages/property-select"
 
 export default function EditMortgage() {
   const { t } = useTranslation()
@@ -62,8 +64,6 @@ export default function EditMortgage() {
   const tabFromUrl = queryParams.get('tab')
   const [selectedPropertyFromUrl, setSelectedPropertyFromUrl] = useState<Property | null>(null)
   const [isCreatingNew, setIsCreatingNew] = useState(!id)
-  // Add state to track if extra installments exist
-  const [hasExtraInstallments, setHasExtraInstallments] = useState(false)
   // Add state to store calculated loan amount from form
   const [calculatedLoanAmount, setCalculatedLoanAmount] = useState<number>(0)
   
@@ -352,110 +352,11 @@ export default function EditMortgage() {
     }
   }, [mortgageForm.watch("loan_protection_type")]);
 
-  const { data: mortgage, isLoading, error: mortgageError } = useQuery({
-    queryKey: ["mortgage", id],
-    queryFn: async () => {
-      if (!user || !id) return null
+  const { data: mortgageBundle, isLoading, error: mortgageError } = useMortgageBundle(id || null);
 
-      try {
-        const { data, error } = await supabase
-          .from("mortgages")
-          .select(`
-            id, 
-            name,
-            down_payment,
-            interest_rate,
-            term_years,
-            installments_per_year,
-            first_installment_date,
-            loan_protection_type,
-            loan_protection_insurance,
-            loan_amount,
-            saved_scenario,
-            property:properties!inner (
-              id,
-              name,
-              description,
-              currency,
-              price_cost,
-              is_first_home,
-              is_sustainable,
-              property_insurance,
-              property_insurance_type
-            )
-          `)
-          .eq("id", id)
-          .single()
-
-        if (error) throw error
-        if (!data) return null
-
-        const property = data.property as unknown as Property
-        
-        // Update saved scenario if one exists in the database
-        if (data.saved_scenario) {
-          // Update both state and localStorage
-          setSavedScenario(data.saved_scenario);
-          localStorage.setItem(`savedScenario_${id}`, data.saved_scenario);
-        }
-        
-        // Ensure all required fields have default values
-        const propertyWithDefaults: Property = {
-          ...property,
-          is_first_home: property.is_first_home ?? false,
-          is_sustainable: property.is_sustainable ?? false,
-          property_insurance: property.property_insurance ?? null,
-          property_insurance_type: (property.property_insurance_type as "auto" | "manual") ?? "auto"
-        }
-
-        // Initialize form with fetched data - handle with delay to ensure form properly updates
-        mortgageForm.reset({
-          name: data.name || "",
-          property_id: propertyWithDefaults.id,
-          down_payment: data.down_payment?.toString() || "",
-          interest_rate: data.interest_rate?.toString() || "",
-          term_years: data.term_years?.toString() || "",
-          installments_per_year: data.installments_per_year?.toString() || "",
-          first_installment_date: parseDatabaseDate(data.first_installment_date),
-          loan_protection_type: data.loan_protection_type as "none" | "custom" | "individual" | "joint",
-          loan_protection_insurance: data.loan_protection_insurance?.toString() || "",
-        }, {
-          keepDirty: false,
-          keepValues: false,
-        });
-        
-        // Set form as ready after a short delay to ensure form is properly populated
-        setTimeout(() => {
-          setFormIsReady(true);
-        }, 100);
-
-        // Immediately initialize scenario inputs with database values
-        // This prevents waiting for the form to calculate values
-        setScenarioInputs({
-          mortgageId: id,
-          loanAmount: data.loan_amount || 0,
-          interestRate: data.interest_rate || 0,
-          termYears: data.term_years || 0,
-          installmentsPerYear: data.installments_per_year || 12,
-          firstInstallmentDate: data.first_installment_date ? parseDatabaseDate(data.first_installment_date) : undefined,
-          propertyInsurance: propertyWithDefaults.property_insurance || 0,
-          loanInsurance: data.loan_protection_insurance || 0
-        });
-
-        return {
-          ...data,
-          property: propertyWithDefaults
-        }
-      } catch (err) {
-        console.error("Error fetching mortgage data:", err);
-        throw err;
-      }
-    },
-    enabled: !!user && !!id,
-    staleTime: 30000, // 30 seconds
-    retry: 1, // Only retry once to avoid infinite loading states
-    refetchOnWindowFocus: false // Prevent unexpected refetches
-  })
+  // Update the references to mortgage and property to use the bundle
+  const mortgage = mortgageBundle?.mortgage;
+  const property = mortgageBundle?.property;
 
   // Helper function to get consistently formatted mortgage form values
   const getFormattedMortgageValues = () => {
@@ -579,6 +480,19 @@ export default function EditMortgage() {
     }
   }, [mortgage?.installments_per_year]);
 
+  // Declare hasExtraInstallments and hasNewRates here (not redeclaring)
+  const [hasExtraInstallments, setHasExtraInstallments] = useState(false);
+  const [hasNewRates, setHasNewRates] = useState(false);
+
+  // Add effect to update these states when bundle changes
+  useEffect(() => {
+    if (mortgageBundle) {
+      setHasExtraInstallments(mortgageBundle.extraInstallments?.length > 0 || false);
+      setHasNewRates(mortgageBundle.newRates?.length > 0 || false);
+    }
+  }, [mortgageBundle]);
+
+  // Update the onUpdateMortgage function to invalidate the bundle query after successful update
   const onUpdateMortgage = async (values: MortgageFormValues) => {
     // Set loading state to true at the beginning
     setIsSubmitting(true);
@@ -891,6 +805,9 @@ export default function EditMortgage() {
           description: t("messages.success_update", { ns: "mortgages" }),
         })
       }
+      
+      // After successful update, inside the try block after the update operation:
+      queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] });
     } catch (error) {
       console.error("Error updating mortgage:", error)
       toast({
@@ -904,36 +821,94 @@ export default function EditMortgage() {
     }
   }
 
-  // Add effect to fetch and update extra installments state
-  useEffect(() => {
-    const fetchExtraInstallments = async () => {
-      if (!id || !user) return
-      
-      try {
-        const { data, error } = await supabase
-          .from("extra_installments")
-          .select("id")
-          .eq("mortgage_id", id)
-          .limit(1)
-          
-        if (error) throw error
-        
-        // Update state based on whether any installments exist
-        setHasExtraInstallments(data.length > 0)
-      } catch (error) {
-        console.error("Error fetching extra installments:", error)
-      }
+  // Update the handler for tab changes to avoid unnecessary re-renders
+  const handleTabChange = (value: string) => {
+    // Only update if the value is different
+    if (value !== activeTab) {
+      setActiveTab(value);
     }
-    
-    if (!isCreatingNew) {
-      fetchExtraInstallments()
-    }
-  }, [id, user, isCreatingNew])
+  };
 
-  // Add state to track new rates
-  const [hasNewRates, setHasNewRates] = useState(false)
-  
-  // Handler to save a scenario
+  // Effect to initialize property data from mortgage
+  useEffect(() => {
+    if (mortgage?.property && !cachedPropertyData) {
+      // Initialize cache with property data when mortgage loads
+      loanCalculator.getPropertyBonus(supabase, mortgage.property.id)
+        .then(bonusAmount => {
+          setCachedPropertyData({
+            price_cost: mortgage.property.price_cost,
+            bonus: bonusAmount,
+            id: mortgage.property.id
+          });
+        })
+        .catch(error => {
+          console.error("Error initializing property data cache:", error);
+        });
+    }
+  }, [mortgage?.property, cachedPropertyData, loanCalculator, supabase]);
+
+  // Add an effect to initialize the form when the mortgageBundle is loaded - around line 305
+  // After the hasExtraInstallments and hasNewRates effect
+
+  // Effect to initialize form with fetched data
+  useEffect(() => {
+    if (!isCreatingNew && mortgageBundle?.mortgage && mortgageBundle?.property) {
+      const { mortgage, property } = mortgageBundle;
+      
+      // Update saved scenario if one exists in the database
+      if (mortgage.saved_scenario) {
+        // Update both state and localStorage
+        setSavedScenario(mortgage.saved_scenario);
+        localStorage.setItem(`savedScenario_${id}`, mortgage.saved_scenario);
+      }
+      
+      // Create a properly typed property object
+      const propertyWithDefaults = {
+        ...property,
+        is_first_home: property.is_first_home ?? false,
+        is_sustainable: property.is_sustainable ?? false,
+        property_insurance: property.property_insurance ?? null,
+        property_insurance_type: (property.property_insurance_type as "auto" | "manual") ?? "auto",
+        bonus: property.bonus ?? 0,
+        description: property.description || ""
+      } as Property;
+
+      // Initialize form with fetched data
+      mortgageForm.reset({
+        name: mortgage.name || "",
+        property_id: propertyWithDefaults.id,
+        down_payment: mortgage.down_payment?.toString() || "",
+        interest_rate: mortgage.interest_rate?.toString() || "",
+        term_years: mortgage.term_years?.toString() || "",
+        installments_per_year: mortgage.installments_per_year?.toString() || "",
+        first_installment_date: parseDatabaseDate(mortgage.first_installment_date),
+        loan_protection_type: mortgage.loan_protection_type as "none" | "custom" | "individual" | "joint",
+        loan_protection_insurance: mortgage.loan_protection_insurance?.toString() || "",
+      }, {
+        keepDirty: false,
+        keepValues: false,
+      });
+      
+      // Set form as ready after a short delay to ensure form is properly populated
+      setTimeout(() => {
+        setFormIsReady(true);
+      }, 100);
+
+      // Immediately initialize scenario inputs with database values
+      setScenarioInputs({
+        mortgageId: id || "",
+        loanAmount: mortgage.loan_amount || 0,
+        interestRate: mortgage.interest_rate || 0,
+        termYears: mortgage.term_years || 0,
+        installmentsPerYear: mortgage.installments_per_year || 12,
+        firstInstallmentDate: mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined,
+        propertyInsurance: propertyWithDefaults.property_insurance || 0,
+        loanInsurance: mortgage.loan_protection_insurance || 0
+      });
+    }
+  }, [mortgageBundle, isCreatingNew, id, mortgageForm]);
+
+  // Also add a handler to save scenario that uses the bundle
   const handleSaveScenario = async (scenarioType: string) => {
     try {
       // First, submit the current mortgage form to save any form changes
@@ -991,6 +966,9 @@ export default function EditMortgage() {
           .eq("id", id);
           
         if (error) throw error;
+        
+        // Invalidate the bundle query to refresh data
+        queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] });
       }
       
       // Show confirmation toast
@@ -1006,159 +984,20 @@ export default function EditMortgage() {
         description: t("messages.error_saving_scenario", "Error saving scenario", { ns: "mortgages" }),
       });
     }
-  }
-  
-  // Add effect to fetch and update new rates state
-  useEffect(() => {
-    const fetchNewRates = async () => {
-      if (!id || !user) return
-      
-      try {
-        const { data, error } = await supabase
-          .from("new_rates")
-          .select("id")
-          .eq("mortgage_id", id)
-          .limit(1)
-          
-        if (error) throw error
-        
-        // Update state based on whether any new rates exist
-        setHasNewRates(data.length > 0)
-      } catch (error) {
-        console.error("Error fetching new rates:", error)
-      }
-    }
-    
-    if (!isCreatingNew) {
-      fetchNewRates()
-    }
-  }, [id, user, isCreatingNew])
+  };
 
-  // Update the onInstallmentsChange callback to also update the hasExtraInstallments state
+  // Replace the handleInstallmentsChange callback with a single version
   const handleInstallmentsChange = useCallback(async () => {
     // First invalidate the queries
     queryClient.invalidateQueries({
       queryKey: ["scenarios", id]
-    })
-    
-    // Then check if any installments still exist
-    if (!id || !user) return
-    
-    try {
-      const { data, error } = await supabase
-        .from("extra_installments")
-        .select("id")
-        .eq("mortgage_id", id)
-        .limit(1)
-        
-      if (error) throw error
-      
-      // Update state based on whether any installments exist
-      setHasExtraInstallments(data.length > 0)
-    } catch (error) {
-      console.error("Error checking extra installments:", error)
-    }
-  }, [queryClient, id, user])
-
-  // Add effect to reset form ready state when mortgage ID changes
-  useEffect(() => {
-    if (id) {
-      // Reset the form ready state when navigating to a different mortgage
-      setFormIsReady(false);
-    }
-    
-    // Cleanup function to reset form ready state when component unmounts
-    return () => {
-      setFormIsReady(false);
-    };
-  }, [id]);
-
-  // Add an effect to watch installments_per_year field changes
-  useEffect(() => {
-    // Get the current value
-    const currentValue = mortgageForm.getValues("installments_per_year");
-    
-    // Set up a subscription to field changes
-    const subscription = mortgageForm.register("installments_per_year", {
-      onChange: () => {
-        // This will run whenever the installments_per_year field changes
-        const newValue = mortgageForm.getValues("installments_per_year");
-        
-        // Only proceed if there's a value and it's changed
-        if (newValue && parseInt(newValue) !== parseInt(currentValue || "12")) {
-          // Force immediate scenario update
-          if (mortgage) {
-            setScenarioInputs(prev => ({
-              ...prev,
-              installmentsPerYear: parseInt(newValue),
-            }));
-            
-            // Invalidate queries to force refresh
-            queryClient.invalidateQueries({
-              queryKey: ["scenarios", id]
-            });
-          }
-        }
-      }
     });
     
-    // No need for cleanup, React Hook Form handles it
-  }, [mortgageForm, id, queryClient, mortgage]);
-
-  // Add effect to specifically watch installments_per_year changes
-  useEffect(() => {
-    // Subscribe to changes in the installments_per_year field
-    const subscription = mortgageForm.watch((value, { name }) => {
-      // Only respond to installments_per_year changes
-      if (name === 'installments_per_year') {
-        const installmentsValue = value.installments_per_year;
-        
-        // Immediately update the scenarioInputs to trigger recalculation
-        if (mortgage && installmentsValue) {
-          const installments = parseInt(installmentsValue);
-          
-          setScenarioInputs(prev => ({
-            ...prev,
-            installmentsPerYear: installments,
-          }));
-          
-          // Invalidate scenarios to force recalculation
-          queryClient.invalidateQueries({
-            queryKey: ["scenarios", id]
-          });
-        }
-      }
+    // Also invalidate the bundle query to refresh related data
+    queryClient.invalidateQueries({
+      queryKey: ["mortgage-bundle", id]
     });
-    
-    // Cleanup the subscription when component unmounts
-    return () => subscription.unsubscribe();
-  }, [mortgageForm, id, queryClient, mortgage]);
-
-  // Update the handler for tab changes to avoid unnecessary re-renders
-  const handleTabChange = (value: string) => {
-    // Only update if the value is different
-    if (value !== activeTab) {
-      setActiveTab(value);
-    }
-  };
-
-  // Effect to initialize property data from mortgage
-  useEffect(() => {
-    if (mortgage?.property && !cachedPropertyData) {
-      // Initialize cache with property data when mortgage loads
-      loanCalculator.getPropertyBonus(supabase, mortgage.property.id)
-        .then(bonusAmount => {
-          setCachedPropertyData({
-            price_cost: mortgage.property.price_cost,
-            bonus: bonusAmount,
-            id: mortgage.property.id
-          });
-        })
-        .catch(error => {
-          console.error("Error initializing property data cache:", error);
-        });
-    }
-  }, [mortgage?.property, cachedPropertyData, loanCalculator, supabase]);
+  }, [queryClient, id]);
 
   if (isLoading) {
     return (
@@ -1377,13 +1216,15 @@ export default function EditMortgage() {
                           loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
                           first_installment_date: getFormattedMortgageValues().firstInstallmentDate
                         }}
+                        extraInstallments={mortgageBundle?.extraInstallments || []}
+                        newRates={mortgageBundle?.newRates || []}
                       />
                     )}
                   </TabsContent>
                   <TabsContent value="accelerated" className="m-0">
                     {scenarios.accelerated && (
                       <>
-                        {hasExtraInstallments ? (
+                        {hasExtraInstallments && (
                           <AcceleratedPanelGraph
                             scenario={scenarios.accelerated}
                             regularScenario={scenarios.regular}
@@ -1402,8 +1243,9 @@ export default function EditMortgage() {
                               loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
                               first_installment_date: getFormattedMortgageValues().firstInstallmentDate
                             }}
+                            extraInstallments={mortgageBundle?.extraInstallments || []}
                           />
-                        ) : null}
+                        )}
                         <div className="mt-8">
                           <ExtraInstallmentsSection
                             mortgageId={getFormattedMortgageValues().mortgageId}
@@ -1419,7 +1261,7 @@ export default function EditMortgage() {
                   <TabsContent value="lower_payment" className="m-0">
                     {scenarios.lower_payment && (
                       <>
-                        {hasExtraInstallments ? (
+                        {hasExtraInstallments && (
                           <LowerPaymentPanelGraph
                             scenario={scenarios.lower_payment}
                             regularScenario={scenarios.regular}
@@ -1438,8 +1280,9 @@ export default function EditMortgage() {
                               loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
                               first_installment_date: getFormattedMortgageValues().firstInstallmentDate
                             }}
+                            extraInstallments={mortgageBundle?.extraInstallments || []}
                           />
-                        ) : null}
+                        )}
                         <div className="mt-8">
                           <ExtraInstallmentsSection
                             mortgageId={getFormattedMortgageValues().mortgageId}
@@ -1455,7 +1298,7 @@ export default function EditMortgage() {
                   <TabsContent value="new_rate" className="m-0">
                     {scenarios.new_rate && (
                       <>
-                        {hasNewRates ? (
+                        {hasNewRates && (
                           <NewRatePanelGraph
                             scenario={scenarios.new_rate}
                             regularScenario={scenarios.regular}
@@ -1474,8 +1317,9 @@ export default function EditMortgage() {
                               loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
                               first_installment_date: getFormattedMortgageValues().firstInstallmentDate
                             }}
+                            newRates={mortgageBundle?.newRates || []}
                           />
-                        ) : null}
+                        )}
                         <div className="mt-8">
                           <NewRateForm
                             mortgageId={getFormattedMortgageValues().mortgageId}
@@ -1484,25 +1328,10 @@ export default function EditMortgage() {
                                 queryKey: ["scenarios", id]
                               });
                               
-                              // Check if any new rates exist after adding/deleting
-                              const checkNewRates = async () => {
-                                try {
-                                  const { data, error } = await supabase
-                                    .from("new_rates")
-                                    .select("id")
-                                    .eq("mortgage_id", id)
-                                    .limit(1);
-                                    
-                                  if (error) throw error;
-                                  
-                                  // Update state based on whether any new rates exist
-                                  setHasNewRates(data.length > 0);
-                                } catch (error) {
-                                  console.error("Error checking new rates:", error);
-                                }
-                              };
-                              
-                              checkNewRates();
+                              // Also invalidate the bundle query to refresh related data
+                              queryClient.invalidateQueries({
+                                queryKey: ["mortgage-bundle", id]
+                              });
                             }}
                             className="space-y-4"
                             firstInstallmentDate={mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined}

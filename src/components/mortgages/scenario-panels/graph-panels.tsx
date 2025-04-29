@@ -37,18 +37,6 @@ interface ScenarioSummaryResult {
   breakeven_point?: number | null
 }
 
-// Add this interface to communicate with parent component
-export interface MortgageFormValues {
-  loan_amount: number;
-  down_payment: number;
-  interest_rate: number;
-  term_years: number;
-  installments_per_year: number;
-  loan_protection_type: string;
-  loan_protection_insurance: number;
-  first_installment_date: string | Date;
-}
-
 // Update ScenarioPanelProps to include form values
 interface ScenarioPanelProps {
   scenario: ScenarioResult | undefined
@@ -59,7 +47,33 @@ interface ScenarioPanelProps {
   scenarioType?: string
   isThisScenarioSaved?: boolean
   onSaveScenario?: (scenarioType: string) => void
-  formValues?: MortgageFormValues  // Add this to receive form values from parent
+  formValues?: MortgageFormValues
+  extraInstallments?: Array<{
+    id: string;
+    mortgage_id: string;
+    amount: number;
+    frequency: string;
+    start_date: string;
+    end_date: string | null;
+  }>
+  newRates?: Array<{
+    id: string;
+    mortgage_id: string;
+    interest_rate: number;
+    effective_date: string;
+  }>
+}
+
+// Update the MortgageFormValues interface around line 40
+export interface MortgageFormValues {
+  loan_amount: number;
+  down_payment: number;
+  interest_rate: number;
+  term_years: number;
+  installments_per_year: number;
+  loan_protection_type: "individual" | "joint" | "none" | "custom";
+  loan_protection_insurance: number;
+  first_installment_date: string | Date;
 }
 
 // Memoize the data transformation function to avoid recalculating on every render
@@ -154,7 +168,9 @@ const ScenarioPanel = ({
   scenarioType = "regular",
   isThisScenarioSaved = false,
   onSaveScenario,
-  formValues  // Add this to the destructuring
+  formValues,
+  extraInstallments,
+  newRates
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
   const { t } = useTranslation()
   const { id } = useParams()
