@@ -149,6 +149,47 @@ To centralize and optimize the retrieval of active bonus rules, a PostgreSQL fun
   $$ LANGUAGE plpgsql STABLE;
   ```
 
+#### Database Function for Exchange Rate Retrieval
+To centralize and optimize exchange rate lookups, a PostgreSQL function `get_exchange_rate` has been implemented.
+
+- **Purpose:** Returns the exchange rate between two currencies, with fallback to a default value if not found.
+- **Inputs:**
+  - `from_curr TEXT`: Source currency code (default: 'USD')
+  - `to_curr TEXT`: Target currency code (default: 'PEN')
+- **Output:**
+  - `NUMERIC`: The exchange rate value, with a fallback to 3.71 if no rate is found
+- **Usage:**
+  ```sql
+  SELECT get_exchange_rate('USD', 'PEN');
+  ```
+  or with Supabase:
+  ```typescript
+  const { data, error } = await supabase.rpc('get_exchange_rate', { 
+    from_curr: 'USD',
+    to_curr: 'PEN'
+  });
+  ```
+- **Implementation:**
+  ```sql
+  CREATE OR REPLACE FUNCTION public.get_exchange_rate(
+    from_curr TEXT DEFAULT 'USD',
+    to_curr TEXT DEFAULT 'PEN'
+  )
+  RETURNS NUMERIC AS $$
+  DECLARE
+    v_rate NUMERIC;
+  BEGIN
+    SELECT rate INTO v_rate
+    FROM exchange_rates
+    WHERE from_currency = from_curr
+    AND to_currency = to_curr;
+    
+    -- Return the rate or a fallback value if not found
+    RETURN COALESCE(v_rate, 3.71);
+  END;
+  $$ LANGUAGE plpgsql STABLE;
+  ```
+
 #### Database Function for Property Update and Mortgage Recalculation
 To optimize performance by reducing multiple database calls when updating property details, a database function `update_property_and_calculate` has been implemented.
 

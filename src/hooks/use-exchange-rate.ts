@@ -1,25 +1,35 @@
-
 import { useQuery } from "@tanstack/react-query"
-import { supabase } from "@/integrations/supabase/client"
-import { Currency } from "@/services/amortization/types/common"
+import { supabase } from "../integrations/supabase/client"
+import { Currency } from "../services/mortgages/types/common"
 
-export const useExchangeRate = () => {
+/**
+ * @deprecated Please use the use-exchange-rate.tsx implementation instead
+ */
+export const useExchangeRate = (
+  fromCurrency: string = "USD", 
+  toCurrency: string = "PEN"
+) => {
   return useQuery({
-    queryKey: ['exchange-rate', 'USD', 'PEN'],
+    queryKey: ['exchange-rate', fromCurrency, toCurrency],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('exchange_rates')
-        .select('*')
-        .eq('from_currency', 'USD')
-        .eq('to_currency', 'PEN')
-        .order('last_updated', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (error) throw error
-      return data.rate
+      try {
+        // Call the database function instead of querying the table directly
+        const { data, error } = await supabase
+          .rpc('get_exchange_rate', { 
+            from_curr: fromCurrency,
+            to_curr: toCurrency
+          })
+        
+        if (error) throw error
+        
+        return data || 3.71
+      } catch (error) {
+        console.error(`Error fetching exchange rate from ${fromCurrency} to ${toCurrency}:`, error)
+        return 3.71 // Default fallback rate
+      }
     },
-    // Fallback to a reasonable default if we can't fetch the rate
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    refetchOnWindowFocus: false,
     placeholderData: 3.7167
   })
 }
