@@ -120,6 +120,35 @@ To optimize performance and reduce direct calls to the database for bonus calcul
   $$ LANGUAGE plpgsql;
   ```
 
+#### Database Function for Retrieving Active Bonus Rules
+To centralize and optimize the retrieval of active bonus rules, a PostgreSQL function `get_active_bonus_rules` has been implemented.
+
+- **Purpose:** Returns all active bonus rules ordered by minimum value, used for UI display and bonus calculations.
+- **Inputs:** None
+- **Output:**
+  - `SETOF bonus_rules`: A set of all active bonus rule records, ordered by minimum value.
+- **Usage:**
+  ```sql
+  SELECT * FROM get_active_bonus_rules();
+  ```
+  or with Supabase:
+  ```typescript
+  const { data, error } = await supabase.rpc('get_active_bonus_rules');
+  ```
+- **Implementation:**
+  ```sql
+  CREATE OR REPLACE FUNCTION public.get_active_bonus_rules()
+  RETURNS SETOF bonus_rules AS $$
+  BEGIN
+    RETURN QUERY
+    SELECT *
+    FROM bonus_rules
+    WHERE is_active = true
+    ORDER BY min_value ASC;
+  END;
+  $$ LANGUAGE plpgsql STABLE;
+  ```
+
 #### Database Function for Property Update and Mortgage Recalculation
 To optimize performance by reducing multiple database calls when updating property details, a database function `update_property_and_calculate` has been implemented.
 

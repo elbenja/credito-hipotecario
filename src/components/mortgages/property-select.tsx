@@ -18,51 +18,68 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { useEffect, useState, memo } from "react"
+import { useEffect, useState, memo, useCallback } from "react"
 import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
 import { UseFormReturn } from "react-hook-form"
 import { MortgageFormValues as AmortizationFormValues } from "./schema"
 import { formatCurrency } from "@/lib/utils"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
-import { Pencil } from "lucide-react"
+
 import { PropertyForm } from "@/components/properties/property-form"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandSeparator,
+} from "@/components/ui/command"
+import { Check, ChevronsUpDown, PlusCircle } from "lucide-react"
 
 // Helper function for currency formatting
-const formatAmount = (amount: number, currency: "USD" | "PEN") => {
-  const roundedAmount = Math.round(amount)
-  return formatCurrency(roundedAmount, currency)
+const formatAmount = (amount: number | null, currency: string): string => {
+  if (amount === null) return "-"
+  return formatCurrency(amount, currency as "USD" | "PEN")
 }
 
-export type Property = {
+export interface Property {
   id: string
   name: string
-  description?: string
   price_cost: number
   currency: "USD" | "PEN"
   is_first_home: boolean
   is_sustainable: boolean
   property_insurance: number | null
   property_insurance_type: "auto" | "manual"
+  bonus: number
+  description?: string
 }
 
-type BonusRule = {
+export interface BonusRule {
+  id: string
   min_value: number
   max_value: number
   traditional_bonus: number
   sustainable_bonus: number
+  is_active: boolean
 }
 
-type PropertySelectProps = {
-  form: UseFormReturn<AmortizationFormValues>
-  onPropertyChange: (property: Property | null) => void
+export interface PropertySelectProps {
+  form: UseFormReturn<any, any, any>
+  onPropertyChange?: (property: Property | null) => void
+  initialProperty?: Property
   disabled?: boolean
-  initialProperty?: Property | null
 }
 
 interface PropertyEditSheetProps {
@@ -74,12 +91,8 @@ interface PropertyEditSheetProps {
 
 function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: PropertyEditSheetProps) {
   const { t } = useTranslation(['global', 'properties', 'dashboard']);
-  const [bonusRules, setBonusRules] = useState<BonusRule[]>([]);
-
-  // Debug logs for props
 
   const handlePropertyUpdate = async () => {
-    console.log('PropertyEditSheet - handlePropertyUpdate called');
     // Fetch the updated property data
     const { data, error } = await supabase
       .from("properties")
@@ -92,26 +105,36 @@ function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: P
       return;
     }
 
-    console.log('PropertyEditSheet - Updated property data:', data);
+    // Get the bonus amount for the updated property
+    const { data: bonusAmount, error: bonusError } = await supabase
+      .rpc('property_bonus', { p_property_id: property.id });
+      
+    if (bonusError) {
+      console.error("Error fetching property bonus:", bonusError);
+    }
+
+    // Create the updated property with bonus
+    const updatedProperty = {
+      ...data,
+      bonus: bonusAmount || 0
+    };
+
+    // Close the sheet and call the update handler
     onOpenChange(false);
     if (onPropertyUpdate) {
-      onPropertyUpdate(data);
+      onPropertyUpdate(updatedProperty as Property);
     }
   };
 
   // If no property is provided, don't render anything
   if (!property) {
-    console.log('PropertyEditSheet - No property provided');
     return null;
   }
 
   return (
     <Sheet 
       open={open} 
-      onOpenChange={(newOpen) => {
-        console.log('Sheet onOpenChange called with:', newOpen);
-        onOpenChange(newOpen);
-      }}
+      onOpenChange={onOpenChange}
     >
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto" side="right">
         <SheetHeader>
@@ -119,12 +142,8 @@ function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: P
         </SheetHeader>
         <div className="mt-8">
           <PropertyForm
-            onSuccess={() => {
-              console.log('PropertyForm - onSuccess called');
-              handlePropertyUpdate();
-            }}
+            onSuccess={handlePropertyUpdate}
             onClose={() => {
-              console.log('PropertyForm - onClose called');
               onOpenChange(false);
             }}
             selectedProperty={property}
@@ -145,78 +164,84 @@ export function PropertyDisplay({
 }) {
   const { t } = useTranslation(['global', 'properties', 'dashboard']);
   const [currentProperty, setCurrentProperty] = useState<Property | null>(null);
-  const [bonusRules, setBonusRules] = useState<BonusRule[]>([]);
+  const [propertyBonus, setPropertyBonus] = useState<number | null>(null);
   const [propertyEditSheetOpen, setPropertyEditSheetOpen] = useState(false);
   const { data: exchangeRate } = useExchangeRate();
 
-  // Debug logs for state changes
+  // Fetch property bonus when property changes
   useEffect(() => {
-    // console.log('PropertyDisplay - Sheet Open State:', propertyEditSheetOpen);
-  }, [propertyEditSheetOpen]);
-
-  // Helper function to convert currency to PEN
-  const convertToPEN = (amount: number, currency: string): number => {
-    if (currency === 'PEN') return amount;
-    return amount * (exchangeRate || 3.7167);
-  };
-
-  // Helper function to calculate bonus
-  const calculateBonus = (property: Property, rules: BonusRule[]): number | null => {
-    if (!property.is_first_home) return null;
-
-    // Convert property value to PEN for bonus calculation
-    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency);
-    
-    const applicableRule = rules.find(
-      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
-    );
-
-    if (!applicableRule) return null;
-
-    return property.is_sustainable 
-      ? applicableRule.sustainable_bonus 
-      : applicableRule.traditional_bonus;
-  };
-
-  // Load bonus rules
-  useEffect(() => {
-    const loadBonusRules = async () => {
-      const { data, error } = await supabase
-        .from("bonus_rules")
-        .select("*")
-        .order('min_value', { ascending: true });
-
-      if (error) {
-        console.error("Error loading bonus rules:", error);
+    const fetchPropertyBonus = async () => {
+      if (!property || !property.is_first_home) {
+        setPropertyBonus(null);
         return;
       }
-
-      setBonusRules(data || []);
+      
+      try {
+        const { data, error } = await supabase
+          .rpc('property_bonus', { p_property_id: property.id });
+          
+        if (error) {
+          console.error("Error fetching property bonus:", error);
+          setPropertyBonus(null);
+          return;
+        }
+        
+        setPropertyBonus(data);
+        
+        // Also update the current property object with the bonus
+        if (currentProperty) {
+          setCurrentProperty({
+            ...currentProperty,
+            bonus: data || 0
+          });
+        }
+      } catch (error) {
+        console.error("Error in property bonus calculation:", error);
+        setPropertyBonus(null);
+      }
     };
+    
+    fetchPropertyBonus();
+    
+    // Disable the frequent refetching by listening to the visibilitychange event
+    const handleVisibilityChange = () => {
+      // Don't refetch on visibility change
+      if (document.visibilityState === 'visible') {
+        // Deliberately empty - we don't want to trigger a refetch
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [property, currentProperty]);
 
-    loadBonusRules();
-  }, []);
-
-  // Update currentProperty when property changes
+  // Update currentProperty when property changes, with proper handling of bonus
   useEffect(() => {
     if (property) {
-      setCurrentProperty(property);
+      // If we already have a bonus value, make sure it's included
+      if (propertyBonus !== null) {
+        setCurrentProperty({
+          ...property,
+          bonus: propertyBonus
+        });
+      } else {
+        // Otherwise, just use the property as is (which might have bonus)
+        setCurrentProperty(property);
+      }
     }
-  }, [property]);
+  }, [property, propertyBonus]);
 
-  // Early return if no property or bonus rules
-  if (!currentProperty || bonusRules.length === 0) {
+  // Early return if no property
+  if (!currentProperty) {
     return (
       <div className="flex items-center justify-center p-4 text-gray-500">
         {t('messages.no_properties', { ns: 'properties' })}
       </div>
     );
   }
-
-  // Calculate cost and bonus
-  const cost = currentProperty.price_cost;
-  const bonus = calculateBonus(currentProperty, bonusRules);
-  const costInPEN = convertToPEN(cost, currentProperty.currency);
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent any form submission
@@ -248,7 +273,7 @@ export function PropertyDisplay({
   <div className="justify-top flex flex-1 flex-col gap-1 px-2 py-2 sm:px-4 sm:py-4">
     <Label className="text-muted-foreground text-xs">{t('form.property_cost', { ns: 'properties' })}</Label>
     <span className="text-lg leading-none font-bold sm:text-lg whitespace-nowrap">
-      {formatCurrency(cost, currentProperty.currency)}
+      {formatCurrency(currentProperty.price_cost, currentProperty.currency)}
     </span>
   </div>
 
@@ -259,7 +284,7 @@ export function PropertyDisplay({
       </Label>
       
       <span className="text-lg leading-none font-bold sm:text-lg whitespace-nowrap">
-        {bonus ? formatCurrency(bonus, currentProperty.currency) : t('bonus.no_bonus', '', { ns: 'properties' })}
+        {propertyBonus ? formatCurrency(propertyBonus, "PEN") : t('bonus.no_bonus', '', { ns: 'properties' })}
       </span>
     </div>
 
@@ -276,7 +301,6 @@ export function PropertyDisplay({
   </div>
 </div>
 {/* end */}
-
 
       <PropertyEditSheet
         property={currentProperty}
@@ -296,119 +320,185 @@ export function PropertyDisplay({
   );
 }
 
-export function PropertySelect({ 
-  form, 
-  onPropertyChange, 
-  disabled = false,
-  initialProperty = null
+export function PropertySelect({
+  form,
+  onPropertyChange,
+  initialProperty,
+  disabled = false
 }: PropertySelectProps) {
   const { t } = useTranslation(['global', 'properties', 'dashboard'])
   const { user } = useAuth()
+  const [loading, setLoading] = useState(false)
   const [properties, setProperties] = useState<Property[]>([])
-  const [bonusRules, setBonusRules] = useState<BonusRule[]>([])
   const [selectedPropertyName, setSelectedPropertyName] = useState<string>("")
   const [initialLoad, setInitialLoad] = useState(true)
-  const [isLoading, setIsLoading] = useState(false)
   const propertyId = form.watch("property_id")
   const { data: exchangeRate } = useExchangeRate()
+  
+  // Function to calculate automatic property insurance
+  const calculateAutoInsurance = (price: number): number => {
+    // Property insurance is typically 0.028% of the property value annually
+    // Dividing by 12 for monthly payment
+    return price * 0.00028 / 12;
+  };
 
-  const convertToPEN = (amount: number, currency: string): number => {
-    if (currency === 'PEN') return amount
-    return amount * (exchangeRate || 3.7167)
-  }
+  const fetchPropertyDetails = useCallback(async (propertyId: string) => {
+    try {
+      // Fetch property
+      const { data: propertyData, error: propertyError } = await supabase
+        .from("properties")
+        .select(`
+          id,
+          name,
+          description,
+          currency,
+          price_cost,
+          is_first_home,
+          is_sustainable,
+          property_insurance,
+          property_insurance_type
+        `)
+        .eq("id", propertyId)
+        .single();
 
-  const calculateBonus = (property: Property): number | null => {
-    if (!property.is_first_home) return null
+      if (propertyError) throw propertyError;
+      if (!propertyData) return null;
 
-    // Convert property value to PEN for bonus calculation without rounding
-    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency)
-    
-    const applicableRule = bonusRules.find(
-      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
-    )
+      // Determine property insurance for automatic calculation
+      let propertyInsurance = propertyData.property_insurance;
+      if (propertyData.property_insurance_type === 'auto' && !propertyInsurance) {
+        propertyInsurance = calculateAutoInsurance(propertyData.price_cost);
+      }
 
-    if (!applicableRule) return null
+      // Get bonus amount
+      const { data: bonusAmount, error: bonusError } = await supabase
+        .rpc('property_bonus', { p_property_id: propertyId });
+        
+      if (bonusError) {
+        console.error("Error fetching property bonus:", bonusError);
+      }
 
-    // Return the exact bonus amount - rounding will be handled in display
-    return property.is_sustainable 
-      ? applicableRule.sustainable_bonus 
-      : applicableRule.traditional_bonus
-  }
+      // Create final property object with proper typing
+      const property = {
+        ...propertyData,
+        currency: propertyData.currency as "USD" | "PEN", // Ensure correct currency type
+        property_insurance: propertyInsurance,
+        bonus: bonusAmount || 0
+      };
+
+      // Set the property name
+      setSelectedPropertyName(property.name);
+      
+      // UPDATE THE PROPERTIES ARRAY to update the displayed bonus
+      setProperties(prevProperties => 
+        prevProperties.map(p => 
+          p.id === property.id 
+            ? { ...p, bonus: property.bonus, property_insurance: property.property_insurance } 
+            : p
+        )
+      );
+      
+      // Call the callback
+      if (onPropertyChange) {
+        onPropertyChange(property as Property);
+      }
+      
+      return property as Property;
+    } catch (error) {
+      console.error("Error fetching property details:", error);
+      return null;
+    }
+  }, [onPropertyChange]);
 
   useEffect(() => {
-    const loadProperties = async () => {
-      if (!user) return;
+    const fetchProperties = async () => {
+      if (!user) return
       
-      setIsLoading(true);
+      setLoading(true)
       try {
-        const [{ data: propertiesData, error: propertiesError }, { data: rulesData, error: rulesError }] = await Promise.all([
-          supabase
-            .from("properties")
-            .select("id, name, price_cost, currency, is_first_home, is_sustainable, property_insurance, property_insurance_type")
-            .eq("user_id", user.id),
-          supabase
-            .from("bonus_rules")
-            .select("*")
-            .order('min_value', { ascending: true })
-        ]);
-
-        if (propertiesError) {
-          console.error(t("messages.error_saving", { ns: "properties" }), propertiesError);
-          return;
-        }
-
-        if (rulesError) {
-          console.error(t("messages.error_saving", { ns: "properties" }), rulesError);
-          return;
-        }
-
-        const validProperties = (propertiesData || []).filter(
-          (p): p is Property => p.currency === "USD" || p.currency === "PEN"
-        );
+        const { data, error } = await supabase
+          .from("properties")
+          .select(`
+            id,
+            name,
+            description,
+            currency,
+            price_cost,
+            is_first_home,
+            is_sustainable,
+            property_insurance,
+            property_insurance_type
+          `)
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
         
-        setProperties(validProperties);
-        setBonusRules(rulesData || []);
-
+        if (error) throw error
+        
+        // Add default bonus of 0 to each property to match the Property type
+        const propertiesWithBonus = (data || []).map(property => ({
+          ...property,
+          currency: property.currency as "USD" | "PEN", // Ensure correct currency type
+          bonus: 0 // Default value, will be populated when a property is selected
+        }));
+        
+        setProperties(propertiesWithBonus as Property[]);
+        
         // Handle initial property if provided
         if (initialProperty && initialLoad) {
           setSelectedPropertyName(initialProperty.name);
-          onPropertyChange(initialProperty);
+          if (onPropertyChange) onPropertyChange(initialProperty);
         } else if (propertyId && initialLoad) {
-          const selectedProperty = validProperties.find(p => p.id === propertyId);
+          const selectedProperty = propertiesWithBonus.find(p => p.id === propertyId);
           if (selectedProperty) {
             setSelectedPropertyName(selectedProperty.name);
-            onPropertyChange(selectedProperty);
+            if (onPropertyChange) onPropertyChange(selectedProperty as Property);
+            
+            // Fetch bonus for initially selected property
+            fetchPropertyDetails(selectedProperty.id);
           }
         }
-      } catch (error) {
-        console.error(t("messages.error_saving", { ns: "properties" }), error);
-      } finally {
-        setIsLoading(false);
+        
         setInitialLoad(false);
+      } catch (error) {
+        console.error("Error loading properties:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchProperties()
+    
+    // Disable the frequent refetching of properties by listening to the visibilitychange event
+    const handleVisibilityChange = () => {
+      // Don't refetch properties when tab comes back to focus
+      if (document.visibilityState === 'visible') {
+        // Do nothing on focus, preventing refetch
       }
     };
-
-    loadProperties();
-  }, [user, initialLoad]); // Only depend on user and initialLoad
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, initialProperty, initialLoad, propertyId, onPropertyChange, fetchPropertyDetails]);
 
   const handlePropertyChange = (propertyId: string) => {
     const property = properties.find((p) => p.id === propertyId)
     if (property) {
-      setSelectedPropertyName(property.name)
-      onPropertyChange(property)
+      // Set the form value
       form.setValue("property_id", propertyId, { shouldValidate: true })
+      
+      // Fetch detailed property info with bonus
+      fetchPropertyDetails(propertyId);
     } else {
       setSelectedPropertyName("")
-      onPropertyChange(null)
+      if (onPropertyChange) onPropertyChange(null)
       form.setValue("property_id", "", { shouldValidate: true })
     }
   }
 
   const formatPropertyOption = (property: Property, isSelected: boolean = false) => {
-    const cost = property.price_cost
-    const bonus = calculateBonus(property)
-    const costInPEN = convertToPEN(cost, property.currency)
-
     return (
       <div className="w-full py-1">
         <div className="flex flex-col items-start">
@@ -417,13 +507,13 @@ export function PropertySelect({
           </span>
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`text-sm ${isSelected ? 'text-inherit/90' : 'text-muted-foreground'}`}>
-              {t("form.property_cost", { ns: "properties" })}: {formatAmount(cost, property.currency)}
+              {t("form.property_cost", { ns: "properties" })}: {formatAmount(property.price_cost, property.currency)}
             </span>
-            {bonus && (
+            {property.bonus > 0 && (
               <>
                 <span className={`text-sm ${isSelected ? 'text-inherit/75' : 'text-muted-foreground/75'}`}>|</span>
                 <span className={`text-sm ${isSelected ? 'text-inherit/90' : 'text-muted-foreground'}`}>
-                  {t("bonus.amount", { ns: "properties" })}: {formatAmount(bonus, "PEN")}
+                  {t("bonus.amount", { ns: "properties" })}: {formatAmount(property.bonus, "PEN")}
                 </span>
               </>
             )}
@@ -443,11 +533,11 @@ export function PropertySelect({
   }
 
   const getSelectedPropertyDisplay = () => {
-    if (isLoading) return t('ui.loading', { ns: 'global' })
+    if (loading) return t('ui.loading', { ns: 'global' })
     if (!propertyId) return t('form.select_property', 'Select a Property', { ns: 'properties' })
     const property = properties.find(p => p.id === propertyId)
-    if (!property) return t('form.select_property', 'Select a Property', { ns: 'properties' })
-    return formatPropertyOption(property, true)
+    if (!property) return selectedPropertyName || t('form.select_property', 'Select a Property', { ns: 'properties' })
+    return selectedPropertyName || property.name
   }
 
   return (
@@ -463,7 +553,7 @@ export function PropertySelect({
               handlePropertyChange(value)
             }}
             value={field.value || ""}
-            disabled={disabled || isLoading}
+            disabled={disabled || loading}
           >
             <FormControl>
               <SelectTrigger className="form-control-focus h-auto flex items-center py-2">
@@ -483,7 +573,7 @@ export function PropertySelect({
               ) : (
                 properties.map((property) => (
                   <SelectItem 
-                    key={property.id} 
+                    key={property.id}
                     value={property.id} 
                     className="h-auto py-2 hover:bg-accent/40 data-[state=checked]:bg-accent data-[state=checked]:text-muted-foreground"
                   >

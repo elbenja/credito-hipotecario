@@ -21,16 +21,13 @@ export function BonusSection({ form }: BonusSectionProps) {
   const isFirstHome = form.watch("is_first_home")
   const isSustainable = form.watch("is_sustainable")
   
-  // Fetch bonus rules directly in the component
+  // Fetch bonus rules using the database function
   const { data: bonusRules = [] } = useQuery({
     queryKey: ['bonus-rules'],
     queryFn: async () => {
       try {
         const { data, error } = await supabase
-          .from('bonus_rules')
-          .select('*')
-          .eq('is_active', true)
-          .order('min_value', { ascending: true })
+          .rpc('get_active_bonus_rules')
 
         if (error) throw error
         return data || []
@@ -84,7 +81,7 @@ export function BonusSection({ form }: BonusSectionProps) {
     }
     
     // Ensure numeric comparison by converting all values to numbers
-    return bonusRules.some(rule => {
+    return bonusRules.some((rule: BonusRule) => {
       const minValue = Number(rule.min_value);
       const maxValue = Number(rule.max_value);
       return priceInPEN >= minValue && priceInPEN <= maxValue;
@@ -98,7 +95,7 @@ export function BonusSection({ form }: BonusSectionProps) {
     }
     
     // Ensure numeric comparison by converting all values to numbers
-    return bonusRules.find(rule => {
+    return bonusRules.find((rule: BonusRule) => {
       const minValue = Number(rule.min_value);
       const maxValue = Number(rule.max_value);
       return priceInPEN >= minValue && priceInPEN <= maxValue;
@@ -109,8 +106,8 @@ export function BonusSection({ form }: BonusSectionProps) {
   const { minPrice, maxPrice } = useMemo(() => {
     if (!bonusRules.length) return { minPrice: 0, maxPrice: 0 };
     return {
-      minPrice: Math.min(...bonusRules.map(rule => Number(rule.min_value))),
-      maxPrice: Math.max(...bonusRules.map(rule => Number(rule.max_value)))
+      minPrice: Math.min(...bonusRules.map((rule: BonusRule) => Number(rule.min_value))),
+      maxPrice: Math.max(...bonusRules.map((rule: BonusRule) => Number(rule.max_value)))
     };
   }, [bonusRules]);
 
