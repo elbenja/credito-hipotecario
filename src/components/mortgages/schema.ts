@@ -7,7 +7,6 @@ export const mortgageFormSchema = z.object({
   name: z.string().min(1, "amortization_form.validation.required"),
   property_id: z.string().min(1, "amortization_form.validation.required"),
   down_payment: z.string()
-    .min(1, "amortization_form.validation.required")
     .refine(
       (value) => {
         const amount = parseFloat(value.replace(/[^0-9.]/g, "") || "0")

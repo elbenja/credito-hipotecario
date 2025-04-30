@@ -66,11 +66,14 @@ export function MortgageDetailsForm({
 
   // Watch the down payment field for real-time calculation
   const downPayment = form.watch("down_payment")
+  console.log("Raw downPayment value:", downPayment, "Type:", typeof downPayment)
   const numericDownPayment = parseFloat(downPayment?.replace(/[^0-9.]/g, "") || "0")
+  console.log("Numeric downPayment after parsing:", numericDownPayment, "Type:", typeof numericDownPayment)
 
   // Optimize loan amount calculation with memoization and caching
   const loanAmount = useMemo(() => {
-    if (!selectedProperty) return 0;
+    console.log("Recalculating loan amount with downPayment:", numericDownPayment)
+    if (!selectedProperty || !selectedProperty.price_cost) return 0;
     
     // Skip recalculation when not necessary
     if (prevProperty === selectedProperty.id && 
@@ -132,14 +135,14 @@ export function MortgageDetailsForm({
                         max="90"
                         placeholder="0.00"
                         className="pr-8"
-                        value={form.watch("down_payment") ? 
-                          Number(((parseFloat(form.watch("down_payment")) / selectedProperty.price_cost) * 100).toFixed(2)) : 
+                        value={form.watch("down_payment") && selectedProperty && selectedProperty.price_cost ? 
+                          Number(((parseFloat(form.watch("down_payment").replace(/[^0-9.]/g, "") || "0") / selectedProperty.price_cost) * 100).toFixed(2)) : 
                           ""}
                         onFocus={handleInputFocus}
                         onChange={(e) => {
                           const value = e.target.value
                           // Allow empty input
-                          if (value === "") {
+                          if (value === "" || !selectedProperty || !selectedProperty.price_cost) {
                             return
                           }
                           
@@ -151,6 +154,11 @@ export function MortgageDetailsForm({
                           }
                         }}
                         onBlur={(e) => {
+                          // Check for valid property data
+                          if (!selectedProperty || !selectedProperty.price_cost) {
+                            return;
+                          }
+                          
                           // Format to 2 decimal places when leaving the field
                           const value = e.target.value
                           if (value && value !== "") {
@@ -172,7 +180,7 @@ export function MortgageDetailsForm({
                     </div>
                   </FormControl>
                   <FormMessage />
-                  {form.watch("down_payment") && 
+                  {form.watch("down_payment") && selectedProperty && selectedProperty.price_cost && 
                    (Number(((parseFloat(form.watch("down_payment").replace(/[^0-9.]/g, "") || "0") / selectedProperty.price_cost) * 100).toFixed(2)) > 90) && (
                     <p className="text-sm font-medium text-destructive">
                       {t('amortization.validation.down_payment_max', 'Max is 90% of property cost', { ns: 'mortgages' })}
@@ -193,10 +201,29 @@ export function MortgageDetailsForm({
                   </FormLabel>
                   <FormControl>
                     <CurrencyInput 
-                      value={field.value || ''}
+                      value={field.value || '0'}
                       onChange={(value) => {
-                        field.onChange(value)
-                        form.trigger("down_payment")
+                        console.log("CurrencyInput onChange value:", value)
+                        // Ensure empty values are treated as "0"
+                        const finalValue = value === '' ? '0' : value;
+                        console.log("CurrencyInput finalValue:", finalValue)
+                        field.onChange(finalValue);
+                        
+                        // Make sure when empty/zero values are used, the form is updated immediately
+                        setTimeout(() => {
+                          console.log("CurrencyInput setTimeout - current field value:", form.getValues("down_payment"))
+                          // Always ensure we have a valid value - either what was entered or 0
+                          const currentValue = form.getValues("down_payment");
+                          const safeValue = !currentValue || currentValue === '' ? '0' : currentValue;
+                          
+                          form.setValue("down_payment", safeValue, { 
+                            shouldValidate: true,
+                            shouldDirty: true,
+                            shouldTouch: true
+                          });
+                          
+                          form.trigger("down_payment");
+                        }, 0);
                       }}
                       currency={selectedProperty?.currency || 'PEN'}
                     />
@@ -486,7 +513,11 @@ export function MortgageDetailsForm({
       </div>
       <div className=" sm:h-16" >
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button 
+        type="submit" 
+        className="w-full" 
+        disabled={isSubmitting}
+      >
         {isSubmitting ? (
           <div className="flex items-center">
             <div className="animate-spin mr-2 h-4 w-4 border-2 border-b-transparent rounded-full"></div>

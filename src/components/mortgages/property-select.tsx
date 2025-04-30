@@ -25,6 +25,7 @@ import { UseFormReturn } from "react-hook-form"
 import { MortgageFormValues as AmortizationFormValues } from "./schema"
 import { formatCurrency } from "@/lib/utils"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
+import { usePropertyBonus } from '@/hooks/usePropertyBonus'
 
 import { PropertyForm } from "@/components/properties/property-form"
 import { useTranslation } from "react-i18next"
@@ -164,84 +165,35 @@ export function PropertyDisplay({
 }) {
   const { t } = useTranslation(['global', 'properties', 'dashboard']);
   const [currentProperty, setCurrentProperty] = useState<Property | null>(null);
-  const [propertyBonus, setPropertyBonus] = useState<number | null>(null);
   const [propertyEditSheetOpen, setPropertyEditSheetOpen] = useState(false);
-  const { data: exchangeRate } = useExchangeRate();
+  
+  // Use our custom hook instead of fetching bonus rules directly
+  const { calculateBonus, bonusRules, isLoadingRules } = usePropertyBonus();
 
-  // Fetch property bonus when property changes
+  // Debug logs for state changes
   useEffect(() => {
-    const fetchPropertyBonus = async () => {
-      if (!property || !property.is_first_home) {
-        setPropertyBonus(null);
-        return;
-      }
-      
-      try {
-        const { data, error } = await supabase
-          .rpc('property_bonus', { p_property_id: property.id });
-          
-        if (error) {
-          console.error("Error fetching property bonus:", error);
-          setPropertyBonus(null);
-          return;
-        }
-        
-        setPropertyBonus(data);
-        
-        // Also update the current property object with the bonus
-        if (currentProperty) {
-          setCurrentProperty({
-            ...currentProperty,
-            bonus: data || 0
-          });
-        }
-      } catch (error) {
-        console.error("Error in property bonus calculation:", error);
-        setPropertyBonus(null);
-      }
-    };
-    
-    fetchPropertyBonus();
-    
-    // Disable the frequent refetching by listening to the visibilitychange event
-    const handleVisibilityChange = () => {
-      // Don't refetch on visibility change
-      if (document.visibilityState === 'visible') {
-        // Deliberately empty - we don't want to trigger a refetch
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [property, currentProperty]);
+    console.log('PropertyDisplay - Sheet Open State:', propertyEditSheetOpen);
+  }, [propertyEditSheetOpen]);
 
-  // Update currentProperty when property changes, with proper handling of bonus
+  // Update currentProperty when property changes
   useEffect(() => {
     if (property) {
-      // If we already have a bonus value, make sure it's included
-      if (propertyBonus !== null) {
-        setCurrentProperty({
-          ...property,
-          bonus: propertyBonus
-        });
-      } else {
-        // Otherwise, just use the property as is (which might have bonus)
-        setCurrentProperty(property);
-      }
+      setCurrentProperty(property);
     }
-  }, [property, propertyBonus]);
+  }, [property]);
 
-  // Early return if no property
-  if (!currentProperty) {
+  // Early return if no property or still loading bonus rules
+  if (!currentProperty || isLoadingRules) {
     return (
       <div className="flex items-center justify-center p-4 text-gray-500">
         {t('messages.no_properties', { ns: 'properties' })}
       </div>
     );
   }
+
+  // Calculate cost and bonus - now using our hook
+  const cost = currentProperty.price_cost;
+  const bonus = calculateBonus(currentProperty);
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent any form submission
@@ -278,13 +230,13 @@ export function PropertyDisplay({
   </div>
 
   <div className="flex">
-    <div className="justify-top flex flex-1 flex-col gap-1 border-t px-2 py-2 text-left even:border-l sm:border-t-0 sm:border-l sm:px-4 sm:py-4">
-      <Label className="text-muted-foreground text-xs">
+    <div className="justify-top relative z-30 flex flex-1 flex-col gap-1 border-t px-2 py-2 text-left even:border-l sm:border-t-0 sm:border-l sm:px-4 sm:py-4">
+      <span className="text-muted-foreground text-xs">
         {t('bonus.amount_short', '', { ns: 'properties' })}
-      </Label>
-      
+      </span>
+      <Label className="text-xs font-normal"></Label>
       <span className="text-lg leading-none font-bold sm:text-lg whitespace-nowrap">
-        {propertyBonus ? formatCurrency(propertyBonus, "PEN") : t('bonus.no_bonus', '', { ns: 'properties' })}
+        {bonus ? formatCurrency(bonus, "PEN") : t('bonus.no_bonus', '', { ns: 'properties' })}
       </span>
     </div>
 

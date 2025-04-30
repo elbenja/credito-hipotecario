@@ -951,4 +951,193 @@ To optimize performance and enforce subscription limits at the database level, a
 For questions or support:
 - Project maintainers
 - Development team
-- Support channels 
+- Support channels
+
+### useMortgageBundle Hook
+
+#### Overview
+The `useMortgageBundle` hook is a custom React Query-based hook that efficiently fetches all relevant mortgage data in a single call. It leverages a Supabase RPC function to retrieve the mortgage and its related entities (property, extra installments, and new rates) as a consolidated bundle, reducing network requests and ensuring data consistency.
+
+#### Purpose
+- Centralizes mortgage-related data fetching into a single hook
+- Reduces network overhead by using a single Supabase RPC call
+- Ensures consistent data snapshots across components
+- Simplifies state management in mortgage-related components
+
+#### Interface
+
+```typescript
+interface MortgageBundle {
+  mortgage: Mortgage
+  property: Property
+  extraInstallments: ExtraInstallment[]
+  newRates: NewRate[]
+}
+
+function useMortgageBundle(mortgageId: string | null): {
+  bundle: MortgageBundle | undefined
+  mortgage: Mortgage | undefined
+  property: Property | undefined
+  extraInstallments: ExtraInstallment[]
+  newRates: NewRate[]
+  isLoading: boolean
+  error: Error | null
+  refetch: () => void
+}
+```
+
+#### Implementation
+
+The hook uses React Query to manage data fetching, caching, and refetching:
+
+```typescript
+export function useMortgageBundle(mortgageId: string | null) {
+  const { data: bundle, isLoading, error, refetch } = useQuery({
+    queryKey: ["mortgage-bundle", mortgageId],
+    queryFn: async () => {
+      if (!mortgageId) return null;
+      
+      const { data, error } = await supabase
+        .rpc('get_mortgage_bundle', { mortgage_id: mortgageId });
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!mortgageId,
+    staleTime: 10 * 1000, // 10 seconds
+  });
+  
+  return {
+    bundle,
+    mortgage: bundle?.mortgage,
+    property: bundle?.property,
+    extraInstallments: bundle?.extraInstallments || [],
+    newRates: bundle?.newRates || [],
+    isLoading, 
+    error,
+    refetch
+  };
+}
+```
+
+#### Supabase RPC Function
+The hook relies on a Supabase RPC function `get_mortgage_bundle` that fetches all related mortgage data:
+
+```sql
+CREATE OR REPLACE FUNCTION get_mortgage_bundle(mortgage_id UUID)
+RETURNS JSONB AS $$
+DECLARE
+  v_result JSONB;
+BEGIN
+  -- Create a JSON object with mortgage, property, extra installments, and new rates
+  SELECT jsonb_build_object(
+    'mortgage', mortgage_json,
+    'property', property_json,
+    'extraInstallments', COALESCE(extra_installments_json, '[]'::JSONB),
+    'newRates', COALESCE(new_rates_json, '[]'::JSONB)
+  ) INTO v_result
+  FROM (
+    -- Get mortgage data
+    SELECT jsonb_build_object(
+      'id', m.id,
+      'name', m.name,
+      'loan_amount', m.loan_amount,
+      'down_payment', m.down_payment,
+      'interest_rate', m.interest_rate,
+      'term_years', m.term_years,
+      'installments_per_year', m.installments_per_year,
+      'first_installment_date', m.first_installment_date,
+      'loan_protection_type', m.loan_protection_type,
+      'loan_protection_insurance', m.loan_protection_insurance,
+      'property_id', m.property_id,
+      'saved_scenario', m.saved_scenario
+    ) AS mortgage_json,
+    
+    -- Get property data with bonus
+    (SELECT jsonb_build_object(
+      'id', p.id,
+      'name', p.name,
+      'price_cost', p.price_cost,
+      'currency', p.currency,
+      'property_insurance', p.property_insurance,
+      'property_insurance_type', p.property_insurance_type,
+      'is_first_home', p.is_first_home,
+      'is_sustainable', p.is_sustainable,
+      'bonus', property_bonus(p.id)
+    ) FROM properties p WHERE p.id = m.property_id) AS property_json,
+    
+    -- Get extra installments
+    (SELECT jsonb_agg(jsonb_build_object(
+      'id', ei.id,
+      'mortgage_id', ei.mortgage_id,
+      'amount', ei.amount,
+      'frequency', ei.frequency,
+      'start_date', ei.start_date
+    )) FROM extra_installments ei WHERE ei.mortgage_id = mortgage_id) AS extra_installments_json,
+    
+    -- Get new rates
+    (SELECT jsonb_agg(jsonb_build_object(
+      'id', nr.id,
+      'mortgage_id', nr.mortgage_id,
+      'new_interest_rate', nr.new_interest_rate,
+      'new_term_years', nr.new_term_years,
+      'effective_date', nr.effective_date
+    )) FROM new_rates nr WHERE nr.mortgage_id = mortgage_id) AS new_rates_json
+    
+    FROM mortgages m
+    WHERE m.id = mortgage_id
+  ) subquery;
+  
+  RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+#### Usage Example
+
+```typescript
+// In a mortgage editing component
+function EditMortgage() {
+  const { id } = useParams();
+  const { 
+    bundle, 
+    mortgage, 
+    property, 
+    isLoading, 
+    error 
+  } = useMortgageBundle(id || null);
+  
+  if (isLoading) return <Spinner />;
+  if (error) return <ErrorMessage error={error} />;
+  if (!bundle) return <NotFound />;
+  
+  return (
+    <div>
+      <h1>{mortgage.name}</h1>
+      <PropertyDisplay property={property} />
+      <MortgageForm initialValues={mortgage} />
+    </div>
+  );
+}
+```
+
+#### Benefits
+
+1. **Performance Optimization:**
+   - Single network request instead of multiple separate queries
+   - Server-side bonus calculation using the `property_bonus` database function
+   - Reduced client-side data processing
+   
+2. **Data Consistency:**
+   - All mortgage-related data fetched in a single atomic operation
+   - Prevents UI inconsistencies from partially loaded data
+   
+3. **Developer Experience:**
+   - Simple API to access all mortgage-related data
+   - Standardized pattern for components to follow
+   - Automatic caching and stale data handling through React Query
+
+4. **Real-world Impact:**
+   - Reduces page load time for mortgage editing
+   - Improves responsiveness when switching between mortgages
+   - Ensures consistent calculations for loan amount, bonuses, etc. 

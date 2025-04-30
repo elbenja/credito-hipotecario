@@ -23,6 +23,8 @@ import { useSubscription } from "@/context/subscription-context"
 import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { toast as sonnerToast } from "sonner"
+import { useMortgageDraftStore } from "@/store/mortgage/store"
+import { usePropertyBonus } from "@/hooks/usePropertyBonus"
 
 type Property = {
   id: string
@@ -72,47 +74,9 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
   const { user } = useAuth()
   const navigate = useNavigate()
   const { isLimitReached, getCurrentUsage, limits } = useSubscription()
-
-  const { data: bonusRules = [] } = useQuery({
-    queryKey: ['bonus-rules'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('bonus_rules')
-          .select('*')
-          .eq('is_active', true)
-          .order('min_value', { ascending: true })
-
-        if (error) throw error
-        return data || []
-      } catch (error) {
-        console.error("Error loading bonus rules:", error)
-        return []
-      }
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
-
-  const convertToPEN = (amount: number, currency: string): number => {
-    if (currency === 'PEN') return amount
-    return amount * (exchangeRate || 3.7167)
-  }
-
-  const calculateBonus = (property: Property): number | null => {
-    if (!property.is_first_home) return null
-
-    const propertyValueInPEN = convertToPEN(property.price_cost, property.currency)
-    
-    const applicableRule = bonusRules.find(
-      rule => propertyValueInPEN >= rule.min_value && propertyValueInPEN <= rule.max_value
-    )
-
-    if (!applicableRule) return null
-
-    return property.is_sustainable 
-      ? applicableRule.sustainable_bonus 
-      : applicableRule.traditional_bonus
-  }
+  const { resetDraft } = useMortgageDraftStore()
+  
+  const { calculateBonus } = usePropertyBonus()
 
   const getSortIcon = (key: keyof Property) => {
     if (sortConfig?.key === key) {
@@ -125,6 +89,7 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
 
   const handleAddMortgage = (e: React.MouseEvent, property: Property) => {
     e.stopPropagation()
+    resetDraft()
     navigate(`/mortgages/new?propertyId=${property.id}`)
   }
 

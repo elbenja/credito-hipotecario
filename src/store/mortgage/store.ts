@@ -70,10 +70,23 @@ export const useMortgageDraftStore = create<MortgageDraftStore>()(
           }
         }),
         
-        resetDraft: () => set({ 
-          mortgageDraft: { ...DEFAULT_DRAFT },
-          isDirty: false 
-        }),
+        resetDraft: () => {
+          console.log("Resetting draft to default values:", DEFAULT_DRAFT);
+          set((state) => {
+            // Preserve property data when resetting
+            const preservedPropertyId = state.mortgageDraft?.property_id || '';
+            const preservedProperty = state.mortgageDraft?.property;
+            
+            return { 
+              mortgageDraft: { 
+                ...DEFAULT_DRAFT,
+                property_id: preservedPropertyId,
+                property: preservedProperty
+              },
+              isDirty: false 
+            };
+          });
+        },
         
         markClean: () => set({ isDirty: false }),
       }),

@@ -260,10 +260,9 @@ export default function NewMortgage() {
       const termYears = parseInt(values.term_years)
       const installmentsPerYear = parseInt(values.installments_per_year)
       
-      // Check for valid values
-      if (isNaN(downPayment) || downPayment < 0) {
-        throw new Error("Invalid down payment amount")
-      }
+      // Ensure down payment is a valid number, with a fallback to 0
+      const validDownPayment = isNaN(downPayment) ? 0 : Math.max(0, downPayment);
+      
       if (isNaN(interestRate) || interestRate <= 0) {
         throw new Error("Invalid interest rate")
       }
@@ -307,7 +306,7 @@ export default function NewMortgage() {
       // Calculate loan amount: (property_cost - bonus) - down_payment
       const propertyPrice = property.price_cost
       const bonus = property.bonus || 0
-      const calculatedLoanAmount = Math.max(0, (propertyPrice - bonus) - downPayment)
+      const calculatedLoanAmount = Math.max(0, (propertyPrice - bonus) - validDownPayment)
       
       // Calculate scenario values using ScenarioCalculator
       const scenarios = ScenarioCalculator.calculateScenarios({
@@ -329,7 +328,7 @@ export default function NewMortgage() {
         property_id: property.id,
         user_id: user?.id,
         loan_amount: calculatedLoanAmount,
-        down_payment: downPayment,
+        down_payment: validDownPayment,
         interest_rate: interestRate,
         term_years: termYears,
         installments_per_year: installmentsPerYear,
