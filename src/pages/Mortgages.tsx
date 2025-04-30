@@ -24,6 +24,7 @@ import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
 import { useMortgageCapture } from "@/services/mortgages/mortgage-capture.service"
 import { useMortgageBundle } from "@/hooks/useMortgageBundle"
+import { useMortgageDraftStore } from "@/store/mortgage/store"
 
 export default function Mortgages() {
   const navigate = useNavigate()
@@ -38,6 +39,7 @@ export default function Mortgages() {
   const { data: exchangeRate } = useExchangeRate()
   const { captureMortgage } = useMortgageCapture();
   const [bonusValues, setBonusValues] = useState<Record<string, number | null>>({});
+  const { resetDraft } = useMortgageDraftStore();
 
   // Add subscription limits hook
   const {
@@ -251,11 +253,15 @@ export default function Mortgages() {
 
   // Memoize the header actions to prevent recreating on every render
   const headerActions = useMemo(() => (
-    <Button onClick={() => navigate("/mortgages/new")} disabled={!propertiesWithMortgages || propertiesWithMortgages.length === 0}>
+    <Button onClick={() => {
+      // Reset the mortgage draft store before navigating
+      resetDraft();
+      navigate("/mortgages/new");
+    }} disabled={!propertiesWithMortgages || propertiesWithMortgages.length === 0}>
       <Plus className="mr-2 h-4 w-4" />
       {tMortgages('amortization.new')}
     </Button>
-  ), [navigate, tMortgages, propertiesWithMortgages])
+  ), [navigate, tMortgages, propertiesWithMortgages, resetDraft])
 
   const loadProperties = useCallback(() => {
     // Logic to load or refresh properties
@@ -380,7 +386,11 @@ export default function Mortgages() {
                 </div>
 
                 <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4">
-                  <button className="text-xs h-8 flex gap-2" onClick={() => navigate('/mortgages/new')}>
+                  <button className="text-xs h-8 flex gap-2" onClick={() => {
+                    // Reset the mortgage draft store before navigating
+                    resetDraft();
+                    navigate('/mortgages/new');
+                  }}>
                     <div className="flex-1 text-right text-sm font-medium leading-none">
                       {tMortgages('amortization.new')}
                     </div>

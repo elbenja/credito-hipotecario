@@ -48,6 +48,14 @@ export default function NewMortgage() {
   // This ensures we always start with default values
   const { resetDraft: resetStore, updateDraft } = useMortgageDraftStore()
   
+  // Now use the mortgage draft hook for form handling
+  const {
+    form,
+    mortgageDraft,
+    resetDraft,
+    isLoading: isLoadingDraft,
+  } = useMortgageDraft(null) // Pass null since this is a new mortgage
+  
   // State for property data when coming from property-list
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   
@@ -101,6 +109,14 @@ export default function NewMortgage() {
     // Reset the store when component mounts to ensure we start fresh
     resetStore()
     
+    // Also reset the form and selected property
+    setSelectedProperty(null)
+    
+    // Reset the draft form as well
+    if (resetDraft) {
+      resetDraft()
+    }
+    
     // If we have a property ID from URL, update the draft with it
     if (propertyIdFromUrl) {
       updateDraft({
@@ -114,10 +130,13 @@ export default function NewMortgage() {
     
     // Cleanup on unmount
     return () => {
-      // Optional: Reset draft on unmount to ensure next visit starts fresh
-      // resetStore()
+      // We will reset when navigating away too for extra safety
+      resetStore()
+      if (resetDraft) {
+        resetDraft()
+      }
     }
-  }, [resetStore, updateDraft, propertyIdFromUrl])
+  }, [resetStore, updateDraft, resetDraft, propertyIdFromUrl])
   
   // State to track if form is being submitted
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -136,14 +155,6 @@ export default function NewMortgage() {
   const [isLimitCheckDone, setIsLimitCheckDone] = useState(false)
   const [isLimitReached, setIsLimitReached] = useState(false)
   const [mortgageCount, setMortgageCount] = useState(0)
-  
-  // Now use the mortgage draft hook for form handling
-  const {
-    form,
-    mortgageDraft,
-    resetDraft,
-    isLoading: isLoadingDraft,
-  } = useMortgageDraft(null) // Pass null since this is a new mortgage
   
   // Property is now coming from either the selectedProperty state or the mortgageDraft
   const property = selectedProperty || mortgageDraft?.property
