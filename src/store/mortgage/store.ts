@@ -70,7 +70,10 @@ export const useMortgageDraftStore = create<MortgageDraftStore>()(
           }
         }),
         
-        resetDraft: () => set({ mortgageDraft: null, isDirty: false }),
+        resetDraft: () => set({ 
+          mortgageDraft: { ...DEFAULT_DRAFT },
+          isDirty: false 
+        }),
         
         markClean: () => set({ isDirty: false }),
       }),

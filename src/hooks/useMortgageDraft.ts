@@ -1,123 +1,124 @@
-import { useEffect } from 'react'
-import { useMortgageBundle } from './useMortgageBundle'
-import { useMortgageDraftStore, MortgageDraft } from '@/store/mortgage/store'
+import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
-import { mortgageFormSchema, MortgageFormValues } from '@/components/mortgages/schema'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { normalizeDate, parseDatabaseDate } from '@/lib/utils'
+import { useMortgageDraftStore } from '@/store/mortgage/store'
+import { mortgageFormSchema, defaultValues, type MortgageFormValues } from '@/components/mortgages/schema'
+import { supabase } from '@/integrations/supabase/client'
+import { useMortgageBundle } from './useMortgageBundle'
+import { normalizeDate } from '@/lib/utils'
 
 /**
  * This hook combines React Query for server state with Zustand for client state.
  * It fetches mortgage data from the server and syncs it with a local draft state.
+ * 
+ * When used with a null mortgageId, it works with the default draft values from the store,
+ * which makes it suitable for creating new mortgages.
  */
-export const useMortgageDraft = (mortgageId: string | null) => {
-  // Get the mortgage bundle from React Query (server state)
+export function useMortgageDraft(mortgageId: string | null) {
+  const queryClient = useQueryClient()
+  const { mortgageDraft, setMortgageDraft, updateDraft, resetDraft } = useMortgageDraftStore()
+  const [isDirty, setIsDirty] = useState(false)
+  
+  // Use the mortgage bundle hook when editing existing mortgage
   const { 
-    data: bundle, 
-    isLoading, 
-    error,
-    refetch,
-    isRefetching
+    data: bundle,
+    isLoading: isBundleLoading,
+    error: bundleError,
+    refetch
   } = useMortgageBundle(mortgageId)
   
-  // Get the mortgage draft state from Zustand (client state)
-  const { 
-    mortgageDraft, 
-    setMortgageDraft, 
-    updateDraft, 
-    resetDraft,
-    isDirty,
-    markClean
-  } = useMortgageDraftStore()
+  // Extract mortgage, property, and other data from the bundle
+  const mortgage = bundle?.mortgage
+  const property = bundle?.property
+  const extraInstallments = bundle?.extraInstallments || []
+  const newRates = bundle?.newRates || []
   
-  // Create a React Hook Form instance
+  // Convert mortgage data to form format if available
+  const formDefaultValues = mortgage ? {
+    name: mortgage.name || '',
+    property_id: mortgage.property_id || '',
+    down_payment: mortgage.down_payment?.toString() || '0',
+    interest_rate: mortgage.interest_rate?.toString() || '0',
+    term_years: mortgage.term_years?.toString() || '20',
+    installments_per_year: mortgage.installments_per_year?.toString() || '12',
+    first_installment_date: mortgage.first_installment_date 
+      ? normalizeDate(new Date(mortgage.first_installment_date))
+      : normalizeDate(new Date()),
+    loan_protection_type: mortgage.loan_protection_type || 'individual',
+    loan_protection_insurance: mortgage.loan_protection_insurance?.toString() || '0'
+  } : mortgageDraft || defaultValues
+  
+  // Form initialization with correct format
   const form = useForm<MortgageFormValues>({
     resolver: zodResolver(mortgageFormSchema),
-    defaultValues: {
-      name: "",
-      property_id: "",
-      down_payment: "0",
-      interest_rate: "8.5",
-      term_years: "20",
-      installments_per_year: "12",
-      first_installment_date: new Date(),
-      loan_protection_type: "individual",
-      loan_protection_insurance: "0.028",
-    }
+    defaultValues: formDefaultValues,
+    mode: "onChange"
   })
   
-  // Initialize or update the local draft when bundle data changes
+  // Initialize form values when mortgage data loads
   useEffect(() => {
-    if (bundle?.mortgage && !isRefetching) {
-      // If we don't have a draft yet or it's not dirty, sync from the server
-      if (!mortgageDraft || !isDirty) {
-        const { mortgage, property } = bundle
-        
-        const newDraft: MortgageDraft = {
-          id: mortgage.id,
-          name: mortgage.name || "",
-          property_id: property.id,
-          down_payment: mortgage.down_payment?.toString() || "",
-          interest_rate: mortgage.interest_rate?.toString() || "",
-          term_years: mortgage.term_years?.toString() || "",
-          installments_per_year: mortgage.installments_per_year?.toString() || "",
-          first_installment_date: parseDatabaseDate(mortgage.first_installment_date) || new Date(),
-          loan_protection_type: mortgage.loan_protection_type as "none" | "custom" | "individual" | "joint",
-          loan_protection_insurance: mortgage.loan_protection_insurance?.toString() || "",
-          loan_amount: mortgage.loan_amount,
-          property: property
-        }
-        
-        // Update both the Zustand store and the form
-        setMortgageDraft(newDraft)
-        
-        // Update the form with the new values
-        form.reset({
-          name: newDraft.name,
-          property_id: newDraft.property_id,
-          down_payment: newDraft.down_payment,
-          interest_rate: newDraft.interest_rate,
-          term_years: newDraft.term_years,
-          installments_per_year: newDraft.installments_per_year,
-          first_installment_date: newDraft.first_installment_date,
-          loan_protection_type: newDraft.loan_protection_type,
-          loan_protection_insurance: newDraft.loan_protection_insurance
-        }, {
-          keepDirty: false,
-          keepValues: false
-        })
+    if (mortgage && !isDirty) {
+      // Format first_installment_date as Date object
+      const firstInstallmentDate = mortgage.first_installment_date 
+        ? normalizeDate(new Date(mortgage.first_installment_date)) 
+        : normalizeDate(new Date())
+      
+      // Prepare form values with string conversions for numeric fields
+      const formValues = {
+        name: mortgage.name || '',
+        property_id: mortgage.property_id || '',
+        down_payment: mortgage.down_payment?.toString() || '0',
+        interest_rate: mortgage.interest_rate?.toString() || '0',
+        term_years: mortgage.term_years?.toString() || '20',
+        installments_per_year: mortgage.installments_per_year?.toString() || '12',
+        first_installment_date: firstInstallmentDate,
+        loan_protection_type: mortgage.loan_protection_type || 'individual',
+        loan_protection_insurance: mortgage.loan_protection_insurance?.toString() || '0'
       }
-    } else if (!bundle && !isLoading && !mortgageDraft) {
-      // If we don't have bundle data and aren't loading, reset the draft
-      resetDraft()
-      form.reset()
+      
+      // Reset form with these values
+      form.reset(formValues)
+      
+      // Update draft in store
+      setMortgageDraft({
+        ...formValues,
+        property: property || undefined,
+        id: mortgage.id
+      })
     }
-  }, [bundle, isLoading, mortgageDraft, isDirty, isRefetching, setMortgageDraft, resetDraft, form])
+  }, [mortgage, property, form, isDirty, setMortgageDraft])
   
-  // Watch form changes and update the draft
+  // Watch for changes to make the form dirty
   useEffect(() => {
-    const subscription = form.watch((values) => {
-      if (values && Object.keys(values).length > 0) {
-        updateDraft(values as MortgageDraft)
-      }
+    const subscription = form.watch(() => {
+      setIsDirty(true)
+      
+      // Update draft in store
+      updateDraft(form.getValues())
     })
     
     return () => subscription.unsubscribe()
   }, [form, updateDraft])
   
+  // Function to mark the form as clean
+  const markClean = () => {
+    setIsDirty(false)
+  }
+  
   return {
     bundle,
-    mortgage: bundle?.mortgage,
-    property: bundle?.property,
-    extraInstallments: bundle?.extraInstallments || [],
-    newRates: bundle?.newRates || [],
+    mortgage,
+    property,
+    extraInstallments,
+    newRates,
     mortgageDraft,
     form,
-    isLoading,
-    error,
+    isLoading: isBundleLoading,
+    error: bundleError,
     isDirty,
-    refetch,
+    markClean,
     resetDraft,
-    markClean
+    refetch
   }
 } 

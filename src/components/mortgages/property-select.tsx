@@ -18,7 +18,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { useEffect, useState, memo, useCallback } from "react"
+import { useEffect, useState, memo, useCallback, useRef } from "react"
 import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
 import { UseFormReturn } from "react-hook-form"
@@ -334,6 +334,7 @@ export function PropertySelect({
   const [initialLoad, setInitialLoad] = useState(true)
   const propertyId = form.watch("property_id")
   const { data: exchangeRate } = useExchangeRate()
+  const hasFetchedRef = useRef(false)
   
   // Function to calculate automatic property insurance
   const calculateAutoInsurance = (price: number): number => {
@@ -344,19 +345,35 @@ export function PropertySelect({
 
   const fetchPropertyDetails = useCallback(async (propertyId: string) => {
     try {
-      // Fetch property
+      // Check if we already have this property in our state
+      const existingProperty = properties.find(p => p.id === propertyId);
+      if (existingProperty) {
+        // If the property already has a non-zero bonus, use it directly
+        if (existingProperty.bonus > 0 || !existingProperty.is_first_home) {
+          // Set the property name
+          setSelectedPropertyName(existingProperty.name);
+          
+          // Call the callback
+          if (onPropertyChange) {
+            onPropertyChange(existingProperty);
+          }
+          
+          return existingProperty;
+        }
+      }
+      
+      // If not in state or needs bonus update, fetch minimum details
       const { data: propertyData, error: propertyError } = await supabase
         .from("properties")
         .select(`
           id,
           name,
-          description,
           currency,
           price_cost,
-          is_first_home,
-          is_sustainable,
           property_insurance,
-          property_insurance_type
+          property_insurance_type,
+          is_first_home,
+          is_sustainable
         `)
         .eq("id", propertyId)
         .single();
@@ -364,13 +381,7 @@ export function PropertySelect({
       if (propertyError) throw propertyError;
       if (!propertyData) return null;
 
-      // Determine property insurance for automatic calculation
-      let propertyInsurance = propertyData.property_insurance;
-      if (propertyData.property_insurance_type === 'auto' && !propertyInsurance) {
-        propertyInsurance = calculateAutoInsurance(propertyData.price_cost);
-      }
-
-      // Get bonus amount
+      // Get property bonus using RPC function
       const { data: bonusAmount, error: bonusError } = await supabase
         .rpc('property_bonus', { p_property_id: propertyId });
         
@@ -381,10 +392,10 @@ export function PropertySelect({
       // Create final property object with proper typing
       const property = {
         ...propertyData,
-        currency: propertyData.currency as "USD" | "PEN", // Ensure correct currency type
-        property_insurance: propertyInsurance,
+        currency: propertyData.currency as "USD" | "PEN",
+        property_insurance: propertyData.property_insurance,
         bonus: bonusAmount || 0
-      };
+      } as Property;
 
       // Set the property name
       setSelectedPropertyName(property.name);
@@ -392,69 +403,102 @@ export function PropertySelect({
       // UPDATE THE PROPERTIES ARRAY to update the displayed bonus
       setProperties(prevProperties => 
         prevProperties.map(p => 
-          p.id === property.id 
-            ? { ...p, bonus: property.bonus, property_insurance: property.property_insurance } 
-            : p
+          p.id === property.id ? property : p
         )
       );
       
       // Call the callback
       if (onPropertyChange) {
-        onPropertyChange(property as Property);
+        onPropertyChange(property);
       }
       
-      return property as Property;
+      return property;
     } catch (error) {
       console.error("Error fetching property details:", error);
       return null;
     }
-  }, [onPropertyChange]);
+  }, [onPropertyChange, properties]);
 
-  useEffect(() => {
     const fetchProperties = async () => {
       if (!user) return
       
       setLoading(true)
       try {
+      // Only fetch essential fields
         const { data, error } = await supabase
           .from("properties")
           .select(`
             id,
             name,
-            description,
             currency,
             price_cost,
+          property_insurance,
+          property_insurance_type,
             is_first_home,
-            is_sustainable,
-            property_insurance,
-            property_insurance_type
+          is_sustainable
           `)
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
         
         if (error) throw error
         
-        // Add default bonus of 0 to each property to match the Property type
-        const propertiesWithBonus = (data || []).map(property => ({
+      // Define propertiesWithPlaceholderBonus here to be accessible in the scope
+      const propertiesWithPlaceholderBonus = (data || []).map(property => ({
           ...property,
-          currency: property.currency as "USD" | "PEN", // Ensure correct currency type
-          bonus: 0 // Default value, will be populated when a property is selected
-        }));
+        currency: property.currency as "USD" | "PEN",
+        bonus: 0
+      })) as Property[];
+      
+      if (data && data.length > 0) {
+        // Set initial properties
+        setProperties(propertiesWithPlaceholderBonus);
         
-        setProperties(propertiesWithBonus as Property[]);
+        // Fetch bonuses for all first home properties in parallel
+        const bonusPromises = data
+          .filter(p => p.is_first_home)
+          .map(async (property) => {
+            try {
+              const { data: bonusAmount, error: bonusError } = await supabase
+                .rpc('property_bonus', { p_property_id: property.id });
+                
+              if (bonusError) {
+                console.error("Error fetching property bonus:", bonusError);
+                return { id: property.id, bonus: 0 };
+              }
+              
+              return { id: property.id, bonus: bonusAmount || 0 };
+            } catch (error) {
+              console.error("Error fetching bonus:", error);
+              return { id: property.id, bonus: 0 };
+            }
+          });
+        
+        // Wait for all bonus fetches to complete
+        const bonusResults = await Promise.all(bonusPromises);
+        
+        // Update properties with the fetched bonuses
+        setProperties(prev => {
+          return prev.map(property => {
+            const bonusResult = bonusResults.find(b => b.id === property.id);
+            return bonusResult 
+              ? { ...property, bonus: bonusResult.bonus } 
+              : property;
+          });
+        });
+      } else {
+        setProperties([]);
+      }
         
         // Handle initial property if provided
         if (initialProperty && initialLoad) {
           setSelectedPropertyName(initialProperty.name);
           if (onPropertyChange) onPropertyChange(initialProperty);
         } else if (propertyId && initialLoad) {
-          const selectedProperty = propertiesWithBonus.find(p => p.id === propertyId);
+        // Let's look up the property in our now populated properties array
+        const selectedProperty = propertiesWithPlaceholderBonus.find(p => p.id === propertyId);
           if (selectedProperty) {
             setSelectedPropertyName(selectedProperty.name);
-            if (onPropertyChange) onPropertyChange(selectedProperty as Property);
-            
-            // Fetch bonus for initially selected property
-            fetchPropertyDetails(selectedProperty.id);
+          if (onPropertyChange) onPropertyChange(selectedProperty!);
           }
         }
         
@@ -466,13 +510,52 @@ export function PropertySelect({
       }
     }
     
+  // Replace handlePropertyChange function to properly handle null return from fetchPropertyDetails
+  const handlePropertyChange = async (propertyId: string) => {
+    const property = properties.find((p) => p.id === propertyId)
+    if (property) {
+      // Set the form value
+      form.setValue("property_id", propertyId, { shouldValidate: true })
+      
+      // Update selected property name for display
+      setSelectedPropertyName(property.name)
+      
+      // Get bonus using database function if this is a first home
+      let propertyWithBonus = property
+      if (property.is_first_home) {
+        // Only fetch bonus if we don't already have it cached (bonus === 0 is initial value)
+        if (property.bonus === 0) {
+          const fetchedProperty = await fetchPropertyDetails(propertyId)
+          if (fetchedProperty !== null) {
+            propertyWithBonus = fetchedProperty
+          }
+        }
+      }
+      
+      // Call the callback with property (with bonus if applicable)
+      if (onPropertyChange) onPropertyChange(propertyWithBonus)
+    } else {
+      setSelectedPropertyName("")
+      if (onPropertyChange) onPropertyChange(null)
+      form.setValue("property_id", "", { shouldValidate: true })
+    }
+  }
+
+  useEffect(() => {
+    // Prevent refetching on every render by tracking if we've already fetched
+    if (!user || hasFetchedRef.current) return
+    
+    // Mark that we've fetched to avoid repeated calls
+    hasFetchedRef.current = true
+    
+    // Execute the fetch
     fetchProperties()
     
-    // Disable the frequent refetching of properties by listening to the visibilitychange event
+    // Disable the frequent refetching by listening to the visibilitychange event
     const handleVisibilityChange = () => {
-      // Don't refetch properties when tab comes back to focus
+      // Don't refetch on visibility change
       if (document.visibilityState === 'visible') {
-        // Do nothing on focus, preventing refetch
+        // Deliberately empty - we don't want to trigger a refetch
       }
     };
     
@@ -481,22 +564,27 @@ export function PropertySelect({
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [user, initialProperty, initialLoad, propertyId, onPropertyChange, fetchPropertyDetails]);
+  }, [user]);  // Only depend on user
 
-  const handlePropertyChange = (propertyId: string) => {
-    const property = properties.find((p) => p.id === propertyId)
-    if (property) {
-      // Set the form value
-      form.setValue("property_id", propertyId, { shouldValidate: true })
-      
-      // Fetch detailed property info with bonus
-      fetchPropertyDetails(propertyId);
-    } else {
-      setSelectedPropertyName("")
-      if (onPropertyChange) onPropertyChange(null)
-      form.setValue("property_id", "", { shouldValidate: true })
+  // Handle initial property or property ID changes in a separate effect
+  useEffect(() => {
+    if (!initialLoad || hasFetchedRef.current === false) return;
+    
+    // Handle initial property if provided
+    if (initialProperty && initialLoad) {
+      setSelectedPropertyName(initialProperty.name);
+      if (onPropertyChange) onPropertyChange(initialProperty);
+      setInitialLoad(false);
+    } else if (propertyId && initialLoad) {
+      // Find selected property in our properties array
+      const selectedProperty = properties.find(p => p.id === propertyId);
+      if (selectedProperty) {
+        setSelectedPropertyName(selectedProperty.name);
+        if (onPropertyChange) onPropertyChange(selectedProperty);
+      }
+      setInitialLoad(false);
     }
-  }
+  }, [initialProperty, propertyId, properties, initialLoad, onPropertyChange]);
 
   const formatPropertyOption = (property: Property, isSelected: boolean = false) => {
     return (
