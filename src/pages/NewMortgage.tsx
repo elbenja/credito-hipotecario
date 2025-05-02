@@ -25,7 +25,7 @@ import { MortgageDetailsForm } from "@/components/mortgages/mortgage-details-for
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
 import { NoMoreSpace } from "@/components/common/NoMoreSpace"
-// import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
+import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
 import { normalizeDate } from "@/lib/utils"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
@@ -143,19 +143,19 @@ export default function NewMortgage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   // Subscription limits hooks and state
-  // const {
-  //   isLoading: isCheckingLimits,
-  //   hasReachedLimit,
-  //   checkLimit,
-  //   currentUsage,
-  //   planLimit,
-  //   currentPlan,
-  //   nextPlan,
-  // } = useSubscriptionLimits()
+  const {
+    isLoading: isCheckingLimits,
+    hasReachedLimit,
+    checkLimit,
+    currentUsage,
+    planLimit,
+    currentPlan,
+    nextPlan,
+  } = useSubscriptionLimits()
   
-  // const [isLimitCheckDone, setIsLimitCheckDone] = useState(false)
-  // const [isLimitReached, setIsLimitReached] = useState(false)
-  // const [mortgageCount, setMortgageCount] = useState(0)
+  const [isLimitCheckDone, setIsLimitCheckDone] = useState(false)
+  const [isLimitReached, setIsLimitReached] = useState(false)
+  const [mortgageCount, setMortgageCount] = useState(0)
   
   // Property is now coming from either the selectedProperty state or the mortgageDraft
   const property = selectedProperty || mortgageDraft?.property
