@@ -25,7 +25,7 @@ import { MortgageDetailsForm } from "@/components/mortgages/mortgage-details-for
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
 import { NoMoreSpace } from "@/components/common/NoMoreSpace"
-import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
+// import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
 import { normalizeDate } from "@/lib/utils"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
@@ -142,20 +142,20 @@ export default function NewMortgage() {
   // State to track if form is being submitted
   const [isSubmitting, setIsSubmitting] = useState(false)
   
-  // Subscription limits hooks and state
-  const {
-    isLoading: isCheckingLimits,
-    hasReachedLimit,
-    checkLimit,
-    currentUsage,
-    planLimit,
-    currentPlan,
-    nextPlan,
-  } = useSubscriptionLimits()
+  // // Subscription limits hooks and state
+  // const {
+  //   isLoading: isCheckingLimits,
+  //   hasReachedLimit,
+  //   checkLimit,
+  //   currentUsage,
+  //   planLimit,
+  //   currentPlan,
+  //   nextPlan,
+  // } = useSubscriptionLimits()
   
-  const [isLimitCheckDone, setIsLimitCheckDone] = useState(false)
-  const [isLimitReached, setIsLimitReached] = useState(false)
-  const [mortgageCount, setMortgageCount] = useState(0)
+  // const [isLimitCheckDone, setIsLimitCheckDone] = useState(false)
+  // const [isLimitReached, setIsLimitReached] = useState(false)
+  // const [mortgageCount, setMortgageCount] = useState(0)
   
   // Property is now coming from either the selectedProperty state or the mortgageDraft
   const property = selectedProperty || mortgageDraft?.property
@@ -184,48 +184,48 @@ export default function NewMortgage() {
     }
   }
 
-  // Function to check limits once
-  const checkLimitOnce = async () => {
-    if (!user?.id || !currentPlan) return false
+  // // Function to check limits once
+  // const checkLimitOnce = async () => {
+  //   if (!user?.id || !currentPlan) return false
     
-    try {
-      // Get direct count from database
-      const { count, error } = await supabase
-        .from("mortgages")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
+  //   try {
+  //     // Get direct count from database
+  //     const { count, error } = await supabase
+  //       .from("mortgages")
+  //       .select("id", { count: "exact", head: true })
+  //       .eq("user_id", user.id)
 
-      if (error) {
-        return false
-      }
+  //     if (error) {
+  //       return false
+  //     }
       
-      // Store the count
-      const currentCount = count || 0
-      setMortgageCount(currentCount)
+  //     // Store the count
+  //     const currentCount = count || 0
+  //     setMortgageCount(currentCount)
       
-      // Determine the user's plan limit
-      const limitValue = planLimit > 0 ? planLimit : 
-                        (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3)
+  //     // Determine the user's plan limit
+  //     const limitValue = planLimit > 0 ? planLimit : 
+  //                       (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3)
       
-      // Simple comparison to determine if limit is reached
-      const limitReached = currentCount >= limitValue
+  //     // Simple comparison to determine if limit is reached
+  //     const limitReached = currentCount >= limitValue
       
-      // Set state based on the check
-      setIsLimitReached(limitReached)
-      return limitReached
-    } catch (err) {
-      return false
-    } finally {
-      setIsLimitCheckDone(true)
-    }
-  }
+  //     // Set state based on the check
+  //     setIsLimitReached(limitReached)
+  //     return limitReached
+  //   } catch (err) {
+  //     return false
+  //   } finally {
+  //     setIsLimitCheckDone(true)
+  //   }
+  // }
   
   // Run the limit check when component mounts
-  useEffect(() => {
-    if (!isLimitCheckDone && user?.id && currentPlan) {
-      checkLimitOnce()
-    }
-  }, [isLimitCheckDone, user?.id, currentPlan])
+  // useEffect(() => {
+  //   if (!isLimitCheckDone && user?.id && currentPlan) {
+  //     checkLimitOnce()
+  //   }
+  // }, [isLimitCheckDone, user?.id, currentPlan])
 
   // Form submission handler
   const handleFormSubmit = async (values: any) => {
@@ -243,17 +243,17 @@ export default function NewMortgage() {
         return
       }
       
-      // Check limits
-      const isLimitExceeded = await checkLimitOnce()
-      if (isLimitExceeded) {
-        toast({
-          variant: "destructive",
-          title: t("ui.error", { ns: "global" }),
-          description: "You have reached your plan limit for mortgages"
-        })
-        setIsSubmitting(false)
-        return
-      }
+      // // Check limits
+      // const isLimitExceeded = await checkLimitOnce()
+      // if (isLimitExceeded) {
+      //   toast({
+      //     variant: "destructive",
+      //     title: t("ui.error", { ns: "global" }),
+      //     description: "You have reached your plan limit for mortgages"
+      //   })
+      //   setIsSubmitting(false)
+      //   return
+      // }
       
       // Parse form values
       const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, "") || "0")
@@ -388,8 +388,77 @@ export default function NewMortgage() {
     }
   }
 
-  // If we haven't checked limits yet or loading property data, show a loading state
-  if ((!isLimitCheckDone && user?.id) || isLoadingDraft) {
+  // // If we haven't checked limits yet or loading property data, show a loading state
+  // if ((!isLimitCheckDone && user?.id) || isLoadingDraft) {
+  //   return (
+  //     <DashboardLayout
+  //       header={{
+  //         title: (
+  //           <Breadcrumb>
+  //             <BreadcrumbList>
+  //               <BreadcrumbItem>
+  //                 <Link to="/mortgages" className="transition-colors hover:text-foreground">
+  //                   {t("sections.mortgages", { ns: "dashboard" })}
+  //                 </Link>
+  //               </BreadcrumbItem>
+  //               <BreadcrumbSeparator />
+  //               <BreadcrumbItem>
+  //                 <BreadcrumbPage>
+  //                   {t("amortization.new", { ns: "mortgages" })}
+  //                 </BreadcrumbPage>
+  //               </BreadcrumbItem>
+  //             </BreadcrumbList>
+  //           </Breadcrumb>
+  //         )
+  //       }}
+  //     >
+  //       <div className="flex items-center justify-center h-96">
+  //         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+  //       </div>
+  //     </DashboardLayout>
+  //   )
+  // }
+  
+  // If user has reached their mortgage limit, show the NoMoreSpace component
+  // if (isLimitReached) {
+  //   return (
+  //     <DashboardLayout
+  //       header={{
+  //         title: (
+  //           <Breadcrumb>
+  //             <BreadcrumbList>
+  //               <BreadcrumbItem>
+  //                 <Link to="/mortgages" className="transition-colors hover:text-foreground">
+  //                   {t("sections.mortgages", { ns: "dashboard" })}
+  //                 </Link>
+  //               </BreadcrumbItem>
+  //               <BreadcrumbSeparator />
+  //               <BreadcrumbItem>
+  //                 <BreadcrumbPage>
+  //                   {t("amortization.new", { ns: "mortgages" })}
+  //                 </BreadcrumbPage>
+  //               </BreadcrumbItem>
+  //             </BreadcrumbList>
+  //           </Breadcrumb>
+  //         )
+  //       }}
+  //     >
+  //       <div className="flex items-center justify-center p-6">
+  //         <NoMoreSpace
+  //           resourceType="mortgage"
+  //           currentUsage={mortgageCount}
+  //           planLimit={planLimit > 0 ? planLimit : (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3)}
+  //           currentPlan={currentPlan}
+  //           nextPlan={nextPlan}
+  //           onBack={() => navigate("/mortgages")}
+  //         />
+  //       </div>
+  //     </DashboardLayout>
+  //   )
+  // }
+  
+  // If loading the draft, show a loading spinner
+  if (isLoadingDraft) {
     return (
       <DashboardLayout
         header={{
@@ -414,44 +483,6 @@ export default function NewMortgage() {
       >
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
-        </div>
-      </DashboardLayout>
-    )
-  }
-  
-  // If user has reached their mortgage limit, show the NoMoreSpace component
-  if (isLimitReached) {
-    return (
-      <DashboardLayout
-        header={{
-          title: (
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <Link to="/mortgages" className="transition-colors hover:text-foreground">
-                    {t("sections.mortgages", { ns: "dashboard" })}
-                  </Link>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>
-                    {t("amortization.new", { ns: "mortgages" })}
-                  </BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          )
-        }}
-      >
-        <div className="flex items-center justify-center p-6">
-          <NoMoreSpace
-            resourceType="mortgage"
-            currentUsage={mortgageCount}
-            planLimit={planLimit > 0 ? planLimit : (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3)}
-            currentPlan={currentPlan}
-            nextPlan={nextPlan}
-            onBack={() => navigate("/mortgages")}
-          />
         </div>
       </DashboardLayout>
     )
@@ -506,7 +537,6 @@ export default function NewMortgage() {
                 <Separator />
                 <div className="p-1 md:p-2 lg:p-4 space-y-6">
 
-          
                 <FormField
                   control={form.control}
                   name="name"
@@ -557,4 +587,4 @@ export default function NewMortgage() {
       </Form>
     </DashboardLayout>
   )
-} 
+}

@@ -6,7 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Plus, Pencil } from "lucide-react";
 import SVGillustration from "@/components/ui/SVGillustration";
 import { useNavigate } from "react-router-dom";
-import { Property } from "./types";
+import { Property } from "../../types/property";
 import {
   Sheet,
   SheetContent,

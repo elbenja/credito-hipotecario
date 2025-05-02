@@ -2,7 +2,7 @@ import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/for
 import { Switch } from "@/components/ui/switch"
 import { UseFormReturn } from "react-hook-form"
 import * as z from "zod"
-import { BonusRule } from "./types"
+import { BonusRule } from "../../types/property"
 import { formatCurrency } from "@/lib/utils"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"

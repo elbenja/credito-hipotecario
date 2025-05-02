@@ -4,7 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider } from "@/context/auth-context"
-import { SubscriptionProvider } from "@/context/subscription-context"
 import { ProtectedRoute } from "@/components/protected-route"
 import { HelmetProvider } from 'react-helmet-async'
 import { ThemeProvider } from "@/components/theme-provider"
@@ -46,95 +45,93 @@ const App = () => (
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AuthProvider>
-            <SubscriptionProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <Routes>
-                  <Route path="/" element={<Auth />} />
-                  <Route path="/coming-soon" element={<ComingSoon />} />
-                  <Route path="/app" element={<Index />} />
-                  <Route path="/update-password" element={<UpdatePassword />} />
-                  <Route path="/reset-password" element={<Navigate to="/update-password" replace />} />
-                  <Route
-                    path="/admin/early-access"
-                    element={
-                      <ProtectedRoute>
-                        <EarlyAccessAdmin />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/admin/users"
-                    element={
-                      <ProtectedRoute>
-                        <UserManagement />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/admin/subscription-plans"
-                    element={
-                      <ProtectedRoute>
-                        <SubscriptionPlansManagement />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/properties"
-                    element={
-                      <ProtectedRoute>
-                        <Properties />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/mortgages"
-                    element={
-                      <ProtectedRoute>
-                        <Mortgages />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/mortgages/new"
-                    element={
-                      <ProtectedRoute>
-                        <NewMortgage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/mortgages/:id"
-                    element={
-                      <ProtectedRoute>
-                        <EditMortgage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/settings"
-                    element={
-                      <ProtectedRoute>
-                        <Settings />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route path="/test" element={<Test />} />
-                  <Route path="/test-calculator" element={<TestCalculator />} />
-                  <Route path="/test-extra-installments" element={<TestExtraInstallments />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </TooltipProvider>
-            </SubscriptionProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
+                <Route path="/" element={<Auth />} />
+                <Route path="/coming-soon" element={<ComingSoon />} />
+                <Route path="/app" element={<Index />} />
+                <Route path="/update-password" element={<UpdatePassword />} />
+                <Route path="/reset-password" element={<Navigate to="/update-password" replace />} />
+                <Route
+                  path="/admin/early-access"
+                  element={
+                    <ProtectedRoute>
+                      <EarlyAccessAdmin />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/users"
+                  element={
+                    <ProtectedRoute>
+                      <UserManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/subscription-plans"
+                  element={
+                    <ProtectedRoute>
+                      <SubscriptionPlansManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/properties"
+                  element={
+                    <ProtectedRoute>
+                      <Properties />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/mortgages"
+                  element={
+                    <ProtectedRoute>
+                      <Mortgages />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/mortgages/new"
+                  element={
+                    <ProtectedRoute>
+                      <NewMortgage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/mortgages/:id"
+                  element={
+                    <ProtectedRoute>
+                      <EditMortgage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <ProtectedRoute>
+                      <Settings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/test" element={<Test />} />
+                <Route path="/test-calculator" element={<TestCalculator />} />
+                <Route path="/test-extra-installments" element={<TestExtraInstallments />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </TooltipProvider>
           </AuthProvider>
         </BrowserRouter>
       </QueryClientProvider>

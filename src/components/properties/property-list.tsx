@@ -1,4 +1,3 @@
-import { Switch } from "@/components/ui/switch"
 import {
   Table,
   TableBody,
@@ -19,7 +18,6 @@ import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useTranslation } from "react-i18next"
 import { MoreVertical, Copy, Trash, ArrowUp, ArrowDown, ChevronsUpDown, Home } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
-import { useSubscription } from "@/context/subscription-context"
 import { useNavigate } from "react-router-dom"
 
 import { useMortgageDraftStore } from "@/store/mortgage/store"
@@ -74,7 +72,6 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
   const { data: exchangeRate } = useExchangeRate()
   const { user } = useAuth()
   const navigate = useNavigate()
-  const { isLimitReached, getCurrentUsage, limits } = useSubscription()
   const { resetDraft } = useMortgageDraftStore()
   
   const { calculateBonus } = usePropertyBonus()
@@ -99,16 +96,6 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
     e.stopPropagation()
     try {
       if (!user) throw new Error(t('messages.no_user_found', 'No user found', { ns: 'global' }))
-
-      const limitReached = await isLimitReached('property')
-      if (limitReached) {
-        toast({
-          variant: "destructive",
-          title: t('ui.error', 'Error', { ns: 'global' }),
-          description: t('messages.plan_limit_reached', 'You have reached your plan limit for properties.', { ns: 'properties' }),
-        })
-        return
-      }
 
       const duplicatedProperty = {
         ...property,

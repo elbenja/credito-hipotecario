@@ -7,7 +7,6 @@ import { UseFormReturn } from "react-hook-form"
 import { useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
-import { useSubscription } from "@/context/subscription-context"
 import { useTranslation } from "react-i18next"
 import * as z from "zod"
 import { Input } from "@/components/ui/input"
@@ -23,33 +22,6 @@ export function PropertyDetails({ form, isNewProperty = false }: PropertyDetails
   const selectedCurrency = form.watch("currency")
   const currentName = form.watch("name")
   const { user } = useAuth()
-  const { getCurrentUsage } = useSubscription()
-
-  useEffect(() => {
-    const setupDefaultName = async () => {
-      if (!isNewProperty || !user || form.getValues("name")) return
-
-      try {
-        // Get the actual count of user's properties from the subscription context
-        const currentCount = await getCurrentUsage('property');
-        
-        // The next number should be the count + 1
-        const nextNumber = currentCount + 1;
-        console.log(`Setting up property name with number: ${nextNumber} (based on ${currentCount} existing properties)`);
-        
-        const newPropertyName = t('form.property_name') + ' #' + nextNumber
-        form.setValue("name", newPropertyName, { shouldValidate: true })
-      } catch (error) {
-        console.error('Error setting up default property name:', error)
-        
-        // Fallback to simple naming if there's an error
-        const fallbackName = t('form.property_name') + ' #' + new Date().getTime().toString().slice(-4);
-        form.setValue("name", fallbackName, { shouldValidate: true });
-      }
-    }
-
-    setupDefaultName()
-  }, [isNewProperty, user, form, t, getCurrentUsage])
 
   const handleNameChange = (newName: string) => {
     form.setValue("name", newName, { shouldValidate: true })

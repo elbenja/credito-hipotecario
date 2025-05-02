@@ -18,7 +18,7 @@ import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/co
 import { Badge } from "@/components/ui/badge"
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js'
-import { BonusRule } from "@/components/properties/types"
+import { BonusRule } from "@/types/property"
 import type { Property, Mortgage } from "../types"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 // import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
