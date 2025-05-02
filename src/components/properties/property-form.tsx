@@ -17,7 +17,7 @@ import { NoMoreSpace } from "@/components/common/NoMoreSpace"
 import { LoanCalculator } from "@/services/mortgages/calculations/loan"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useQueryClient } from "@tanstack/react-query"
-
+import { useAddProperty } from "@/hooks/properties"
 // Define the schema creator function that takes the translation function
 export const createPropertyFormSchema = (t: any) => z.object({
   name: z.string().min(1, {
@@ -51,6 +51,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
   const { t: tComponents } = useTranslation('components')
   const { data: exchangeRate } = useExchangeRate()
   const queryClient = useQueryClient()
+  const addProperty = useAddProperty()
   
   // Using the global subscription context
   const {
@@ -130,6 +131,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
   }, [selectedProperty, isLimitReached, getCurrentUsage, limits]);
 
   async function onSubmit(values: z.infer<typeof propertyFormSchema>) {
+
     try {
       if (!user) throw new Error(tGlobal('messages.no_user_found', 'User not found', { ns: 'properties' }))
 
@@ -197,19 +199,28 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
           await updateDependentMortgages(updatedProperty);
         }
       } else {
-        console.log("PROPERTY FORM: Creating new property");
-        const { data, error } = await supabase
-          .from("properties")
-          .insert(propertyData)
-          .select()
-
-        if (error) throw error
-
-        console.log("PROPERTY FORM: Property created successfully");
-        toast({
-          title: tGlobal('ui.success'),
-          description: tProperties('messages.property_added'),
-        })
+        // Optimistically add new property
+        addProperty.mutate(propertyData, {
+          onSuccess: (newProperty) => {
+            console.log("PROPERTY FORM: Property created successfully");
+            toast({
+              title: tGlobal('ui.success'),
+              description: tProperties('messages.property_added'),
+            });
+            onSuccess();
+            onClose();
+            form.reset();
+          },
+          onError: (err) => {
+            console.error("PROPERTY FORM: Error creating property:", err);
+            toast({
+              variant: "destructive",
+              title: tGlobal('ui.error'),
+              description: tProperties('messages.error_saving'),
+            });
+          },
+        });
+        return;
       }
       
       onSuccess()

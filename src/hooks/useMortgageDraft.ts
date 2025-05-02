@@ -49,9 +49,9 @@ export function useMortgageDraft(mortgageId: string | null) {
     loan_protection_insurance: mortgage.loan_protection_insurance?.toString() || '0'
   } : mortgageDraft || defaultValues
   
-  console.log("useMortgageDraft - formDefaultValues:", formDefaultValues);
-  console.log("useMortgageDraft - defaultValues from schema:", defaultValues);
-  console.log("useMortgageDraft - mortgageDraft from store:", mortgageDraft);
+  // console.log("useMortgageDraft - formDefaultValues:", formDefaultValues);
+  // console.log("useMortgageDraft - defaultValues from schema:", defaultValues);
+  // console.log("useMortgageDraft - mortgageDraft from store:", mortgageDraft);
   
   // Form initialization with correct format
   const form = useForm<MortgageFormValues>({

@@ -433,9 +433,9 @@ export default function TestExtraInstallments() {
     }
   }
 
-  const [mortgageSum, setMortgageSum] = useState<number>(0);
-  const [calculatedLoanAmount, setCalculatedLoanAmount] = useState<number>(0);
-  const [mortgageNotFoundError, setMortgageNotFoundError] = useState<boolean>(false);
+  // const [mortgageSum, setMortgageSum] = useState<number>(0);
+  // const [calculatedLoanAmount, setCalculatedLoanAmount] = useState<number>(0);
+  // const [mortgageNotFoundError, setMortgageNotFoundError] = useState<boolean>(false);
 
   return (
     <DashboardLayout
@@ -558,7 +558,7 @@ export default function TestExtraInstallments() {
                         onSubmit={onUpdateMortgage}
                         submitLabel="Update"
                         onLoanAmountChange={(amount: number) => {
-                          setCalculatedLoanAmount(amount);
+                          // setCalculatedLoanAmount(amount);
                         }}
                         propertyBonus={getPropertyBonusFromCache(selectedProperty.id || '')}
                       />

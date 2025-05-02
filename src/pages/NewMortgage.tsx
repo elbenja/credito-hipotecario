@@ -25,14 +25,15 @@ import { MortgageDetailsForm } from "@/components/mortgages/mortgage-details-for
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
 import { NoMoreSpace } from "@/components/common/NoMoreSpace"
-import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
+// import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
 import { normalizeDate } from "@/lib/utils"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { ScenarioCalculator } from "@/services/mortgages/services/scenarioCalculator"
 import { defaultValues } from "@/components/mortgages/schema"
-
+import { useAddMortgage } from "@/hooks/mortgages"
 export default function NewMortgage() {
+  const addMortgage = useAddMortgage()
   const { t } = useTranslation(['mortgages', 'dashboard', 'global'])
   const { t: tMortgages } = useTranslation('mortgages')
   const { user } = useAuth()
@@ -142,19 +143,19 @@ export default function NewMortgage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   // Subscription limits hooks and state
-  const {
-    isLoading: isCheckingLimits,
-    hasReachedLimit,
-    checkLimit,
-    currentUsage,
-    planLimit,
-    currentPlan,
-    nextPlan,
-  } = useSubscriptionLimits()
+  // const {
+  //   isLoading: isCheckingLimits,
+  //   hasReachedLimit,
+  //   checkLimit,
+  //   currentUsage,
+  //   planLimit,
+  //   currentPlan,
+  //   nextPlan,
+  // } = useSubscriptionLimits()
   
-  const [isLimitCheckDone, setIsLimitCheckDone] = useState(false)
-  const [isLimitReached, setIsLimitReached] = useState(false)
-  const [mortgageCount, setMortgageCount] = useState(0)
+  // const [isLimitCheckDone, setIsLimitCheckDone] = useState(false)
+  // const [isLimitReached, setIsLimitReached] = useState(false)
+  // const [mortgageCount, setMortgageCount] = useState(0)
   
   // Property is now coming from either the selectedProperty state or the mortgageDraft
   const property = selectedProperty || mortgageDraft?.property
@@ -343,25 +344,37 @@ export default function NewMortgage() {
       }
       
       // Save mortgage to database
-      const { data, error } = await supabase
-        .from("mortgages")
-        .insert(mortgageData)
-        .select()
-        .single()
+      // const { data, error } = await supabase
+      //   .from("mortgages")
+      //   .insert(mortgageData)
+      //   .select()
+      //   .single()
         
-      if (error) throw error
-      
-      toast({
-        title: t("ui.success", { ns: "global" }),
-        description: t("messages.amortization_created", { ns: "mortgages" }),
+      // if (error) throw error
+
+    
+       // Save mortgage to database (optimistically via React Query)
+       addMortgage.mutate(mortgageData, {
+        onSuccess(newRow) {
+          toast({
+            title: t("ui.success", { ns: "global" }),
+            description: t("messages.amortization_created", { ns: "mortgages" }),
+          })
+          resetDraft()
+          resetStore()
+          navigate(`/mortgages/${newRow.id}`)
+        },
+        onError(err) {
+          console.error(err)
+          toast({
+            variant: "destructive",
+            title: t("ui.error", { ns: "global" }),
+            description: err.message,
+          })
+        },
       })
       
-      // Reset the draft since we successfully created the mortgage
-      resetDraft()
-      resetStore()
-      
-      // Navigate to the new mortgage
-      navigate(`/mortgages/${data.id}`)
+
       
     } catch (error) {
       console.error("Error creating mortgage:", error)

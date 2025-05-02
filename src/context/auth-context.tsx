@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function initializeAuth() {
       try {
-        console.log('Initializing auth...')
+        // console.log('Initializing auth...')
         // Get the current session from Supabase
         const { data: { session: currentSession } } = await supabase.auth.getSession()
         

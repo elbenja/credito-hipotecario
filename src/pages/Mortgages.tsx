@@ -21,10 +21,11 @@ import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supab
 import { BonusRule } from "@/components/properties/types"
 import type { Property, Mortgage } from "../types"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
-import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
+// import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
 import { useMortgageCapture } from "@/services/mortgages/mortgage-capture.service"
 import { useMortgageBundle } from "@/hooks/useMortgageBundle"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
+import { useDeleteMortgage } from "@/hooks/mortgages"
 
 export default function Mortgages() {
   const navigate = useNavigate()
@@ -41,41 +42,43 @@ export default function Mortgages() {
   const [bonusValues, setBonusValues] = useState<Record<string, number | null>>({});
   const { resetDraft } = useMortgageDraftStore();
 
-  // Add subscription limits hook
-  const {
-    currentUsage,
-    planLimit,
-    currentPlan,
-    checkLimit
-  } = useSubscriptionLimits();
+  const deleteMortgage = useDeleteMortgage()
 
-  // Function to check mortgage limits directly from the database
-  const checkMortgageLimits = useCallback(async (): Promise<boolean> => {
-    if (!user) return false;
+  // // Add subscription limits hook
+  // const {
+  //   currentUsage,
+  //   planLimit,
+  //   currentPlan,
+  //   checkLimit
+  // } = useSubscriptionLimits();
+
+  // // Function to check mortgage limits directly from the database
+  // const checkMortgageLimits = useCallback(async (): Promise<boolean> => {
+  //   if (!user) return false;
     
-    try {
-      // Get current count directly from database for accuracy
-      const { count, error } = await supabase
-        .from("mortgages")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id);
+  //   try {
+  //     // Get current count directly from database for accuracy
+  //     const { count, error } = await supabase
+  //       .from("mortgages")
+  //       .select("id", { count: "exact", head: true })
+  //       .eq("user_id", user.id);
 
-      if (error) {
-        console.error("Error counting mortgages:", error);
-        return false;
-      }
+  //     if (error) {
+  //       console.error("Error counting mortgages:", error);
+  //       return false;
+  //     }
       
-      // Get limit from subscription or default
-      const limitValue = planLimit > 0 ? planLimit : 
-                         (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3);
+  //     // Get limit from subscription or default
+  //     const limitValue = planLimit > 0 ? planLimit : 
+  //                        (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3);
       
-      // True if limit reached
-      return (count || 0) >= limitValue;
-    } catch (err) {
-      console.error("Error checking mortgage limits:", err);
-      return false;
-    }
-  }, [user, planLimit, currentPlan]);
+  //     // True if limit reached
+  //     return (count || 0) >= limitValue;
+  //   } catch (err) {
+  //     console.error("Error checking mortgage limits:", err);
+  //     return false;
+  //   }
+  // }, [user, planLimit, currentPlan]);
 
   // Fetch bonus rules
   const { data: bonusRules = [] } = useQuery({
@@ -224,32 +227,29 @@ export default function Mortgages() {
     
   }, [captureMortgage, queryClient])
 
-  const handleDelete = useCallback(async (e: React.MouseEvent, mortgage: Mortgage) => {
-    e.stopPropagation()
-    try {
-      const { error } = await supabase
-        .from("mortgages")
-        .delete()
-        .eq('id', mortgage.id)
-
-      if (error) throw error
-
-      toast({
-        title: tGlobal('ui.success'),
-        description: tMortgages('messages.success_delete'),
+  const handleDelete = useCallback(
+    (e: React.MouseEvent, mortgage: Mortgage) => {
+      e.stopPropagation()
+      deleteMortgage.mutate(mortgage.id, {
+        onSuccess: () => {
+          toast({
+            title: tGlobal("ui.success"),
+            description: tMortgages("messages.success_delete"),
+          })
+          queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
+        },
+        onError: (err) => {
+          console.error("Error deleting mortgage:", err)
+          toast({
+            variant: "destructive",
+            title: tGlobal("ui.error"),
+            description: tMortgages("messages.error_delete"),
+          })
+        },
       })
-
-      // Refresh the data
-      queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
-    } catch (error) {
-      console.error("Error deleting mortgage:", error)
-      toast({
-        variant: "destructive",
-        title: tGlobal('ui.error'),
-        description: tMortgages('messages.error_delete'),
-      })
-    }
-  }, [tGlobal, tMortgages, queryClient, toast])
+    },
+    [deleteMortgage, queryClient, tGlobal, tMortgages, toast]
+  )
 
   // Memoize the header actions to prevent recreating on every render
   const headerActions = useMemo(() => (

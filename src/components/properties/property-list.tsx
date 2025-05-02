@@ -21,10 +21,11 @@ import { MoreVertical, Copy, Trash, ArrowUp, ArrowDown, ChevronsUpDown, Home } f
 import { useAuth } from "@/context/auth-context"
 import { useSubscription } from "@/context/subscription-context"
 import { useNavigate } from "react-router-dom"
-import { useQuery } from "@tanstack/react-query"
-import { toast as sonnerToast } from "sonner"
+
 import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { usePropertyBonus } from "@/hooks/usePropertyBonus"
+
+import { useDeleteProperty } from "@/hooks/properties"
 
 type Property = {
   id: string
@@ -77,6 +78,7 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
   const { resetDraft } = useMortgageDraftStore()
   
   const { calculateBonus } = usePropertyBonus()
+  const deleteProperty = useDeleteProperty()
 
   const getSortIcon = (key: keyof Property) => {
     if (sortConfig?.key === key) {
@@ -152,30 +154,25 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
     }
   }
 
-  const handleDelete = async (e: React.MouseEvent, property: Property) => {
+  const handleDelete = (e: React.MouseEvent, property: Property) => {
     e.stopPropagation()
-    try {
-      const { error } = await supabase
-        .from("properties")
-        .delete()
-        .eq('id', property.id)
-
-      if (error) throw error
-
-      toast({
-        title: t('ui.success', 'Success', { ns: 'global' }),
-        description: t('messages.property_deleted', 'Property deleted successfully', { ns: 'properties' }),
-      })
-
-      onPropertyUpdate(property, true)
-    } catch (error) {
-      console.error("Error deleting property:", error)
-      toast({
-        variant: "destructive",
-        title: t('ui.error', 'Error', { ns: 'global' }),
-        description: t('messages.error_deleting_property', 'Error deleting property', { ns: 'properties' }),
-      })
-    }
+    deleteProperty.mutate(property.id, {
+      onSuccess: () => {
+        toast({
+          title: t('ui.success', { ns: 'global' }),
+          description: t('messages.property_deleted', { ns: 'properties' }),
+        })
+        onPropertyUpdate(property, true)
+      },
+      onError: (err) => {
+        console.error("Error deleting property:", err)
+        toast({
+          variant: "destructive",
+          title: t('ui.error', { ns: 'global' }),
+          description: t('messages.error_deleting_property', { ns: 'properties' }),
+        })
+      },
+    })
   }
 
   return (

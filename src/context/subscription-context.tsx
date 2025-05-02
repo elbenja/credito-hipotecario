@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth-context';
 
@@ -107,100 +108,34 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setIsLoading(true);
       
       try {
-        // console.log("SUBSCRIPTION: Fetching plan information for user", user.id);
+        // Use the new RPC function to get plan name and limits in one call
+        const { data, error } = await supabase.rpc('get_user_plan_limits', { p_user_id: user.id });
         
-        // 1. Get the active subscription
-        const { data: subscriptionData, error: subscriptionError } = await supabase
-          .from("user_subscriptions")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("status", "active")
-          .single();
-        
-        if (subscriptionError && subscriptionError.code !== 'PGRST116') {
-          console.error("Error fetching subscription:", subscriptionError);
-        }
-        
-        let currentPlanName = 'personal';
-        let currentPlanId = null;
-        
-        if (subscriptionData) {
-          console.log("SUBSCRIPTION: Found active subscription", subscriptionData);
-          currentPlanId = subscriptionData.plan_id;
-          
-          // 2. Get the plan details
-          const { data: planData, error: planError } = await supabase
-            .from("subscription_plans")
-            .select("*")
-            .eq("id", currentPlanId)
-            .single();
-            
-          if (planError) {
-            console.error("Error fetching plan:", planError);
-          } else if (planData) {
-            currentPlanName = planData.name.toLowerCase();
-            // console.log(`SUBSCRIPTION: User has ${currentPlanName} plan`);
-          }
+        if (error) {
+          console.error("Error fetching user plan limits:", error);
+          setPlanName('personal');
+          setPlanId(null);
+          setLimits(DEFAULT_PLAN_LIMITS.personal);
+        } else if (data) {
+          console.log('SUBSCRIPTION: User plan limits fetched:', data);
+          // data: { plan_name: string, limits: { properties: number, mortgages: number, rentals: number } }
+          setPlanName(data.plan_name || 'personal');
+          setPlanId(null); // Plan ID is not returned by the function, set to null or extend function if needed
+          setLimits({
+            properties: data.limits.properties ?? DEFAULT_PLAN_LIMITS.personal.properties,
+            mortgages: data.limits.mortgages ?? DEFAULT_PLAN_LIMITS.personal.mortgages,
+            rentals: data.limits.rentals ?? DEFAULT_PLAN_LIMITS.personal.rentals,
+          });
         } else {
-          console.log("SUBSCRIPTION: No active subscription found, using Personal plan");
+          setPlanName('personal');
+          setPlanId(null);
+          setLimits(DEFAULT_PLAN_LIMITS.personal);
         }
-        
-        // Save the plan name and ID
-        setPlanName(currentPlanName);
-        setPlanId(currentPlanId);
-        
-        // 3. Get the plan feature limits
-        const { data: featureData, error: featureError } = await supabase
-          .from("plan_features")
-          .select("*");
-          
-        if (featureError) {
-          console.error("Error fetching plan features:", featureError);
-          // Fall back to default limits
-          setLimits(DEFAULT_PLAN_LIMITS[currentPlanName] || DEFAULT_PLAN_LIMITS.personal);
-        } else if (featureData) {
-          // Find limits for the current plan
-          let planLimits = { ...DEFAULT_PLAN_LIMITS[currentPlanName] || DEFAULT_PLAN_LIMITS.personal };
-          
-          // Filter features for this plan
-          const planFeatures = currentPlanId 
-            ? featureData.filter(f => f.plan_id === currentPlanId)
-            : featureData.filter(f => {
-                if (currentPlanName === 'personal') {
-                  return (f.feature_name === 'properties' && f.feature_limit === 3) ||
-                         (f.feature_name === 'mortgages' && f.feature_limit === 3) ||
-                         (f.feature_name === 'rentals' && f.feature_limit === 1);
-                } else if (currentPlanName === 'professional') {
-                  return (f.feature_name === 'properties' && f.feature_limit === 5) ||
-                         (f.feature_name === 'mortgages' && f.feature_limit === 15) ||
-                         (f.feature_name === 'rentals' && f.feature_limit === 10);
-                }
-                return false;
-              });
-          
-          if (planFeatures.length === 0) {
-            console.log("SUBSCRIPTION: No features found for plan, using defaults");
-          } else {
-            planFeatures.forEach(feature => {
-              if (feature.feature_name === 'properties') {
-                planLimits.properties = feature.feature_limit;
-              } else if (feature.feature_name === 'mortgages') {
-                planLimits.mortgages = feature.feature_limit;
-              } else if (feature.feature_name === 'rentals') {
-                planLimits.rentals = feature.feature_limit;
-              }
-            });
-            
-            console.log("SUBSCRIPTION: Plan limits set", planLimits);
-          }
-          
-          setLimits(planLimits);
-        }
-        
         setIsLimitsFetched(true);
       } catch (error) {
         console.error("Error setting up subscription limits:", error);
-        // Fallback to defaults
+        setPlanName('personal');
+        setPlanId(null);
         setLimits(DEFAULT_PLAN_LIMITS.personal);
       } finally {
         setIsLoading(false);

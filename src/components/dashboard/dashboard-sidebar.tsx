@@ -28,6 +28,8 @@ import { supabase } from "@/integrations/supabase/client"
 import { useTheme } from "@/components/theme-provider"
 import { useState, useEffect } from "react"
 import { Logo } from "@/components/ui/logo"
+import { useMortgageCount } from "@/hooks/mortgages/useCount"
+import { usePropertyCount } from "@/hooks/properties/useCount"
 
 function PropertyIcon({ className }: { className?: string }) {
   return (
@@ -257,49 +259,9 @@ export function DashboardSidebar() {
     }
   }
 
-  const { data: propertiesCount = 0 } = useQuery({
-    queryKey: ['properties-count'],
-    queryFn: async () => {
-      try {
-        const { count, error } = await supabase
-          .from('properties')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user?.id)
+  const { data: propertiesCount = 0 } = usePropertyCount()
 
-        if (error) {
-          console.error('Error fetching properties:', error)
-          return 0
-        }
-
-        return count || 0
-      } catch (error) {
-        console.error('Error fetching properties:', error)
-        return 0
-      }
-    },
-  })
-
-  const { data: amortizationsCount = 0 } = useQuery({
-    queryKey: ['amortizations-count'],
-    queryFn: async () => {
-      try {
-        const { count, error } = await supabase
-          .from('amortizations')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user?.id)
-
-        if (error) {
-          console.error('Error fetching amortizations:', error)
-          return 0
-        }
-
-        return count || 0
-      } catch (error) {
-        console.error('Error fetching amortizations:', error)
-        return 0
-      }
-    },
-  })
+  const { data: mortgagesCount = 0 } = useMortgageCount()
 
   const getTranslation = (item: NavItem): string => {
     if (item.namespace === 'dashboard') {
@@ -333,8 +295,8 @@ export function DashboardSidebar() {
                       {item.title === "properties" && propertiesCount > 0 && (
                         <SidebarMenuBadge>{propertiesCount}</SidebarMenuBadge>
                       )}
-                      {item.title === "mortgages" && amortizationsCount > 0 && (
-                        <SidebarMenuBadge>{amortizationsCount}</SidebarMenuBadge>
+                      {item.title === "mortgages" && mortgagesCount > 0 && (
+                        <SidebarMenuBadge>{mortgagesCount}</SidebarMenuBadge>
                       )}
                     </Link>
                   </SidebarMenuButton>

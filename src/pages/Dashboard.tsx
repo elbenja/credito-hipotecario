@@ -14,7 +14,7 @@ import { useState, useEffect } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Plus } from "lucide-react"
 import { PropertyForm } from "@/components/properties/property-form"
-import { toast } from "@/components/ui/use-toast"
+import { usePropertyCount } from "@/hooks/properties/useCount"
 
 export default function Dashboard() {
   const { t } = useTranslation(['dashboard', 'properties', 'mortgages'])
@@ -43,58 +43,9 @@ export default function Dashboard() {
   })
 
   // Fetch properties count with optimized caching
-  const { data: propertiesCount = 0 } = useQuery({
-    queryKey: ['properties-count', user?.id],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user?.id)
+  const { data: propertiesCount = 0 } = usePropertyCount()
 
-      if (error) throw error
-      return count || 0
-    },
-    enabled: !!user?.id,
-    staleTime: 5 * 1000, // 5 seconds (reduced from 30 seconds)
-    gcTime: 2 * 60 * 1000 // 2 minutes
-  })
 
-  // Set up real-time subscription for property updates
-  useEffect(() => {
-    if (!user?.id) return
-
-    // Create a channel for property updates
-    const channel = supabase.channel('property-updates')
-    
-    // Subscribe to the channel
-    const subscription = channel
-      .on('broadcast', { event: 'property-created' }, (payload) => {
-        if (payload.payload?.userId === user.id) {
-          // Invalidate and refresh queries when property is created
-          queryClient.invalidateQueries({ queryKey: ['properties-count', user.id] })
-          queryClient.invalidateQueries({ queryKey: ['properties', user.id] })
-        }
-      })
-      .on('broadcast', { event: 'property-updated' }, (payload) => {
-        if (payload.payload?.userId === user.id) {
-          // Invalidate and refresh queries when property is updated
-          queryClient.invalidateQueries({ queryKey: ['properties', user.id] })
-        }
-      })
-      .on('broadcast', { event: 'property-deleted' }, (payload) => {
-        if (payload.payload?.userId === user.id) {
-          // Invalidate and refresh queries when property is deleted
-          queryClient.invalidateQueries({ queryKey: ['properties-count', user.id] })
-          queryClient.invalidateQueries({ queryKey: ['properties', user.id] })
-        }
-      })
-      .subscribe()
-
-    // Clean up the subscription when component unmounts
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [user?.id, queryClient])
 
   // Handle property success with optimistic update
   const handlePropertySuccess = () => {

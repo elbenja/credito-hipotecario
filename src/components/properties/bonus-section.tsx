@@ -65,6 +65,12 @@ export function BonusSection({ form }: BonusSectionProps) {
     }
   })
 
+// code debt use database function
+  // const { data, error } = await supabase.rpc('get_exchange_rate', { 
+  //   from_curr: 'USD',
+  //   to_curr: 'PEN'
+  // });
+
   // Memoize price parsing to avoid recalculating on every render
   const parsedPrice = useMemo(() => parsePrice(price), [price]);
   
