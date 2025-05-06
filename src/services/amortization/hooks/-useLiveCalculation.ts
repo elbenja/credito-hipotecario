@@ -1,6 +1,6 @@
 
 import { useCallback, useEffect } from 'react'
-import { useAmortizationStore } from '@/store/amortization/store'
+import { useAmortizationStore } from '@/store/-amortization/store'
 import { AmortizationBaseValues, Property } from '@/services/amortization/types/common'
 
 // Define the store shape for type safety

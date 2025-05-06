@@ -8,124 +8,34 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { PropertyForm } from "@/components/properties/property-form"
 import { PropertyList } from "@/components/properties/property-list"
-import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
-import { useToast } from "@/components/ui/use-toast"
-import { Separator } from "@/components/ui/separator"
+// import { useToast } from "@/components/ui/use-toast"
+
 import { SEO } from "@/components/seo"
 import { Property } from "@/types/property"
 import { useTranslation } from "react-i18next"
 import SVGillustration from "@/components/ui/SVGillustration"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useProperties } from "@/services/propertyService"
 
 export default function Properties() {
   const { t, i18n } = useTranslation(['properties', 'global'])
   const [open, setOpen] = useState(false)
   const { user } = useAuth()
-  const { toast } = useToast()
-  const queryClient = useQueryClient()
+  // const { toast } = useToast()
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Property;
     direction: 'asc' | 'desc';
   } | null>(null)
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
 
-  // Fetch properties with React Query
-  const { data: properties = [], isLoading } = useQuery({
-    queryKey: ['properties', user?.id],
-    queryFn: async () => {
-      if (!user) return []
-
-      try {
-        const { data, error } = await supabase
-          .from('properties')
-          .select('*')
-          .eq('user_id', user.id)
-
-        if (error) {
-          console.error('Error loading properties:', error)
-          toast({
-            variant: "destructive",
-            title: t('global:ui.error'),
-            description: t('properties:messages.error_loading_properties'),
-          })
-          throw error
-        }
-        
-        return (data || []).map(p => ({
-          ...p,
-          property_insurance_type: p.property_insurance_type || "auto"
-        })) as Property[]
-      } catch (error) {
-        console.error('Error loading properties:', error)
-        toast({
-          variant: "destructive",
-          title: t('global:ui.error'),
-          description: t('properties:messages.error_loading_properties'),
-        })
-        throw error
-      }
-    },
-    enabled: !!user?.id,
-    staleTime: 5 * 1000, // 5 seconds
-    gcTime: 2 * 60 * 1000, // 2 minutes
-  })
-
-  // Set up real-time subscription for property updates
-  useEffect(() => {
-    if (!user?.id) return
-
-    // Create a channel for property updates
-    const channel = supabase.channel('property-updates')
-    
-    // Subscribe to the channel
-    channel
-      .on('broadcast', { event: 'property-created' }, (payload) => {
-        if (payload.payload?.userId === user.id) {
-          // Invalidate and refresh properties when a property is created
-          queryClient.invalidateQueries({ queryKey: ['properties', user.id] })
-        }
-      })
-      .on('broadcast', { event: 'property-updated' }, (payload) => {
-        if (payload.payload?.userId === user.id) {
-          // Invalidate and refresh properties when a property is updated
-          queryClient.invalidateQueries({ queryKey: ['properties', user.id] })
-        }
-      })
-      .on('broadcast', { event: 'property-deleted' }, (payload) => {
-        if (payload.payload?.userId === user.id) {
-          // Invalidate and refresh properties when a property is deleted
-          queryClient.invalidateQueries({ queryKey: ['properties', user.id] })
-        }
-      })
-      .subscribe()
-
-    // Clean up the subscription when component unmounts
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [user?.id, queryClient])
+ const { data: properties = [], isLoading, refetch } = useProperties(user?.id)
 
   // Handle property success and broadcast event
   const handlePropertySuccess = () => {
-    // Optimistically update the query cache
-    queryClient.invalidateQueries({ queryKey: ['properties', user?.id] })
-    
-    // Broadcast property created/updated message
-    const channel = supabase.channel('property-updates')
-    channel.send({
-      type: 'broadcast',
-      event: selectedProperty ? 'property-updated' : 'property-created',
-      payload: { 
-        action: selectedProperty ? 'update' : 'create', 
-        userId: user?.id,
-        propertyId: selectedProperty?.id
-      },
-    })
-    
+    refetch()
     setOpen(false)
     setSelectedProperty(null)
   }
@@ -146,40 +56,7 @@ export default function Properties() {
   }
 
   const handlePropertyUpdate = (updatedProperty: Property, isDelete: boolean = false) => {
-    // Optimistically update the cache
-    if (isDelete) {
-      queryClient.setQueryData(['properties', user?.id], (oldData: Property[] = []) => 
-        oldData.filter(p => p.id !== updatedProperty.id)
-      )
-      
-      // Broadcast property deleted message
-      const channel = supabase.channel('property-updates')
-      channel.send({
-        type: 'broadcast',
-        event: 'property-deleted',
-        payload: { 
-          action: 'delete', 
-          userId: user?.id,
-          propertyId: updatedProperty.id
-        },
-      })
-    } else {
-      queryClient.setQueryData(['properties', user?.id], (oldData: Property[] = []) => {
-        // Check if property already exists in the list
-        const propertyExists = oldData.some(p => p.id === updatedProperty.id);
-        
-        if (propertyExists) {
-          // Update existing property
-          return oldData.map(p => p.id === updatedProperty.id ? updatedProperty : p);
-        } else {
-          // Add new property to the list (for duplication)
-          return [...oldData, updatedProperty];
-        }
-      });
-      
-      // Force a refresh of the subscription context to update property counts
-      queryClient.invalidateQueries({ queryKey: ['properties', user?.id] });
-    }
+    refetch()
   }
 
   const handleAddNewClick = () => {

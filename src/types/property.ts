@@ -1,5 +1,6 @@
 export type Property = {
   id: string
+  user_id: string
   name: string
   price_cost: number
   currency: string

@@ -12,7 +12,7 @@ import { BonusSection } from "./bonus-section"
 import { Property, BonusRule } from "@/types/property"
 import { useTranslation } from "react-i18next"
 import { useMemo, useState, useEffect, useRef } from "react"
-import { NoMoreSpace } from "@/components/common/NoMoreSpace"
+
 import { LoanCalculator } from "@/services/mortgages/calculations/loan"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useQueryClient } from "@tanstack/react-query"

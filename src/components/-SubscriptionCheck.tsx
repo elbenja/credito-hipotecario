@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription } from '@/hooks/-useSubscription';
 import { FeatureName } from '@/types/subscription';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';

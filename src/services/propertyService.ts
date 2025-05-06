@@ -1,0 +1,47 @@
+// src/services/propertyService.ts
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client"
+import type { Property } from "@/types/property";
+import { toast } from "@/components/ui/use-toast";
+
+/**
+ * Fetches all properties for a given user.
+ * @param userId - the UUID of the current user
+ * @returns array of Property objects
+ */
+export async function fetchProperties(userId: string): Promise<Property[]> {
+  const { data, error } = await supabase
+    .from('properties')
+    .select("*")
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Error fetching properties:", error);
+    toast({
+        variant: "destructive",
+        title: t('global:ui.error'),
+        description: t('properties:messages.error_loading_properties'),
+      })
+    throw error;
+  }
+
+  // Normalize default insurance type
+  return (data ?? []).map((p) => ({
+    ...p,
+    property_insurance_type: p.property_insurance_type ?? "auto",
+  }));
+}
+
+/**
+ * React Query hook to load all properties for a given user.
+ * Delegates to fetchProperties in the service layer.
+ */
+export function useProperties(userId?: string | null) {
+  return useQuery<Property[], Error>({
+    queryKey: ["properties", userId],
+    queryFn:     () => (userId ? fetchProperties(userId) : []),
+    enabled:     Boolean(userId),
+    staleTime:   5_000,
+    gcTime:      120_000,
+  });
+}

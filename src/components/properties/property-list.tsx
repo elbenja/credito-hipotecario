@@ -13,36 +13,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/components/ui/use-toast"
-import { supabase } from "@/integrations/supabase/client"
-import { useExchangeRate } from "@/hooks/use-exchange-rate"
+// import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useTranslation } from "react-i18next"
 import { MoreVertical, Copy, Trash, ArrowUp, ArrowDown, ChevronsUpDown, Home } from "lucide-react"
-import { useAuth } from "@/context/auth-context"
+// import { useAuth } from "@/context/auth-context"
 import { useNavigate } from "react-router-dom"
 
 import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { usePropertyBonus } from "@/hooks/usePropertyBonus"
+import { useDuplicateProperty } from "@/hooks/properties/useDuplicate"
+import { useDeleteProperty } from "@/hooks/properties/useDelete"
 
-import { useDeleteProperty } from "@/hooks/properties"
+import type { Property } from "@/types/property";
+// import type { BonusRule } from "@/types/property";
+import { formatCurrency } from "@/lib/utils"
 
-type Property = {
-  id: string
-  name: string
-  price_cost: number
-  currency: string
-  property_insurance: number | null
-  property_insurance_type: "auto" | "manual"
-  is_first_home: boolean
-  is_sustainable: boolean
-  description?: string | null
-}
-
-type BonusRule = {
-  min_value: number
-  max_value: number
-  traditional_bonus: number
-  sustainable_bonus: number
-}
 
 export type PropertyListProps = {
   properties: Property[]
@@ -55,27 +40,17 @@ export type PropertyListProps = {
   onSort: (key: keyof Property) => void
 }
 
-const formatCurrency = (amount: number, currency: string) => {
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency === 'PEN' ? 'PEN' : 'USD',
-    currencyDisplay: 'symbol',
-  })
-  
-  const formatted = formatter.format(amount)
-  return currency === 'PEN' ? formatted.replace('PEN', 'S/') : formatted
-}
-
 export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, sortConfig, onSort }: PropertyListProps) {
   const { t } = useTranslation(['properties', 'global'])
   const { toast } = useToast()
-  const { data: exchangeRate } = useExchangeRate()
-  const { user } = useAuth()
+  // const { data: exchangeRate } = useExchangeRate()
+  // const { user } = useAuth()
   const navigate = useNavigate()
   const { resetDraft } = useMortgageDraftStore()
   
   const { calculateBonus } = usePropertyBonus()
   const deleteProperty = useDeleteProperty()
+  const duplicateProperty = useDuplicateProperty()
 
   const getSortIcon = (key: keyof Property) => {
     if (sortConfig?.key === key) {
@@ -92,74 +67,16 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
     navigate(`/mortgages/new?propertyId=${property.id}`)
   }
 
-  const handleDuplicate = async (e: React.MouseEvent, property: Property) => {
-    e.stopPropagation()
-    try {
-      if (!user) throw new Error(t('messages.no_user_found', 'No user found', { ns: 'global' }))
-
-      const duplicatedProperty = {
-        ...property,
-        name: `${property.name} (${t('ui.copy', 'Copy', { ns: 'global' })})`,
-        user_id: user.id,
-      }
-      delete (duplicatedProperty as any).id
-
-      const { data, error } = await supabase
-        .from("properties")
-        .insert(duplicatedProperty)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      toast({
-        title: t('ui.success', 'Success', { ns: 'global' }),
-        description: t('messages.property_duplicated', 'Property duplicated successfully', { ns: 'properties' }),
-      })
-
-      if (data) {
-        onPropertyUpdate(data, false)
-        
-        const channel = supabase.channel('property-updates')
-        channel.send({
-          type: 'broadcast',
-          event: 'property-created',
-          payload: { 
-            action: 'create', 
-            userId: user.id,
-            propertyId: data.id
-          },
-        })
-      }
-    } catch (error) {
-      console.error("Error duplicating property:", error)
-      toast({
-        variant: "destructive",
-        title: t('ui.error', 'Error', { ns: 'global' }),
-        description: t('messages.error_duplicating_property', 'Error duplicating property', { ns: 'properties' }),
-      })
-    }
+  const handleDuplicate = (e: React.MouseEvent, property: Property) => {
+    e.stopPropagation();
+    duplicateProperty.mutate(property);
   }
 
   const handleDelete = (e: React.MouseEvent, property: Property) => {
-    e.stopPropagation()
+    e.stopPropagation();
     deleteProperty.mutate(property.id, {
-      onSuccess: () => {
-        toast({
-          title: t('ui.success', { ns: 'global' }),
-          description: t('messages.property_deleted', { ns: 'properties' }),
-        })
-        onPropertyUpdate(property, true)
-      },
-      onError: (err) => {
-        console.error("Error deleting property:", err)
-        toast({
-          variant: "destructive",
-          title: t('ui.error', { ns: 'global' }),
-          description: t('messages.error_deleting_property', { ns: 'properties' }),
-        })
-      },
-    })
+      onSuccess: () => onPropertyUpdate(property, true),
+    });
   }
 
   return (
@@ -210,10 +127,10 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
                   </div>
                   </TableCell>
                 <TableCell>
-                  {formatCurrency(property.price_cost, property.currency)}
+                  {formatCurrency(property.price_cost, property.currency as 'USD' | 'PEN')}
                 </TableCell>
                 <TableCell>
-                  {formatCurrency(property.property_insurance || 0, property.currency)}
+                  {formatCurrency(property.property_insurance || 0, property.currency as 'USD' | 'PEN')}
                   <span className="text-xs text-muted-foreground ml-1">
                     ({t(`insurance.${property.property_insurance_type}`, property.property_insurance_type === 'auto' ? 'Automatic' : 'Manual', { ns: 'properties' })})
                   </span>
