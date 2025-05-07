@@ -1,7 +1,7 @@
 import { GoalSeekService } from "./goalSeek"
 import { FixedPaymentsService } from "./fixedPayments"
-import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios } from "@/services/mortgages/types/common"
-import { normalizeDate } from "@/lib/utils"
+import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios } from "@/types/common"
+import { normalizeDate } from "@/utils/utils"
 
 interface ExtraInstallment {
   amount: number

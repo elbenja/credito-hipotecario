@@ -1,4 +1,4 @@
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency } from "@/utils/utils"
 import { CollapsibleScenarioPanel } from "@/components/amortizations/collapsible-scenario-panel"
 import { ScenarioTable } from "@/components/amortizations/scenario-table"
 import type { BaseScenarioPanelProps } from "./types"

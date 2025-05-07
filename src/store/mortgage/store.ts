@@ -71,7 +71,7 @@ export const useMortgageDraftStore = create<MortgageDraftStore>()(
         }),
         
         resetDraft: () => {
-          console.log("Resetting draft to default values:", DEFAULT_DRAFT);
+          // console.log("Resetting draft to default values:", DEFAULT_DRAFT);
           set((state) => {
             // Preserve property data when resetting
             const preservedPropertyId = state.mortgageDraft?.property_id || '';

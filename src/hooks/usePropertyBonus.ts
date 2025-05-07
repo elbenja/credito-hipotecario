@@ -3,25 +3,9 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useExchangeRate } from './use-exchange-rate'
 
-export type Property = {
-  id: string
-  name: string
-  price_cost: number
-  currency: string
-  property_insurance: number | null
-  property_insurance_type: "auto" | "manual"
-  is_first_home: boolean
-  is_sustainable: boolean
-  description?: string | null
-  bonus?: number | null // Added for convenience
-}
+import type { Property } from '@/types/property'
 
-export type BonusRule = {
-  min_value: number
-  max_value: number
-  traditional_bonus: number
-  sustainable_bonus: number
-}
+
 
 export function usePropertyBonus() {
   const { data: exchangeRate } = useExchangeRate()

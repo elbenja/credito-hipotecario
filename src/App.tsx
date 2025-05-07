@@ -42,7 +42,7 @@ const queryClient = new QueryClient({
 const App = () => (
   <HelmetProvider>
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <QueryClientProvider client={queryClient}>
+      {/* <QueryClientProvider client={queryClient}> */}
         <BrowserRouter>
           <AuthProvider>
             <TooltipProvider>
@@ -134,7 +134,7 @@ const App = () => (
             </TooltipProvider>
           </AuthProvider>
         </BrowserRouter>
-      </QueryClientProvider>
+      {/* </QueryClientProvider> */}
     </ThemeProvider>
   </HelmetProvider>
 )

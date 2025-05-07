@@ -8,7 +8,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
-import { normalizeDate } from "@/lib/utils"
+import { normalizeDate } from "@/utils/utils"
 
 interface ExtraInstallmentFormValues {
   start_date: Date

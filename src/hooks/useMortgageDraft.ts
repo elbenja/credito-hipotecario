@@ -6,7 +6,7 @@ import { useMortgageDraftStore } from '@/store/mortgage/store'
 import { mortgageFormSchema, defaultValues, type MortgageFormValues } from '@/components/mortgages/schema'
 import { supabase } from '@/integrations/supabase/client'
 import { useMortgageBundle } from './useMortgageBundle'
-import { normalizeDate } from '@/lib/utils'
+import { normalizeDate } from '@/utils/utils'
 
 /**
  * This hook combines React Query for server state with Zustand for client state.
@@ -49,18 +49,12 @@ export function useMortgageDraft(mortgageId: string | null) {
     loan_protection_insurance: mortgage.loan_protection_insurance?.toString() || '0'
   } : mortgageDraft || defaultValues
   
-  // console.log("useMortgageDraft - formDefaultValues:", formDefaultValues);
-  // console.log("useMortgageDraft - defaultValues from schema:", defaultValues);
-  // console.log("useMortgageDraft - mortgageDraft from store:", mortgageDraft);
-  
   // Form initialization with correct format
   const form = useForm<MortgageFormValues>({
     resolver: zodResolver(mortgageFormSchema),
     defaultValues: formDefaultValues,
     mode: "onChange"
   })
-  
-  console.log("useMortgageDraft - form values after initialization:", form.getValues());
   
   // Initialize form values when mortgage data loads
   useEffect(() => {

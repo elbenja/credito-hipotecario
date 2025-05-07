@@ -11,6 +11,11 @@ export type Property = {
   description?: string | null
 }
 
+
+export type PropertyWithBonus = Property & {
+  bonus?: number | null // Added for convenience
+}
+
 export type BonusRule = {
   min_value: number
   max_value: number

@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { format } from "date-fns"
+import { format } from "date-fns"  // try later parseISO
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

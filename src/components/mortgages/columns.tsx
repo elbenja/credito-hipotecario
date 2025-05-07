@@ -1,7 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { Car, Clock, CreditCard, Calendar, DollarSign, Compass, Armchair, TrendingDown, Wallet, Axe, ArrowUpDown } from "lucide-react"
 import type { Mortgage, Property } from "../../types"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency } from "@/utils/utils"
 import { Badge } from "@/components/ui/badge"
 import { MoreHorizontal, Copy, Trash2 } from "lucide-react"
 import {

@@ -1,4 +1,4 @@
-import type { CalculationResults, ExtraPayment, RateChange } from './common';
+import type { CalculationResults, ExtraPayment, RateChange } from '@/types/common';
 
 export type ScenarioType = 'regular' | 'accelerated' | 'lower_payment' | 'new_rate';
 

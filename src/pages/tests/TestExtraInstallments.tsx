@@ -11,7 +11,7 @@ import { amortizationFormSchema, type AmortizationFormValues, defaultValues } fr
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 
 
-import { cn, formatCurrency, formatDate, normalizeDate, createLocalDate } from "@/lib/utils"
+import { cn, formatCurrency, formatDate, normalizeDate, createLocalDate } from "@/utils/utils"
 import { useToast } from "@/components/ui/use-toast"
 import { ExtraInstallmentsSection } from "@/components/mortgages/extra-installments-section"
 

@@ -4,7 +4,7 @@ import type {
   PaymentDetail,
   Property,
   BonusRule
-} from '../types/common';
+} from '@/types/common';
 
 export class LoanCalculator {
   private static readonly FIXED_VALUES = {

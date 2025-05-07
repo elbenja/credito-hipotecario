@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
-import { cn, normalizeDate, formatCurrency, handleInputFocus } from "@/lib/utils"
+import { cn, normalizeDate, formatCurrency, handleInputFocus } from "@/utils/utils"
 import type { Property } from "./property-select"
 import type { MortgageFormValues } from "./schema"
 import { Separator } from "@/components/ui/separator"
@@ -66,13 +66,10 @@ export function MortgageDetailsForm({
 
   // Watch the down payment field for real-time calculation
   const downPayment = form.watch("down_payment")
-  console.log("Raw downPayment value:", downPayment, "Type:", typeof downPayment)
   const numericDownPayment = parseFloat(downPayment?.replace(/[^0-9.]/g, "") || "0")
-  console.log("Numeric downPayment after parsing:", numericDownPayment, "Type:", typeof numericDownPayment)
 
   // Optimize loan amount calculation with memoization and caching
   const loanAmount = useMemo(() => {
-    console.log("Recalculating loan amount with downPayment:", numericDownPayment)
     if (!selectedProperty || !selectedProperty.price_cost) return 0;
     
     // Skip recalculation when not necessary
@@ -203,15 +200,12 @@ export function MortgageDetailsForm({
                     <CurrencyInput 
                       value={field.value || '0'}
                       onChange={(value) => {
-                        console.log("CurrencyInput onChange value:", value)
                         // Ensure empty values are treated as "0"
                         const finalValue = value === '' ? '0' : value;
-                        console.log("CurrencyInput finalValue:", finalValue)
                         field.onChange(finalValue);
                         
                         // Make sure when empty/zero values are used, the form is updated immediately
                         setTimeout(() => {
-                          console.log("CurrencyInput setTimeout - current field value:", form.getValues("down_payment"))
                           // Always ensure we have a valid value - either what was entered or 0
                           const currentValue = form.getValues("down_payment");
                           const safeValue = !currentValue || currentValue === '' ? '0' : currentValue;

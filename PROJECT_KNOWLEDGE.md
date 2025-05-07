@@ -81,41 +81,58 @@ To optimize performance and reduce direct calls to the database for bonus calcul
   ```
 - **Implementation:**
   ```sql
-  CREATE OR REPLACE FUNCTION property_bonus(p_property_id UUID)
-  RETURNS NUMERIC AS $$
+  CREATE OR REPLACE FUNCTION property_bonus(p_property_id uuid)
+  RETURNS numeric AS $$
   DECLARE
-    p_price_cost NUMERIC;
-    p_is_first_home BOOLEAN;
-    p_is_sustainable BOOLEAN;
-    bonus_value NUMERIC := 0;
-    bonus_record RECORD;
+    p_price_cost     numeric;
+    p_currency       text;
+    p_is_first_home  boolean;
+    p_is_sustainable boolean;
+    p_price_in_pen   numeric;
+    bonus_record     bonus_rules%rowtype;
+    v_rate           numeric;
   BEGIN
-    -- Get property details
-    SELECT price_cost, is_first_home, is_sustainable
-    INTO p_price_cost, p_is_first_home, p_is_sustainable
+    -- Load the raw cost, currency and flags
+    SELECT price_cost, currency, is_first_home, is_sustainable
+      INTO p_price_cost, p_currency, p_is_first_home, p_is_sustainable
     FROM properties
     WHERE id = p_property_id;
 
-    -- Check if eligible for bonus (must be first home)
-    IF p_is_first_home = TRUE THEN
-      -- Find matching bonus bracket
-      SELECT *
-      INTO bonus_record
-      FROM bonus_rules
-      WHERE p_price_cost >= min_value AND p_price_cost < max_value
+    -- Convert USD to PEN if needed
+    IF p_currency = 'USD' THEN
+      SELECT rate
+        INTO v_rate
+      FROM exchange_rates
+      WHERE from_currency = 'USD'
+        AND to_currency   = 'PEN'
       LIMIT 1;
 
-      -- Determine bonus amount based on property type
+      -- Fallback to 1 if no rate found
+      p_price_in_pen := p_price_cost * coalesce(v_rate, 1);
+    ELSE
+      p_price_in_pen := p_price_cost;
+    END IF;
+
+    -- Only first-home properties are eligible
+    IF p_is_first_home THEN
+      SELECT *
+        INTO bonus_record
+      FROM bonus_rules
+      WHERE is_active
+        AND p_price_in_pen >= min_value
+        AND p_price_in_pen  < max_value
+      LIMIT 1;
+
       IF FOUND THEN
-        IF p_is_sustainable = TRUE THEN
-          bonus_value := bonus_record.sustainable_bonus;
+        IF p_is_sustainable THEN
+          RETURN bonus_record.sustainable_bonus;
         ELSE
-          bonus_value := bonus_record.traditional_bonus;
+          RETURN bonus_record.traditional_bonus;
         END IF;
       END IF;
     END IF;
 
-    RETURN bonus_value;
+    RETURN 0;
   END;
   $$ LANGUAGE plpgsql;
   ```
@@ -269,7 +286,7 @@ src/
 │           ├── goalSeek.ts     # GoalSeek service for payment calculation
 │           └── fixedPayments.ts # FixedPayments service for accelerated scenarios
 └── store/
-    └── amortization/
+    └── mortgages/
         └── store.ts            # Zustand state management
 ```
 

@@ -16,9 +16,9 @@ import {
 } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { CalendarIcon } from "lucide-react"
-import { cn, formatDate, formatCurrency, normalizeDate } from "@/lib/utils"
+import { cn, formatDate, formatCurrency, normalizeDate } from "@/utils/utils"
 import { amortizationDataService } from "@/services/amortization/calculations/amortizationData"
-import type { Property } from "@/services/amortization/types/common"
+import type { Property } from "@/types/common"
 import type { AmortizationRow } from "@/services/amortization/calculations/amortizationData"
 
 export default function TestCalculator() {

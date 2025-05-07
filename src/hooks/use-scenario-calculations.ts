@@ -2,10 +2,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { useDebounce } from "./use-debounce"
-import { ScenarioCalculator } from "@/services/mortgages/services/scenarioCalculator"
+import { ScenarioCalculator } from "@/utils/calculations/mortgage/scenarioCalculator"
 import type { Database } from "@/types/supabase"
 import { addMonths, startOfMonth } from "date-fns"
-import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios } from "@/services/mortgages/types/common"
+import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios } from "@/types/common"
 
 type ScenarioType = Database["public"]["Enums"]["scenario_type"]
 

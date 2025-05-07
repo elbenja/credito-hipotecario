@@ -2,7 +2,7 @@ import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMe
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Menu, X, Home } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/utils"
 import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { useAuth } from "@/context/auth-context"

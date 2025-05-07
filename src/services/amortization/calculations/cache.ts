@@ -2,7 +2,7 @@ import type {
   BaseAmortizationValues,
   CalculationResults,
   Property
-} from '../types/common';
+} from '@/types/common';
 import type { ScenarioType } from '../types/scenarios';
 
 interface CacheKey {

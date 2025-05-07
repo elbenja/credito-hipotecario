@@ -23,11 +23,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
-import { cn, normalizeDate } from "@/lib/utils"
+import { cn, normalizeDate } from "@/utils/utils"
 import { CurrencyInput } from "@/components/ui/currency-input"
 
 import { z } from "zod"
-import { formatCurrency, formatDate } from "@/lib/utils"
+import { formatCurrency, formatDate } from "@/utils/utils"
 
 // Create a function to generate the schema with dynamic validation based on firstInstallmentDate
 const createExtraInstallmentSchema = (firstInstallmentDate?: Date, t?: any) => {

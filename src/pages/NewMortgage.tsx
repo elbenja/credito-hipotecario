@@ -20,18 +20,19 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { PropertySelect, PropertyDisplay, type Property } from "@/components/mortgages/property-select"
+import { PropertyDisplay, type Property } from "@/components/mortgages/property-select"
+import { PropertySelect } from "@/components/properties/PropertySelect"
 import { MortgageDetailsForm } from "@/components/mortgages/mortgage-details-form"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
-import { NoMoreSpace } from "@/components/common/NoMoreSpace"
-// import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
-import { normalizeDate } from "@/lib/utils"
+
+import { normalizeDate } from "@/utils/utils"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
-import { ScenarioCalculator } from "@/services/mortgages/services/scenarioCalculator"
+import { ScenarioCalculator } from "@/utils/calculations/mortgage/scenarioCalculator"
 import { defaultValues } from "@/components/mortgages/schema"
 import { useAddMortgage } from "@/hooks/mortgages"
+
 export default function NewMortgage() {
   const addMortgage = useAddMortgage()
   const { t } = useTranslation(['mortgages', 'dashboard', 'global'])

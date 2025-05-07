@@ -1,4 +1,4 @@
-import type { PaymentRow } from "../types/common"
+import type { PaymentRow } from "@/types/common"
 
 interface ExtraInstallment {
   amount: number

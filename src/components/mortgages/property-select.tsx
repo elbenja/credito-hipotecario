@@ -23,7 +23,7 @@ import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
 import { UseFormReturn } from "react-hook-form"
 import { MortgageFormValues as AmortizationFormValues } from "./schema"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency } from "@/utils/utils"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { usePropertyBonus } from '@/hooks/usePropertyBonus'
 
@@ -32,7 +32,7 @@ import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { useQuery } from "@tanstack/react-query"
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/utils"
 import {
   Popover,
   PopoverContent,

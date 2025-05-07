@@ -1,4 +1,4 @@
-import { formatCurrency, formatDate } from "@/lib/utils"
+import { formatCurrency, formatDate } from "@/utils/utils"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { BadgeCheck } from "lucide-react"
 

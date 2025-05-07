@@ -32,7 +32,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { cn, formatDate, createLocalDate } from "@/lib/utils"
+import { cn, formatDate, createLocalDate } from "@/utils/utils"
 import { newRateSchema, type NewRateFormValues } from "@/components/mortgages/new-rate-schema"
 
 interface NewRateFormProps {

@@ -1,7 +1,7 @@
 import { ArrowRight, Star } from "lucide-react"
 import { Avatar, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/utils"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/context/auth-context"
 

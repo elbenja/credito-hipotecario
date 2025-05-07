@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, ElementType } from "react"
 import { Pencil } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/utils"
 
 interface EditableHeadingProps {
   value: string

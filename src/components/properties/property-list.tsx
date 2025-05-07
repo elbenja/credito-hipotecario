@@ -26,7 +26,7 @@ import { useDeleteProperty } from "@/hooks/properties/useDelete"
 
 import type { Property } from "@/types/property";
 // import type { BonusRule } from "@/types/property";
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency } from "@/utils/utils"
 
 
 export type PropertyListProps = {

@@ -1,4 +1,4 @@
-import type { Property } from "../types/common"
+import type { Property } from "@/types/common"
 
 export interface AmortizationRow {
   row: number;

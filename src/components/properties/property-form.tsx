@@ -13,11 +13,12 @@ import { Property, BonusRule } from "@/types/property"
 import { useTranslation } from "react-i18next"
 import { useMemo, useState, useEffect, useRef } from "react"
 
-import { LoanCalculator } from "@/services/mortgages/calculations/loan"
+import { LoanCalculator } from "@/utils/calculations/mortgage/loan"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { useQueryClient } from "@tanstack/react-query"
 import { useAddProperty } from "@/hooks/properties"
 // Define the schema creator function that takes the translation function
+
 export const createPropertyFormSchema = (t: any) => z.object({
   name: z.string().min(1, {
     message: t('property_form.validation.property_name_required', 'Property name is required', { ns: 'components' })

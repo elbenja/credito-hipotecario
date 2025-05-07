@@ -1,7 +1,7 @@
 
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import { PaymentDetail } from '@/services/amortization/types/common'
+import { PaymentDetail } from '@/types/common'
 
 export type ScenarioData = {
   total_interest_and_insurance: number

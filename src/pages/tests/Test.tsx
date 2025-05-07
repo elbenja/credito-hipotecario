@@ -1,4 +1,4 @@
-import { cn, normalizeDate } from "@/lib/utils";
+import { cn, normalizeDate } from "@/utils/utils";
 
 import { es } from 'date-fns/locale';
 import { useTranslation } from "react-i18next";

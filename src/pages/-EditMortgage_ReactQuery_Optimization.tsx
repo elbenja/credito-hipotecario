@@ -27,7 +27,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { mortgageFormSchema, type MortgageFormValues } from "@/components/mortgages/schema"
 import { useToast } from "@/components/ui/use-toast"
-import { createLocalDate, normalizeDate, parseDatabaseDate } from "@/lib/utils"
+import { createLocalDate, normalizeDate, parseDatabaseDate } from "@/utils/utils"
 import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
 import { 
   RegularPanelGraph,
@@ -41,9 +41,9 @@ import { useMemo, useCallback, useEffect, useState } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { Heart } from "lucide-react"
-import { ScenarioResult } from "@/services/mortgages/types/common"
+import { ScenarioResult } from "@/types/common"
 import SVGfixed from "@/components/ui/svg-fixed"
-import { LoanCalculator } from "@/services/mortgages/calculations/loan"
+import { LoanCalculator } from "@/utils/calculations/mortgage/loan"
 import React from "react"
 import { useMortgageBundle } from "@/hooks/useMortgageBundle"
 import type { Property } from "@/components/mortgages/property-select"
@@ -707,7 +707,7 @@ export default function EditMortgage() {
           if (rateChangesError) throw rateChangesError;
           
           // Import the ScenarioCalculator
-          const { ScenarioCalculator } = await import("@/services/mortgages/services/scenarioCalculator");
+          const { ScenarioCalculator } = await import("@/utils/calculations/mortgage/scenarioCalculator");
           
           // Calculate updated scenarios with the new parameters
           const updatedScenarios = ScenarioCalculator.calculateScenarios({

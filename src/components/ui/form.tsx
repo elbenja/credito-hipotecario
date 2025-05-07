@@ -11,7 +11,7 @@ import {
 } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/utils"
 import { Label } from "@/components/ui/label"
 
 const Form = FormProvider

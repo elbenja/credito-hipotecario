@@ -1,6 +1,6 @@
 import * as z from "zod"
 import { startOfMonth, addMonths } from "date-fns"
-import { formatDate, normalizeDate } from "@/lib/utils"
+import { formatDate, normalizeDate } from "@/utils/utils"
 
 // Unified schema for both amortizations and mortgages
 export const mortgageFormSchema = z.object({

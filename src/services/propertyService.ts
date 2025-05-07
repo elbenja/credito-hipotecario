@@ -1,35 +1,43 @@
 // src/services/propertyService.ts
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client"
-import type { Property } from "@/types/property";
-import { toast } from "@/components/ui/use-toast";
+import type { Property, PropertyWithBonus } from "@/types/property";
 
 /**
  * Fetches all properties for a given user.
  * @param userId - the UUID of the current user
- * @returns array of Property objects
+ * @returns array of PropertyWithBonus objects
  */
-export async function fetchProperties(userId: string): Promise<Property[]> {
+export async function fetchProperties(userId: string): Promise<PropertyWithBonus[]> {
   const { data, error } = await supabase
-    .from('properties')
+    .from("properties")
     .select("*")
     .eq("user_id", userId);
 
   if (error) {
     console.error("Error fetching properties:", error);
-    toast({
-        variant: "destructive",
-        title: t('global:ui.error'),
-        description: t('properties:messages.error_loading_properties'),
-      })
+    
+    // toast debt
+    // toast ({
+    //   variant: "destructive", title: t( 'global:ui.error'),
+    //   description: t( 'properties:messages.error_loading_properties'),
+    //   })
     throw error;
   }
 
-  // Normalize default insurance type
-  return (data ?? []).map((p) => ({
-    ...p,
-    property_insurance_type: p.property_insurance_type ?? "auto",
-  }));
+  const props = data ?? [];
+  const enriched = await Promise.all(
+    props.map(async (p) => {
+      const { data: bonusValue, error: bonusError } = await supabase
+        .rpc("property_bonus", { p_property_id: p.id });
+      return {
+        ...p,
+        property_insurance_type: p.property_insurance_type ?? "auto",
+        bonus: bonusValue ?? 0,
+      };
+    })
+  );
+  return enriched;
 }
 
 /**
@@ -37,7 +45,7 @@ export async function fetchProperties(userId: string): Promise<Property[]> {
  * Delegates to fetchProperties in the service layer.
  */
 export function useProperties(userId?: string | null) {
-  return useQuery<Property[], Error>({
+  return useQuery<PropertyWithBonus[], Error>({
     queryKey: ["properties", userId],
     queryFn:     () => (userId ? fetchProperties(userId) : []),
     enabled:     Boolean(userId),

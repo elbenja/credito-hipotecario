@@ -17,7 +17,7 @@ import {
 import { Form } from "@/components/ui/form"
 import { MortgageDetailsForm } from "@/components/mortgages/mortgage-details-form"
 import { useToast } from "@/components/ui/use-toast"
-import { parseDatabaseDate } from "@/lib/utils"
+import { parseDatabaseDate } from "@/utils/utils"
 import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
 import { 
   RegularPanelGraph,
