@@ -129,18 +129,15 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
         //   },
         // });
 
-
         try {
           const fresh = await updateProperty.mutateAsync(payload);
-          console.log("[PropertyForm v2] mutateAsync → fresh:", fresh);
+          // console.log("[PropertyForm v2] mutateAsync → fresh:", fresh);
           onSuccess(fresh);
           onClose();
         } catch (err) {
           console.error("[PropertyForm] mutation error", err);
           // show toast or error message
         }
-
-
 
         toast({
           title: tGlobal('ui.success'),

@@ -118,21 +118,10 @@ export default function NewMortgage() {
 
   // Function to handle property selection from PropertySelect
   const handlePropertyChange = (updated: PropertyWithBonus | null) => {
-    // const bonus = usePropertyBonus().calculateBonus(property);
 
-    // useEffect(() => {
-    //   setSelectedProperty(property);
-    // }, [property]);
-  
-    // useEffect(() => {
-    //   const unsub = useMortgageDraftStore.subscribe((state) => {
-    //     console.log("🦆 draft changed:", state.mortgageDraft);
-    //   });
-    //   return unsub;
-    // }, []);
   
     setSelectedProperty(updated)
-    console.log("beforeupdated draft", updated)
+    // console.log("beforeupdated draft", updated)
 
     if (updated) {
       // Update the form property ID
@@ -155,7 +144,7 @@ export default function NewMortgage() {
       // 4) recalc loan now that bonus has changed
       calcLoanAmount();
       
-      console.log("after updateDraft:", useMortgageDraftStore.getState().mortgageDraft);
+      // console.log("after updateDraft:", useMortgageDraftStore.getState().mortgageDraft);
 
       form.setValue("property_id", updated.id, { shouldValidate: true })
       
@@ -374,13 +363,6 @@ export default function NewMortgage() {
             <div className="w-full md:w-[40%] md:min-w-[320px] md:max-w-[540px] relative flex-shrink-0">
               <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-border"></div>
               <div className="p-0">
-              <button onClick={() => {
-                    console.log(property)
-                    resetDraft()
-                    setSelectedProperty(null)
-                  }}>
-                  resetdraft()
-                  </button>
 
                 {property ? (
                   <>
