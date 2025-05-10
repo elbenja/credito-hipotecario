@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import { devtools, persist } from 'zustand/middleware'
-import { Property } from '@/components/mortgages/property-select'
+import { devtools , persist } from 'zustand/middleware'
+import { PropertyWithBonus } from '@/types/property'
 
 // The mortgage form draft data that can be edited by the user
 export interface MortgageDraft {
@@ -15,7 +15,7 @@ export interface MortgageDraft {
   loan_protection_type: "none" | "custom" | "individual" | "joint"
   loan_protection_insurance: string
   loan_amount?: number
-  property?: Property
+  property?: PropertyWithBonus
 }
 
 // The store interface with actions
@@ -29,6 +29,7 @@ interface MortgageDraftStore {
   updateDraft: (updates: Partial<MortgageDraft>) => void
   resetDraft: () => void
   markClean: () => void
+  calcLoanAmount: () => void;
 }
 
 // Default form values
@@ -42,12 +43,13 @@ const DEFAULT_DRAFT: MortgageDraft = {
   first_installment_date: new Date(),
   loan_protection_type: "individual",
   loan_protection_insurance: "0.028",
+  property: undefined,
 }
 
 // Create the store
 export const useMortgageDraftStore = create<MortgageDraftStore>()(
   devtools(
-    persist(
+    // persist(
       (set) => ({
         // Initial state
         mortgageDraft: null,
@@ -74,14 +76,14 @@ export const useMortgageDraftStore = create<MortgageDraftStore>()(
           // console.log("Resetting draft to default values:", DEFAULT_DRAFT);
           set((state) => {
             // Preserve property data when resetting
-            const preservedPropertyId = state.mortgageDraft?.property_id || '';
-            const preservedProperty = state.mortgageDraft?.property;
+            // const preservedPropertyId = state.mortgageDraft?.property_id || '';
+            // const preservedProperty = state.mortgageDraft?.property;
             
             return { 
               mortgageDraft: { 
                 ...DEFAULT_DRAFT,
-                property_id: preservedPropertyId,
-                property: preservedProperty
+                // property_id: preservedPropertyId,
+                // property: preservedProperty
               },
               isDirty: false 
             };
@@ -89,11 +91,23 @@ export const useMortgageDraftStore = create<MortgageDraftStore>()(
         },
         
         markClean: () => set({ isDirty: false }),
+        calcLoanAmount: () => set((state) => {
+          const draft = state.mortgageDraft;
+          if (!draft) return state;
+          const down = parseFloat(draft.down_payment) || 0;
+          const price = draft.property?.price_cost ?? 0;
+          const bonus = draft.property?.bonus ?? 0;
+          const loan = Math.max(0, price - bonus - down);
+          return {
+            mortgageDraft: { ...draft, loan_amount: loan },
+            isDirty: true,
+          };
+        }),
       }),
       {
         name: 'mortgage-draft-storage',
-        partialize: (state) => ({ mortgageDraft: state.mortgageDraft }),
+        partialize: (state: MortgageDraftStore) => ({ mortgageDraft: state.mortgageDraft }),
       }
-    )
+    // )
   )
 ) 

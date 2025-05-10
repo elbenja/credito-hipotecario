@@ -3,9 +3,14 @@ import { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { useAuth } from '@/context/auth-context';
-import { supabase } from '@/integrations/supabase/client';
-import type { Property } from '@/types/property';
+// import { supabase } from '@/integrations/supabase/client';
+import type { PropertyWithBonus } from '@/types/property';
 import { useProperties } from '@/services/propertyService';
+
+//zustand
+
+import { useMortgageDraftStore } from "@/store/mortgage/store"
+
 
 export function PropertySelect({
   form,
@@ -13,14 +18,32 @@ export function PropertySelect({
   disabled = false,
 }: {
   form: UseFormReturn<any>;
-  onPropertyChange?: (p: Property | null) => void;
+  onPropertyChange?: (p: PropertyWithBonus | null) => void;
   disabled?: boolean;
 }) {
-  const [list, setList] = useState<Property[]>([]);
+  const [list, setList] = useState<PropertyWithBonus[]>([]);
   const [loading, setLoading] = useState(false);
 
   const { user } = useAuth()
-  const { data: properties = [], isLoading, refetch } = useProperties(user?.id)
+  // const { data: PropertyWithBonus = [], isLoading: boolean, refetch } = useProperties(user?.id)
+  const { updateDraft } = useMortgageDraftStore()
+
+//finde the error here
+const {
+  data: PropertyWithBonus = [],
+  isLoading,
+  isError,
+  error
+} = useProperties(user?.id);
+
+useEffect(() => {
+  if (isError) console.error("Failed to load properties:", error);
+}, [isError, error]);
+
+useEffect(() => {
+  setList(PropertyWithBonus);
+}, [PropertyWithBonus]);
+// console.error(PropertyWithBonus); 
 
   return (
     <FormField control={form.control} name="property_id" render={({ field }) => (
@@ -34,11 +57,17 @@ export function PropertySelect({
               field.onChange(val);
               const sel = list.find((p) => p.id === val) ?? null;
               onPropertyChange?.(sel);
+              if (sel) {
+                updateDraft({
+                  property_id: sel.id,
+                  property: sel,
+                });
+              }
             }}
           >
             <SelectTrigger><SelectValue placeholder="Select property" /></SelectTrigger>
             <SelectContent>
-              {properties.map((p) => (
+              {PropertyWithBonus.map((p) => (
                 <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
               ))}
             </SelectContent>

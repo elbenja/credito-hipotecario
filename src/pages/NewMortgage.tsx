@@ -20,23 +20,34 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { PropertyDisplay, type Property } from "@/components/mortgages/property-select"
+
+/// new hooks and types
+import { PropertyDisplay } from "@/components/properties/PropertyDisplay"
 import { PropertySelect } from "@/components/properties/PropertySelect"
+import type { Property , PropertyWithBonus } from "@/types/property"
+
 import { MortgageDetailsForm } from "@/components/mortgages/mortgage-details-form"
-import { supabase } from "@/integrations/supabase/client"
+import { fetchPropertyWithBonus } from "@/services/propertyService";
 import { useToast } from "@/components/ui/use-toast"
 
 import { normalizeDate } from "@/utils/utils"
-import { useMortgageDraft } from "@/hooks/useMortgageDraft"
-import { useMortgageDraftStore } from "@/store/mortgage/store"
+
 import { ScenarioCalculator } from "@/utils/calculations/mortgage/scenarioCalculator"
 import { defaultValues } from "@/components/mortgages/schema"
 import { useAddMortgage } from "@/hooks/mortgages"
 
+import { useMortgageDraft } from "@/hooks/useMortgageDraft"
+import { useMortgageDraftStore } from "@/store/mortgage/store"
+import { usePropertyBonus } from "@/hooks/usePropertyBonus"
+
+
+
 export default function NewMortgage() {
   const addMortgage = useAddMortgage()
+
   const { t } = useTranslation(['mortgages', 'dashboard', 'global'])
   const { t: tMortgages } = useTranslation('mortgages')
+  
   const { user } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -48,8 +59,10 @@ export default function NewMortgage() {
   
   // Reset draft store on component mount
   // This ensures we always start with default values
-  const { resetDraft: resetStore, updateDraft } = useMortgageDraftStore()
-  
+  const { resetDraft: resetStore} = useMortgageDraftStore()
+  const { updateDraft, calcLoanAmount } = useMortgageDraftStore()
+  const { calculateBonus } = usePropertyBonus();
+
   // Now use the mortgage draft hook for form handling
   const {
     form,
@@ -59,174 +72,106 @@ export default function NewMortgage() {
   } = useMortgageDraft(null) // Pass null since this is a new mortgage
   
   // State for property data when coming from property-list
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+  const [selectedProperty, setSelectedProperty] = useState<PropertyWithBonus | undefined | null>(null)
   
   // Fetch property details if needed
   const fetchPropertyIfNeeded = async (propertyId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("properties")
-        .select(`
-          id,
-          name,
-          currency,
-          price_cost,
-          property_insurance,
-          property_insurance_type,
-          is_first_home,
-          is_sustainable
-        `)
-        .eq("id", propertyId)
-        .single()
-        
-      if (error) throw error
-      
-      if (data) {
-        // Get bonus using database function
-        const { data: bonusAmount, error: bonusError } = await supabase
-          .rpc('property_bonus', { p_property_id: data.id })
-        
-        if (bonusError) console.error("Error fetching bonus:", bonusError)
-        
-        const propertyWithBonus = {
-          ...data,
-          bonus: bonusAmount || 0
-        } as Property
-        
-        // Set selected property
-        setSelectedProperty(propertyWithBonus)
-        
-        // Update draft with property info
-        updateDraft({ 
-          property: propertyWithBonus,
-          name: `${data.name} Mortgage` 
-        })
-      }
-    } catch (error) {
-      console.error("Error fetching property:", error)
+    if (!user?.id) {
+      console.error("No user ID available");
+      return;
     }
-  }
+    try {
+      const property = await fetchPropertyWithBonus(user.id, propertyId);
+      setSelectedProperty(property);
+      updateDraft({
+        property,
+        name: `${property.name} Mortgage`,
+      });
+    } catch (error) {
+      console.error("Error fetching property:", error);
+    }
+  };
   
   useEffect(() => {
-    // Reset the store when component mounts to ensure we start fresh
-    resetStore()
-    
-    // Also reset the form and selected property
-    setSelectedProperty(null)
-    
-    // Reset the draft form as well
-    if (resetDraft) {
-      resetDraft()
-    }
-    
-    // If we have a property ID from URL, update the draft with it
     if (propertyIdFromUrl) {
-      updateDraft({
-        ...defaultValues,
-        property_id: propertyIdFromUrl
-      })
-      
-      // Fetch the property details
-      fetchPropertyIfNeeded(propertyIdFromUrl)
+      // load it
+      updateDraft({ property_id: propertyIdFromUrl });
+      fetchPropertyIfNeeded(propertyIdFromUrl);
+    } else {
+      // no query param → clear out any leftover
+      resetStore();
+      resetDraft();
+      setSelectedProperty(null);
     }
-    
-    // Cleanup on unmount
-    return () => {
-      // We will reset when navigating away too for extra safety
-      resetStore()
-      if (resetDraft) {
-        resetDraft()
-      }
-    }
-  }, [resetStore, updateDraft, resetDraft, propertyIdFromUrl])
+  }, [propertyIdFromUrl]);
   
+  
+
   // State to track if form is being submitted
   const [isSubmitting, setIsSubmitting] = useState(false)
   
-  // // Subscription limits hooks and state
-  // const {
-  //   isLoading: isCheckingLimits,
-  //   hasReachedLimit,
-  //   checkLimit,
-  //   currentUsage,
-  //   planLimit,
-  //   currentPlan,
-  //   nextPlan,
-  // } = useSubscriptionLimits()
-  
-  // const [isLimitCheckDone, setIsLimitCheckDone] = useState(false)
-  // const [isLimitReached, setIsLimitReached] = useState(false)
-  // const [mortgageCount, setMortgageCount] = useState(0)
-  
   // Property is now coming from either the selectedProperty state or the mortgageDraft
-  const property = selectedProperty || mortgageDraft?.property
+  // second part is pulling old data from the draft
+  const property = selectedProperty //|| mortgageDraft?.property
   
+  // console.log("const property:", property)
+
   // Function to handle property selection from PropertySelect
-  const handlePropertyChange = (newProperty: Property | null) => {
-    setSelectedProperty(newProperty)
-    
-    if (newProperty) {
+  const handlePropertyChange = (updated: PropertyWithBonus | null) => {
+    // const bonus = usePropertyBonus().calculateBonus(property);
+
+    // useEffect(() => {
+    //   setSelectedProperty(property);
+    // }, [property]);
+  
+    // useEffect(() => {
+    //   const unsub = useMortgageDraftStore.subscribe((state) => {
+    //     console.log("🦆 draft changed:", state.mortgageDraft);
+    //   });
+    //   return unsub;
+    // }, []);
+  
+    setSelectedProperty(updated)
+    console.log("beforeupdated draft", updated)
+
+    if (updated) {
       // Update the form property ID
-      form.setValue("property_id", newProperty.id, { shouldValidate: true })
+      const bonusValue = calculateBonus(updated);
+
+      // 2) merge it into a new enriched object
+      const enriched: PropertyWithBonus = {
+        ...updated,
+        bonus: bonusValue,
+      };
+      // 3) update your local state & draft store
+     
+      updateDraft({ 
+        property: enriched, 
+        property_id: enriched.id 
+      });
+      setSelectedProperty(enriched);
+
+      // console.log("newProperty", updated)
+      // 4) recalc loan now that bonus has changed
+      calcLoanAmount();
+      
+      console.log("after updateDraft:", useMortgageDraftStore.getState().mortgageDraft);
+
+      form.setValue("property_id", updated.id, { shouldValidate: true })
       
       // Update the form name if empty
       if (!form.getValues("name")) {
-        const defaultName = `${newProperty.name} Mortgage`
+        const defaultName = `${updated.name} Mortgage`
         form.setValue("name", defaultName, { shouldValidate: true })
       }
       
-      // Update the draft in store
-      updateDraft({ 
-        property_id: newProperty.id,
-        property: newProperty 
-      })
+
     } else {
       form.setValue("property_id", "", { shouldValidate: true })
     }
   }
 
-  // // Function to check limits once
-  // const checkLimitOnce = async () => {
-  //   if (!user?.id || !currentPlan) return false
-    
-  //   try {
-  //     // Get direct count from database
-  //     const { count, error } = await supabase
-  //       .from("mortgages")
-  //       .select("id", { count: "exact", head: true })
-  //       .eq("user_id", user.id)
 
-  //     if (error) {
-  //       return false
-  //     }
-      
-  //     // Store the count
-  //     const currentCount = count || 0
-  //     setMortgageCount(currentCount)
-      
-  //     // Determine the user's plan limit
-  //     const limitValue = planLimit > 0 ? planLimit : 
-  //                       (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3)
-      
-  //     // Simple comparison to determine if limit is reached
-  //     const limitReached = currentCount >= limitValue
-      
-  //     // Set state based on the check
-  //     setIsLimitReached(limitReached)
-  //     return limitReached
-  //   } catch (err) {
-  //     return false
-  //   } finally {
-  //     setIsLimitCheckDone(true)
-  //   }
-  // }
-  
-  // Run the limit check when component mounts
-  // useEffect(() => {
-  //   if (!isLimitCheckDone && user?.id && currentPlan) {
-  //     checkLimitOnce()
-  //   }
-  // }, [isLimitCheckDone, user?.id, currentPlan])
 
   // Form submission handler
   const handleFormSubmit = async (values: any) => {
@@ -244,18 +189,7 @@ export default function NewMortgage() {
         return
       }
       
-      // // Check limits
-      // const isLimitExceeded = await checkLimitOnce()
-      // if (isLimitExceeded) {
-      //   toast({
-      //     variant: "destructive",
-      //     title: t("ui.error", { ns: "global" }),
-      //     description: "You have reached your plan limit for mortgages"
-      //   })
-      //   setIsSubmitting(false)
-      //   return
-      // }
-      
+
       // Parse form values
       const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, "") || "0")
       const interestRate = parseFloat(values.interest_rate)
@@ -344,16 +278,7 @@ export default function NewMortgage() {
         saved_scenario_breakeven_point: regularScenario.summary.breakeven_point || null
       }
       
-      // Save mortgage to database
-      // const { data, error } = await supabase
-      //   .from("mortgages")
-      //   .insert(mortgageData)
-      //   .select()
-      //   .single()
-        
-      // if (error) throw error
 
-    
        // Save mortgage to database (optimistically via React Query)
        addMortgage.mutate(mortgageData, {
         onSuccess(newRow) {
@@ -389,75 +314,6 @@ export default function NewMortgage() {
     }
   }
 
-  // // If we haven't checked limits yet or loading property data, show a loading state
-  // if ((!isLimitCheckDone && user?.id) || isLoadingDraft) {
-  //   return (
-  //     <DashboardLayout
-  //       header={{
-  //         title: (
-  //           <Breadcrumb>
-  //             <BreadcrumbList>
-  //               <BreadcrumbItem>
-  //                 <Link to="/mortgages" className="transition-colors hover:text-foreground">
-  //                   {t("sections.mortgages", { ns: "dashboard" })}
-  //                 </Link>
-  //               </BreadcrumbItem>
-  //               <BreadcrumbSeparator />
-  //               <BreadcrumbItem>
-  //                 <BreadcrumbPage>
-  //                   {t("amortization.new", { ns: "mortgages" })}
-  //                 </BreadcrumbPage>
-  //               </BreadcrumbItem>
-  //             </BreadcrumbList>
-  //           </Breadcrumb>
-  //         )
-  //       }}
-  //     >
-  //       <div className="flex items-center justify-center h-96">
-  //         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
-  //       </div>
-  //     </DashboardLayout>
-  //   )
-  // }
-  
-  // If user has reached their mortgage limit, show the NoMoreSpace component
-  // if (isLimitReached) {
-  //   return (
-  //     <DashboardLayout
-  //       header={{
-  //         title: (
-  //           <Breadcrumb>
-  //             <BreadcrumbList>
-  //               <BreadcrumbItem>
-  //                 <Link to="/mortgages" className="transition-colors hover:text-foreground">
-  //                   {t("sections.mortgages", { ns: "dashboard" })}
-  //                 </Link>
-  //               </BreadcrumbItem>
-  //               <BreadcrumbSeparator />
-  //               <BreadcrumbItem>
-  //                 <BreadcrumbPage>
-  //                   {t("amortization.new", { ns: "mortgages" })}
-  //                 </BreadcrumbPage>
-  //               </BreadcrumbItem>
-  //             </BreadcrumbList>
-  //           </Breadcrumb>
-  //         )
-  //       }}
-  //     >
-  //       <div className="flex items-center justify-center p-6">
-  //         <NoMoreSpace
-  //           resourceType="mortgage"
-  //           currentUsage={mortgageCount}
-  //           planLimit={planLimit > 0 ? planLimit : (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3)}
-  //           currentPlan={currentPlan}
-  //           nextPlan={nextPlan}
-  //           onBack={() => navigate("/mortgages")}
-  //         />
-  //       </div>
-  //     </DashboardLayout>
-  //   )
-  // }
-  
   // If loading the draft, show a loading spinner
   if (isLoadingDraft) {
     return (
@@ -518,8 +374,18 @@ export default function NewMortgage() {
             <div className="w-full md:w-[40%] md:min-w-[320px] md:max-w-[540px] relative flex-shrink-0">
               <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-border"></div>
               <div className="p-0">
+              <button onClick={() => {
+                    console.log(property)
+                    resetDraft()
+                    setSelectedProperty(null)
+                  }}>
+                  resetdraft()
+                  </button>
+
                 {property ? (
                   <>
+                  
+              
                     <PropertyDisplay 
                       property={property}
                       onPropertyUpdate={(updatedProperty) => {
@@ -529,10 +395,12 @@ export default function NewMortgage() {
                     />
                   </>
                 ) : (
-                <PropertySelect 
-                  form={form} 
-                  onPropertyChange={handlePropertyChange}
-                />
+                  <div className="p-1 md:p-2 lg:p-4 space-y-6"> 
+                    <PropertySelect 
+                      form={form} 
+                      onPropertyChange={handlePropertyChange}
+                    />
+                  </div>
                 )}
 
                 <Separator />

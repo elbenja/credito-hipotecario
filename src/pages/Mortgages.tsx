@@ -44,43 +44,9 @@ export default function Mortgages() {
 
   const deleteMortgage = useDeleteMortgage()
 
-  // // Add subscription limits hook
-  // const {
-  //   currentUsage,
-  //   planLimit,
-  //   currentPlan,
-  //   checkLimit
-  // } = useSubscriptionLimits();
 
-  // // Function to check mortgage limits directly from the database
-  // const checkMortgageLimits = useCallback(async (): Promise<boolean> => {
-  //   if (!user) return false;
-    
-  //   try {
-  //     // Get current count directly from database for accuracy
-  //     const { count, error } = await supabase
-  //       .from("mortgages")
-  //       .select("id", { count: "exact", head: true })
-  //       .eq("user_id", user.id);
 
-  //     if (error) {
-  //       console.error("Error counting mortgages:", error);
-  //       return false;
-  //     }
-      
-  //     // Get limit from subscription or default
-  //     const limitValue = planLimit > 0 ? planLimit : 
-  //                        (DEFAULT_SUBSCRIPTION_PLANS[currentPlan]?.mortgages || 3);
-      
-  //     // True if limit reached
-  //     return (count || 0) >= limitValue;
-  //   } catch (err) {
-  //     console.error("Error checking mortgage limits:", err);
-  //     return false;
-  //   }
-  // }, [user, planLimit, currentPlan]);
-
-  // Fetch bonus rules
+  // Fetch bonus rules delete soon
   const { data: bonusRules = [] } = useQuery({
     queryKey: ['bonus-rules'],
     queryFn: async () => {
@@ -261,7 +227,7 @@ export default function Mortgages() {
       <Plus className="mr-2 h-4 w-4" />
       {tMortgages('amortization.new')}
     </Button>
-  ), [navigate, tMortgages, propertiesWithMortgages, resetDraft])
+  ), [navigate, tMortgages, propertiesWithMortgages])
 
   const loadProperties = useCallback(() => {
     // Logic to load or refresh properties

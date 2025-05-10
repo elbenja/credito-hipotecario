@@ -3,15 +3,20 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { PropertyForm } from '@/components/properties/property-form';
 import { usePropertyBonus } from '@/hooks/usePropertyBonus';
-import type { Property } from '@/types/property';
+import type { Property , PropertyWithBonus} from '@/types/property';
+
+interface PropertyDisplayProps {
+  property: PropertyWithBonus | null;
+  onPropertyUpdate: (p: PropertyWithBonus) => void;
+}
 
 export function PropertyDisplay({
   property,
   onPropertyUpdate,
-}: {
-  property: Property | null;
-  onPropertyUpdate?: (p: Property) => void;
-}) {
+}: PropertyDisplayProps) {
+  // if you need local copy (for bonus loading, etc.), sync it from props:
+  // const [current, setCurrent] = useState<PropertyWithBonus | null>(null);
+
   const [open, setOpen] = useState(false);
 
   if (!property) return <div>No property selected</div>;
@@ -32,9 +37,13 @@ export function PropertyDisplay({
           </SheetHeader>
           <PropertyForm
             selectedProperty={property}
-            onSuccess={() => {
+            onSuccess={(fresh) => {
+              // console.log("PROPERTY DISPLAY: onSuccess", property);
+              
+              // onPropertyUpdate?.(fresh);
+              onPropertyUpdate(fresh);
               setOpen(false);
-              onPropertyUpdate?.(property);
+             
             }}
             onClose={() => setOpen(false)}
           />

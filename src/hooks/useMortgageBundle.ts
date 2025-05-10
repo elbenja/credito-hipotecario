@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Property } from "@/components/mortgages/property-select";
+import { Property } from "@/types/property";
 
 export interface MortgageBundle {
   mortgage: {

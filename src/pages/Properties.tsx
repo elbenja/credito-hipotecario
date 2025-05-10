@@ -29,8 +29,10 @@ export default function Properties() {
     key: keyof Property;
     direction: 'asc' | 'desc';
   } | null>(null)
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
 
+const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+
+// hook to fetch PropertyWithBonus
  const { data: properties = [], isLoading, refetch } = useProperties(user?.id)
 
   // Handle property success and broadcast event

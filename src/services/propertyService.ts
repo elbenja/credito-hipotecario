@@ -41,6 +41,20 @@ export async function fetchProperties(userId: string): Promise<PropertyWithBonus
 }
 
 /**
+ * Fetches a single property by ID, including computed bonus.
+ * @param propertyId - the UUID of the property
+ * @returns a PropertyWithBonus object
+ */
+export async function fetchPropertyWithBonus(
+  userId: string,
+  propertyId: string
+): Promise<PropertyWithBonus> {
+  const all = await fetchProperties(userId);
+  const prop = all.find((p) => p.id === propertyId);
+  if (!prop) throw new Error("Property not found");
+  return prop;
+}
+/**
  * React Query hook to load all properties for a given user.
  * Delegates to fetchProperties in the service layer.
  */

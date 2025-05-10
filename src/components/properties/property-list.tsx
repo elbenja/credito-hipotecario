@@ -20,17 +20,17 @@ import { MoreVertical, Copy, Trash, ArrowUp, ArrowDown, ChevronsUpDown, Home } f
 import { useNavigate } from "react-router-dom"
 
 import { useMortgageDraftStore } from "@/store/mortgage/store"
-import { usePropertyBonus } from "@/hooks/usePropertyBonus"
+// import { usePropertyBonus } from "@/hooks/usePropertyBonus"
 import { useDuplicateProperty } from "@/hooks/properties/useDuplicate"
 import { useDeleteProperty } from "@/hooks/properties/useDelete"
 
-import type { Property } from "@/types/property";
+import type { Property, PropertyWithBonus } from "@/types/property";
 // import type { BonusRule } from "@/types/property";
 import { formatCurrency } from "@/utils/utils"
 
 
 export type PropertyListProps = {
-  properties: Property[]
+  properties: PropertyWithBonus[]
   onPropertySelect: (property: Property) => void
   onPropertyUpdate: (updatedProperty: Property, isDelete?: boolean) => void
   sortConfig: {
@@ -46,9 +46,11 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
   // const { data: exchangeRate } = useExchangeRate()
   // const { user } = useAuth()
   const navigate = useNavigate()
+
+  // do we need this?
   const { resetDraft } = useMortgageDraftStore()
   
-  const { calculateBonus } = usePropertyBonus()
+  // const { calculateBonus } = usePropertyBonus()
   const deleteProperty = useDeleteProperty()
   const duplicateProperty = useDuplicateProperty()
 
@@ -63,6 +65,7 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
 
   const handleAddMortgage = (e: React.MouseEvent, property: Property) => {
     e.stopPropagation()
+    // do we need this?
     resetDraft()
     navigate(`/mortgages/new?propertyId=${property.id}`)
   }
@@ -112,7 +115,8 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
           </TableRow>
         ) : (
           properties.map((property) => {
-            const bonusAmount = calculateBonus(property)
+            // const bonusAmount = calculateBonus(property)
+            const bonusAmount = property.bonus
             return (
               <TableRow 
                 key={property.id}

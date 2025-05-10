@@ -4,7 +4,7 @@ import { useToast } from '@/components/ui/use-toast'
 // import { useAuth } from "@/context/auth-context";
 import { useTranslation } from "react-i18next";
 
-export function useDeleteProperty(userId?: string) {
+export function useDeleteProperty(property_id?: string) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation(["properties", "global"]);
@@ -39,8 +39,8 @@ export function useDeleteProperty(userId?: string) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["propertyCount"] });
-      if (userId) {
-        queryClient.invalidateQueries({ queryKey: ["properties", userId] });
+      if (property_id) {
+        queryClient.invalidateQueries({ queryKey: ["properties", property_id] });
       }
     },
   });

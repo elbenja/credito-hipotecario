@@ -31,6 +31,8 @@ import { PropertyForm } from "@/components/properties/property-form"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+
+import type { Property } from "@/types/property"
 import { useQuery } from "@tanstack/react-query"
 import { cn } from "@/utils/utils"
 import {
@@ -54,27 +56,27 @@ const formatAmount = (amount: number | null, currency: string): string => {
   return formatCurrency(amount, currency as "USD" | "PEN")
 }
 
-export interface Property {
-  id: string
-  name: string
-  price_cost: number
-  currency: "USD" | "PEN"
-  is_first_home: boolean
-  is_sustainable: boolean
-  property_insurance: number | null
-  property_insurance_type: "auto" | "manual"
-  bonus: number
-  description?: string
-}
+// export interface Property {
+//   id: string
+//   name: string
+//   price_cost: number
+//   currency: "USD" | "PEN"
+//   is_first_home: boolean
+//   is_sustainable: boolean
+//   property_insurance: number | null
+//   property_insurance_type: "auto" | "manual"
+//   bonus: number
+//   description?: string
+// }
 
-export interface BonusRule {
-  id: string
-  min_value: number
-  max_value: number
-  traditional_bonus: number
-  sustainable_bonus: number
-  is_active: boolean
-}
+// export interface BonusRule {
+//   id: string
+//   min_value: number
+//   max_value: number
+//   traditional_bonus: number
+//   sustainable_bonus: number
+//   is_active: boolean
+// }
 
 export interface PropertySelectProps {
   form: UseFormReturn<any, any, any>
@@ -223,18 +225,19 @@ export function PropertyDisplay({
 {/* start */}
 <div className="flex flex-col items-stretch space-y-0 border-t p-0 sm:flex-row">
   <div className="justify-top flex flex-1 flex-col gap-1 px-2 py-2 sm:px-4 sm:py-4">
-    <Label className="text-muted-foreground text-xs">{t('form.property_cost', { ns: 'properties' })}</Label>
+    <Label className="text-muted-foreground text-xs">
+      {t('form.property_cost', { ns: 'properties' })}</Label>
     <span className="text-lg leading-none font-bold sm:text-lg whitespace-nowrap">
-      {formatCurrency(currentProperty.price_cost, currentProperty.currency)}
+      {formatCurrency(currentProperty.price_cost, currentProperty.currency as "USD" | "PEN")}
     </span>
   </div>
 
   <div className="flex">
     <div className="justify-top relative z-30 flex flex-1 flex-col gap-1 border-t px-2 py-2 text-left even:border-l sm:border-t-0 sm:border-l sm:px-4 sm:py-4">
-      <span className="text-muted-foreground text-xs">
-        {t('bonus.amount_short', '', { ns: 'properties' })}
-      </span>
-      <Label className="text-xs font-normal"></Label>
+ 
+      <Label className="text-muted-foreground text-xs">
+      {t('bonus.amount_short', '', { ns: 'properties' })}
+      </Label>
       <span className="text-lg leading-none font-bold sm:text-lg whitespace-nowrap">
         {bonus ? formatCurrency(bonus, "PEN") : t('bonus.no_bonus', '', { ns: 'properties' })}
       </span>
@@ -246,7 +249,7 @@ export function PropertyDisplay({
       </Label>
       <span className="text-lg leading-none font-bold sm:text-lg whitespace-nowrap">
       {currentProperty.property_insurance !== null
-              ? formatCurrency(currentProperty.property_insurance, currentProperty.currency)
+              ? formatCurrency(currentProperty.property_insurance, currentProperty.currency as "USD" | "PEN")
               : t('bonus.no_bonus', '', { ns: 'properties' })}
       </span>
     </div>
@@ -269,6 +272,7 @@ export function PropertyDisplay({
         }}
       />
     </div>
+
   );
 }
 

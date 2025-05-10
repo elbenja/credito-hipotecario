@@ -4,11 +4,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CurrencyInput } from "@/components/ui/currency-input"
 import { UseFormReturn } from "react-hook-form"
 
-import { useEffect } from "react"
-import { supabase } from "@/integrations/supabase/client"
-import { useAuth } from "@/context/auth-context"
+// import { useEffect } from "react"
+// import { supabase } from "@/integrations/supabase/client"
+// import * as z from "zod"
+
+// import { useAuth } from "@/context/auth-context"
 import { useTranslation } from "react-i18next"
-import * as z from "zod"
+
 import { Input } from "@/components/ui/input"
 import { PropertyFormSchema } from "./property-form"
 
@@ -21,7 +23,7 @@ export function PropertyDetails({ form, isNewProperty = false }: PropertyDetails
   const { t } = useTranslation('properties')
   const selectedCurrency = form.watch("currency")
   const currentName = form.watch("name")
-  const { user } = useAuth()
+  // const { user } = useAuth()
 
   const handleNameChange = (newName: string) => {
     form.setValue("name", newName, { shouldValidate: true })
