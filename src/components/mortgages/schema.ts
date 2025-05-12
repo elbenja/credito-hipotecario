@@ -1,5 +1,5 @@
 import * as z from "zod"
-import { startOfMonth, addMonths } from "date-fns"
+import { startOfMonth, addMonths, parseISO } from "date-fns"
 import { formatDate, normalizeDate } from "@/utils/utils"
 
 // Unified schema for both amortizations and mortgages
@@ -39,10 +39,17 @@ export const mortgageFormSchema = z.object({
     ),
   term_years: z.string().min(1, "amortization_form.validation.required"),
   installments_per_year: z.string().min(1, "amortization_form.validation.required"),
-  first_installment_date: z.date({
+  first_installment_date: z.preprocess((val) => {
+    // if a string is provided, parse it as ISO 8601
+    if (typeof val === "string") {
+      const parsed = parseISO(val);
+      return isNaN(parsed.getTime()) ? val : parsed;
+    }
+    return val;
+  }, z.date({
     required_error: "amortization_form.validation.first_installment_date_required",
     invalid_type_error: "amortization_form.validation.first_installment_date_invalid",
-  }),
+  })),
   loan_protection_type: z.enum(["individual", "joint", "none", "custom"], {
     required_error: "amortization_form.validation.loan_protection_type_required",
   }).default("none"),

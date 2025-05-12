@@ -95,17 +95,57 @@ export default function NewMortgage() {
   useEffect(() => {
     if (propertyIdFromUrl) {
       // load it
+      console.log("  ⏳ loading property", propertyIdFromUrl);
       updateDraft({ property_id: propertyIdFromUrl });
       fetchPropertyIfNeeded(propertyIdFromUrl);
     } else {
       // no query param → clear out any leftover
+      console.warn("  ⚠️ no propertyIdFromUrl, clearing store");
       resetStore();
       resetDraft();
       setSelectedProperty(null);
     }
   }, [propertyIdFromUrl]);
   
-  
+//   import { useEffect } from "react";
+// import { useMortgageDraftStore } from "@/stores/mortgageDraftStore";
+
+
+
+
+
+function DebugMortgageDraft() {
+  useEffect(() => {
+    // Subscribe with a single callback function
+    const unsub = useMortgageDraftStore.subscribe((state) => {
+      // Extract the properties we want to log
+      const property = state.mortgageDraft?.property;
+      const property_id = state.mortgageDraft?.property_id;
+      
+      console.log(
+        "%c[MORTGAGE DRAFT STORE] property:",
+        "color:teal;font-weight:bold",
+        property,
+        "property_id:",
+        property_id
+      );
+    });
+    
+    return unsub;
+  }, []);
+
+  return null;
+}
+
+
+// then render <DebugMortgageDraft/> somewhere under <App/>
+
+  useEffect(() => {
+    const unsub = useMortgageDraftStore.subscribe((state) => {
+      console.log("🗒️ store changed:", state);
+    });
+    return unsub;
+  }, []);
 
   // State to track if form is being submitted
   const [isSubmitting, setIsSubmitting] = useState(false)
