@@ -103,15 +103,16 @@ export default function NewMortgage() {
       console.warn("  ⚠️ no propertyIdFromUrl, clearing store");
       resetStore();
       resetDraft();
+      
       setSelectedProperty(null);
+
+          // reset the form controls to completely blank defaults
+    form.reset(defaultValues);
     }
   }, [propertyIdFromUrl]);
   
 //   import { useEffect } from "react";
 // import { useMortgageDraftStore } from "@/stores/mortgageDraftStore";
-
-
-
 
 
 function DebugMortgageDraft() {
