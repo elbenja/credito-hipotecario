@@ -23,7 +23,7 @@ import type { Property, Mortgage } from "../types"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 // import { useSubscriptionLimits, DEFAULT_SUBSCRIPTION_PLANS } from "@/hooks/useSubscriptionLimits"
 import { useMortgageCapture } from "@/services/mortgages/mortgage-capture.service"
-import { useMortgageBundle } from "@/hooks/useMortgageBundle"
+// import { useMortgageBundle } from "@/hooks/useMortgageBundle"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { useDeleteMortgage } from "@/hooks/mortgages"
 

@@ -2,7 +2,7 @@ import { useNavigate, useParams, Link, useLocation } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { useQueryClient } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
-import { useAuth } from "@/context/auth-context"
+// import { useAuth } from "@/context/auth-context"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { EditableHeading } from "@/components/ui/editable-heading"
 import { Button } from "@/components/ui/button"
@@ -37,6 +37,7 @@ import { Mortgage } from "@/types/mortgage"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useUpdateMortgage } from '@/hooks/mortgages/useUpdate'
+import { useMortgageBundle } from "@/hooks/useMortgageBundle"
 
 
 export default function EditMortgageWithZustand(mortgageData: any) {
@@ -46,7 +47,7 @@ export default function EditMortgageWithZustand(mortgageData: any) {
   const navigate = useNavigate()
   const { id: paramId } = useParams<{ id?: string }>()
   const id = paramId ?? null
-  const { user } = useAuth()
+  // const { user } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const location = useLocation()
@@ -55,9 +56,7 @@ export default function EditMortgageWithZustand(mortgageData: any) {
   const queryParams = new URLSearchParams(location.search)
   const tabFromUrl = queryParams.get('tab')
   
-  // Get the current exchange rate
-  const { data: exchangeRate } = useExchangeRate()
-  const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
+
 
   // Add state to track if the form is submitting
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -78,6 +77,23 @@ export default function EditMortgageWithZustand(mortgageData: any) {
     refetch
   } = useMortgageDraft(id || null)
   
+
+
+  // 2) Pull the exchange‐rate hook here
+  const { data: exchangeRate = 1 } = useExchangeRate("USD", "PEN");
+
+  // 3) Grab the store action
+  const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
+
+  // 4) Seed the draft and the rate in one effect
+  useEffect(() => {
+    if (mortgage) {
+      setExchangeRate(exchangeRate);   // seed the existing mortgage
+    }
+  }, [mortgage, setExchangeRate]);
+
+console.log("🔄 exchangeRate:", exchangeRate)
+
   // Initialize calculatedLoanAmount based on mortgage data
   const [calculatedLoanAmount, setCalculatedLoanAmount] = useState<number>(mortgage?.loan_amount || 0)
   
