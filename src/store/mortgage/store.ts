@@ -23,13 +23,15 @@ interface MortgageDraftStore {
   // State
   mortgageDraft: MortgageDraft | null
   isDirty: boolean
+  exchangeRate: number;
   
   // Actions
   setMortgageDraft: (draft: MortgageDraft | null) => void
   updateDraft: (updates: Partial<MortgageDraft>) => void
   resetDraft: () => void
   markClean: () => void
-  calcLoanAmount: () => void;
+  setExchangeRate: (rate: number) => void
+  // calcLoanAmount: () => void;
 }
 
 // Default form values
@@ -54,23 +56,45 @@ export const useMortgageDraftStore = create<MortgageDraftStore>()(
         // Initial state
         mortgageDraft: null,
         isDirty: false,
+        exchangeRate: 1,  // default 1:1
         
         // Actions
         setMortgageDraft: (draft) => set({ mortgageDraft: draft, isDirty: false }),
-        
+        // in your Zustand store definition
         updateDraft: (updates) => set((state) => {
-          if (!state.mortgageDraft) {
-            return { 
-              mortgageDraft: { ...DEFAULT_DRAFT, ...updates },
-              isDirty: true
-            }
-          }
-          
-          return {
-            mortgageDraft: { ...state.mortgageDraft, ...updates },
-            isDirty: true
-          }
+          // console.log(" state.mortgageDraft?.property", state.mortgageDraft?.property);
+
+          const base = state.mortgageDraft ?? DEFAULT_DRAFT;
+          // merge in the user’s changes
+          const merged = { ...base, ...updates };
+
+          // **immediately** recalc loan_amount from merged values
+          const down = parseFloat(merged.down_payment) || 0;
+          const price = merged.property?.price_cost ?? 0;
+          // bonus always stored in PEN; convert if currency is not PEN
+          const bonusPen = merged.property?.bonus ?? 0;
+          const currency = merged.property?.currency ?? 'PEN';
+          const bonus = currency === 'PEN'
+            ? bonusPen
+            : bonusPen / state.exchangeRate;
+          merged.loan_amount = Math.max(0, price - bonus - down);
+          // console.log("price, bonus, down, loan_amount", price, bonus," " , down, currency , " " , merged.loan_amount);
+
+          return { mortgageDraft: merged, isDirty: true };
         }),
+        // updateDraft: (updates) => set((state) => {
+        //   if (!state.mortgageDraft) {
+        //     return { 
+        //       mortgageDraft: { ...DEFAULT_DRAFT, ...updates },
+        //       isDirty: true
+        //     }
+        //   }
+          
+        //   return {
+        //     mortgageDraft: { ...state.mortgageDraft, ...updates },
+        //     isDirty: true
+        //   }
+        // }),
         
         resetDraft: () => {
           // console.log("Resetting draft to default values:", DEFAULT_DRAFT);
@@ -91,18 +115,19 @@ export const useMortgageDraftStore = create<MortgageDraftStore>()(
         },
         
         markClean: () => set({ isDirty: false }),
-        calcLoanAmount: () => set((state) => {
-          const draft = state.mortgageDraft;
-          if (!draft) return state;
-          const down = parseFloat(draft.down_payment) || 0;
-          const price = draft.property?.price_cost ?? 0;
-          const bonus = draft.property?.bonus ?? 0;
-          const loan = Math.max(0, price - bonus - down);
-          return {
-            mortgageDraft: { ...draft, loan_amount: loan },
-            isDirty: true,
-          };
-        }),
+        setExchangeRate: (rate) => set({ exchangeRate: rate }),
+        // calcLoanAmount: () => set((state) => {
+        //   const draft = state.mortgageDraft;
+        //   if (!draft) return state;
+        //   const down = parseFloat(draft.down_payment) || 0;
+        //   const price = draft.property?.price_cost ?? 0;
+        //   const bonus = draft.property?.bonus ?? 0;
+        //   const loan = Math.max(0, price - bonus - down);
+        //   return {
+        //     mortgageDraft: { ...draft, loan_amount: loan },
+        //     isDirty: true,
+        //   };
+        // }),
       }),
       {
         name: 'mortgage-draft-storage',

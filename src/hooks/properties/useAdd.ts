@@ -28,6 +28,7 @@ export function useAddProperty() {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ['propertyCount'] })
+      qc.invalidateQueries({ queryKey: ['properties'] })
     },
   })
 }

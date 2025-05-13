@@ -7,7 +7,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { EditableHeading } from "@/components/ui/editable-heading"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { PropertyDisplay } from "@/components/mortgages/property-select"
+import { PropertyDisplay } from "@/components/properties/PropertyDisplay"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -31,9 +31,16 @@ import { useState, useEffect } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { SVGfixed } from "@/components/ui/svg-fixed"
-import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 
-export default function EditMortgageWithZustand() {
+import { Mortgage } from "@/types/mortgage"
+
+import { useMortgageDraftStore } from "@/store/mortgage/store"
+import { useMortgageDraft } from "@/hooks/useMortgageDraft"
+import { useUpdateMortgage } from '@/hooks/mortgages/useUpdate'
+
+
+export default function EditMortgageWithZustand(mortgageData: any) {
+  const updateMortgage = useUpdateMortgage()
   const { t } = useTranslation()
   const { t: tMortgages } = useTranslation('mortgages')
   const navigate = useNavigate()
@@ -50,6 +57,7 @@ export default function EditMortgageWithZustand() {
   
   // Get the current exchange rate
   const { data: exchangeRate } = useExchangeRate()
+  const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
 
   // Add state to track if the form is submitting
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -226,7 +234,7 @@ export default function EditMortgageWithZustand() {
 
   // Handler for updating mortgage
   const onUpdateMortgage = async (formValues: any) => {
-    setIsSubmitting(true)
+    // setIsSubmitting(true)
     
     try {
       // Parse numeric values
@@ -234,36 +242,35 @@ export default function EditMortgageWithZustand() {
       const interestRate = parseFloat(formValues.interest_rate)
       const termYears = parseInt(formValues.term_years)
       const installmentsPerYear = parseInt(formValues.installments_per_year)
-      
+      const loanProtectionInsurance = parseFloat(formValues.loan_protection_insurance)
+      // const calculatedLoanAmount = mortgageDraft?.loan_amount || 0
       // Determine loan protection insurance based on type
-      let loanProtectionInsurance = 0
-      const loanProtectionType = formValues.loan_protection_type
+      // let loanProtectionInsurance = 0
+      // const loanProtectionType = formValues.loan_protection_type
         
-        switch (loanProtectionType) {
-          case "individual":
-          loanProtectionInsurance = 0.028
-          break
-          case "joint":
-          loanProtectionInsurance = 0.052
-          break
-          case "custom":
-          const rawValue = parseFloat(formValues.loan_protection_insurance || "0")
-            if (isNaN(rawValue) || rawValue < 0 || rawValue > 1) {
-            throw new Error("Invalid loan protection insurance amount")
-            }
-          loanProtectionInsurance = rawValue
-          break
-          case "none":
-          loanProtectionInsurance = 0
-          break
-          default:
-          throw new Error("Invalid loan protection type")
-      }
+      //   switch (loanProtectionType) {
+      //     case "individual":
+      //     loanProtectionInsurance = 0.028
+      //     break
+      //     case "joint":
+      //     loanProtectionInsurance = 0.052
+      //     break
+      //     case "custom":
+      //     const rawValue = parseFloat(formValues.loan_protection_insurance || "0")
+      //       if (isNaN(rawValue) || rawValue < 0 || rawValue > 1) {
+      //       throw new Error("Invalid loan protection insurance amount")
+      //       }
+      //     loanProtectionInsurance = rawValue
+      //     break
+      //     case "none":
+      //     loanProtectionInsurance = 0
+      //     break
+      //     default:
+      //     throw new Error("Invalid loan protection type")
+      // }
       
       // Calculate loan amount
-      const propertyPrice = property?.price_cost || 0
-      const bonus = property?.bonus || 0
-      let loanAmount = propertyPrice - downPayment - bonus
+      const loanAmount = mortgage?.loan_amount || 0
       
       if (loanAmount <= 0) {
           throw new Error("Down payment cannot be greater than property cost")
@@ -284,18 +291,22 @@ export default function EditMortgageWithZustand() {
           installments_per_year: installmentsPerYear,
         first_installment_date: formattedDate,
         loan_amount: loanAmount,
-        loan_protection_type: loanProtectionType,
+        loan_protection_type: formValues.loan_protection_type,
           loan_protection_insurance: loanProtectionInsurance,
+          id: id
         }
 
       // Update in Supabase
-      const { error } = await supabase
-          .from("mortgages")
-        .update(mortgageData)
-          .eq('id', id)
+      // const { error } = await supabase
+      //     .from("mortgages")
+      //   .update(mortgageData)
+      //     .eq('id', id)
 
-      if (error) throw error
+      // if (error) throw error
       
+      const updatedMortgage: Mortgage = { ...mortgageData };
+      updateMortgage.mutate(updatedMortgage);
+
       // Mark the form as clean in Zustand
       markClean()
       
@@ -315,7 +326,7 @@ export default function EditMortgageWithZustand() {
         description: error instanceof Error ? error.message : t("messages.error_update", { ns: "mortgages" })
       })
     } finally {
-      setIsSubmitting(false)
+      // setIsSubmitting(false)
     }
   }
 
@@ -437,19 +448,23 @@ export default function EditMortgageWithZustand() {
             
             <div className="p-1 md:p-2 lg:p-4">
                 <Form {...mortgageForm}>
+
                   <MortgageDetailsForm
                     form={mortgageForm}
                   selectedProperty={property}
                     onSubmit={onUpdateMortgage}
-                    isSubmitting={isSubmitting}
+                    isSubmitting={updateMortgage.isLoading}
                   submitLabel={t("ui.save", { ns: "global" })}
                     onLoanAmountChange={(amount: number) => {
                     setCalculatedLoanAmount(amount)
                     }}
-                  propertyBonus={property.bonus || 0}
+                  propertyBonus={property.bonus || 0  
+                  }
                   />
+
+                  
                 </Form>
-              <p className="text-xs text-muted-foreground"> v Zustand </p>
+              <p className="text-xs text-muted-foreground"> Zustand v May 12</p>
             </div>
           </div>
 

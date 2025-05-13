@@ -3,7 +3,7 @@ export type Property = {
   user_id: string
   name: string
   price_cost: number
-  currency: string
+  currency: "USD" | "PEN"
   property_insurance: number | null
   property_insurance_type: "auto" | "manual"
   is_first_home: boolean

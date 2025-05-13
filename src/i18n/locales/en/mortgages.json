@@ -124,6 +124,8 @@
     "plan_limit_reached": "You have reached your plan limit for mortgages",
     "scenario_captured": "Scenario captured: {{name}}",
     "scenario_captured_redirect": "Scenario captured: {{name}}. Redirecting to mortgages list...",
-    "error_capturing_scenario": "Error capturing scenario"
+    "error_capturing_scenario": "Error capturing scenario",
+    "mortgage_updated": "Mortgage updated successfully",
+    "error_updating_mortgage": "Could not update mortgage"
   }
 } 

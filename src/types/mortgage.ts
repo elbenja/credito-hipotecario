@@ -4,23 +4,44 @@
  */
 
 // Base Mortgage type
-export interface Mortgage {
-  id: string;
-  name: string;
-  property_id: string;
-  loan_amount: number;
-  down_payment: number;
-  down_payment_percentage: number;
-  interest_rate: number;
-  term_years: number;
-  installments_per_year: number;
-  first_installment_date: string;
-  loan_protection_type: 'individual' | 'joint' | 'none' | 'custom';
-  loan_protection_insurance: number;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-}
+// export interface Mortgage {
+//   id: string;
+//   name: string;
+//   property_id: string;
+//   loan_amount: number;
+//   down_payment: number;
+//   // down_payment_percentage: number;
+//   interest_rate: number;
+//   term_years: number;
+//   installments_per_year: number;
+//   first_installment_date: string;
+//   loan_protection_type: 'individual' | 'joint' | 'none' | 'custom';
+//   loan_protection_insurance: number;
+//   saved_scenario: string;
+//   // user_id: string;
+//   // created_at: string;
+//   // updated_at: string;
+// }
+
+export type Mortgage = {
+  id: string
+  name: string
+  property_id: string
+  loan_amount: number
+  down_payment: number
+  interest_rate: number
+  term_years: number
+  installments_per_year: number
+  first_installment_date: string
+  loan_protection_type: "none" | "custom" | "individual" | "joint"
+  loan_protection_insurance: number
+
+  saved_scenario?: string
+  saved_scenario_total_interest_and_insurance?: number
+  saved_scenario_total_months?: number
+  saved_scenario_monthly_payment?: number
+  saved_scenario_breakeven_point?: number
+} 
 
 // For backward compatibility
 export type Amortization = Mortgage;

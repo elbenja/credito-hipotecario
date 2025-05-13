@@ -124,6 +124,8 @@
     "plan_limit_reached": "Has alcanzado el límite de hipotecas de tu plan",
     "scenario_captured": "Escenario capturado: {{name}}",
     "scenario_captured_redirect": "Escenario capturado: {{name}}. Redirigiendo a la lista de hipotecas...",
-    "error_capturing_scenario": "Error al capturar el escenario"
+    "error_capturing_scenario": "Error al capturar el escenario",
+    "mortgage_updated": "Hipoteca actualizada exitosamente",
+    "error_updating_mortgage": "No se pudo actualizar la hipoteca"
   }
 } 

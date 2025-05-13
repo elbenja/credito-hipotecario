@@ -63,7 +63,7 @@ export function useProperties(userId?: string | null) {
     queryKey: ["properties", userId],
     queryFn:     () => (userId ? fetchProperties(userId) : []),
     enabled:     Boolean(userId),
-    staleTime:   5_000,
-    gcTime:      120_000,
+    staleTime:   5 * 60 * 1000,      // 5 minutes
+    gcTime:     30 * 60 * 1000,     // 30 minutes
   });
 }

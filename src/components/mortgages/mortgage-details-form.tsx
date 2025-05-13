@@ -26,6 +26,7 @@ import { useState, useEffect, useMemo } from "react"
 import { CurrencyInput } from "@/components/ui/currency-input"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { mortgageFormSchema } from "./schema"
+import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 
 interface MortgageDetailsFormProps {
   form: ReturnType<typeof useForm<MortgageFormValues>>
@@ -66,31 +67,34 @@ export function MortgageDetailsForm({
   // Watch the down payment field for real-time calculation
   const downPayment = form.watch("down_payment")
   const numericDownPayment = parseFloat(downPayment?.replace(/[^0-9.]/g, "") || "0")
+  const {    mortgageDraft  } = useMortgageDraft(null) 
 
   // Optimize loan amount calculation with memoization and caching
   const loanAmount = useMemo(() => {
     if (!selectedProperty || !selectedProperty.price_cost) return 0;
     
-    // Skip recalculation when not necessary
-    if (prevProperty === selectedProperty.id && 
-        prevDownPayment === numericDownPayment && 
-        prevBonus === propertyBonus) {
-      return prevLoanAmount;
-    }
+    // // Skip recalculation when not necessary
+    // if (prevProperty === selectedProperty.id && 
+    //     prevDownPayment === numericDownPayment && 
+    //     prevBonus === propertyBonus) {
+    //   return prevLoanAmount;
+    // }
     
     // Use a simplified direct calculation when possible
-    const calculatedAmount = selectedProperty.price_cost - numericDownPayment - propertyBonus;
+    // const calculatedAmount = selectedProperty.price_cost - numericDownPayment - propertyBonus;
+    const calculatedAmount = mortgageDraft?.loan_amount;
+
+
+    // // Update previous values to enable future skipping
+    // setPrevProperty(selectedProperty.id);
+    // setPrevDownPayment(numericDownPayment);
+    // setPrevBonus(propertyBonus);
+    // setPrevLoanAmount(calculatedAmount);
     
-    // Update previous values to enable future skipping
-    setPrevProperty(selectedProperty.id);
-    setPrevDownPayment(numericDownPayment);
-    setPrevBonus(propertyBonus);
-    setPrevLoanAmount(calculatedAmount);
-    
-    // Call the callback to update loan amount in parent component
-    if (onLoanAmountChange) {
-      onLoanAmountChange(calculatedAmount);
-    }
+    // // Call the callback to update loan amount in parent component
+    // if (onLoanAmountChange) {
+    //   onLoanAmountChange(calculatedAmount);
+    // }
     
     return calculatedAmount;
   }, [selectedProperty, numericDownPayment, propertyBonus, onLoanAmountChange, 
@@ -102,7 +106,7 @@ export function MortgageDetailsForm({
       <div className="space-y-2">
         <h4 className="font-medium">{t('amortization.loan_amount', { ns: 'mortgages' })}</h4>
         <div className="text-xl xl:text-2xl 2xl:text-3xl font-bold">
-          {formatCurrency(Math.round(loanAmount), selectedProperty?.currency || "PEN")}
+          {formatCurrency(Math.round(loanAmount || 0), (selectedProperty?.currency as "USD" | "PEN") || "PEN")}
         </div>
         <div className="text-xs">
           {t('amortization.loan_amount_formula', { ns: 'mortgages' })}
@@ -218,7 +222,7 @@ export function MortgageDetailsForm({
                           form.trigger("down_payment");
                         }, 0);
                       }}
-                      currency={selectedProperty?.currency || 'PEN'}
+                      currency={(selectedProperty?.currency as "USD" | "PEN") || "PEN"}
                     />
                   </FormControl>
                   <FormMessage />
@@ -240,7 +244,21 @@ export function MortgageDetailsForm({
                   <FormLabel>{t('amortization.insurance.type', { ns: 'mortgages' })}</FormLabel>
                   <Select onValueChange={(value) => {
                     field.onChange(value)
+                    // Set loan_protection_insurance based on selected type
+                    switch(value) {
+                      case "individual":
+                        form.setValue("loan_protection_insurance", "0.028")
+                        break
+                      case "joint":
+                        form.setValue("loan_protection_insurance", "0.052")
+                        break
+                      case "none":
+                        form.setValue("loan_protection_insurance", "0")
+                        break
+                      // "custom" case is handled by user input, no need to set a value
+                    }
                     form.trigger("loan_protection_type")
+                    form.trigger("loan_protection_insurance")
                   }} value={field.value}>
                     <FormControl>
                       <SelectTrigger>

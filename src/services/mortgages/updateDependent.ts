@@ -154,7 +154,7 @@ export async function updateDependentMortgages(propertyId: string): Promise<void
         const { error: updateError } = await supabase
           .from("mortgages")
           .update({ 
-            loan_amount: 0,
+            // loan_amount: 0,
             ...updatedScenarioData
           })
           .eq('id', mortgage.id);

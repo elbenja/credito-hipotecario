@@ -59,30 +59,30 @@ export class LoanCalculator {
   }
 
   // New method to handle property price updates and recalculate mortgage values
-  async recalculateMortgageFromProperty(supabase: any, propertyId: string, updatedProperty: Property): Promise<void> {
-    try {
-      // 1. Get all mortgages related to this property
-      const { data: mortgages, error: mortgagesError } = await supabase
-        .from("mortgages")
-        .select("id, down_payment")
-        .eq("property_id", propertyId);
-      if (mortgagesError) throw mortgagesError;
-      // 2. Update each mortgage with the new loan amount
-      for (const mortgage of mortgages || []) {
-        const newLoanAmount = await this.calculateLoanAmount(supabase, updatedProperty, mortgage.down_payment);
-        // Update the mortgage with the new loan amount
-        const { error: updateError } = await supabase
-          .from("mortgages")
-          .update({ loan_amount: newLoanAmount })
-          .eq('id', mortgage.id);
-        if (updateError) throw updateError;
-        console.log(`Updated mortgage ${mortgage.id} with new loan amount: ${newLoanAmount}`);
-      }
-    } catch (error) {
-      console.error("Error recalculating mortgages after property update:", error);
-      throw error;
-    }
-  }
+  // async recalculateMortgageFromProperty(supabase: any, propertyId: string, updatedProperty: Property): Promise<void> {
+  //   try {
+  //     // 1. Get all mortgages related to this property
+  //     const { data: mortgages, error: mortgagesError } = await supabase
+  //       .from("mortgages")
+  //       .select("id, down_payment")
+  //       .eq("property_id", propertyId);
+  //     if (mortgagesError) throw mortgagesError;
+  //     // 2. Update each mortgage with the new loan amount
+  //     for (const mortgage of mortgages || []) {
+  //       const newLoanAmount = await this.calculateLoanAmount(supabase, updatedProperty, mortgage.down_payment);
+  //       // Update the mortgage with the new loan amount
+  //       const { error: updateError } = await supabase
+  //         .from("mortgages")
+  //         .update({ loan_amount: newLoanAmount })
+  //         .eq('id', mortgage.id);
+  //       if (updateError) throw updateError;
+  //       console.log(`Updated mortgage ${mortgage.id} with new loan amount: ${newLoanAmount}`);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error recalculating mortgages after property update:", error);
+  //     throw error;
+  //   }
+  // }
 
   // Add new method for goal-seeking calculation
   private findCorrectMonthlyInstallment(
@@ -296,71 +296,71 @@ export class LoanCalculator {
     return property.price_cost - bonusInPropertyCurrency - downPayment;
   }
 
-  // Synchronous version for when bonus is already known
-  calculateResultsSync(
-    property: Property,
-    baseValues: BaseAmortizationValues,
-    bonus: number = 0
-  ): CalculationResults {
-    const loanAmount = this.calculateLoanAmountSync(property, baseValues.down_payment, bonus);
+//   // Synchronous version for when bonus is already known
+//   calculateResultsSync(
+//     property: Property,
+//     baseValues: BaseAmortizationValues,
+//     bonus: number = 0
+//   ): CalculationResults {
+//     const loanAmount = this.calculateLoanAmountSync(property, baseValues.down_payment, bonus);
     
-    // Calculate base monthly payment (without insurances)
-    const baseMonthlyPayment = this.calculateMonthlyPayment(
-      loanAmount,
-      baseValues.interest_rate,
-      baseValues.term_years,
-      baseValues.installments_per_year
-    );
+//     // Calculate base monthly payment (without insurances)
+//     const baseMonthlyPayment = this.calculateMonthlyPayment(
+//       loanAmount,
+//       baseValues.interest_rate,
+//       baseValues.term_years,
+//       baseValues.installments_per_year
+//     );
 
-    // Add monthly insurance amounts to get total monthly payment
-    const monthlyPropertyInsurance = Number(property.property_insurance || 0);
-    const monthlyLoanProtection = Number(baseValues.loan_protection_insurance || 0);
-    const totalMonthlyPayment = Number((baseMonthlyPayment + monthlyPropertyInsurance + monthlyLoanProtection).toFixed(10));
+//     // Add monthly insurance amounts to get total monthly payment
+//     const monthlyPropertyInsurance = Number(property.property_insurance || 0);
+//     const monthlyLoanProtection = Number(baseValues.loan_protection_insurance || 0);
+//     const totalMonthlyPayment = Number((baseMonthlyPayment + monthlyPropertyInsurance + monthlyLoanProtection).toFixed(10));
 
-    console.log("LOAN CALCULATOR - Monthly payment components:", {
-      baseMonthlyPayment,
-      monthlyPropertyInsurance,
-      monthlyLoanProtection,
-      totalMonthlyPayment,
-      property_insurance_type: property.property_insurance_type
-    });
+//     console.log("LOAN CALCULATOR - Monthly payment components:", {
+//       baseMonthlyPayment,
+//       monthlyPropertyInsurance,
+//       monthlyLoanProtection,
+//       totalMonthlyPayment,
+//       property_insurance_type: property.property_insurance_type
+//     });
 
-    const schedule = this.generatePaymentSchedule(loanAmount, baseValues, property);
-    const totalMonths = baseValues.term_years * LoanCalculator.MONTHS_IN_YEAR;
+//     const schedule = this.generatePaymentSchedule(loanAmount, baseValues, property);
+//     const totalMonths = baseValues.term_years * LoanCalculator.MONTHS_IN_YEAR;
 
-    const totalInterestAndInsurance = schedule.reduce((sum, payment) => 
-      sum + payment.interest + payment.property_insurance + payment.loan_protection_insurance,
-      0
-    );
+//     const totalInterestAndInsurance = schedule.reduce((sum, payment) => 
+//       sum + payment.interest + payment.property_insurance + payment.loan_protection_insurance,
+//       0
+//     );
 
-    console.log("LOAN CALCULATOR - Total calculation results:", {
-      loan_amount: loanAmount,
-      total_interest_and_insurance: totalInterestAndInsurance,
-      total_months: totalMonths,
-      monthly_payment: totalMonthlyPayment,
-      propertyInsurance: property.property_insurance,
-      firstPaymentInfo: schedule.length > 0 ? {
-        property_insurance: schedule[0].property_insurance,
-        loan_insurance: schedule[0].loan_protection_insurance
-      } : null
-    });
+//     console.log("LOAN CALCULATOR - Total calculation results:", {
+//       loan_amount: loanAmount,
+//       total_interest_and_insurance: totalInterestAndInsurance,
+//       total_months: totalMonths,
+//       monthly_payment: totalMonthlyPayment,
+//       propertyInsurance: property.property_insurance,
+//       firstPaymentInfo: schedule.length > 0 ? {
+//         property_insurance: schedule[0].property_insurance,
+//         loan_insurance: schedule[0].loan_protection_insurance
+//       } : null
+//     });
 
-    return {
-      loan_amount: loanAmount,
-      total_interest_and_insurance: totalInterestAndInsurance,
-      total_months: totalMonths,
-      base_monthly_payment: baseMonthlyPayment,
-      monthly_payment: totalMonthlyPayment,
-      payment_schedule: schedule
-    };
-  }
+//     return {
+//       loan_amount: loanAmount,
+//       total_interest_and_insurance: totalInterestAndInsurance,
+//       total_months: totalMonths,
+//       base_monthly_payment: baseMonthlyPayment,
+//       monthly_payment: totalMonthlyPayment,
+//       payment_schedule: schedule
+//     };
+//   }
 
-  getSuggestedValues(property: Property): Partial<BaseAmortizationValues> {
-    return {
-      term_years: LoanCalculator.FIXED_VALUES.SUGGESTED_TERM_YEARS,
-      down_payment: property.price_cost * (LoanCalculator.FIXED_VALUES.SUGGESTED_DOWN_PAYMENT_PERCENT / 100),
-      down_payment_percentage: LoanCalculator.FIXED_VALUES.SUGGESTED_DOWN_PAYMENT_PERCENT,
-      installments_per_year: LoanCalculator.FIXED_VALUES.SUGGESTED_INSTALLMENTS
-    };
-  }
-} 
+//   getSuggestedValues(property: Property): Partial<BaseAmortizationValues> {
+//     return {
+//       term_years: LoanCalculator.FIXED_VALUES.SUGGESTED_TERM_YEARS,
+//       down_payment: property.price_cost * (LoanCalculator.FIXED_VALUES.SUGGESTED_DOWN_PAYMENT_PERCENT / 100),
+//       down_payment_percentage: LoanCalculator.FIXED_VALUES.SUGGESTED_DOWN_PAYMENT_PERCENT,
+//       installments_per_year: LoanCalculator.FIXED_VALUES.SUGGESTED_INSTALLMENTS
+//     };
+//   }
+// } 

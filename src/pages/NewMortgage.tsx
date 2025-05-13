@@ -39,6 +39,7 @@ import { useAddMortgage } from "@/hooks/mortgages"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { usePropertyBonus } from "@/hooks/usePropertyBonus"
+import { useExchangeRate } from "@/hooks/use-exchange-rate"
 
 
 
@@ -60,9 +61,13 @@ export default function NewMortgage() {
   // Reset draft store on component mount
   // This ensures we always start with default values
   const { resetDraft: resetStore} = useMortgageDraftStore()
-  const { updateDraft, calcLoanAmount } = useMortgageDraftStore()
+  const { updateDraft } = useMortgageDraftStore()
   const { calculateBonus } = usePropertyBonus();
+  
+  const { data: exchangeRate } = useExchangeRate("USD", "PEN");
+  const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
 
+  
   // Now use the mortgage draft hook for form handling
   const {
     form,
@@ -93,6 +98,13 @@ export default function NewMortgage() {
   };
   
   useEffect(() => {
+    if (exchangeRate) {
+      console.log("🔄 setting store.exchangeRate =", exchangeRate);
+      setExchangeRate(exchangeRate);
+    }
+  }, [exchangeRate, setExchangeRate]);
+
+  useEffect(() => {
     if (propertyIdFromUrl) {
       // load it
       console.log("  ⏳ loading property", propertyIdFromUrl);
@@ -111,8 +123,7 @@ export default function NewMortgage() {
     }
   }, [propertyIdFromUrl]);
   
-//   import { useEffect } from "react";
-// import { useMortgageDraftStore } from "@/stores/mortgageDraftStore";
+
 
 
 function DebugMortgageDraft() {
@@ -143,7 +154,16 @@ function DebugMortgageDraft() {
 
   useEffect(() => {
     const unsub = useMortgageDraftStore.subscribe((state) => {
-      console.log("🗒️ store changed:", state);
+      const property = state.mortgageDraft?.property;
+      const property_id = state.mortgageDraft?.property_id;
+      
+      console.log(
+        "%c[MORTGAGE DRAFT STORE] property:",
+        "color:teal;font-weight:bold",
+        property,
+        "property_id:",
+        property_id
+      );
     });
     return unsub;
   }, []);
@@ -183,7 +203,7 @@ function DebugMortgageDraft() {
 
       // console.log("newProperty", updated)
       // 4) recalc loan now that bonus has changed
-      calcLoanAmount();
+      // calcLoanAmount();
       
       // console.log("after updateDraft:", useMortgageDraftStore.getState().mortgageDraft);
 
@@ -225,7 +245,9 @@ function DebugMortgageDraft() {
       const interestRate = parseFloat(values.interest_rate)
       const termYears = parseInt(values.term_years)
       const installmentsPerYear = parseInt(values.installments_per_year)
-      
+      const loanProtectionInsurance = parseFloat(values.loan_protection_insurance)
+      const calculatedLoanAmount = mortgageDraft?.loan_amount || 0
+
       // Ensure down payment is a valid number, with a fallback to 0
       const validDownPayment = isNaN(downPayment) ? 0 : Math.max(0, downPayment);
       
@@ -247,32 +269,32 @@ function DebugMortgageDraft() {
       // Format date for database
       const dateString = `${firstInstallmentDate.getFullYear()}-${String(firstInstallmentDate.getMonth() + 1).padStart(2, '0')}-${String(firstInstallmentDate.getDate()).padStart(2, '0')}`
       
-      // Handle loan protection insurance
-      let loanProtectionInsurance: number
-      switch (values.loan_protection_type) {
-        case "individual":
-          loanProtectionInsurance = 0.028
-          break
-        case "joint":
-          loanProtectionInsurance = 0.052
-          break
-        case "custom":
-          const customValue = parseFloat(values.loan_protection_insurance || "0")
-          if (isNaN(customValue) || customValue < 0 || customValue > 1) {
-            throw new Error("Invalid loan protection insurance amount")
-          }
-          loanProtectionInsurance = customValue
-          break
-        case "none":
-        default:
-          loanProtectionInsurance = 0
-          break
-      }
+      // // Handle loan protection insurance
+      // let loanProtectionInsurance: number
+      // switch (values.loan_protection_type) {
+      //   case "individual":
+      //     loanProtectionInsurance = 0.028
+      //     break
+      //   case "joint":
+      //     loanProtectionInsurance = 0.052
+      //     break
+      //   case "custom":
+      //     const customValue = parseFloat(values.loan_protection_insurance || "0")
+      //     if (isNaN(customValue) || customValue < 0 || customValue > 1) {
+      //       throw new Error("Invalid loan protection insurance amount")
+      //     }
+      //     loanProtectionInsurance = customValue
+      //     break
+      //   case "none":
+      //   default:
+      //     loanProtectionInsurance = 0
+      //     break
+      // }
       
       // Calculate loan amount: (property_cost - bonus) - down_payment
-      const propertyPrice = property.price_cost
-      const bonus = property.bonus || 0
-      const calculatedLoanAmount = Math.max(0, (propertyPrice - bonus) - validDownPayment)
+      // const propertyPrice = property.price_cost
+      // const bonus = property.bonus || 0
+      // const calculatedLoanAmount = Math.max(0, (propertyPrice - bonus) - validDownPayment)
       
       // Calculate scenario values using ScenarioCalculator
       const scenarios = ScenarioCalculator.calculateScenarios({
