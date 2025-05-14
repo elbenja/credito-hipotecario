@@ -16,12 +16,12 @@ interface ExtraInstallment {
   start_date: string
 }
 
-interface RateChange {
-  id: string
-  new_interest_rate: number
-  new_term_years: number
-  effective_date: string
-}
+// interface RateChange {
+//   id: string
+//   new_interest_rate: number
+//   new_term_years: number
+//   effective_date: string
+// }
 
 interface AmortizationInput {
   loan_amount: number
@@ -62,34 +62,34 @@ export function useScenarioCalculations({
   const id = mortgageId || amortizationId;
   
   // Set up a subscription to changes in the new_rates table
-  useEffect(() => {
-    if (!id) return;
+  // useEffect(() => {
+  //   if (!id) return;
     
-    // Create a subscription to the new_rates table
-    const channel = supabase
-      .channel(`scenario_new_rates_${id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'new_rates',
-          filter: `mortgage_id=eq.${id}`
-        },
-        (payload) => {
-          // When there's a change, invalidate the scenario query
-          queryClient.invalidateQueries({
-            queryKey: ["scenarios", id]
-          });
-        }
-      )
-      .subscribe();
+  //   // Create a subscription to the new_rates table
+  //   const channel = supabase
+  //     .channel(`scenario_new_rates_${id}`)
+  //     .on(
+  //       'postgres_changes',
+  //       {
+  //         event: '*',
+  //         schema: 'public',
+  //         table: 'new_rates',
+  //         filter: `mortgage_id=eq.${id}`
+  //       },
+  //       (payload) => {
+  //         // When there's a change, invalidate the scenario query
+  //         queryClient.invalidateQueries({
+  //           queryKey: ["scenarios", id]
+  //         });
+  //       }
+  //     )
+  //     .subscribe();
     
-    // Clean up subscription when the component unmounts or id changes
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [id, queryClient]);
+  //   // Clean up subscription when the component unmounts or id changes
+  //   return () => {
+  //     channel.unsubscribe();
+  //   };
+  // }, [id, queryClient]);
   
   // Create debounced values to prevent excessive calculations
   const debouncedLoanAmount = useDebounce(loanAmount, 500)

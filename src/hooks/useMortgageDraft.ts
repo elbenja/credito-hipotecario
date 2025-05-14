@@ -45,6 +45,7 @@ export function useMortgageDraft(mortgageId: string | null) {
     first_installment_date: mortgage.first_installment_date 
       ? normalizeDate(new Date(mortgage.first_installment_date))
       : normalizeDate(new Date()),
+    loan_amount: mortgage.loan_amount?.toString() || '0', //  May 13
     loan_protection_type: mortgage.loan_protection_type || 'individual',
     loan_protection_insurance: mortgage.loan_protection_insurance?.toString() || '0'
   } : mortgageDraft || defaultValues
@@ -72,6 +73,7 @@ export function useMortgageDraft(mortgageId: string | null) {
         interest_rate: mortgage.interest_rate?.toString() || '0',
         term_years: mortgage.term_years?.toString() || '20',
         installments_per_year: mortgage.installments_per_year?.toString() || '12',
+        loan_amount: mortgage.loan_amount?.toString() || '0', //  May 13
         first_installment_date: firstInstallmentDate,
         loan_protection_type: mortgage.loan_protection_type || 'individual',
         loan_protection_insurance: mortgage.loan_protection_insurance?.toString() || '0'
@@ -84,7 +86,8 @@ export function useMortgageDraft(mortgageId: string | null) {
       setMortgageDraft({
         ...formValues,
         property: property || undefined,
-        id: mortgage.id
+        id: mortgage.id,
+        loan_amount: parseFloat(formValues.loan_amount) || 0
       })
     }
   }, [mortgage, property, form, isDirty, setMortgageDraft])

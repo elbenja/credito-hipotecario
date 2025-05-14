@@ -92,7 +92,7 @@ export default function EditMortgageWithZustand(mortgageData: any) {
     }
   }, [mortgage, setExchangeRate]);
 
-console.log("🔄 exchangeRate:", exchangeRate)
+// console.log("🔄 exchangeRate:", exchangeRate)
 
   // Initialize calculatedLoanAmount based on mortgage data
   const [calculatedLoanAmount, setCalculatedLoanAmount] = useState<number>(mortgage?.loan_amount || 0)
@@ -165,6 +165,12 @@ console.log("🔄 exchangeRate:", exchangeRate)
 
   // Use the scenario calculations hook
   const { data: scenarios, isLoading: isLoadingScenarios, error: scenariosError } = useScenarioCalculations(scenarioInputs)
+  console.log({
+    mortgage,
+    scenarios,
+    isLoadingScenarios,
+    isLoadingMortgage: isLoading
+  })
 
   // Handler for tab changes
   const handleTabChange = (value: string) => {
@@ -259,6 +265,7 @@ console.log("🔄 exchangeRate:", exchangeRate)
       const termYears = parseInt(formValues.term_years)
       const installmentsPerYear = parseInt(formValues.installments_per_year)
       const loanProtectionInsurance = parseFloat(formValues.loan_protection_insurance)
+      const loanAmount = mortgageDraft?.loan_amount || 0
       // const calculatedLoanAmount = mortgageDraft?.loan_amount || 0
       // Determine loan protection insurance based on type
       // let loanProtectionInsurance = 0
@@ -285,8 +292,8 @@ console.log("🔄 exchangeRate:", exchangeRate)
       //     throw new Error("Invalid loan protection type")
       // }
       
-      // Calculate loan amount
-      const loanAmount = mortgage?.loan_amount || 0
+      // // Calculate loan amount
+      // const loanAmount = mortgage?.loan_amount || 0
       
       if (loanAmount <= 0) {
           throw new Error("Down payment cannot be greater than property cost")
@@ -320,7 +327,10 @@ console.log("🔄 exchangeRate:", exchangeRate)
 
       // if (error) throw error
       
-      const updatedMortgage: Mortgage = { ...mortgageData };
+      const updatedMortgage: Mortgage = { 
+        ...mortgageData,
+        id: id as string // Ensure id is treated as string
+      };
       updateMortgage.mutate(updatedMortgage);
 
       // Mark the form as clean in Zustand
@@ -467,24 +477,24 @@ console.log("🔄 exchangeRate:", exchangeRate)
 
                   <MortgageDetailsForm
                     form={mortgageForm}
-                  selectedProperty={property}
+                    selectedProperty={property}
                     onSubmit={onUpdateMortgage}
-                    isSubmitting={updateMortgage.isLoading}
-                  submitLabel={t("ui.save", { ns: "global" })}
+                    isSubmitting={updateMortgage.isPending}
+                    submitLabel={t("ui.save", { ns: "global" })}
                     onLoanAmountChange={(amount: number) => {
-                    setCalculatedLoanAmount(amount)
+                      setCalculatedLoanAmount(amount)
                     }}
-                  propertyBonus={property.bonus || 0  
-                  }
+                    propertyBonus={(property as any).bonus || 0}
                   />
 
                   
                 </Form>
-              <p className="text-xs text-muted-foreground"> Zustand v May 12</p>
+              <p className="text-xs text-muted-foreground"> Zustand v May 13</p>
             </div>
           </div>
 
           {/* Right Container */}
+          
           <div className="w-screen sm:w-full overflow-hidden flex-1 pt-8 sm:p-0">
               {(!mortgage || !scenarios || isLoadingScenarios) ? (
                 <div className="flex items-center justify-center h-64">
