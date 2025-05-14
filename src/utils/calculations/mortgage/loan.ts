@@ -5,6 +5,7 @@ import type {
   Property,
   BonusRule
 } from '@/types/common';
+import { PropertyWithBonus } from '@/types/property';
 
 export class LoanCalculator {
   private static readonly FIXED_VALUES = {
@@ -29,6 +30,12 @@ export class LoanCalculator {
     return amount * this.exchangeRate;
   }
 
+  // Helper to convert a PEN amount into the property’s currency
+  private convertFromPEN(amount: number): number {
+    // If property currency is PEN, no conversion; otherwise divide by rate
+    return amount / this.exchangeRate;
+  }
+
   // Get bonus using the PostgreSQL property_bonus function
   async getPropertyBonus(supabase: any, propertyId: string): Promise<number> {
     if (!propertyId) return 0;
@@ -47,6 +54,7 @@ export class LoanCalculator {
   }
 
   // Calculate loan amount always using the property_bonus database function
+  // debt delete this May14
   async calculateLoanAmount(supabase: any, property: Property, downPayment: number): Promise<number> {
     if (!property) return 0;
     // Always fetch bonus from the database
@@ -282,18 +290,43 @@ export class LoanCalculator {
 
   // Synchronous version of calculateLoanAmount for when bonus is already known
   calculateLoanAmountSync(
-    property: Property,
+    property: PropertyWithBonus,
     downPayment: number,
     bonus: number = 0
   ): number {
     if (!property) return 0;
     
-    // Convert bonus to property currency if needed
-    const bonusInPropertyCurrency = property.currency === 'USD' 
-      ? bonus / this.exchangeRate
-      : bonus;
-      
-    return property.price_cost - bonusInPropertyCurrency - downPayment;
+    // Convert property price into PEN (if not already)
+    const priceInPEN = this.convertToPEN(property.price_cost, property.currency);
+    
+    // Convert bonus (always in PEN) into PEN—no change
+    const bonusInPEN = bonus;
+    
+    // Convert everything back into the property’s currency
+    const price = property.currency === 'PEN'
+      ? priceInPEN
+      : this.convertFromPEN(priceInPEN);
+    const bonusConverted = property.currency === 'PEN'
+      ? bonusInPEN
+      : this.convertFromPEN(bonusInPEN);
+    const down = downPayment;
+    
+    // Final loan amount in the property’s own currency
+    return price - bonusConverted - down;
+  }
+}
+/**
+ * Convenience function to calculate loan amount synchronously.
+ * Wraps LoanCalculator.calculateLoanAmountSync.
+ */
+
+  export function calculateLoanAmountSync(
+    property: PropertyWithBonus,
+    downPayment: number,
+    bonus: number = 0
+  ): number {
+    const calculator = new LoanCalculator();
+    return calculator.calculateLoanAmountSync(property, downPayment, bonus);
   }
 
 //   // Synchronous version for when bonus is already known
@@ -363,4 +396,5 @@ export class LoanCalculator {
 //       installments_per_year: LoanCalculator.FIXED_VALUES.SUGGESTED_INSTALLMENTS
 //     };
 //   }
-// } 
+// } // }
+

@@ -39,7 +39,7 @@ import { useAddMortgage } from "@/hooks/mortgages"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { usePropertyBonus } from "@/hooks/usePropertyBonus"
-import { useExchangeRate } from "@/hooks/use-exchange-rate"
+// import { useExchangeRate } from "@/hooks/use-exchange-rate"
 
 
 
@@ -64,8 +64,8 @@ export default function NewMortgage() {
   const { updateDraft } = useMortgageDraftStore()
   const { calculateBonus } = usePropertyBonus();
   
-  const { data: exchangeRate } = useExchangeRate("USD", "PEN");
-  const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
+  // const { data: exchangeRate } = useExchangeRate("USD", "PEN");
+  // const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
 
   
   // Now use the mortgage draft hook for form handling
@@ -97,12 +97,12 @@ export default function NewMortgage() {
     }
   };
   
-  useEffect(() => {
-    if (exchangeRate) {
-      console.log("🔄 setting store.exchangeRate =", exchangeRate);
-      setExchangeRate(exchangeRate);
-    }
-  }, [exchangeRate, setExchangeRate]);
+  // useEffect(() => {
+  //   if (exchangeRate) {
+  //     console.log("🔄 setting store.exchangeRate =", exchangeRate);
+  //     setExchangeRate(exchangeRate);
+  //   }
+  // }, [exchangeRate, setExchangeRate]);
 
   useEffect(() => {
     if (propertyIdFromUrl) {

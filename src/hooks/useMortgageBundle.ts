@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Property } from "@/types/property";
+import { Property, PropertyWithBonus } from "@/types/property";
 
 export interface MortgageBundle {
   mortgage: {
@@ -21,9 +21,9 @@ export interface MortgageBundle {
     saved_scenario_breakeven_point: number | null;
     property_id: string;
     user_id: string;
-    property: Property;
+    property: PropertyWithBonus;
   };
-  property: Property;
+  // property: Property;
   extraInstallments: Array<{
     id: string;
     mortgage_id: string;
