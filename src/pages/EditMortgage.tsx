@@ -135,36 +135,10 @@ export default function EditMortgageWithZustand(mortgageData: any) {
     }
   }
 
-  // Setup scenario inputs for calculations
-  const [scenarioInputs, setScenarioInputs] = useState({
-    mortgageId: id || "",
-    loanAmount: 0,
-    interestRate: 0,
-    termYears: 0,
-    installmentsPerYear: 12,
-    firstInstallmentDate: undefined as Date | undefined,
-    propertyInsurance: 0,
-    loanInsurance: 0
-  })
 
-  // Update scenario inputs when form values change
-  useEffect(() => {
-    if (mortgage && property && mortgageDraft) {
-        setScenarioInputs({
-      mortgageId: id || "",
-      loanAmount: calculatedLoanAmount,
-        interestRate: parseFloat(mortgageDraft.interest_rate || "0"),
-        termYears: parseInt(mortgageDraft.term_years || "0"),
-        installmentsPerYear: parseInt(mortgageDraft.installments_per_year || "12"),
-        firstInstallmentDate: mortgageDraft.first_installment_date,
-        propertyInsurance: property.property_insurance || 0,
-        loanInsurance: parseFloat(mortgageDraft.loan_protection_insurance || "0")
-      })
-    }
-  }, [mortgage, property, mortgageDraft, calculatedLoanAmount, id])
 
   // Use the scenario calculations hook
-  const { data: scenarios, isLoading: isLoadingScenarios, error: scenariosError } = useScenarioCalculations(scenarioInputs)
+  const { data: scenarios, isLoading: isLoadingScenarios, error: scenariosError } = useScenarioCalculations();
   console.log({
     mortgage,
     scenarios,
@@ -266,34 +240,7 @@ export default function EditMortgageWithZustand(mortgageData: any) {
       const installmentsPerYear = parseInt(formValues.installments_per_year)
       const loanProtectionInsurance = parseFloat(formValues.loan_protection_insurance)
       const loanAmount = mortgageDraft?.loan_amount || 0
-      // const calculatedLoanAmount = mortgageDraft?.loan_amount || 0
-      // Determine loan protection insurance based on type
-      // let loanProtectionInsurance = 0
-      // const loanProtectionType = formValues.loan_protection_type
-        
-      //   switch (loanProtectionType) {
-      //     case "individual":
-      //     loanProtectionInsurance = 0.028
-      //     break
-      //     case "joint":
-      //     loanProtectionInsurance = 0.052
-      //     break
-      //     case "custom":
-      //     const rawValue = parseFloat(formValues.loan_protection_insurance || "0")
-      //       if (isNaN(rawValue) || rawValue < 0 || rawValue > 1) {
-      //       throw new Error("Invalid loan protection insurance amount")
-      //       }
-      //     loanProtectionInsurance = rawValue
-      //     break
-      //     case "none":
-      //     loanProtectionInsurance = 0
-      //     break
-      //     default:
-      //     throw new Error("Invalid loan protection type")
-      // }
-      
-      // // Calculate loan amount
-      // const loanAmount = mortgage?.loan_amount || 0
+
       
       if (loanAmount <= 0) {
           throw new Error("Down payment cannot be greater than property cost")
@@ -319,13 +266,7 @@ export default function EditMortgageWithZustand(mortgageData: any) {
           id: id
         }
 
-      // Update in Supabase
-      // const { error } = await supabase
-      //     .from("mortgages")
-      //   .update(mortgageData)
-      //     .eq('id', id)
 
-      // if (error) throw error
       
       const updatedMortgage: Mortgage = { 
         ...mortgageData,

@@ -157,13 +157,13 @@ function DebugMortgageDraft() {
       const property = state.mortgageDraft?.property;
       const property_id = state.mortgageDraft?.property_id;
       
-      console.log(
-        "%c[MORTGAGE DRAFT STORE] property:",
-        "color:teal;font-weight:bold",
-        property,
-        "property_id:",
-        property_id
-      );
+      // console.log(
+      //   "%c[MORTGAGE DRAFT STORE] property:",
+      //   "color:teal;font-weight:bold",
+      //   property,
+      //   "property_id:",
+      //   property_id
+      // );
     });
     return unsub;
   }, []);

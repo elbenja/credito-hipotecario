@@ -1,276 +1,16 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect, useMemo } from "react"
-import { supabase } from "@/integrations/supabase/client"
-import { useDebounce } from "./use-debounce"
+import { useQuery } from "@tanstack/react-query"
+import { fetchExtraInstallments, fetchNewRates } from "@/services/mortgageServices"
 import { ScenarioCalculator } from "@/utils/calculations/mortgage/scenarioCalculator"
-import type { Database } from "@/types/supabase"
-import { addMonths, startOfMonth } from "date-fns"
-import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios } from "@/types/common"
-
-type ScenarioType = Database["public"]["Enums"]["scenario_type"]
-
-interface ExtraInstallment {
-  id: string
-  amount: number
-  frequency: "monthly" | "one-time"
-  start_date: string
-}
-
-// interface RateChange {
-//   id: string
-//   new_interest_rate: number
-//   new_term_years: number
-//   effective_date: string
-// }
-
-interface AmortizationInput {
-  loan_amount: number
-  interest_rate: number
-  term_years: number
-  installments_per_year: number
-  first_installment_date: Date
-  property_insurance: number
-  loan_insurance: number
-}
-
-export interface UseScenarioCalculationsProps {
-  amortizationId?: string  // Keep for backward compatibility
-  mortgageId?: string      // New property for mortgage ID
-  loanAmount: number
-  interestRate: number
-  termYears: number
-  installmentsPerYear: number
-  firstInstallmentDate?: Date
-  propertyInsurance: number
-  loanInsurance: number
-}
-
-export function useScenarioCalculations({
-  amortizationId,
-  mortgageId,
-  loanAmount,
-  interestRate,
-  termYears,
-  installmentsPerYear,
-  firstInstallmentDate,
-  propertyInsurance,
-  loanInsurance
-}: UseScenarioCalculationsProps) {
-  const queryClient = useQueryClient();
-  
-  // Use mortgageId with fallback to amortizationId for backward compatibility
-  const id = mortgageId || amortizationId;
-  
-  // Set up a subscription to changes in the new_rates table
-  // useEffect(() => {
-  //   if (!id) return;
-    
-  //   // Create a subscription to the new_rates table
-  //   const channel = supabase
-  //     .channel(`scenario_new_rates_${id}`)
-  //     .on(
-  //       'postgres_changes',
-  //       {
-  //         event: '*',
-  //         schema: 'public',
-  //         table: 'new_rates',
-  //         filter: `mortgage_id=eq.${id}`
-  //       },
-  //       (payload) => {
-  //         // When there's a change, invalidate the scenario query
-  //         queryClient.invalidateQueries({
-  //           queryKey: ["scenarios", id]
-  //         });
-  //       }
-  //     )
-  //     .subscribe();
-    
-  //   // Clean up subscription when the component unmounts or id changes
-  //   return () => {
-  //     channel.unsubscribe();
-  //   };
-  // }, [id, queryClient]);
-  
-  // Create debounced values to prevent excessive calculations
-  const debouncedLoanAmount = useDebounce(loanAmount, 500)
-  const debouncedInterestRate = useDebounce(interestRate, 500)
-  const debouncedTermYears = useDebounce(termYears, 500)
-  const debouncedInstallmentsPerYear = useDebounce(installmentsPerYear, 500)
-  const debouncedFirstInstallmentDate = useDebounce(firstInstallmentDate, 500)
-  const debouncedPropertyInsurance = useDebounce(propertyInsurance, 500)
-  const debouncedLoanInsurance = useDebounce(loanInsurance, 500)
-
-  // Add validation for input values
-  const isValidInput = useMemo(() => {
-    return (
-      debouncedLoanAmount > 0 &&
-      debouncedInterestRate > 0 &&
-      debouncedTermYears > 0 &&
-      [12, 14].includes(debouncedInstallmentsPerYear) &&
-      !!debouncedFirstInstallmentDate // Make sure first installment date exists
-    );
-  }, [
-    debouncedLoanAmount,
-    debouncedInterestRate,
-    debouncedTermYears,
-    debouncedInstallmentsPerYear,
-    debouncedFirstInstallmentDate // Add to dependencies
-  ]);
-
-  return useQuery<Scenarios, Error>({
-    queryKey: [
-      "scenarios", 
-      id, 
-      debouncedLoanAmount, 
-      debouncedInterestRate, 
-      debouncedTermYears, 
-      debouncedInstallmentsPerYear, 
-      debouncedFirstInstallmentDate?.toISOString(), 
-      debouncedPropertyInsurance,
-      debouncedLoanInsurance
-    ],
-    queryFn: async () => {
-      try {
-        // Return default scenarios if input values are invalid
-        if (!isValidInput) {
-          return getDefaultScenarios();
-        }
-
-        // Fetch extra installments and rate changes from Supabase
-        const [extraInstallmentsResult, newRatesResult] = await Promise.all([
-          supabase
-            .from("extra_installments")
-            .select("*")
-            .eq("mortgage_id", id)
-            .order("start_date", { ascending: true }),
-          supabase
-            .from("new_rates")
-            .select("*")
-            .eq("mortgage_id", id)
-            .order("effective_date", { ascending: true })
-        ])
-
-        if (extraInstallmentsResult.error) throw extraInstallmentsResult.error
-        if (newRatesResult.error) throw newRatesResult.error
-
-        // console.log("Fetched extra installments:", extraInstallmentsResult.data.length);
-        // console.log("Fetched rate changes:", newRatesResult.data.length);
-
-        // Improved handling of extra installments to preserve exact dates
-        const extraInstallments = extraInstallmentsResult.data.map(ei => {
-          // Keep the original string format for YYYY-MM-DD dates
-          if (typeof ei.start_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ei.start_date)) {
-            // Return the date in its original string format to avoid any conversion issues
-            return {
-              amount: ei.amount,
-              frequency: ei.frequency,
-              start_date: ei.start_date // Keep as string
-            };
-          } else {
-            // For non-standard formats, create a normalized date string
-            const tempDate = new Date(ei.start_date);
-            const year = tempDate.getFullYear();
-            const month = tempDate.getMonth() + 1; // Convert to 1-based
-            const day = tempDate.getDate();
-            const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            
-            return {
-              amount: ei.amount,
-              frequency: ei.frequency,
-              start_date: dateString
-            };
-          }
-        });
-
-        // Improved handling of rate changes to preserve exact dates
-        const rateChanges = newRatesResult.data.map(rc => {
-          let effectiveDate;
-          
-          // Check if the date is already in ISO format (YYYY-MM-DD or with T)
-          if (typeof rc.effective_date === 'string') {
-            // Handle different date formats
-            if (rc.effective_date.includes('T')) {
-              // ISO format with time component - extract just the date part
-              effectiveDate = rc.effective_date.split('T')[0];
-            } else if (/^\d{4}-\d{2}-\d{2}$/.test(rc.effective_date)) {
-              // Already in YYYY-MM-DD format
-              effectiveDate = rc.effective_date;
-            } else {
-              // Other string format - parse and reformat
-              const date = new Date(rc.effective_date);
-              effectiveDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-            }
-          } else if (rc.effective_date instanceof Date) {
-            // Direct Date object
-            effectiveDate = `${rc.effective_date.getFullYear()}-${String(rc.effective_date.getMonth() + 1).padStart(2, '0')}-${String(rc.effective_date.getDate()).padStart(2, '0')}`;
-          } else {
-            // Handle unexpected case
-            // Use current date as fallback
-            const today = new Date();
-            effectiveDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-          }
-          
-          return {
-            id: rc.id,
-            mortgage_id: rc.mortgage_id || rc.amortization_id, // Support both old and new field names, but list mortgage_id first
-            new_interest_rate: rc.new_interest_rate,
-            new_term_years: rc.new_term_years,
-            effective_date: effectiveDate,
-            created_at: rc.created_at,
-            updated_at: rc.updated_at,
-            new_balance: rc.new_balance
-          };
-        });
-
-        // Calculate all scenarios using the static method
-        const scenarios = ScenarioCalculator.calculateScenarios({
-          loan_amount: debouncedLoanAmount,
-          interest_rate: debouncedInterestRate,
-          term_years: debouncedTermYears,
-          installments_per_year: debouncedInstallmentsPerYear,
-          first_installment_date: debouncedFirstInstallmentDate || new Date(),
-          property_insurance: debouncedPropertyInsurance,
-          loan_insurance: debouncedLoanInsurance,
-          extra_installments: extraInstallments,
-          rate_changes: rateChanges
-        })
-
-        // If there are no rate changes, the new_rate scenario should be the same as regular
-        const hasNewRates = rateChanges && rateChanges.length > 0
-        const newRateScenario = hasNewRates && scenarios.new_rate?.summary && 
-          typeof scenarios.new_rate.summary.total_months === 'number' && 
-          scenarios.new_rate.summary.total_months > 0
-            ? scenarios.new_rate
-            : scenarios.regular
-
-        const result = {
-          regular: scenarios.regular,
-          accelerated: scenarios.accelerated,
-          lower_payment: scenarios.lower_payment,
-          new_rate: newRateScenario
-        };
-
-        return result;
-      } catch (error) {
-        console.error("Error calculating scenarios:", error);
-        return getDefaultScenarios();
-      }
-    },
-    staleTime: 30000, // Add a reasonable staleTime to prevent frequent refetches
-    gcTime: 300000, // Increase gcTime to keep data in cache longer
-    refetchOnMount: true,
-    refetchOnWindowFocus: false, // Disable refetch on window focus to reduce unnecessary calls
-    retry: 1, // Limit retries to avoid excessive calculations
-    enabled: !!id && isValidInput
-  })
-}
+import { useMortgageDraftStore, MortgageDraft } from "@/store/mortgage/store"
+import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios, RateChange } from "@/types/common"
 
 // Default empty scenarios to prevent UI crashes
 function getDefaultScenarios(): Scenarios {
   const defaultSummary: ScenarioSummaryResult = {
     total_interest_and_insurance: 0,
     total_months: 0,
-    monthly_payment: 0
+    monthly_payment: 0,
+    breakeven_point: 0
   };
   
   const defaultScenario: ScenarioResult = {
@@ -284,4 +24,55 @@ function getDefaultScenarios(): Scenarios {
     lower_payment: defaultScenario,
     new_rate: defaultScenario
   };
-} 
+}
+
+export function useScenarioCalculations() {
+  const {
+    id: mortgageId,
+    loan_amount,
+    interest_rate,
+    term_years,
+    installments_per_year,
+    first_installment_date,
+    property: { property_insurance } = {},
+    loan_protection_insurance: loan_insurance,
+  } = useMortgageDraftStore((s) => s.mortgageDraft || {}) as MortgageDraft;
+
+  return useQuery<Scenarios, Error>({
+    queryKey: [
+      "scenarios",
+      mortgageId,
+      loan_amount,
+      interest_rate,
+      term_years,
+      installments_per_year,
+      first_installment_date?.toISOString(),
+      property_insurance,
+      loan_insurance
+    ],
+    queryFn: async () => {
+      if (!mortgageId) return getDefaultScenarios();
+
+      const [extraInstallments, newRates] = await Promise.all([
+        fetchExtraInstallments(mortgageId),
+        fetchNewRates(mortgageId),
+      ]);
+
+      return ScenarioCalculator.calculateScenarios({
+        loan_amount: typeof loan_amount === 'string' ? parseFloat(loan_amount) : loan_amount || 0,
+        interest_rate: typeof interest_rate === 'string' ? parseFloat(interest_rate) : interest_rate || 0,
+        term_years: typeof term_years === 'string' ? parseFloat(term_years) : term_years || 0,
+        installments_per_year: typeof installments_per_year === 'string' ? parseFloat(installments_per_year) : installments_per_year || 12,
+        first_installment_date: first_installment_date!,
+        property_insurance: property_insurance || 0,
+        loan_insurance: typeof loan_insurance === 'string' ? parseFloat(loan_insurance) : loan_insurance || 0,
+        extra_installments: extraInstallments,
+        rate_changes: newRates as unknown as RateChange[],
+      });
+    },
+    enabled: Boolean(mortgageId),
+    staleTime: 30000,
+    gcTime: 300000,
+    refetchOnWindowFocus: false,
+  });
+}

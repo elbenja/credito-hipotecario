@@ -90,3 +90,40 @@ export interface MortgageFormValues {
 
 // For backward compatibility
 export type AmortizationFormValues = MortgageFormValues; 
+
+
+
+export type ExtraInstallment = {
+  id: string
+  amortization_id: string
+  amount: number
+  frequency: 'monthly' | 'one-time'
+  start_date: string
+  created_at: string
+  updated_at: string
+}
+
+export type ExtraInstallmentFormValues = {
+  amount: string
+  frequency: 'monthly' | 'one-time'
+  start_date: Date
+}
+
+// src/types/mortgage.ts
+export interface NewRate {
+  /** Primary key */
+  id: string;
+  /** FK back to mortgages.id */
+  mortgage_id: string;
+  /** The new interest rate (e.g. 0.07 for 7%) */
+  new_interest_rate: number;
+  /** When this rate takes effect (ISO date string) */
+  effective_date: string;
+  /** Optional updated term length (in years) */
+  new_term_years?: number | null;
+  /** Timestamps */
+  // created_at: string;
+  // updated_at: string;
+  /** Optional remaining balance at that point */
+  // new_balance?: number | null;
+}
