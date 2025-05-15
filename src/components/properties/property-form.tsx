@@ -14,13 +14,13 @@ import { useTranslation } from "react-i18next"
 import { useMemo, useState, useEffect, useRef } from "react"
 
 // import { LoanCalculator } from "@/utils/calculations/mortgage/loan"
-import { useExchangeRate } from "@/hooks/use-exchange-rate"
-// import { useQueryClient } from "@tanstack/react-query"
+// import { useExchangeRate } from "@/hooks/use-exchange-rate"
+
 import { useAddProperty } from "@/hooks/properties"
 // Define the schema creator function that takes the translation function
 import { updateDependentMortgages } from "@/services/mortgages/updateDependent"
 import { useUpdateProperty } from "@/hooks/properties/useUpdate"
-
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 export const createPropertyFormSchema = (t: any) => z.object({
   name: z.string().min(1, {
     message: t('property_form.validation.property_name_required', 'Property name is required', { ns: 'components' })
@@ -81,6 +81,18 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
     },
   })
 
+  const queryClient = useQueryClient()
+  const depMutation = useMutation({
+    mutationKey: ['updateDependentMortgages'],
+    mutationFn: ({ userId, propertyId }: { userId: string; propertyId: string }) =>
+      updateDependentMortgages(userId, propertyId),
+    onError: (err) => console.error('failed to update dependents', err),
+    onSuccess: () => {
+      // Refresh both the combined list and individual mortgages caches
+      queryClient.invalidateQueries({ queryKey: ['properties-with-mortgages'] });
+      queryClient.invalidateQueries({ queryKey: ['mortgages'] });
+    },
+  })
 
   async function onSubmit(values: z.infer<typeof propertyFormSchema>) {
     try {
@@ -98,12 +110,12 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
         user_id: user.id,
       }
 
-      let updatedProperty: Property | null = null;
+      // let updatedProperty: Property | null = null;
 
       if (selectedProperty) {
         // merge form fields onto selectedProperty
         // const payload = { ...selectedProperty, ...propertyData };
-          // 1. parse/validate your formValues into a Partial<Property>
+
 
           // 2. strip bonus off the selectedProperty
           const { bonus, ...base } = selectedProperty;
@@ -111,23 +123,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
           // 3. merge into a pure Property payload
           const payload: Property = { ...base, ...propertyData };
 
-        // inside your onSubmit handler, before mutating:
-        // updateProperty.reset();
-        // updateProperty.mutate(payload, {
-          
-        //   onSuccess: (fresh) => {
-        //     console.log("[PropertyForm] onSuccess → fresh:", fresh);
-        //     onSuccess(fresh);
-        //     onClose();
-        //   },
-        //   onError: (err) => {
-        //     toast({
-        //       variant: "destructive",
-        //       title: tGlobal('ui.error'),
-        //       description: tProperties('messages.error_saving'),
-        //     })
-        //   },
-        // });
+
 
         try {
           const fresh = await updateProperty.mutateAsync(payload);
@@ -143,6 +139,9 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
           title: tGlobal('ui.success'),
           description: tProperties('messages.property_updated'),
         })
+
+        // start updateDependentMortgages
+
         
         // Check if any critical property fields changed
         const criticalFieldsChanged = 
@@ -151,11 +150,17 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
           selectedProperty.property_insurance !== propertyData.property_insurance ||
           selectedProperty.is_first_home !== propertyData.is_first_home ||
           selectedProperty.is_sustainable !== propertyData.is_sustainable;
-        
+
+
         // Update dependent mortgages if critical fields changed
-        if (criticalFieldsChanged && updatedProperty) {
-          await updateDependentMortgages(selectedProperty.id);
+        if (criticalFieldsChanged ) {
+
+          // await updateDependentMortgages(selectedProperty.id);
+          depMutation.mutate({ userId: user.id, propertyId: payload.id })
         }
+        // end updateDependentMortgages
+
+
       } else {
         // Optimistically add new property
         addProperty.mutate(propertyData, {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+// import { useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMortgageDraftStore } from '@/store/mortgage/store'
@@ -16,7 +16,7 @@ import { normalizeDate } from '@/utils/utils'
  * which makes it suitable for creating new mortgages.
  */
 export function useMortgageDraft(mortgageId: string | null) {
-  const queryClient = useQueryClient()
+  // const queryClient = useQueryClient()
   const { mortgageDraft, setMortgageDraft, updateDraft, resetDraft } = useMortgageDraftStore()
   const [isDirty, setIsDirty] = useState(false)
   
@@ -30,7 +30,7 @@ export function useMortgageDraft(mortgageId: string | null) {
   
   // Extract mortgage, property, and other data from the bundle
   const mortgage = bundle?.mortgage
-  const property = bundle?.property
+  const property = bundle?.mortgage.property
   const extraInstallments = bundle?.extraInstallments || []
   const newRates = bundle?.newRates || []
   

@@ -3,6 +3,7 @@ import { fetchExtraInstallments, fetchNewRates } from "@/services/mortgageServic
 import { ScenarioCalculator } from "@/utils/calculations/mortgage/scenarioCalculator"
 import { useMortgageDraftStore, MortgageDraft } from "@/store/mortgage/store"
 import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios, RateChange } from "@/types/common"
+import { useMemo } from "react";
 
 // Default empty scenarios to prevent UI crashes
 function getDefaultScenarios(): Scenarios {
@@ -27,50 +28,58 @@ function getDefaultScenarios(): Scenarios {
 }
 
 export function useScenarioCalculations() {
-  const {
-    id: mortgageId,
-    loan_amount,
-    interest_rate,
-    term_years,
-    installments_per_year,
-    first_installment_date,
-    property: { property_insurance } = {},
-    loan_protection_insurance: loan_insurance,
-  } = useMortgageDraftStore((s) => s.mortgageDraft || {}) as MortgageDraft;
+  const mortgageDraft = useMortgageDraftStore((s) => s.mortgageDraft) as MortgageDraft;
 
-  return useQuery<Scenarios, Error>({
-    queryKey: [
-      "scenarios",
-      mortgageId,
+  const stableInputs = useMemo(() => {
+    if (!mortgageDraft) return null;
+
+    const {
+      id,
       loan_amount,
       interest_rate,
       term_years,
       installments_per_year,
-      first_installment_date?.toISOString(),
-      property_insurance,
-      loan_insurance
-    ],
+      first_installment_date,
+      property,
+      loan_protection_insurance,
+    } = mortgageDraft;
+
+    return {
+      id,
+      loan_amount,
+      interest_rate,
+      term_years,
+      installments_per_year,
+      first_installment_date: first_installment_date?.toISOString(),
+      property_insurance: property?.property_insurance,
+      loan_insurance: loan_protection_insurance,
+    };
+  }, [mortgageDraft]);
+
+  return useQuery<Scenarios, Error>({
+    enabled: !!stableInputs,
+    queryKey: ["scenarios", stableInputs],
     queryFn: async () => {
-      if (!mortgageId) return getDefaultScenarios();
+      if (!mortgageDraft?.id) return getDefaultScenarios();
 
       const [extraInstallments, newRates] = await Promise.all([
-        fetchExtraInstallments(mortgageId),
-        fetchNewRates(mortgageId),
+        fetchExtraInstallments(mortgageDraft.id),
+        fetchNewRates(mortgageDraft.id),
       ]);
 
       return ScenarioCalculator.calculateScenarios({
-        loan_amount: typeof loan_amount === 'string' ? parseFloat(loan_amount) : loan_amount || 0,
-        interest_rate: typeof interest_rate === 'string' ? parseFloat(interest_rate) : interest_rate || 0,
-        term_years: typeof term_years === 'string' ? parseFloat(term_years) : term_years || 0,
-        installments_per_year: typeof installments_per_year === 'string' ? parseFloat(installments_per_year) : installments_per_year || 12,
-        first_installment_date: first_installment_date!,
-        property_insurance: property_insurance || 0,
-        loan_insurance: typeof loan_insurance === 'string' ? parseFloat(loan_insurance) : loan_insurance || 0,
+        loan_amount: mortgageDraft.loan_amount || 0,
+        interest_rate: parseFloat(mortgageDraft.interest_rate || "0"),
+        term_years: parseInt(mortgageDraft.term_years || "0"),
+        installments_per_year: parseInt(mortgageDraft.installments_per_year || "12"),
+        first_installment_date: mortgageDraft.first_installment_date!,
+        property_insurance: mortgageDraft.property?.property_insurance || 0,
+        loan_insurance: mortgageDraft.loan_protection_insurance || 0,
         extra_installments: extraInstallments,
         rate_changes: newRates as unknown as RateChange[],
       });
     },
-    enabled: Boolean(mortgageId),
+    // enabled: Boolean(mortgageDraft?.id),
     staleTime: 30000,
     gcTime: 300000,
     refetchOnWindowFocus: false,

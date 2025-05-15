@@ -5,7 +5,7 @@ import { calculateLoanAmountSync } from '@/utils/calculations/mortgage/loan';
 import { fetchExtraInstallments, fetchNewRates } from '@/services/mortgageServices';
 import { ScenarioCalculator } from '@/utils/calculations/mortgage/scenarioCalculator';
 import { RateChange } from '@/types/common';
-import { NewRate } from '@/types/mortgage';
+
 
 export async function updateDependentMortgages(
   userId: string,
@@ -59,6 +59,12 @@ export async function updateDependentMortgages(
       // 3d) Grab the saved scenario summary
       const key = m.saved_scenario as keyof typeof scenarios;
       const scenario = scenarios[key];
+
+    // ←── ADD YOUR LOG HERE ──→
+    // console.log(
+    //   `Mortgage ${m.id}: newLoanAmount=${newLoanAmount.toFixed(2)}, ` +
+    //   `totalInterestAndInsurance=${scenario.summary.total_interest_and_insurance.toFixed(2)}`
+    // );
 
       // 4) Persist updates back to DB
       await supabase

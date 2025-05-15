@@ -29,15 +29,15 @@ import { ExtraInstallmentsSection } from '@/components/mortgages/extra-installme
 import { NewRateForm } from '@/components/mortgages/new-rate-form'
 import { useState, useEffect } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { useExchangeRate } from "@/hooks/use-exchange-rate"
+// import { useExchangeRate } from "@/hooks/use-exchange-rate"
 import { SVGfixed } from "@/components/ui/svg-fixed"
 
 import { Mortgage } from "@/types/mortgage"
 
-import { useMortgageDraftStore } from "@/store/mortgage/store"
+// import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useUpdateMortgage } from '@/hooks/mortgages/useUpdate'
-import { useMortgageBundle } from "@/hooks/useMortgageBundle"
+
 
 
 export default function EditMortgageWithZustand(mortgageData: any) {
@@ -80,17 +80,17 @@ export default function EditMortgageWithZustand(mortgageData: any) {
 
 
   // 2) Pull the exchange‐rate hook here
-  const { data: exchangeRate = 1 } = useExchangeRate("USD", "PEN");
+  // const { data: exchangeRate = 1 } = useExchangeRate("USD", "PEN");
 
-  // 3) Grab the store action
-  const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
+  // // 3) Grab the store action
+  // const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
 
-  // 4) Seed the draft and the rate in one effect
-  useEffect(() => {
-    if (mortgage) {
-      setExchangeRate(exchangeRate);   // seed the existing mortgage
-    }
-  }, [mortgage, setExchangeRate]);
+  // // 4) Seed the draft and the rate in one effect
+  // useEffect(() => {
+  //   if (mortgage) {
+  //     setExchangeRate(exchangeRate);   // seed the existing mortgage
+  //   }
+  // }, [mortgage, setExchangeRate]);
 
 // console.log("🔄 exchangeRate:", exchangeRate)
 
@@ -135,16 +135,14 @@ export default function EditMortgageWithZustand(mortgageData: any) {
     }
   }
 
-
-
   // Use the scenario calculations hook
   const { data: scenarios, isLoading: isLoadingScenarios, error: scenariosError } = useScenarioCalculations();
-  console.log({
-    mortgage,
-    scenarios,
-    isLoadingScenarios,
-    isLoadingMortgage: isLoading
-  })
+  // console.log({
+  //   mortgage,
+  //   scenarios,
+  //   isLoadingScenarios,
+  //   isLoadingMortgage: isLoading
+  // })
 
   // Handler for tab changes
   const handleTabChange = (value: string) => {
@@ -372,21 +370,22 @@ export default function EditMortgageWithZustand(mortgageData: any) {
               <BreadcrumbItem>
                   <EditableHeading 
                     value={mortgage?.name || ""} 
-                    onChange={async (newName) => {
-                      try {
-                        const { error } = await supabase
-                          .from("mortgages")
-                          .update({ name: newName })
-                          .eq("id", id)
+                    // onChange={async (newName) => {
+                    //   try {
+                    //     const { error } = await supabase
+                    //       .from("mortgages")
+                    //       .update({ name: newName })
+                    //       .eq("id", id)
 
-                        if (error) throw error
+                    //     if (error) throw error
                         
-                      // Refresh the data
-                      queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
-                      } catch (error) {
-                        console.error("Error updating name:", error)
-                      }
-                    }}
+                    //   // Refresh the data
+                    //   queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
+                    //   } catch (error) {
+                    //     console.error("Error updating name:", error)
+                    //   }
+                    // }}
+                    onChange={() => {}}
                     size="breadcrumb"
                     as="span"
                     className="text-foreground"
@@ -436,7 +435,7 @@ export default function EditMortgageWithZustand(mortgageData: any) {
 
           {/* Right Container */}
           
-          <div className="w-screen sm:w-full overflow-hidden flex-1 pt-8 sm:p-0">
+         <div className="w-screen sm:w-full overflow-hidden flex-1 pt-8 sm:p-0">
               {(!mortgage || !scenarios || isLoadingScenarios) ? (
                 <div className="flex items-center justify-center h-64">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-2"></div>
@@ -625,7 +624,7 @@ export default function EditMortgageWithZustand(mortgageData: any) {
                   </TabsContent>
                 </Tabs>
               )}
-            </div>
+          </div> 
         </div>
       </div>
     </DashboardLayout>
