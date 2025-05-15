@@ -31,13 +31,13 @@ import { formatCurrency } from "@/utils/utils"
 
 export type PropertyListProps = {
   properties: PropertyWithBonus[]
-  onPropertySelect: (property: Property) => void
-  onPropertyUpdate: (updatedProperty: Property, isDelete?: boolean) => void
+  onPropertySelect: (property: PropertyWithBonus) => void
+  onPropertyUpdate: (updatedProperty: PropertyWithBonus, isDelete?: boolean) => void
   sortConfig: {
-    key: keyof Property;
+    key: keyof PropertyWithBonus;
     direction: 'asc' | 'desc';
   } | null
-  onSort: (key: keyof Property) => void
+  onSort: (key: keyof PropertyWithBonus) => void
 }
 
 export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, sortConfig, onSort }: PropertyListProps) {

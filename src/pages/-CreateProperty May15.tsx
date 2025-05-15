@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { SubscriptionCheck } from '@/components/SubscriptionCheck';
+// import { SubscriptionCheck } from '@/components/SubscriptionCheck';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -119,11 +119,11 @@ export default function CreatePropertyPage() {
     <div className="container max-w-xl py-10">
       <h1 className="text-3xl font-bold mb-8">Crear Nueva Propiedad</h1>
       
-      <SubscriptionCheck 
+      {/* <SubscriptionCheck 
         featureName="properties"
         currentCount={propertyCount}
         onUpgrade={handleUpgrade}
-      >
+      > */}
         <Card>
           <form onSubmit={handleSubmit}>
             <CardHeader>
@@ -183,7 +183,7 @@ export default function CreatePropertyPage() {
             </CardFooter>
           </form>
         </Card>
-      </SubscriptionCheck>
+      {/* </SubscriptionCheck> */}
     </div>
   );
 } 

@@ -28,8 +28,23 @@ export async function fetchProperties(userId: string): Promise<PropertyWithBonus
   const props = data ?? [];
   const enriched = await Promise.all(
     props.map(async (p) => {
-      const { data: bonusValue, error: bonusError } = await supabase
-        .rpc("property_bonus", { p_property_id: p.id });
+      // const { data: bonusValue, error: bonusError } = await supabase
+      //   .rpc("property_bonus", { p_property_id: p.id });
+     // ── Add debug logging here ──
+            const { data: bonusValue, error: bonusError } = await supabase
+            .rpc("property_bonus", { p_property_id: p.id });
+    
+          console.log(
+            `[property_bonus] property_id=${p.id} → bonus=${bonusValue} `,
+            bonusError ? `error=${bonusError.message}` : ""
+          );
+          // ── end debug logging ──
+    
+          if (bonusError) {
+            // you could also throw or fallback here
+            console.error("Failed to fetch bonus for", p.id, bonusError);
+          }
+    
       return {
         ...p,
         property_insurance_type: p.property_insurance_type ?? "auto",

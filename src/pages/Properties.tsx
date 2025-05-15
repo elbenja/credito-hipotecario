@@ -15,10 +15,10 @@ import { useAuth } from "@/context/auth-context"
 // import { useToast } from "@/components/ui/use-toast"
 
 import { SEO } from "@/components/seo"
-import { Property } from "@/types/property"
+import {  PropertyWithBonus } from "@/types/property"
 import { useTranslation } from "react-i18next"
 import SVGillustration from "@/components/ui/SVGillustration"
-import { useProperties } from "@/services/propertyService"
+import { fetchPropertyWithBonus, useProperties } from "@/services/propertyService"
 
 export default function Properties() {
   const { t, i18n } = useTranslation(['properties', 'global'])
@@ -26,11 +26,11 @@ export default function Properties() {
   const { user } = useAuth()
   // const { toast } = useToast()
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof Property;
+    key: keyof PropertyWithBonus;
     direction: 'asc' | 'desc';
   } | null>(null)
 
-const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+const [selectedProperty, setSelectedProperty] = useState<PropertyWithBonus | null>(null)
 
 // hook to fetch PropertyWithBonus
  const { data: properties = [], isLoading, refetch } = useProperties(user?.id)
@@ -42,7 +42,7 @@ const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
     setSelectedProperty(null)
   }
 
-  const handleSort = (key: keyof Property) => {
+  const handleSort = (key: keyof PropertyWithBonus) => {
     let direction: 'asc' | 'desc' = 'asc'
     
     if (sortConfig?.key === key && sortConfig.direction === 'asc') {
@@ -52,12 +52,19 @@ const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
     setSortConfig({ key, direction })
   }
 
-  const handlePropertySelect = (property: Property) => {
-    setSelectedProperty(property)
+  // const handlePropertySelect = (property: PropertyWithBonus) => {
+  //   setSelectedProperty(property)
+  //   setOpen(true)
+  // }
+
+  const handlePropertySelect = async (property: Property) => {
+    if (!user) return
+    const enriched = await fetchPropertyWithBonus(user.id, property.id)
+    setSelectedProperty(enriched)
     setOpen(true)
   }
-
-  const handlePropertyUpdate = (updatedProperty: Property, isDelete: boolean = false) => {
+  
+  const handlePropertyUpdate = (updatedProperty: PropertyWithBonus , isDelete: boolean = false) => {
     refetch()
   }
 

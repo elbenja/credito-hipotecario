@@ -1,5 +1,5 @@
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import SVGillustration from '@/components/ui/SVGillustration'
@@ -7,14 +7,15 @@ import { Badge } from "@/components/ui/badge"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
-import { Separator } from "@radix-ui/react-separator"
+// import { Separator } from "@radix-ui/react-separator"
 import { FeatureCounts } from "@/components/dashboard/feature-counts"
 import { PropertyCards } from "@/components/properties/property-cards"
 import { useState, useEffect } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Plus } from "lucide-react"
+import { Plus, Terminal } from "lucide-react"
 import { PropertyForm } from "@/components/properties/property-form"
 import { usePropertyCount } from "@/hooks/properties/useCount"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function Dashboard() {
   const { t } = useTranslation(['dashboard', 'properties', 'mortgages'])
@@ -23,28 +24,28 @@ export default function Dashboard() {
   const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  const { data: subscription } = useQuery({
-    queryKey: ['user-subscription'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select(`
-          *,
-          subscription_plan:subscription_plans(name)
-        `)
-        .eq('user_id', user?.id)
-        .eq('status', 'active')
-        .single()
+  // const { data: subscription } = useQuery({
+  //   queryKey: ['user-subscription'],
+  //   queryFn: async () => {
+  //     const { data, error } = await supabase
+  //       .from('user_subscriptions')
+  //       .select(`
+  //         *,
+  //         subscription_plan:subscription_plans(name)
+  //       `)
+  //       .eq('user_id', user?.id)
+  //       .eq('status', 'active')
+  //       .single()
 
-      if (error) throw error
-      return data
-    },
-    enabled: !!user?.id
-  })
+  //     if (error) throw error
+  //     return data
+  //   },
+  //   enabled: !!user?.id
+  // })
 
-  // Fetch properties count with optimized caching
+  // // Fetch properties count with optimized caching
   const { data: propertiesCount = 0 } = usePropertyCount()
-
+  // const { data: propertiesCount = 0 } = usePlanLimits()
 
 
   // Handle property success with optimistic update
@@ -56,12 +57,12 @@ export default function Dashboard() {
     queryClient.setQueryData(['properties-count', user?.id], (oldCount: number = 0) => oldCount + 1)
     
     // Broadcast property created message
-    const channel = supabase.channel('property-updates')
-    channel.send({
-      type: 'broadcast',
-      event: 'property-created',
-      payload: { action: 'create', userId: user?.id },
-    })
+    // const channel = supabase.channel('property-updates')
+    // channel.send({
+    //   type: 'broadcast',
+    //   event: 'property-created',
+    //   payload: { action: 'create', userId: user?.id },
+    // })
     
     setOpen(false)
   }
@@ -75,8 +76,9 @@ export default function Dashboard() {
    
 {/* container start */}
 <div className="h-full w-full p-6  flex flex-col justify-center items-center ">
-  
-<div className="-mt-12 w-full inline-flex justify-center items-center gap-4 flex-wrap content-center ">
+
+
+  <div className="-mt-12 w-full inline-flex justify-center items-center gap-4 flex-wrap content-center ">
       
      
       {!hasProperties && (
@@ -157,6 +159,14 @@ propertiesCount > 0 && <FeatureCounts />
       />
 
    </div>
+  <Alert className="w-80 mb-16 mt-12">
+    <Terminal className="h-4 w-4" />
+    <AlertTitle>v May15</AlertTitle>
+    {/* <AlertDescription>
+      You can add components and dependencies to your app using the cli.
+    </AlertDescription> */}
+  </Alert>
+
 </div>
     </DashboardLayout>
   )

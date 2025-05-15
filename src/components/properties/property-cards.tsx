@@ -6,7 +6,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { Plus, Pencil } from "lucide-react";
 import SVGillustration from "@/components/ui/SVGillustration";
 import { useNavigate } from "react-router-dom";
-import { Property } from "../../types/property";
+import { Property } from "@/types/property";
+import { fetchPropertyWithBonus } from '@/services/propertyService';
+import type { PropertyWithBonus } from '@/types/property';
 import {
   Sheet,
   SheetContent,
@@ -15,6 +17,8 @@ import {
 } from "@/components/ui/sheet";
 import { PropertyForm } from "@/components/properties/property-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchProperties } from '@/services/propertyService';
+import { formatCurrency } from "@/utils/utils";
 
 type PropertyCardsProps = {
   onPropertySelect?: (property: Property) => void;
@@ -31,37 +35,21 @@ interface PropertyEditSheetProps {
 function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: PropertyEditSheetProps) {
   const { t } = useTranslation(['global', 'properties', 'dashboard']);
   const { user } = useAuth();
-  const [bonusRules, setBonusRules] = useState<any[]>([]);
   const queryClient = useQueryClient();
 
   const handlePropertyUpdate = async () => {
-    const { data, error } = await supabase
-      .from("properties")
-      .select("*")
-      .eq('id', property.id)
-      .single();
-
-    if (error) {
-      console.error("Error fetching updated property:", error);
-      return;
+    try {
+      if (!user) throw new Error('No user logged in');
+      // Use the service to get property with bonus
+      const updated: PropertyWithBonus = await fetchPropertyWithBonus(user.id, property.id);
+      onOpenChange(false);
+      onPropertyUpdate?.(updated);
+      // Broadcast omitted...
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      // queryClient.invalidateQueries({ queryKey: ['properties-count'] });
+    } catch (error) {
+      console.error('Error fetching updated property:', error);
     }
-
-    onOpenChange(false);
-    if (onPropertyUpdate) {
-      onPropertyUpdate(data);
-    }
-    
-    // Broadcast property update message
-    const channel = supabase.channel('property-updates');
-    channel.send({
-      type: 'broadcast',
-      event: 'property-updated',
-      payload: { action: 'update', userId: user?.id },
-    });
-    
-    // Invalidate queries
-    queryClient.invalidateQueries({ queryKey: ['properties'] });
-    queryClient.invalidateQueries({ queryKey: ['properties-count'] });
   };
 
   if (!property) {
@@ -79,7 +67,7 @@ function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: P
             onSuccess={handlePropertyUpdate}
             onClose={() => onOpenChange(false)}
             selectedProperty={property}
-            bonusRules={bonusRules}
+            // bonusRules={bonusRules}
           />
         </div>
       </SheetContent>
@@ -87,17 +75,17 @@ function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate }: P
   );
 }
 
-const formatCurrency = (amount: number, currency: string) => {
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency === 'PEN' ? 'PEN' : 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
+// const formatCurrency = (amount: number, currency: string) => {
+//   const formatter = new Intl.NumberFormat('en-US', {
+//     style: 'currency',
+//     currency: currency === 'PEN' ? 'PEN' : 'USD',
+//     minimumFractionDigits: 0,
+//     maximumFractionDigits: 0,
+//   });
   
-  const formatted = formatter.format(amount);
-  return currency === 'PEN' ? formatted.replace('PEN', 'S/') : formatted;
-}
+//   const formatted = formatter.format(amount);
+//   return currency === 'PEN' ? formatted.replace('PEN', 'S/') : formatted;
+// }
 
 export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: PropertyCardsProps) {
   const { t } = useTranslation(['properties', 'global', 'dashboard']);
@@ -113,20 +101,15 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
   // Use React Query to fetch properties
   const { data: properties = [], isLoading, refetch } = useQuery({
     queryKey: ['properties', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-      return data || [];
+    queryFn: () => {
+      if (!user) {
+        return Promise.resolve([]);
+      }
+      return fetchProperties(user.id);
     },
     enabled: !!user?.id,
     staleTime: 10 * 1000, // 10 seconds
-    gcTime: 2 * 60 * 1000 // 2 minutes
+    gcTime: 2 * 60 * 1000, // 2 minutes
   });
 
   // Update mortgage counts and onPropertiesLoaded callback
@@ -156,44 +139,44 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
   }, [properties, onPropertiesLoaded]);
 
   // Subscribe to broadcast messages for property updates
-  useEffect(() => {
-    if (!user) return;
+  // useEffect(() => {
+  //   if (!user) return;
 
-    // Define a function to handle property updates that require refetching
-    const handlePropertyUpdate = () => {
-      // Clear cached property IDs to force a refresh of mortgage counts
-      fetchedPropertyIds.current.clear();
-      refetch(); // Refresh properties list
-    };
+  //   // Define a function to handle property updates that require refetching
+  //   const handlePropertyUpdate = () => {
+  //     // Clear cached property IDs to force a refresh of mortgage counts
+  //     fetchedPropertyIds.current.clear();
+  //     refetch(); // Refresh properties list
+  //   };
 
-    // Set up the realtime subscription
-    const channel = supabase
-      .channel('property-updates')
-      .on('broadcast', { event: 'property-created' }, (payload) => {
-        console.log('Property created broadcast received:', payload);
-        if (payload.payload?.userId === user.id) {
-          handlePropertyUpdate();
-        }
-      })
-      .on('broadcast', { event: 'property-updated' }, (payload) => {
-        console.log('Property updated broadcast received:', payload);
-        if (payload.payload?.userId === user.id) {
-          handlePropertyUpdate();
-        }
-      })
-      .on('broadcast', { event: 'property-deleted' }, (payload) => {
-        console.log('Property deleted broadcast received:', payload);
-        if (payload.payload?.userId === user.id) {
-          handlePropertyUpdate();
-        }
-      })
-      .subscribe();
+  //   // Set up the realtime subscription
+  //   const channel = supabase
+  //     .channel('property-updates')
+  //     .on('broadcast', { event: 'property-created' }, (payload) => {
+  //       console.log('Property created broadcast received:', payload);
+  //       if (payload.payload?.userId === user.id) {
+  //         handlePropertyUpdate();
+  //       }
+  //     })
+  //     .on('broadcast', { event: 'property-updated' }, (payload) => {
+  //       console.log('Property updated broadcast received:', payload);
+  //       if (payload.payload?.userId === user.id) {
+  //         handlePropertyUpdate();
+  //       }
+  //     })
+  //     .on('broadcast', { event: 'property-deleted' }, (payload) => {
+  //       console.log('Property deleted broadcast received:', payload);
+  //       if (payload.payload?.userId === user.id) {
+  //         handlePropertyUpdate();
+  //       }
+  //     })
+  //     .subscribe();
 
-    // Clean up subscription on unmount
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, refetch]);
+  //   // Clean up subscription on unmount
+  //   return () => {
+  //     supabase.removeChannel(channel);
+  //   };
+  // }, [user, refetch]);
 
   const handleEditProperty = (e: React.MouseEvent, property: Property) => {
     e.stopPropagation();

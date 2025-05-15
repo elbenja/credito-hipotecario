@@ -94,6 +94,8 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
     },
   })
 
+  console.log("[PropertyForm] selectedProperty:", selectedProperty);
+
   async function onSubmit(values: z.infer<typeof propertyFormSchema>) {
     try {
       if (!user) throw new Error(tGlobal('messages.no_user_found', 'User not found', { ns: 'properties' }))
