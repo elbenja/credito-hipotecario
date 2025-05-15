@@ -34,7 +34,7 @@ import { SVGfixed } from "@/components/ui/svg-fixed"
 
 import { Mortgage } from "@/types/mortgage"
 
-// import { useMortgageDraftStore } from "@/store/mortgage/store"
+import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useUpdateMortgage } from '@/hooks/mortgages/useUpdate'
 
@@ -135,14 +135,17 @@ export default function EditMortgageWithZustand(mortgageData: any) {
     }
   }
 
-  // Use the scenario calculations hook
+  // Reset draft on unmount
+  const resetDraft = useMortgageDraftStore((s) => s.resetDraft);
+  useEffect(() => {
+    return () => {
+      resetDraft();
+    };
+  }, []);
+
+  // Use the scenario calculations hook, only when ready
+  const readyForScenarios = !!(mortgageDraft?.loan_amount && mortgageDraft?.interest_rate);
   const { data: scenarios, isLoading: isLoadingScenarios, error: scenariosError } = useScenarioCalculations();
-  // console.log({
-  //   mortgage,
-  //   scenarios,
-  //   isLoadingScenarios,
-  //   isLoadingMortgage: isLoading
-  // })
 
   // Handler for tab changes
   const handleTabChange = (value: string) => {
@@ -429,7 +432,7 @@ export default function EditMortgageWithZustand(mortgageData: any) {
 
                   
                 </Form>
-              <p className="text-xs text-muted-foreground"> Zustand vMay 15 7:07</p>
+              <p className="text-xs text-muted-foreground"> Zustand vMay 15 7:28</p>
             </div>
           </div>
 

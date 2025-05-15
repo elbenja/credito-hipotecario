@@ -74,7 +74,7 @@ export function useScenarioCalculations() {
         installments_per_year: parseInt(mortgageDraft.installments_per_year || "12"),
         first_installment_date: mortgageDraft.first_installment_date!,
         property_insurance: mortgageDraft.property?.property_insurance || 0,
-        loan_insurance: mortgageDraft.loan_protection_insurance || 0,
+        loan_insurance: parseFloat(mortgageDraft.loan_protection_insurance || "0"),
         extra_installments: extraInstallments,
         rate_changes: newRates as unknown as RateChange[],
       });
