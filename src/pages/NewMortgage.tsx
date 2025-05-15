@@ -38,7 +38,7 @@ import { useAddMortgage } from "@/hooks/mortgages"
 
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
-import { usePropertyBonus } from "@/hooks/usePropertyBonus"
+// import { usePropertyBonus } from "@/hooks/usePropertyBonus"
 // import { useExchangeRate } from "@/hooks/use-exchange-rate"
 
 
@@ -62,7 +62,7 @@ export default function NewMortgage() {
   // This ensures we always start with default values
   const { resetDraft: resetStore} = useMortgageDraftStore()
   const { updateDraft } = useMortgageDraftStore()
-  const { calculateBonus } = usePropertyBonus();
+  // const { calculateBonus } = usePropertyBonus();
   
   // const { data: exchangeRate } = useExchangeRate("USD", "PEN");
   // const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
@@ -87,8 +87,10 @@ export default function NewMortgage() {
     }
     try {
       const property = await fetchPropertyWithBonus(user.id, propertyId);
+      console.log("Fetch If Needed 🔄 property:", property)
       setSelectedProperty(property);
       updateDraft({
+        property_id: property.id,
         property,
         name: `${property.name} Mortgage`,
       });
@@ -97,17 +99,12 @@ export default function NewMortgage() {
     }
   };
   
-  // useEffect(() => {
-  //   if (exchangeRate) {
-  //     console.log("🔄 setting store.exchangeRate =", exchangeRate);
-  //     setExchangeRate(exchangeRate);
-  //   }
-  // }, [exchangeRate, setExchangeRate]);
+
 
   useEffect(() => {
     if (propertyIdFromUrl) {
       // load it
-      console.log("  ⏳ loading property", propertyIdFromUrl);
+      console.log(" propertyIdFromUrl ⏳ loading property", propertyIdFromUrl);
       updateDraft({ property_id: propertyIdFromUrl });
       fetchPropertyIfNeeded(propertyIdFromUrl);
     } else {

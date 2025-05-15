@@ -34,10 +34,10 @@ export async function fetchProperties(userId: string): Promise<PropertyWithBonus
             const { data: bonusValue, error: bonusError } = await supabase
             .rpc("property_bonus", { p_property_id: p.id });
     
-          console.log(
-            `[property_bonus] property_id=${p.id} → bonus=${bonusValue} `,
-            bonusError ? `error=${bonusError.message}` : ""
-          );
+          // console.log(
+          //   `[property_bonus] property_id=${p.id} → bonus=${bonusValue} `,
+          //   bonusError ? `error=${bonusError.message}` : ""
+          // );
           // ── end debug logging ──
     
           if (bonusError) {
