@@ -38,7 +38,7 @@ import { useAddMortgage } from "@/hooks/mortgages"
 
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
-// import { usePropertyBonus } from "@/hooks/usePropertyBonus"
+import { usePropertyBonus } from "@/hooks/usePropertyBonus"
 // import { useExchangeRate } from "@/hooks/use-exchange-rate"
 
 
@@ -62,7 +62,7 @@ export default function NewMortgage() {
   // This ensures we always start with default values
   const { resetDraft: resetStore} = useMortgageDraftStore()
   const { updateDraft } = useMortgageDraftStore()
-  // const { calculateBonus } = usePropertyBonus();
+  const { calculateBonus } = usePropertyBonus();
   
   // const { data: exchangeRate } = useExchangeRate("USD", "PEN");
   // const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
