@@ -90,7 +90,7 @@ export function PropertyDisplay({
           <PropertyForm
             selectedProperty={property}
             onSuccess={(fresh) => {
-              // console.log("PROPERTY DISPLAY: onSuccess", property);
+              // console.log("PROPERTY DISPLAY: onSuccess", fresh);
               
               // onPropertyUpdate?.(fresh);
               onPropertyUpdate(fresh);

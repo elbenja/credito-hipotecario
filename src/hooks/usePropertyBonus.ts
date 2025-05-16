@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/integrations/supabase/client'
+// import { useQuery } from '@tanstack/react-query'
+// import { supabase } from '@/integrations/supabase/client'
 import { useExchangeRate } from './use-exchange-rate'
 
 import type { Property } from '@/types/property'
+import { useBonusRules } from './useBonusRules'
 
 
 
@@ -11,25 +12,8 @@ export function usePropertyBonus() {
   const { data: exchangeRate } = useExchangeRate()
   
   // Cache bonus rules with React Query for efficient data fetching
-  const { data: bonusRules = [], isLoading } = useQuery({
-    queryKey: ['bonus-rules'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('bonus_rules')
-          .select('*')
-          .eq('is_active', true)
-          .order('min_value', { ascending: true })
-
-        if (error) throw error
-        return data || []
-      } catch (error) {
-        console.error("Error loading bonus rules:", error)
-        return []
-      }
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
-  })
+  // Fetch bonus rules using the database function
+  const { data: bonusRules = [] } = useBonusRules()
 
   // Helper function to convert currency to PEN
   const convertToPEN = useMemo(() => {
@@ -72,7 +56,7 @@ export function usePropertyBonus() {
     calculateBonus,
     calculateBonusForProperties,
     bonusRules,
-    isLoadingRules: isLoading,
+    // isLoadingRules: isLoading,
     convertToPEN
   }
 } 

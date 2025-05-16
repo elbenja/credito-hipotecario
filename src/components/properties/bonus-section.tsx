@@ -1,14 +1,18 @@
+
+
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
 import { UseFormReturn } from "react-hook-form"
 import * as z from "zod"
-import { BonusRule } from "../../types/property"
+import { BonusRule } from "@/types/property"
 import { formatCurrency } from "@/utils/utils"
-import { useQuery } from "@tanstack/react-query"
-import { supabase } from "@/integrations/supabase/client"
 import { useTranslation } from "react-i18next"
 import { useState, useEffect, useMemo } from "react"
 import { PropertyFormSchema } from "./property-form"
+import { useExchangeRate } from "@/hooks/use-exchange-rate"
+import { useBonusRules } from '@/hooks/useBonusRules'
+import { supabase } from "@/integrations/supabase/client"
+import { useQuery } from "@tanstack/react-query"
 
 type BonusSectionProps = {
   form: UseFormReturn<PropertyFormSchema>
@@ -20,24 +24,13 @@ export function BonusSection({ form }: BonusSectionProps) {
   const currency = form.watch("currency")
   const isFirstHome = form.watch("is_first_home")
   const isSustainable = form.watch("is_sustainable")
-  
-  // Fetch bonus rules using the database function
-  const { data: bonusRules = [] } = useQuery({
-    queryKey: ['bonus-rules'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .rpc('get_active_bonus_rules')
 
-        if (error) throw error
-        return data || []
-      } catch (error) {
-        console.error("Error loading bonus rules:", error)
-        return []
-      }
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
+  // Fetch exchange rate
+  const { data: exchangeRate } = useExchangeRate(currency, "PEN");
+
+
+  // Fetch bonus rules using the database function
+  const { data: bonusRules = [] } = useBonusRules()
   
   // Helper function to parse price string properly
   const parsePrice = (priceStr: string): number => {
@@ -47,23 +40,24 @@ export function BonusSection({ form }: BonusSectionProps) {
     return parseFloat(sanitized);
   };
 
-  // Fetch exchange rate
-  const { data: exchangeRate = 3.70 } = useQuery({
-    queryKey: ['exchangeRate', currency, 'PEN'],
-    queryFn: async () => {
-      if (currency === 'PEN') return 1
 
-      const { data, error } = await supabase
-        .from('exchange_rates')
-        .select('rate')
-        .eq('from_currency', currency)
-        .eq('to_currency', 'PEN')
-        .single()
+  // const { data: exchangeRate = 3.70 } = useQuery({
+  //   queryKey: ['exchangeRate', currency, 'PEN'],
+  //   queryFn: async () => {
+  //     if (currency === 'PEN') return 1
 
-      if (error) throw error
-      return data?.rate || 3.70 // Fallback rate
-    }
-  })
+  //     const { data, error } = await supabase
+  //       .from('exchange_rates')
+  //       .select('rate')
+  //       .eq('from_currency', currency)
+  //       .eq('to_currency', 'PEN')
+  //       .single()
+
+  //     if (error) throw error
+  //     return data?.rate || 3.70 // Fallback rate
+  //   }
+  // })
+  // console.log("[BonusSection] exchangeRate:", exchangeRate);
 
 // code debt use database function
   // const { data, error } = await supabase.rpc('get_exchange_rate', { 
@@ -169,7 +163,7 @@ export function BonusSection({ form }: BonusSectionProps) {
                     />
 
                     {applicableRule && (
-                      <div className="mt-4 rounded-md bg-primary-foreground p-6">
+                      <div className="mt-4   bg-primary-foreground p-6">
                         <p className="text-lg font-medium">{t('bonus.amount')}:</p>
                         <p className="text-2xl font-bold">
                           {formatCurrency(

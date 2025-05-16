@@ -21,6 +21,9 @@ import { useAddProperty } from "@/hooks/properties"
 import { updateDependentMortgages } from "@/services/mortgages/updateDependent"
 import { useUpdateProperty } from "@/hooks/properties/useUpdate"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useBonusRules } from "@/hooks/useBonusRules"
+
+
 export const createPropertyFormSchema = (t: any) => z.object({
   name: z.string().min(1, {
     message: t('property_form.validation.property_name_required', 'Property name is required', { ns: 'components' })
@@ -94,11 +97,27 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
     },
   })
 
-  console.log("[PropertyForm] selectedProperty:", selectedProperty);
+  const { data: bonusRules = [] } = useBonusRules()
+  // console.log("[PropertyForm] selectedProperty:", selectedProperty);
 
   async function onSubmit(values: z.infer<typeof propertyFormSchema>) {
     try {
       if (!user) throw new Error(tGlobal('messages.no_user_found', 'User not found', { ns: 'properties' }))
+
+// calculate bonus May 16
+        const price = parseFloat(values.price_cost)
+        const firstHome = values.is_first_home
+        const sustainable = values.is_sustainable
+          // Find the bracket
+          const rule = bonusRules.find(r => price >= r.min_value && price < r.max_value)
+
+          // Derive bonus exactly as in your UI
+          const bonus =
+            firstHome && rule
+              ? sustainable
+                ? rule.sustainable_bonus
+                : rule.traditional_bonus
+              : 0
 
       const propertyData = {
         name: values.name,
@@ -110,27 +129,28 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
         is_sustainable: values.is_sustainable,
         is_first_home: values.is_first_home,
         user_id: user.id,
+        bonus,                  // ← your new field May 16
       }
 
       // let updatedProperty: Property | null = null;
 
       if (selectedProperty) {
         // merge form fields onto selectedProperty
-        // const payload = { ...selectedProperty, ...propertyData };
+        const payload = { ...selectedProperty, ...propertyData };
 
 
-          // 2. strip bonus off the selectedProperty
-          const { bonus, ...base } = selectedProperty;
+          // // 2. strip bonus off the selectedProperty
+          // const { bonus, ...base } = selectedProperty;
 
-          // 3. merge into a pure Property payload
-          const payload: Property = { ...base, ...propertyData };
+          // // 3. merge into a pure Property payload
+          // const payload: Property = { ...base, ...propertyData };
 
 
 
         try {
           const fresh = await updateProperty.mutateAsync(payload);
-          // console.log("[PropertyForm v2] mutateAsync → fresh:", fresh);
-          onSuccess(fresh);
+          console.log("[PropertyForm v2] mutateAsync → fresh:", payload);
+          onSuccess(payload);
           onClose();
         } catch (err) {
           console.error("[PropertyForm] mutation error", err);
@@ -158,7 +178,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
         if (criticalFieldsChanged ) {
 
           // await updateDependentMortgages(selectedProperty.id);
-          depMutation.mutate({ userId: user.id, propertyId: payload.id })
+          depMutation.mutate({ userId: user.id, propertyId: selectedProperty.id })
         }
         // end updateDependentMortgages
 

@@ -1,21 +1,28 @@
 // src/services/propertyService.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Property } from "@/types/property";
+import type { Property, PropertyWithBonus } from "@/types/property";
+type RawProperty = Omit<PropertyWithBonus, 'bonus'>
+
 
 export function useUpdateProperty() {
   const qc = useQueryClient();
-  return useMutation<Property, Error, Property>({
+  return useMutation<
+  PropertyWithBonus,    // what the mutation returns
+  Error,
+  PropertyWithBonus     // the input type (so `updated` has `bonus`)
+>({
       // **Give it a key for DevTools**:
     mutationKey: ["updateProperty"],
     mutationFn: async (updated) => {
-    
-      // console.log("mutate called with", updated);
+      // Remove the bonus field before updating
+      const { bonus, ...clean } = updated;
+
       try {
         const { data, error } = await supabase
           .from("properties")
-          .update(updated)
-          .eq("id", updated.id)
+          .update(clean)
+          .eq("id", clean.id)
           .select()
           .single();
         if (error || !data) {

@@ -26,6 +26,7 @@ import { useMortgageCapture } from "@/services/mortgages/mortgage-capture.servic
 // import { useMortgageBundle } from "@/hooks/useMortgageBundle"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { useDeleteMortgage } from "@/hooks/mortgages"
+// import { useBonusRules } from "@/hooks/useBonusRules"
 
 export default function Mortgages() {
   const navigate = useNavigate()
@@ -45,27 +46,29 @@ export default function Mortgages() {
   const deleteMortgage = useDeleteMortgage()
 
 
+// Fetch bonus rules using the database function
+// const { data: bonusRules = [] } = useBonusRules()
 
-  // Fetch bonus rules delete soon
-  const { data: bonusRules = [] } = useQuery({
-    queryKey: ['bonus-rules'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('bonus_rules')
-          .select('*')
-          .eq('is_active', true)
-          .order('min_value', { ascending: true })
+  // // Fetch bonus rules delete soon
+  // const { data: bonusRules = [] } = useQuery({
+  //   queryKey: ['bonus-rules'],
+  //   queryFn: async () => {
+  //     try {
+  //       const { data, error } = await supabase
+  //         .from('bonus_rules')
+  //         .select('*')
+  //         .eq('is_active', true)
+  //         .order('min_value', { ascending: true })
 
-        if (error) throw error
-        return data || []
-      } catch (error) {
-        console.error("Error loading bonus rules:", error)
-        return []
-      }
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
+  //       if (error) throw error
+  //       return data || []
+  //     } catch (error) {
+  //       console.error("Error loading bonus rules:", error)
+  //       return []
+  //     }
+  //   },
+  //   staleTime: 5 * 60 * 1000, // 5 minutes
+  // })
 
   // Helper function to convert currency to PEN - memoize to prevent recreation on each render
   const convertToPEN = useCallback((amount: number, currency: string): number => {

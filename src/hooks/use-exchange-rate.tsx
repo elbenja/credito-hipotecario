@@ -16,6 +16,11 @@ export const useExchangeRate = (
   const query = useQuery({
     queryKey: ["exchange-rate", fromCurrency, toCurrency],
     queryFn: async () => {
+      // If currencies are identical, exchange rate is 1
+      if (fromCurrency === toCurrency) {
+        return 1
+      }
+
       try {
         // Call the database function instead of querying the table directly
         const { data, error } = await supabase

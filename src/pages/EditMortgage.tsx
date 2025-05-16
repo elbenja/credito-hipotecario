@@ -37,6 +37,7 @@ import { Mortgage } from "@/types/mortgage"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useUpdateMortgage } from '@/hooks/mortgages/useUpdate'
+import { PropertyWithBonus } from "@/types/property"
 
 
 
@@ -137,12 +138,25 @@ export default function EditMortgageWithZustand(mortgageData: any) {
 
   // Reset draft on unmount
   const resetDraft = useMortgageDraftStore((s) => s.resetDraft);
+  const updateDraft = useMortgageDraftStore((s) => s.updateDraft);
+
   useEffect(() => {
     return () => {
       resetDraft();
     };
   }, []);
 
+// EditMortgage.tsx (or NewMortgage.tsx)
+
+const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
+  // updateDraft({ property: freshProperty })
+  // console.log("handlePropertyChange", freshProperty)
+  updateDraft({ 
+    property: freshProperty, 
+    property_id: freshProperty.id 
+  });
+     // ← recalc loan amount using the new bonus
+}
   // Use the scenario calculations hook, only when ready
   const readyForScenarios = !!(mortgageDraft?.loan_amount && mortgageDraft?.interest_rate);
   const { data: scenarios, isLoading: isLoadingScenarios, error: scenariosError } = useScenarioCalculations();
@@ -373,22 +387,22 @@ export default function EditMortgageWithZustand(mortgageData: any) {
               <BreadcrumbItem>
                   <EditableHeading 
                     value={mortgage?.name || ""} 
-                    // onChange={async (newName) => {
-                    //   try {
-                    //     const { error } = await supabase
-                    //       .from("mortgages")
-                    //       .update({ name: newName })
-                    //       .eq("id", id)
+                    onChange={async (newName) => {
+                      try {
+                        const { error } = await supabase
+                          .from("mortgages")
+                          .update({ name: newName })
+                          .eq("id", id)
 
-                    //     if (error) throw error
+                        if (error) throw error
                         
-                    //   // Refresh the data
-                    //   queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
-                    //   } catch (error) {
-                    //     console.error("Error updating name:", error)
-                    //   }
-                    // }}
-                    onChange={() => {}}
+                      // Refresh the data
+                      queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
+                      } catch (error) {
+                        console.error("Error updating name:", error)
+                      }
+                    }}
+                    // onChange={() => {}} // debt May 16
                     size="breadcrumb"
                     as="span"
                     className="text-foreground"
@@ -407,8 +421,13 @@ export default function EditMortgageWithZustand(mortgageData: any) {
             
                   <PropertyDisplay 
               property={property}
-              onPropertyUpdate={() => {
-                // After property update, refresh data
+              // onPropertyUpdate={() => {
+              //   // After property update, refresh data
+              //   queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
+              // }}
+              onPropertyUpdate={(updatedProperty) => {
+                // Update our local property state when property is updated
+                handlePropertyChange(updatedProperty)
                 queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
               }}
             />
@@ -432,7 +451,7 @@ export default function EditMortgageWithZustand(mortgageData: any) {
 
                   
                 </Form>
-              <p className="text-xs text-muted-foreground"> Zustand vMay 16 10:52am</p>
+              <p className="text-xs text-muted-foreground"> Zustand vMay 16 5:25pm</p>
             </div>
           </div>
 
