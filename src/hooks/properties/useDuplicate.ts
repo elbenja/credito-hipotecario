@@ -31,7 +31,8 @@ export function useDuplicateProperty() {
     return useMutation<
       RawProperty,           // returned data
       Error,                 // error
-      PropertyWithBonus      // input
+      PropertyWithBonus,      // input
+      ContextProps  //for the counter
     >({
       mutationKey: ['duplicateProperty'],
       mutationFn: async (propWithBonus) => {
