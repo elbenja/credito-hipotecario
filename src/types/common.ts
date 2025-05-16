@@ -88,7 +88,9 @@ export interface PaymentRow {
   monthly_loan_insurance?: number  // Alias for loan_insurance
   principal?: number  // Alias for capital
 }
-
+// monthly_interest?: number
+// monthly_loan_insurance?: number
+// principal?: number
 /**
  * Summary of a payment scenario
  */
@@ -116,3 +118,40 @@ export type Scenarios = {
   lower_payment: ScenarioResult
   new_rate: ScenarioResult
 } 
+
+export interface ScenarioPanelProps {
+  scenario: ScenarioResult | undefined
+  regularScenario?: ScenarioResult | undefined
+  currency: string
+  installmentsPerYear: number
+  propertyCost?: number
+  scenarioType?: string
+  isThisScenarioSaved?: boolean
+  onSaveScenario?: (scenarioType: string) => void
+  formValues?: MortgageFormValues
+  extraInstallments?: Array<{
+    id: string;
+    mortgage_id: string;
+    amount: number;
+    frequency: string;
+    start_date: string;
+    end_date: string | null;
+  }>
+  newRates?: Array<{
+    id: string;
+    mortgage_id: string;
+    interest_rate: number;
+    effective_date: string;
+  }>
+}
+// Update the MortgageFormValues interface around line 40
+export interface MortgageFormValues {
+  loan_amount: number;
+  down_payment: number;
+  interest_rate: number;
+  term_years: number;
+  installments_per_year: number;
+  loan_protection_type: "individual" | "joint" | "none" | "custom";
+  loan_protection_insurance: number;
+  first_installment_date: string | Date;
+}
