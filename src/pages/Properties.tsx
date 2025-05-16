@@ -57,7 +57,7 @@ const [selectedProperty, setSelectedProperty] = useState<PropertyWithBonus | nul
   //   setOpen(true)
   // }
 
-  const handlePropertySelect = async (property: Property) => {
+  const handlePropertySelect = async (property: PropertyWithBonus) => {
     if (!user) return
     const enriched = await fetchPropertyWithBonus(user.id, property.id)
     setSelectedProperty(enriched)
