@@ -10,6 +10,7 @@ import { useEffect, useState } from "react"
 import { Separator } from "@/components/ui/separator"
 import { getUserPlanLimits } from "@/services/planService"
 import { useAuth } from "@/context/auth-context"
+import SVGillustration from "@/components/ui/SVGillustration"
 
 type PlanLimits = {
   plan_name: string
@@ -44,7 +45,9 @@ export default function Account() {
       }}
     >
       <div className="container py-6 space-y-6">
-    
+        <div className="flex justify-center">
+      <SVGillustration variant="cat" className="size-52 -mb-8" />
+        </div>
 
     <Card>
       <CardHeader>
