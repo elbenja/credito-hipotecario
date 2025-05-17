@@ -19,6 +19,8 @@ import {  PropertyWithBonus } from "@/types/property"
 import { useTranslation } from "react-i18next"
 import SVGillustration from "@/components/ui/SVGillustration"
 import { fetchPropertyWithBonus, useProperties } from "@/services/propertyService"
+// import { useAddWithValidation } from "@/hooks/UseAddValidation"
+import { useCanCreateFeature } from "@/hooks/usePlanLimits"
 
 export default function Properties() {
   const { t, i18n } = useTranslation(['properties', 'global'])
@@ -68,10 +70,28 @@ const [selectedProperty, setSelectedProperty] = useState<PropertyWithBonus | nul
     refetch()
   }
 
-  const handleAddNewClick = () => {
+  // const handleAddNewClick = () => {
+  //   const { isBlocked } = useAddWithValidation('properties')
+  //   if (isBlocked) {
+  //     console.log('You need to upgrade your plan to create more properties')
+  //   }else{
+  //     setSelectedProperty(null)
+  //     setOpen(true)
+  //   }
+  // }
+
+
+const { canCreate } = useCanCreateFeature()
+
+const handleAddNewClick = async () => {
+  const allowed = await canCreate('properties')
+  if (!allowed) {
+    console.log('You need to upgrade your plan to create more properties')
+  } else {
     setSelectedProperty(null)
     setOpen(true)
   }
+}
 
   // Only open the property form when bonus rules are loaded
   const handleOpenEmptyPropertyForm = () => {

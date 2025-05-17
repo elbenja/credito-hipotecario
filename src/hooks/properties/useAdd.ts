@@ -7,13 +7,24 @@ export function useAddProperty() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (newData: any) => {
-      const { data, error } = await supabase
+      // Remove the bonus field before updating
+      const { bonus, ...clean } = newData;
+    
+      try {
+        const { data, error } = await supabase
         .from('properties')
-        .insert(newData)
+        .insert(clean)
         .select()
         .single()
-      if (error || !data) throw error || new Error('Failed to insert property')
-      return data
+        if (error || !data) {
+          console.error("mutationFn error", error);
+          throw error || new Error("Update failed");
+        }
+        return data;
+      } catch (err) {
+        console.error("mutationFn caught error", err);
+        throw err;
+      }
     },
     onMutate: async () => {
       await qc.cancelQueries({ queryKey: ['propertyCount'] })
@@ -32,4 +43,7 @@ export function useAddProperty() {
     },
   })
 }
+
+
+
 

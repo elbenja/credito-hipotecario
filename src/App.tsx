@@ -64,7 +64,7 @@ export default function App () {
           <AuthProvider>
             <TooltipProvider>
               <Toaster />
-              <Sonner />
+              {/* <Sonner /> */}
               <Routes>
                 <Route path="/" element={<Auth />} />
                 <Route path="/coming-soon" element={<ComingSoon />} />
