@@ -368,7 +368,7 @@ export function DashboardSidebar() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="start" side="right">
                     <DropdownMenuItem asChild>
-                      <Link to="/dashboard" className="flex items-center">
+                      <Link to="/account" className="flex items-center">
                         <User className="mr-2 h-4 w-4" />
                         <span>{tDashboard('sections.account')}</span>
                       </Link>

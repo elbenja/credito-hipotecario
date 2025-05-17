@@ -41,8 +41,6 @@ import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { usePropertyBonus } from "@/hooks/usePropertyBonus"
 // import { useExchangeRate } from "@/hooks/use-exchange-rate"
 
-
-
 export default function NewMortgage() {
   const addMortgage = useAddMortgage()
 
@@ -64,7 +62,7 @@ export default function NewMortgage() {
   const { updateDraft } = useMortgageDraftStore()
   const { calculateBonus } = usePropertyBonus();
   
-  // const { data: exchangeRate } = useExchangeRate("USD", "PEN");
+
   // const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
 
   
@@ -87,7 +85,7 @@ export default function NewMortgage() {
     }
     try {
       const property = await fetchPropertyWithBonus(user.id, propertyId);
-      console.log("Fetch If Needed 🔄 property:", property)
+      // console.log("Fetch If Needed 🔄 property:", property)
       setSelectedProperty(property);
       updateDraft({
         property_id: property.id,
@@ -98,18 +96,16 @@ export default function NewMortgage() {
       console.error("Error fetching property:", error);
     }
   };
-  
-
 
   useEffect(() => {
     if (propertyIdFromUrl) {
       // load it
-      console.log(" propertyIdFromUrl ⏳ loading property", propertyIdFromUrl);
+      // console.log(" propertyIdFromUrl ⏳ loading property", propertyIdFromUrl);
       updateDraft({ property_id: propertyIdFromUrl });
       fetchPropertyIfNeeded(propertyIdFromUrl);
     } else {
       // no query param → clear out any leftover
-      console.warn("  ⚠️ no propertyIdFromUrl, clearing store");
+      // console.warn("  ⚠️ no propertyIdFromUrl, clearing store");
       resetStore();
       resetDraft();
       
@@ -120,37 +116,11 @@ export default function NewMortgage() {
     }
   }, [propertyIdFromUrl]);
   
-
-
-
 function DebugMortgageDraft() {
   useEffect(() => {
     // Subscribe with a single callback function
     const unsub = useMortgageDraftStore.subscribe((state) => {
       // Extract the properties we want to log
-      const property = state.mortgageDraft?.property;
-      const property_id = state.mortgageDraft?.property_id;
-      
-      console.log(
-        "%c[MORTGAGE DRAFT STORE] property:",
-        "color:teal;font-weight:bold",
-        property,
-        "property_id:",
-        property_id
-      );
-    });
-    
-    return unsub;
-  }, []);
-
-  return null;
-}
-
-
-// then render <DebugMortgageDraft/> somewhere under <App/>
-
-  useEffect(() => {
-    const unsub = useMortgageDraftStore.subscribe((state) => {
       const property = state.mortgageDraft?.property;
       const property_id = state.mortgageDraft?.property_id;
       
@@ -161,6 +131,21 @@ function DebugMortgageDraft() {
       //   "property_id:",
       //   property_id
       // );
+    });
+    
+    return unsub;
+  }, []);
+
+  return null;
+}
+// then render <DebugMortgageDraft/> somewhere under <App/>
+
+  useEffect(() => {
+    const unsub = useMortgageDraftStore.subscribe((state) => {
+      const property = state.mortgageDraft?.property;
+      const property_id = state.mortgageDraft?.property_id;
+      
+
     });
     return unsub;
   }, []);
@@ -197,12 +182,7 @@ function DebugMortgageDraft() {
         property_id: enriched.id 
       });
       setSelectedProperty(enriched);
-
-      // console.log("newProperty", updated)
-      // 4) recalc loan now that bonus has changed
-      // calcLoanAmount();
       
-      // console.log("after updateDraft:", useMortgageDraftStore.getState().mortgageDraft);
 
       form.setValue("property_id", updated.id, { shouldValidate: true })
       
@@ -217,8 +197,6 @@ function DebugMortgageDraft() {
       form.setValue("property_id", "", { shouldValidate: true })
     }
   }
-
-
 
   // Form submission handler
   const handleFormSubmit = async (values: any) => {
@@ -266,32 +244,7 @@ function DebugMortgageDraft() {
       // Format date for database
       const dateString = `${firstInstallmentDate.getFullYear()}-${String(firstInstallmentDate.getMonth() + 1).padStart(2, '0')}-${String(firstInstallmentDate.getDate()).padStart(2, '0')}`
       
-      // // Handle loan protection insurance
-      // let loanProtectionInsurance: number
-      // switch (values.loan_protection_type) {
-      //   case "individual":
-      //     loanProtectionInsurance = 0.028
-      //     break
-      //   case "joint":
-      //     loanProtectionInsurance = 0.052
-      //     break
-      //   case "custom":
-      //     const customValue = parseFloat(values.loan_protection_insurance || "0")
-      //     if (isNaN(customValue) || customValue < 0 || customValue > 1) {
-      //       throw new Error("Invalid loan protection insurance amount")
-      //     }
-      //     loanProtectionInsurance = customValue
-      //     break
-      //   case "none":
-      //   default:
-      //     loanProtectionInsurance = 0
-      //     break
-      // }
-      
-      // Calculate loan amount: (property_cost - bonus) - down_payment
-      // const propertyPrice = property.price_cost
-      // const bonus = property.bonus || 0
-      // const calculatedLoanAmount = Math.max(0, (propertyPrice - bonus) - validDownPayment)
+
       
       // Calculate scenario values using ScenarioCalculator
       const scenarios = ScenarioCalculator.calculateScenarios({

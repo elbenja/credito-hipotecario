@@ -16,7 +16,7 @@ import Properties from "./pages/Properties"
 import Mortgages from "./pages/Mortgages"
 import NewMortgage from "./pages/NewMortgage"
 import EditMortgage from "./pages/EditMortgage"
-import Settings from "./pages/Settings"
+
 import Test from "./pages/tests/Test"
 import TestCalculator from "./pages/tests/TestCalculator"
 import TestExtraInstallments from "./pages/tests/TestExtraInstallments"
@@ -28,7 +28,8 @@ import SubscriptionPlansManagement from "./pages/admin/subscription-plans"
 import { useEffect } from "react"
 import { useMortgageDraftStore } from "./store/mortgage/store"
 import { useExchangeRate } from "./hooks/use-exchange-rate"
-
+import Account from "@/pages/account/Account"
+import Settings from "@/pages/account/Settings"
 // const queryClient = new QueryClient({
 //   defaultOptions: {
 //     queries: {
@@ -132,6 +133,14 @@ export default function App () {
                   element={
                     <ProtectedRoute>
                       <EditMortgage />
+                    </ProtectedRoute>
+                  }
+                />
+                 <Route
+                  path="/account"
+                  element={
+                    <ProtectedRoute>
+                      <Account />
                     </ProtectedRoute>
                   }
                 />
