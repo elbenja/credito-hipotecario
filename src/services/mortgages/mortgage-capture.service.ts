@@ -50,34 +50,34 @@ export const useMortgageCapture = () => {
    * Checks if the user has reached their mortgage limit
    * Returns true if limit reached, false if under limit
    */
-  const checkMortgageLimits = async (): Promise<boolean> => {
-    try {
-      // Get the user's profile information
-      const { data: { user } } = await supabase.auth.getUser();
+  // const checkMortgageLimits = async (): Promise<boolean> => {
+  //   try {
+  //     // Get the user's profile information
+  //     const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) {
-        return true; // Limit reached if no user
-      }
+  //     if (!user) {
+  //       return true; // Limit reached if no user
+  //     }
 
-      // Use the database function check_user_feature_limit to check if user is under limit
-      const { data, error } = await supabase.rpc('check_user_feature_limit', {
-        p_user_id: user.id,
-        p_feature_name: 'mortgages'
-      });
+  //     // Use the database function check_user_feature_limit to check if user is under limit
+  //     const { data, error } = await supabase.rpc('check_user_feature_limit', {
+  //       p_user_id: user.id,
+  //       p_feature_name: 'mortgages'
+  //     });
       
-      if (error) {
-        console.error("Error checking mortgage limits:", error);
-        return false; // Default to allowing creation in case of errors
-      }
+  //     if (error) {
+  //       console.error("Error checking mortgage limits:", error);
+  //       return false; // Default to allowing creation in case of errors
+  //     }
       
-      // Invert the result as our function returns true if limit is reached,
-      // while the database function returns true if under limit
-      return !data;
-    } catch (err) {
-      console.error("Error checking mortgage limits:", err);
-      return false; // Default to allowing creation in case of errors
-    }
-  };
+  //     // Invert the result as our function returns true if limit is reached,
+  //     // while the database function returns true if under limit
+  //     return !data;
+  //   } catch (err) {
+  //     console.error("Error checking mortgage limits:", err);
+  //     return false; // Default to allowing creation in case of errors
+  //   }
+  // };
 
   /**
    * Captures a mortgage with all its dependencies
@@ -85,16 +85,16 @@ export const useMortgageCapture = () => {
   const captureMortgage = async ({ mortgageId, successCallback, stayOnPage = false }: MortgageCapture) => {
     try {
       // Check if user has reached their mortgage limit
-      const limitReached = await checkMortgageLimits();
+      // const limitReached = await checkMortgageLimits();
       
-      if (limitReached) {
-        toast({
-          variant: "destructive",
-          title: tGlobal('ui.error'),
-          description: tMortgages('messages.plan_limit_reached', "You have reached your plan limit for mortgages"),
-        });
-        return null;
-      }
+      // if (limitReached) {
+      //   toast({
+      //     variant: "destructive",
+      //     title: tGlobal('ui.error'),
+      //     description: tMortgages('messages.plan_limit_reached', "You have reached your plan limit for mortgages"),
+      //   });
+      //   return null;
+      // }
 
       // 1. Get original mortgage data with the most up-to-date values
       const { data: originalMortgage, error: mortgageError } = await supabase
@@ -146,7 +146,7 @@ export const useMortgageCapture = () => {
 
       // Insert into mortgages (using amortizations table since that's the actual table)
       const { data: newMortgage, error: createError } = await supabase
-        .from("amortizations")
+        .from("mortgages")
         .insert(duplicatedMortgage)
         .select()
         .single();
@@ -265,16 +265,16 @@ export const useMortgageCapture = () => {
       }
       
       // Check if user has reached their mortgage limit
-      const limitReached = await checkMortgageLimits();
+      // const limitReached = await checkMortgageLimits();
       
-      if (limitReached) {
-        toast({
-          variant: "destructive",
-          title: tGlobal('ui.error'),
-          description: tMortgages('messages.plan_limit_reached', "You have reached your plan limit for mortgages"),
-        });
-        return null;
-      }
+      // if (limitReached) {
+      //   toast({
+      //     variant: "destructive",
+      //     title: tGlobal('ui.error'),
+      //     description: tMortgages('messages.plan_limit_reached', "You have reached your plan limit for mortgages"),
+      //   });
+      //   return null;
+      // }
 
       // 1. Get original mortgage data just for the property and user info
       const { data: originalMortgage, error: mortgageError } = await supabase
@@ -339,7 +339,7 @@ export const useMortgageCapture = () => {
 
       // Insert into mortgages (using amortizations table since that's the actual table)
       const { data: createdMortgage, error: createError } = await supabase
-        .from("amortizations")
+        .from("mortgages")
         .insert(newMortgage)
         .select()
         .single();
@@ -438,6 +438,6 @@ export const useMortgageCapture = () => {
   return {
     captureMortgage,
     captureCurrentScenario,
-    checkMortgageLimits
+    // checkMortgageLimits
   };
 }; 

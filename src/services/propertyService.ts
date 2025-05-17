@@ -82,3 +82,39 @@ export function useProperties(userId?: string | null) {
     gcTime:     30 * 60 * 1000,     // 30 minutes
   });
 }
+
+
+
+export async function getPropertiesWithMortgagesAndBonus(userId: string) {
+  const { data: properties, error } = await supabase
+    .from("properties")
+    .select(`
+      *,
+      mortgages(
+        id, name, loan_amount, down_payment, interest_rate, term_years,
+        installments_per_year, loan_protection_type, loan_protection_insurance,
+        first_installment_date, saved_scenario, saved_scenario_total_interest_and_insurance,
+        saved_scenario_total_months, saved_scenario_monthly_payment, saved_scenario_breakeven_point, property_id
+      )
+    `)
+    .eq("user_id", userId)
+
+  if (error || !properties) throw error
+
+  const enriched = await Promise.all(
+    properties.map(async (p) => {
+      const bonus = p.is_first_home
+        ? await supabase
+            .rpc('property_bonus', { p_property_id: p.id })
+            .then((res) => res.data)
+        : null
+
+      return {
+        ...p,
+        bonus,
+      }
+    })
+  )
+
+  return enriched
+}
