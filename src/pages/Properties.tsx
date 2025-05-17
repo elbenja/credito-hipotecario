@@ -21,10 +21,13 @@ import SVGillustration from "@/components/ui/SVGillustration"
 import { fetchPropertyWithBonus, useProperties } from "@/services/propertyService"
 // import { useAddWithValidation } from "@/hooks/UseAddValidation"
 import { useCanCreateFeature } from "@/hooks/usePlanLimits"
+import { useDuplicateProperty } from "@/hooks/properties/useDuplicate"
+import { PlanLimitDialog } from "@/components/common/PlanLimitDialog"
 
 export default function Properties() {
   const { t, i18n } = useTranslation(['properties', 'global'])
   const [open, setOpen] = useState(false)
+  const [showDialog, setShowDialog] = useState(false)
   const { user } = useAuth()
   // const { toast } = useToast()
   const [sortConfig, setSortConfig] = useState<{
@@ -70,52 +73,51 @@ const [selectedProperty, setSelectedProperty] = useState<PropertyWithBonus | nul
     refetch()
   }
 
-  // const handleAddNewClick = () => {
-  //   const { isBlocked } = useAddWithValidation('properties')
-  //   if (isBlocked) {
-  //     console.log('You need to upgrade your plan to create more properties')
-  //   }else{
-  //     setSelectedProperty(null)
-  //     setOpen(true)
-  //   }
-  // }
 
 
 const { canCreate } = useCanCreateFeature()
+const duplicateProperty = useDuplicateProperty()
 
-const handleAddNewClick = async () => {
+const handleOpenEmptyPropertyForm = async () => {
   const allowed = await canCreate('properties')
   if (!allowed) {
-    console.log('You need to upgrade your plan to create more properties')
+    setShowDialog(true)
   } else {
     setSelectedProperty(null)
     setOpen(true)
   }
 }
 
+const handleDuplicate = async (property: PropertyWithBonus) => {
+  const allowed = await canCreate('properties')
+  if (!allowed) {
+    setShowDialog(true)
+    return
+  }
+
+  duplicateProperty.mutate(property)
+}
+
+// const handleAddNewClick = () => {
+//   handleOpenEmptyPropertyForm()
+// }
+
   // Only open the property form when bonus rules are loaded
-  const handleOpenEmptyPropertyForm = () => {
-    setOpen(true);
-  };
+  // const handleOpenEmptyPropertyForm = () => {
+  //   setOpen(true);
+  // };
 
   const headerActions = (
-    <Sheet 
-      open={open} 
-      onOpenChange={setOpen}
-      aria-describedby="property-form-description"
-    >
-      <SheetTrigger asChild>
-        <Button onClick={handleAddNewClick}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t('actions.add_property', { ns: 'properties' })}
-        </Button>
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <Button onClick={handleOpenEmptyPropertyForm}>
+        <Plus className="mr-2 h-4 w-4" />
+        {t('actions.add_property', { ns: 'properties' })}
+      </Button>
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>
             {selectedProperty ? t('actions.edit_property', { ns: 'properties' }) : t('actions.add_property', { ns: 'properties' })}
           </SheetTitle>
-     
         </SheetHeader>
         <div className="mt-8">
           <PropertyForm
@@ -167,6 +169,7 @@ const handleAddNewClick = async () => {
             }) : properties}
             onPropertySelect={handlePropertySelect}
             onPropertyUpdate={handlePropertyUpdate}
+            onDuplicate={handleDuplicate}
             sortConfig={sortConfig}
             onSort={handleSort}
           />
@@ -186,16 +189,14 @@ const handleAddNewClick = async () => {
 
              <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4 ">
                 <Sheet open={open} onOpenChange={setOpen}>
-                  <SheetTrigger asChild>
-                    <button className="text-xs h-8 flex gap-2">  
-                      <div className="flex-1 text-right text-sm font-medium leading-none">
-                        {t('actions.add_property', { ns: 'properties' })}
-                      </div>
-                      <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
-                        <Plus className="h-4 w-4" />
-                      </div>
-                    </button>
-                  </SheetTrigger>
+                  <Button onClick={handleOpenEmptyPropertyForm} className="text-xs h-8 flex gap-2">  
+                    <div className="flex-1 text-right text-sm font-medium leading-none">
+                      {t('actions.add_property', { ns: 'properties' })}
+                    </div>
+                    <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
+                      <Plus className="h-4 w-4" />
+                    </div>
+                  </Button>
                   <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
                     <SheetHeader>
                       <SheetTitle>
@@ -206,7 +207,7 @@ const handleAddNewClick = async () => {
                       <PropertyForm
                         onSuccess={handlePropertySuccess}
                         onClose={() => setOpen(false)}
-                        selectedProperty={null}
+                        selectedProperty={selectedProperty}
                       />
                     </div>
                   </SheetContent>
@@ -218,7 +219,14 @@ const handleAddNewClick = async () => {
           </>
         )}
       </div>
-
+      <PlanLimitDialog
+        open={showDialog}
+        onClose={() => setShowDialog(false)}
+        onUpgrade={() => {
+          // TODO: Add navigation or logic to upgrade page
+          setShowDialog(false)
+        }}
+      />
     </DashboardLayout>
   )
 }

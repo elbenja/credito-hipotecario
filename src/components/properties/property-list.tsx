@@ -38,9 +38,10 @@ export type PropertyListProps = {
     direction: 'asc' | 'desc';
   } | null
   onSort: (key: keyof PropertyWithBonus) => void
+  onDuplicate: (property: PropertyWithBonus) => void
 }
 
-export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, sortConfig, onSort }: PropertyListProps) {
+export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, sortConfig, onSort, onDuplicate }: PropertyListProps) {
   const { t } = useTranslation(['properties', 'global'])
   const { toast } = useToast()
   // const { data: exchangeRate } = useExchangeRate()
@@ -70,9 +71,14 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
     navigate(`/mortgages/new?propertyId=${property.id}`)
   }
 
-  const handleDuplicate = (e: React.MouseEvent, property: Property) => {
-    e.stopPropagation();
-    duplicateProperty.mutate(property);
+  // const handleDuplicate = (e: React.MouseEvent, property: Property) => {
+  //   e.stopPropagation();
+  //   duplicateProperty.mutate(property);
+  // }
+
+  const handleDuplicate = (e: React.MouseEvent, property: PropertyWithBonus) => {
+    e.stopPropagation()
+    onDuplicate?.(property)
   }
 
   const handleDelete = (e: React.MouseEvent, property: Property) => {
