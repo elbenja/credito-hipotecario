@@ -29,6 +29,7 @@ export function useAddMortgage() {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ['mortgageCount'] })
+      qc.invalidateQueries({ queryKey: ['mortgages-with-bonus'] })
     },
   })
 }

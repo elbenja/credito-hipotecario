@@ -47,7 +47,7 @@ export default function Dashboard() {
   const { data: propertiesCount = 0 } = usePropertyCount()
   // const { data: propertiesCount = 0 } = usePlanLimits()
 
-
+// old optimistic update M19
   // Handle property success with optimistic update
   const handlePropertySuccess = () => {
     // Optimistic update - immediately set hasProperties to true
@@ -161,7 +161,7 @@ propertiesCount > 0 && <FeatureCounts />
    </div>
   <Alert className="w-80 mb-16 mt-12">
     <Terminal className="h-4 w-4" />
-    <AlertTitle>v May17 5:38PM </AlertTitle>
+    <AlertTitle>v May19 5:38PM </AlertTitle>
     {/* <AlertDescription>
       You can add components and dependencies to your app using the cli.
     </AlertDescription> */}

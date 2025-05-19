@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useMortgageCount } from "@/hooks/mortgages/useCount";
 
 /**
  * Types for mortgage capture service
@@ -45,6 +46,7 @@ export const useMortgageCapture = () => {
   const navigate = useNavigate();
   const { t: tGlobal } = useTranslation('global');
   const { t: tMortgages } = useTranslation('mortgages');
+  const { incrementMortgageCount } = useMortgageCount();
 
   /**
    * Checks if the user has reached their mortgage limit
@@ -228,6 +230,7 @@ export const useMortgageCapture = () => {
       if (!stayOnPage) {
         navigate("/mortgages");
       }
+      incrementMortgageCount();
 
       // Return the new mortgage data
       return newMortgage;
@@ -421,6 +424,7 @@ export const useMortgageCapture = () => {
       if (!stayOnPage) {
         navigate("/mortgages");
       }
+      incrementMortgageCount();
 
       // Return the new mortgage data
       return createdMortgage;

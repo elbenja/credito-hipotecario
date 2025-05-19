@@ -24,8 +24,9 @@ export function useUpdateMortgage() {
       const { data, error } = await supabase
         .from('mortgages')
         .update(payload)
-        .select()
+        
         .eq('id', payload.id)
+        .select()
         .single();
 
       if (error || !data) {

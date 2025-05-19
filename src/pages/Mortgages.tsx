@@ -81,8 +81,9 @@ export default function Mortgages() {
     await captureMortgage({
       mortgageId: mortgage.id,
       successCallback: () => {
-        queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
-  
+        console.log("captureMortgage successCallback ", mortgage.id)
+        queryClient.invalidateQueries({ queryKey: ["properties-mortgages-bonus"] })
+       
         queryClient.invalidateQueries({
           queryKey: ["mortgage-bundle", mortgage.id],
           exact: true
@@ -123,7 +124,8 @@ export default function Mortgages() {
             title: tGlobal("ui.success"),
             description: tMortgages("messages.success_delete"),
           })
-          queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
+          console.log("handleDelete success", mortgage.id)
+          queryClient.invalidateQueries({ queryKey: ["properties-mortgages-bonus"] })
         },
         onError: (err) => {
           console.error("Error deleting mortgage:", err)
@@ -148,7 +150,7 @@ export default function Mortgages() {
 
   const loadProperties = useCallback(() => {
     // Logic to load or refresh properties
-    queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
+    queryClient.invalidateQueries({ queryKey: ["properties-mortgages-bonus"] })
   }, [queryClient])
 
   // Create a translations object to pass to the columns function - memoize to prevent recreation
