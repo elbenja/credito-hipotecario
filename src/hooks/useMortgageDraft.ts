@@ -101,10 +101,9 @@ export function useMortgageDraft(mortgageId: string | null) {
       // Only update if we have a property_id to preserve
       if (mortgageDraft?.property_id) {
         updateDraft({
-          ...form.getValues()
-          // ,
-          // property_id: mortgageDraft.property_id,
-          // property: mortgageDraft.property,
+          ...form.getValues(),
+          property_id: mortgageDraft.property_id,
+          property: mortgageDraft.property,
         })
       } else {
         updateDraft(form.getValues())

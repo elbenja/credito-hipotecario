@@ -288,31 +288,68 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
         ...mortgageData,
         id: id as string // Ensure id is treated as string
       };
-      updateMortgage.mutate(updatedMortgage);
 
-      // Mark the form as clean in Zustand
-      markClean()
+  //     updateMortgage.mutate(updatedMortgage);
       
-      // Refresh data
-      queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
-      queryClient.invalidateQueries({ queryKey: ["scenarios", id] })
-        
-        toast({
-          title: t("ui.success", { ns: "global" }),
-          description: t("messages.success_update", { ns: "mortgages" }),
-        })
-    } catch (error) {
-      console.error("Error updating mortgage:", error)
-      toast({
-        variant: "destructive",
-        title: t("ui.error", { ns: "global" }),
-        description: error instanceof Error ? error.message : t("messages.error_update", { ns: "mortgages" })
-      })
-    } finally {
-      // setIsSubmitting(false)
-    }
-  }
+  //     // Refresh data
+  //     queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
+  //     queryClient.invalidateQueries({ queryKey: ["scenarios", id] })
 
+  //     // Mark the form as clean in Zustand
+  //     markClean()
+
+        
+  //       toast({
+  //         title: t("ui.success", { ns: "global" }),
+  //         description: t("messages.success_update", { ns: "mortgages" }),
+  //       })
+  //   } catch (error) {
+  //     console.error("Error updating mortgage:", error)
+  //     toast({
+  //       variant: "destructive",
+  //       title: t("ui.error", { ns: "global" }),
+  //       description: error instanceof Error ? error.message : t("messages.error_update", { ns: "mortgages" })
+  //     })
+  //   } finally {
+  //     // setIsSubmitting(false)
+  //   }
+  // }
+        updateMortgage.mutate(updatedMortgage, {
+              onSuccess: () => {
+                // Invalidate queries to refresh data after update
+                queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
+                queryClient.invalidateQueries({ queryKey: ["scenarios", id] })
+                
+                // Mark the form as clean in Zustand
+                // markClean()
+                
+                toast({
+                  title: t("ui.success", { ns: "global" }),
+                  description: t("messages.success_update", { ns: "mortgages" }),
+                })
+              },
+              onError: (error) => {
+                console.error("Error updating mortgage:", error)
+                toast({
+                  variant: "destructive",
+                  title: t("ui.error", { ns: "global" }),
+                  description: error instanceof Error ? error.message : t("messages.error_update", { ns: "mortgages" })
+                })
+              }
+            });
+          } catch (error) {
+            // Handle other errors not related to the mutation
+            console.error("Error preparing update:", error)
+            toast({
+              variant: "destructive",
+              title: t("ui.error", { ns: "global" }),
+              description: error instanceof Error ? error.message : t("messages.error_update", { ns: "mortgages" })
+            })
+          } finally {
+            // setIsSubmitting(false)
+          }
+       }
+       
   // Handler for invalidating queries when extra installments or new rates change
   const handleDataChange = () => {
     queryClient.invalidateQueries({ queryKey: ["scenarios", id] })
@@ -386,7 +423,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                  <EditableHeading 
+                  {/* <EditableHeading 
                     value={mortgage?.name || ""} 
                     onChange={(newName) => {
                       // Optimistic update via React Query
@@ -394,6 +431,21 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                       // onUpdateMortgage({ name: newName })
                     }}
                     // onChange={() => {}} // debt May 16
+                    size="breadcrumb"
+                    as="span"
+                    className="text-foreground"
+                  /> */}
+                  <EditableHeading 
+                    value={mortgage?.name || ""} 
+                    onChange={(newName) => {
+                      // Optimistic update via React Query
+                      updateMortgage.mutate({ id: id as string, name: newName }, {
+                        onSuccess: () => {
+                          // Invalidate queries to refresh data after update
+                          queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
+                        }
+                      })
+                    }}
                     size="breadcrumb"
                     as="span"
                     className="text-foreground"

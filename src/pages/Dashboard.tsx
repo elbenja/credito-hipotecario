@@ -48,7 +48,7 @@ export default function Dashboard() {
   }
 
   const handleAddMortgage =  async (e: React.MouseEvent, property: Property)  => {
-    console.log('handleAddMortgage', property)
+    // console.log('handleAddMortgage', property)
     const allowed = await canCreate('mortgages')
 
     if (!allowed) {
@@ -57,7 +57,7 @@ export default function Dashboard() {
     } else {
       resetDraft();
       // navigate("/mortgages/new");
-      console.log('allowed', allowed)
+      // console.log('allowed', allowed)
       e.stopPropagation();
       navigate(`/mortgages/new?propertyId=${property.id}`);
     }

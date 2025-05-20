@@ -61,11 +61,8 @@ export default function NewMortgage() {
   const { resetDraft: resetStore} = useMortgageDraftStore()
   const { updateDraft } = useMortgageDraftStore()
   const { calculateBonus } = usePropertyBonus();
-  
 
   // const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
-
-  
   // Now use the mortgage draft hook for form handling
   const {
     form,
@@ -101,7 +98,7 @@ export default function NewMortgage() {
     if (propertyIdFromUrl) {
       // load it
       // console.log(" propertyIdFromUrl ⏳ loading property", propertyIdFromUrl);
-      updateDraft({ property_id: propertyIdFromUrl });
+      // updateDraft({ property_id: propertyIdFromUrl });
       fetchPropertyIfNeeded(propertyIdFromUrl);
     } else {
       // no query param → clear out any leftover
@@ -138,17 +135,7 @@ function DebugMortgageDraft() {
 
   return null;
 }
-// then render <DebugMortgageDraft/> somewhere under <App/>
 
-  useEffect(() => {
-    const unsub = useMortgageDraftStore.subscribe((state) => {
-      const property = state.mortgageDraft?.property;
-      const property_id = state.mortgageDraft?.property_id;
-      
-
-    });
-    return unsub;
-  }, []);
 
   // State to track if form is being submitted
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -261,6 +248,7 @@ function DebugMortgageDraft() {
       const regularScenario = scenarios.regular
       
       // Create mortgage object
+      console.log("property.id", property.id)
       const mortgageData = {
         name: values.name,
         property_id: property.id,

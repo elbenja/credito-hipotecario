@@ -5,7 +5,7 @@ import { formatDate, normalizeDate } from "@/utils/utils"
 // Unified schema for both amortizations and mortgages
 export const mortgageFormSchema = z.object({
   name: z.string().min(1, "amortization_form.validation.required"),
-  property_id: z.string().min(1, "amortization_form.validation.required"),
+  // property_id: z.string().min(1, "amortization_form.validation.required"),
   down_payment: z.string()
     .refine(
       (value) => {
@@ -58,7 +58,7 @@ export const mortgageFormSchema = z.object({
 
 export const defaultValues: MortgageFormValues = {
   name: "",
-  property_id: "",
+  // property_id: "",
   down_payment: "0",
   interest_rate: "8.5",
   term_years: "20",

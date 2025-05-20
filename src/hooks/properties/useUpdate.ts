@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Property, PropertyWithBonus } from "@/types/property";
-type RawProperty = Omit<PropertyWithBonus, 'bonus'>
+// type RawProperty = Omit<PropertyWithBonus, 'bonus'>
 
 
 export function useUpdateProperty() {
@@ -16,7 +16,22 @@ export function useUpdateProperty() {
     mutationKey: ["updateProperty"],
     mutationFn: async (updated) => {
       // Remove the bonus field before updating
-      const { bonus, ...clean } = updated;
+      // const { bonus, ...clean } = updated;
+
+      const clean: Property = {
+        id: updated.id,
+        user_id: updated.user_id,
+        name: updated.name,
+        price_cost: updated.price_cost,
+        property_insurance: updated.property_insurance,
+        // Include all other Property type fields here
+        currency: updated.currency,
+        property_insurance_type: updated.property_insurance_type,
+        is_first_home: updated.is_first_home,
+        is_sustainable: updated.is_sustainable,
+        description: updated.description,
+      };
+
 
       try {
         const { data, error } = await supabase

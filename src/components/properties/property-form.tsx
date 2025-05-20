@@ -149,7 +149,7 @@ export function PropertyForm({ onSuccess, onClose, selectedProperty }: PropertyF
 
         try {
           const fresh = await updateProperty.mutateAsync(payload);
-          console.log("[PropertyForm v2] mutateAsync → fresh:", payload);
+          // console.log("[PropertyForm v2] mutateAsync → fresh:", payload);
           onSuccess(payload);
           onClose();
         } catch (err) {

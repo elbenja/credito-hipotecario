@@ -125,6 +125,7 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded, onAddMortg
 
 
   const handleEditProperty = (e: React.MouseEvent, property: Property) => {
+    // console.log('property', property);
     e.stopPropagation();
     setEditingProperty(property);
     setPropertyEditSheetOpen(true);
@@ -136,7 +137,7 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded, onAddMortg
     
     // Broadcast will handle notifying other components
     queryClient.invalidateQueries({ queryKey: ['properties'] });
-    queryClient.invalidateQueries({ queryKey: ['properties-count'] });
+    queryClient.invalidateQueries({ queryKey: ['properties-mortgages-bonus'] });
   };
 
 
@@ -218,7 +219,7 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded, onAddMortg
                 if (onAddMortgage) {
                   onAddMortgage(e, property);
                 }
-                console.log('property', property);
+                // console.log('property', property);
               }}
             >
               <Plus className="h-4 w-4" />

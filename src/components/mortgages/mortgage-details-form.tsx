@@ -25,7 +25,7 @@ import { Separator } from "@/components/ui/separator"
 import { useState, useEffect, useMemo } from "react"
 import { CurrencyInput } from "@/components/ui/currency-input"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { mortgageFormSchema } from "./schema"
+// import { mortgageFormSchema } from "./schema"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 
 interface MortgageDetailsFormProps {
