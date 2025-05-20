@@ -98,16 +98,21 @@ export function useMortgageDraft(mortgageId: string | null) {
       setIsDirty(true)
       
       // Update draft in store
-      updateDraft({
-        ...form.getValues(),
-        property_id: mortgageDraft?.property_id,
-        property: mortgageDraft?.property,
-
-      })
+      // Only update if we have a property_id to preserve
+      if (mortgageDraft?.property_id) {
+        updateDraft({
+          ...form.getValues()
+          // ,
+          // property_id: mortgageDraft.property_id,
+          // property: mortgageDraft.property,
+        })
+      } else {
+        updateDraft(form.getValues())
+      }
     })
     
     return () => subscription.unsubscribe()
-  }, [form, updateDraft])
+  }, [form, updateDraft, mortgageDraft])
   
   // Function to mark the form as clean
   const markClean = () => {

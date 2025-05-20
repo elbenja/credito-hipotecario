@@ -35,8 +35,7 @@ interface PropertyEditSheetProps {
   onPropertyUpdate?: (property: Property) => void;
 }
 
-function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate,
-   onAddMortgage 
+function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate 
 }: PropertyEditSheetProps) {
 
   const { t } = useTranslation(['global', 'properties', 'dashboard']);
@@ -214,7 +213,9 @@ here
             type="button"  
               className="size-8 border border-foreground text-foreground rounded-[99px] flex justify-center items-center"
               onClick={(e) => {
-                onAddMortgage(e, property);
+                if (onAddMortgage) {
+                  onAddMortgage(e, property);
+                }
                 console.log('property', property);
               }}
             >

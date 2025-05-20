@@ -20,17 +20,18 @@ import { PlanLimitDialog } from "@/components/common/PlanLimitDialog"
 import { useCanCreateFeature } from "@/hooks/usePlanLimits"
 import {  Property, PropertyWithBonus } from "@/types/property"
 import { useNavigate } from "react-router-dom"
+import { useMortgageDraftStore } from "@/store/mortgage/store"
 
 export default function Dashboard() {
   const { t } = useTranslation(['dashboard', 'properties', 'mortgages'])
-  const { user } = useAuth()
+  // const { user } = useAuth()
   const [hasProperties, setHasProperties] = useState(false)
   const [open, setOpen] = useState(false)
   const [showDialog, setShowDialog] = useState(false)
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  // const queryClient = useQueryClient()
   const { canCreate } = useCanCreateFeature()
-  
+  const { resetDraft } = useMortgageDraftStore();
   // const [selectedProperty, setSelectedProperty] = useState<PropertyWithBonus | null>(null)
  
   const handleOpenEmptyPropertyForm = async () => {
@@ -64,7 +65,7 @@ export default function Dashboard() {
       console.log('allowed', allowed)
       setShowDialog(true)
     } else {
-      // resetDraft();
+      resetDraft();
       // navigate("/mortgages/new");
       console.log('allowed', allowed)
       e.stopPropagation();
