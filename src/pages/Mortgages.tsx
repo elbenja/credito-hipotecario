@@ -27,7 +27,7 @@ import { useMortgageCapture } from "@/services/mortgages/mortgage-capture.servic
 import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { useDeleteMortgage } from "@/hooks/mortgages"
 // import { useBonusRules } from "@/hooks/useBonusRules"
-import { getPropertiesWithMortgagesAndBonus } from '@/services/propertyService'
+import { usePropertiesWithMortgagesAndBonus } from "@/services/propertyService"
 import { PlanLimitDialog } from "@/components/common/PlanLimitDialog"
 import { useCanCreateFeature } from "@/hooks/usePlanLimits"
 
@@ -52,11 +52,7 @@ export default function Mortgages() {
 
 
 
-  const { data: propertiesWithMortgages, isLoading } = useQuery({
-    queryKey: ['properties-mortgages-bonus', user?.id],
-    queryFn: () => getPropertiesWithMortgagesAndBonus(user?.id ?? ''),
-    enabled: !!user,
-  })
+  const { data: propertiesWithMortgages, isLoading } = usePropertiesWithMortgagesAndBonus(user?.id);
 
   const handleNewMortgage = async () => {
     const allowed = await canCreate('mortgages')

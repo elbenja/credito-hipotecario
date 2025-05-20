@@ -76,9 +76,7 @@ export function useProperties(userId?: string | null) {
   });
 }
 
-
-
-export async function getPropertiesWithMortgagesAndBonus(userId: string) {
+export async function fetchPropertiesWithMortgagesAndBonus(userId: string) {
   const { data: properties, error } = await supabase
     .from("properties")
     .select(`
@@ -105,9 +103,24 @@ export async function getPropertiesWithMortgagesAndBonus(userId: string) {
       return {
         ...p,
         bonus,
+        mortgageCount: p.mortgages ? p.mortgages.length : 0,
       }
     })
   )
 
   return enriched
+}
+
+/**
+ * React Query hook to load properties with mortgages and bonus for a given user.
+ * Delegates to fetchPropertiesWithMortgagesAndBonus in the service layer.
+ */
+export function usePropertiesWithMortgagesAndBonus(userId?: string | null) {
+  return useQuery({
+    queryKey: ["properties-mortgages-bonus", userId],
+    queryFn: () => (userId ? fetchPropertiesWithMortgagesAndBonus(userId) : []),
+    enabled: Boolean(userId),
+    staleTime: 5 * 60 * 1000,      // 5 minutes
+    gcTime: 30 * 60 * 1000,     // 30 minutes
+  });
 }

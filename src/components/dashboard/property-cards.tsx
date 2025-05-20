@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+// import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/auth-context";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/components/ui/use-toast";
@@ -7,7 +7,7 @@ import { Plus, Pencil } from "lucide-react";
 import SVGillustration from "@/components/ui/SVGillustration";
 import { useNavigate } from "react-router-dom";
 import { Property } from "@/types/property";
-import { fetchPropertyWithBonus, useProperties } from '@/services/propertyService';
+import { fetchPropertyWithBonus,  usePropertiesWithMortgagesAndBonus } from '@/services/propertyService';
 import type { PropertyWithBonus } from '@/types/property';
 import {
   Sheet,
@@ -41,13 +41,14 @@ function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate
   const { t } = useTranslation(['global', 'properties', 'dashboard']);
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [showDialog, setShowDialog] = useState(false)
+  // const [showDialog, setShowDialog] = useState(false)
 
   const handlePropertyUpdate = async () => {
     try {
       if (!user) throw new Error('No user logged in');
       // Use the service to get property with bonus
       const updated: PropertyWithBonus = await fetchPropertyWithBonus(user.id, property.id);
+      
       onOpenChange(false);
       onPropertyUpdate?.(updated);
       queryClient.invalidateQueries({ queryKey: ['properties'] });
@@ -92,33 +93,34 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded, onAddMortg
   const fetchedPropertyIds = useRef<Set<string>>(new Set());
 
   // hook to fetch PropertyWithBonus
- const { data: properties = [], isLoading, refetch } = useProperties(user?.id)
+//  const { data: properties = [], isLoading, refetch } = useProperties(user?.id)
+ const { data: propertiesWithMortgages=[], isLoading } = usePropertiesWithMortgagesAndBonus(user?.id);
 
   // Update mortgage counts and onPropertiesLoaded callback
-  useEffect(() => {
-    onPropertiesLoaded?.(properties.length > 0);
+  // useEffect(() => {
+  //   onPropertiesLoaded?.(propertiesWithMortgages.length > 0);
     
-    const fetchMortgageCounts = async () => {
-      if (properties.length === 0) return;
+  //   const fetchMortgageCounts = async () => {
+  //     if (propertiesWithMortgages.length === 0) return;
       
-      const newCounts = { ...mortgageCounts };
-      let hasUpdates = false;
+  //     const newCounts = { ...mortgageCounts };
+  //     let hasUpdates = false;
       
-      for (const property of properties) {
-        if (!fetchedPropertyIds.current.has(property.id)) {
-          newCounts[property.id] = await getPropertyMortgagesCount(property.id);
-          fetchedPropertyIds.current.add(property.id);
-          hasUpdates = true;
-        }
-      }
+  //     for (const property of propertiesWithMortgages) {
+  //       if (!fetchedPropertyIds.current.has(property.id)) {
+  //         newCounts[property.id] = await getPropertyMortgagesCount(property.id);
+  //         fetchedPropertyIds.current.add(property.id);
+  //         hasUpdates = true;
+  //       }
+  //     }
       
-      if (hasUpdates) {
-        setMortgageCounts(newCounts);
-      }
-    };
+  //     if (hasUpdates) {
+  //       setMortgageCounts(newCounts);
+  //     }
+  //   };
     
-    fetchMortgageCounts();
-  }, [properties, onPropertiesLoaded]);
+  //   fetchMortgageCounts();
+  // }, [properties, onPropertiesLoaded]);
 
 
 
@@ -139,21 +141,21 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded, onAddMortg
 
 
   // note to self i think this can be merged with properties-mortgages-bonus from Mortgages.tsx
-  const getPropertyMortgagesCount = async (propertyId: string): Promise<number> => {
-    try {
+  // const getPropertyMortgagesCount = async (propertyId: string): Promise<number> => {
+  //   try {
       
-      const { error, count } = await supabase
-        .from('mortgages')
-        .select('*', { count: 'exact' })
-        .eq('property_id', propertyId);
+  //     const { error, count } = await supabase
+  //       .from('mortgages')
+  //       .select('*', { count: 'exact' })
+  //       .eq('property_id', propertyId);
 
-      if (error) throw error;
-      return count || 0;
-    } catch (error) {
-      console.error('Error counting mortgages:', error);
-      return 0;
-    }
-  };
+  //     if (error) throw error;
+  //     return count || 0;
+  //   } catch (error) {
+  //     console.error('Error counting mortgages:', error);
+  //     return 0;
+  //   }
+  // };
 
   // Get SVG variant for properties
   const getSVGVariant = (index: number): "stool" | "dog" | "armchair" | "hangingPlant" | "plant" | "beanBag" => {
@@ -167,13 +169,13 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded, onAddMortg
     return <div className="flex justify-center items-center h-40">Loading properties...</div>;
   }
 
-  if (properties.length === 0) {
+  if (propertiesWithMortgages.length === 0) {
     return null;
   }
 
   return (
     <>
-      {properties.map((property, index) => (
+      {propertiesWithMortgages.map((property, index) => (
         <div 
           key={property.id} 
           className=" h-80 w-52 bg-card rounded-2xl flex flex-col items-center overflow-hidden p-4 cursor-pointer hover:shadow-md transition-shadow"
@@ -201,14 +203,14 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded, onAddMortg
           <div className="self-stretch flex justify-between items-center">
             <div className="flex flex-col justify-center items-start gap-1">
               <div className="justify-start text-lg font-semibold leading-none">
-                {mortgageCounts[property.id] || 0}
+                {property.mortgageCount || 0}
               </div>
               <div className="justify-start text-sm font-normal leading-none">
                 {t('sections.mortgages', { ns: 'dashboard' })}
               </div>
             </div>
 
-here
+
             <button 
             type="button"  
               className="size-8 border border-foreground text-foreground rounded-[99px] flex justify-center items-center"
