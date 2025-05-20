@@ -18,17 +18,19 @@ export interface FeatureCountsProps {
   variant?: "default" | "primary" | "secondary" | "accent"
   progressColor?: string
   progressBgColor?: string
+  onOpenEmptyPropertyForm?: () => void
 }
 
 export function FeatureCounts({ 
   className,
   variant = "primary",
   progressColor = "bg-brand",
-  progressBgColor = "bg-slate-600"
+  progressBgColor = "bg-slate-600",
+  onOpenEmptyPropertyForm
 }: FeatureCountsProps) {
   const { t } = useTranslation(['dashboard', 'properties', 'mortgages'])
   const { user } = useAuth()
-  const [open, setOpen] = useState(false)
+  // const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
 
   const {
@@ -81,21 +83,21 @@ export function FeatureCounts({
   const propertyLimit = planData?.limits['properties'] ?? 10
   const mortgageLimit = planData?.limits['mortgages'] ?? 10
 
-  const handlePropertyAdded = async () => {
-    // Invalidate and refetch to ensure fresh data
-    await queryClient.invalidateQueries({ queryKey: ['propertyCount', user?.id] })
+  // const handlePropertyAdded = async () => {
+  //   // Invalidate and refetch to ensure fresh data
+  //   await queryClient.invalidateQueries({ queryKey: ['propertyCount', user?.id] })
     
-    // Broadcast property created message
-    // const channel = supabase.channel('property-updates');
-    // channel.send({
-    //   type: 'broadcast',
-    //   event: 'property-created',
-    //   payload: { action: 'create', userId: user?.id },
-    // });
+  //   // Broadcast property created message
+  //   // const channel = supabase.channel('property-updates');
+  //   // channel.send({
+  //   //   type: 'broadcast',
+  //   //   event: 'property-created',
+  //   //   payload: { action: 'create', userId: user?.id },
+  //   // });
     
-    // Close the sheet after successful property creation
-    setOpen(false)
-  }
+  //   // Close the sheet after successful property creation
+  //   setOpen(false)
+  // }
 
   return (
     <div className={cn(
@@ -129,34 +131,19 @@ export function FeatureCounts({
           />
         </div>
       </div>
-    
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <button className="text-xs h-8 flex gap-2">  
-          <div className="flex-1 text-right text-sm font-medium leading-none">
-            {t('actions.add_property', { ns: 'properties' })}
-          </div>
-          <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
-            <Plus className="h-4 w-4" />
-          </div>
-        </button>
-      </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>
-            {t('actions.add_property', { ns: 'properties' })}
-          </SheetTitle>
-        </SheetHeader>
-        <div className="mt-8">
-          <PropertyForm
-            onSuccess={handlePropertyAdded}
-            onClose={() => setOpen(false)}
-            selectedProperty={null}
-            // bonusRules={[]}
-          />
-        </div>
-      </SheetContent>
-    </Sheet>
+               <button 
+                type="button"
+                onClick={onOpenEmptyPropertyForm} 
+                className="text-xs h-8 flex gap-2">  
+                  <div className="flex-1 text-right text-sm font-medium leading-none">
+                    {t('actions.add_property', { ns: 'properties' })}
+                  </div>
+                  <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
+                    <Plus className="h-4 w-4" />
+                  </div>
+              </button>
+
+
     </div>
   )
 }

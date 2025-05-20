@@ -16,32 +16,36 @@ import { Plus, Terminal } from "lucide-react"
 import { PropertyForm } from "@/components/properties/property-form"
 import { usePropertyCount } from "@/hooks/properties/useCount"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { PlanLimitDialog } from "@/components/common/PlanLimitDialog"
+import { useCanCreateFeature } from "@/hooks/usePlanLimits"
+import {  PropertyWithBonus } from "@/types/property"
 
 export default function Dashboard() {
   const { t } = useTranslation(['dashboard', 'properties', 'mortgages'])
   const { user } = useAuth()
   const [hasProperties, setHasProperties] = useState(false)
   const [open, setOpen] = useState(false)
+  const [showDialog, setShowDialog] = useState(false)
+
   const queryClient = useQueryClient()
 
-  // const { data: subscription } = useQuery({
-  //   queryKey: ['user-subscription'],
-  //   queryFn: async () => {
-  //     const { data, error } = await supabase
-  //       .from('user_subscriptions')
-  //       .select(`
-  //         *,
-  //         subscription_plan:subscription_plans(name)
-  //       `)
-  //       .eq('user_id', user?.id)
-  //       .eq('status', 'active')
-  //       .single()
+  const { canCreate } = useCanCreateFeature()
+  
 
-  //     if (error) throw error
-  //     return data
-  //   },
-  //   enabled: !!user?.id
-  // })
+  const [selectedProperty, setSelectedProperty] = useState<PropertyWithBonus | null>(null)
+ 
+  const handleOpenEmptyPropertyForm = async () => {
+    // console.log('canCreate', canCreate)
+    const allowed = await canCreate('properties')
+ 
+    if (!allowed) {
+      setShowDialog(true)
+    } else {
+      console.log('allowed', allowed)
+      setSelectedProperty(null)
+      setOpen(true)
+    }
+  }
 
   // // Fetch properties count with optimized caching
   const { data: propertiesCount = 0 } = usePropertyCount()
@@ -53,16 +57,7 @@ export default function Dashboard() {
     // Optimistic update - immediately set hasProperties to true
     setHasProperties(true)
     
-    // Optimistically update the properties count in the cache
-    // queryClient.setQueryData(['properties-count', user?.id], (oldCount: number = 0) => oldCount + 1)
-    
-    // Broadcast property created message
-    // const channel = supabase.channel('property-updates')
-    // channel.send({
-    //   type: 'broadcast',
-    //   event: 'property-created',
-    //   payload: { action: 'create', userId: user?.id },
-    // })
+
     
     setOpen(false)
   }
@@ -85,7 +80,6 @@ export default function Dashboard() {
 
        <div className="flex justify-start items-end gap-4 "> 
 
-
             <div className="w-52  rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
                 <div className=" rounded-3xl flex flex-col justify-center items-center  gap-1 ">
                   <SVGillustration variant="dog" className="w-52 h-52" />
@@ -95,35 +89,6 @@ export default function Dashboard() {
                   </p>
                 </div>
 
-
-             <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4 ">
-                <Sheet open={open} onOpenChange={setOpen}>
-                  <SheetTrigger asChild>
-                    <button className="text-xs h-8 flex gap-2">  
-                      <div className="flex-1 text-right text-sm font-medium leading-none">
-                        {t('actions.add_property', { ns: 'properties' })}
-                      </div>
-                      <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
-                        <Plus className="h-4 w-4" />
-                      </div>
-                    </button>
-                  </SheetTrigger>
-                  <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-                    <SheetHeader>
-                      <SheetTitle>
-                        {t('actions.add_property', { ns: 'properties' })}
-                      </SheetTitle>
-                    </SheetHeader>
-                    <div className="mt-8">
-                      <PropertyForm
-                        onSuccess={handlePropertySuccess}
-                        onClose={() => setOpen(false)}
-                        selectedProperty={null}
-                      />
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              </div>
             </div>
 
 
@@ -150,7 +115,8 @@ export default function Dashboard() {
        
         </div>
       )}{
-propertiesCount > 0 && <FeatureCounts />
+propertiesCount > 0 && <FeatureCounts 
+onOpenEmptyPropertyForm={handleOpenEmptyPropertyForm} />
       }
 
 <PropertyCards 
@@ -161,13 +127,50 @@ propertiesCount > 0 && <FeatureCounts />
    </div>
   <Alert className="w-80 mb-16 mt-12">
     <Terminal className="h-4 w-4" />
-    <AlertTitle>v May19 8:38PM </AlertTitle>
+    <AlertTitle>v May20 10:36aM </AlertTitle>
     {/* <AlertDescription>
       You can add components and dependencies to your app using the cli.
     </AlertDescription> */}
   </Alert>
 
 </div>
+<Sheet open={open} onOpenChange={setOpen}>
+
+<SheetTrigger asChild>
+  <button className="text-xs h-8 flex gap-2">  
+    <div className="flex-1 text-right text-sm font-medium leading-none">
+      {t('actions.add_property', { ns: 'properties' })}
+    </div>
+    <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
+      <Plus className="h-4 w-4" />
+    </div>
+  </button>
+
+</SheetTrigger>
+<SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+  <SheetHeader>
+    <SheetTitle>
+      {t('actions.add_property', { ns: 'properties' })}
+    </SheetTitle>
+  </SheetHeader>
+  <div className="mt-8">
+    <PropertyForm
+      onSuccess={handlePropertySuccess}
+      onClose={() => setOpen(false)}
+      selectedProperty={null}
+    />
+  </div>
+</SheetContent>
+</Sheet>
+
+<PlanLimitDialog
+        open={showDialog}
+        onClose={() => setShowDialog(false)}
+        onUpgrade={() => {
+          // TODO: Add navigation or logic to upgrade page
+          setShowDialog(false)
+        }}
+      />
     </DashboardLayout>
   )
 }
