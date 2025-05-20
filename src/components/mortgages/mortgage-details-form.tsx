@@ -101,7 +101,24 @@ export function MortgageDetailsForm({
       prevProperty, prevDownPayment, prevBonus, prevLoanAmount]);
 
   return (
+    
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+
+            <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    
+                    <FormItem>
+                      <FormLabel>{t("amortization.label", { ns: "mortgages" })}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t("amortization.name", { ns: "mortgages" })} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+ <Separator />
       {/* Loan Amount Display */}
       <div className="space-y-2">
         <h4 className="font-medium">{t('amortization.loan_amount', { ns: 'mortgages' })}</h4>

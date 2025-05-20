@@ -98,7 +98,12 @@ export function useMortgageDraft(mortgageId: string | null) {
       setIsDirty(true)
       
       // Update draft in store
-      updateDraft(form.getValues())
+      updateDraft({
+        ...form.getValues(),
+        property_id: mortgageDraft?.property_id,
+        property: mortgageDraft?.property,
+
+      })
     })
     
     return () => subscription.unsubscribe()

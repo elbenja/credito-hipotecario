@@ -246,7 +246,8 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
   // Handler for updating mortgage
   const onUpdateMortgage = async (formValues: any) => {
     // setIsSubmitting(true)
-    
+    console.log("onUpdateMortgage formValues", formValues)
+  
     try {
       // Parse numeric values
       const downPayment = parseFloat(formValues.down_payment.replace(/[^0-9.]/g, ""))
@@ -387,20 +388,10 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
               <BreadcrumbItem>
                   <EditableHeading 
                     value={mortgage?.name || ""} 
-                    onChange={async (newName) => {
-                      try {
-                        const { error } = await supabase
-                          .from("mortgages")
-                          .update({ name: newName })
-                          .eq("id", id)
-
-                        if (error) throw error
-                        
-                      // Refresh the data
-                      queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
-                      } catch (error) {
-                        console.error("Error updating name:", error)
-                      }
+                    onChange={(newName) => {
+                      // Optimistic update via React Query
+                      updateMortgage.mutate({ id: id as string, name: newName })
+                      // onUpdateMortgage({ name: newName })
                     }}
                     // onChange={() => {}} // debt May 16
                     size="breadcrumb"

@@ -62,7 +62,7 @@ export const useMortgageDraftStore = create<MortgageDraftStore>()(
         setMortgageDraft: (draft) => set({ mortgageDraft: draft, isDirty: false }),
         // in your Zustand store definition
         updateDraft: (updates) => set((state) => {
-          // console.log(" state.mortgageDraft?.property", state.mortgageDraft?.property);
+          // console.log(" state.mortgageDraft?.property_id", state.mortgageDraft?.property_id);
 
           const base = state.mortgageDraft ?? DEFAULT_DRAFT;
           // merge in the user’s changes

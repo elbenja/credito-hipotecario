@@ -1,9 +1,8 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { useAuth } from "@/context/auth-context"
-import { supabase } from "@/integrations/supabase/client"
 import { FeatureCounter } from "@/components/ui/feature-counter"
-import { Separator } from "@/components/ui/separator"
+// import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/utils/utils"
 import { FeatureName } from "@/types/subscription"
@@ -11,7 +10,9 @@ import { Trash2, Plus } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { PropertyForm } from "@/components/properties/property-form"
 import { useState } from "react"
-
+import { useUserPlanLimits } from '@/hooks/usePlanLimits'
+import { usePropertyCount } from "@/hooks/properties/useCount"
+import { useMortgageCount } from "@/hooks/mortgages/useCount"
 export interface FeatureCountsProps {
   className?: string
   variant?: "default" | "primary" | "secondary" | "accent"
@@ -30,64 +31,44 @@ export function FeatureCounts({
   const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  // Fetch user subscription with plan and feature limits
-  const { data: subscriptionData } = useQuery({
-    queryKey: ['user-subscription-with-features', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select(`
-          *,
-          subscription_plan:subscription_plans(
-            name,
-            features:plan_features(*)
-          )
-        `)
-        .eq('user_id', user?.id)
-        .eq('status', 'active')
-        .single()
-
-      if (error) throw error
-      return data
-    },
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000 // 10 minutes
-  })
+  const {
+    data: planData,
+    isLoading: isLoadingPlan,
+    error: planError
+  } = useUserPlanLimits()
   
   // Fetch properties count
-  const { data: propertiesCount = 0, refetch: refetchPropertiesCount } = useQuery({
-    queryKey: ['properties-count', user?.id],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user?.id)
+  const { data: propertiesCount = 0 } = usePropertyCount()
 
-      if (error) throw error
-      return count || 0
-    },
-    enabled: !!user?.id,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 2 * 60 * 1000 // 2 minutes
-  })
+  // const { data: propertiesCount = 0, refetch: refetchPropertiesCount } = useQuery({
+  //   queryKey: ['properties-count', user?.id],
+  //   queryFn: async () => {
+  //     const { count, error } = await supabase
+  //       .from('properties')
+  //       .select('*', { count: 'exact', head: true })
+  //       .eq('user_id', user?.id)
+
+  //     if (error) throw error
+  //     return count || 0
+  //   },
+  //   enabled: !!user?.id,
+  //   staleTime: 30 * 1000, // 30 seconds
+  //   gcTime: 2 * 60 * 1000 // 2 minutes
+  // })
 
   // Fetch mortgages count
-  const { data: mortgagesCount = 0 } = useQuery({
-    queryKey: ['mortgages-count', user?.id],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('amortizations')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user?.id)
+  const { data: mortgagesCount = 0 } = useMortgageCount()
+  //       .from('amortizations')
+  //       .select('*', { count: 'exact', head: true })
+  //       .eq('user_id', user?.id)
 
-      if (error) throw error
-      return count || 0
-    },
-    enabled: !!user?.id,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 2 * 60 * 1000 // 2 minutes
-  })
+  //     if (error) throw error
+  //     return count || 0
+  //   },
+  //   enabled: !!user?.id,
+  //   staleTime: 30 * 1000, // 30 seconds
+  //   gcTime: 2 * 60 * 1000 // 2 minutes
+  // })
   
   // Container background and text color based on variant
   const containerStyles = {
@@ -97,36 +78,20 @@ export function FeatureCounts({
     accent: "bg-accent text-accent-foreground"
   }
 
-  // Helper function to get feature limit
-  const getFeatureLimit = (featureName: FeatureName): number => {
-    if (!subscriptionData?.subscription_plan?.features) return 10
-    
-    const feature = subscriptionData.subscription_plan.features.find(
-      (f: any) => f.feature_name === featureName
-    )
-    
-    // Return 10 as default if feature not found
-    if (!feature) return 10
-    
-    // -1 means unlimited, return a high number for progress calculation
-    return feature.feature_limit === -1 ? 1000 : feature.feature_limit
-  }
-
-  // Get limits for each feature
-  const propertyLimit = getFeatureLimit('properties')
-  const mortgageLimit = getFeatureLimit('mortgages')
+  const propertyLimit = planData?.limits['properties'] ?? 10
+  const mortgageLimit = planData?.limits['mortgages'] ?? 10
 
   const handlePropertyAdded = async () => {
     // Invalidate and refetch to ensure fresh data
-    await queryClient.invalidateQueries({ queryKey: ['properties-count', user?.id] })
+    await queryClient.invalidateQueries({ queryKey: ['propertyCount', user?.id] })
     
     // Broadcast property created message
-    const channel = supabase.channel('property-updates');
-    channel.send({
-      type: 'broadcast',
-      event: 'property-created',
-      payload: { action: 'create', userId: user?.id },
-    });
+    // const channel = supabase.channel('property-updates');
+    // channel.send({
+    //   type: 'broadcast',
+    //   event: 'property-created',
+    //   payload: { action: 'create', userId: user?.id },
+    // });
     
     // Close the sheet after successful property creation
     setOpen(false)
@@ -141,7 +106,7 @@ export function FeatureCounts({
     )}>
        <div className="self-stretch flex flex-col justify-start items-start gap-6">
           <Badge variant="plan" className="text-xs">
-            {subscriptionData?.subscription_plan?.name || 'Free'}
+            {planData?.plan_name || 'Free'}
           </Badge>
       
         <div className="self-stretch flex flex-col justify-start items-start gap-5">
@@ -194,4 +159,4 @@ export function FeatureCounts({
     </Sheet>
     </div>
   )
-} 
+}

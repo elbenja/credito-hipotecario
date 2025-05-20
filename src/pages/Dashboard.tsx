@@ -54,7 +54,7 @@ export default function Dashboard() {
     setHasProperties(true)
     
     // Optimistically update the properties count in the cache
-    queryClient.setQueryData(['properties-count', user?.id], (oldCount: number = 0) => oldCount + 1)
+    // queryClient.setQueryData(['properties-count', user?.id], (oldCount: number = 0) => oldCount + 1)
     
     // Broadcast property created message
     // const channel = supabase.channel('property-updates')
