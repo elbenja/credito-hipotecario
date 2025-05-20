@@ -47,16 +47,6 @@ export default function Dashboard() {
     }
   }
 
-  // const handleNewMortgage = async () => {
-  //   const allowed = await canCreate('mortgages')
-  //   if (!allowed) {
-  //     setShowDialog(true)
-  //   } else {
-  //     // resetDraft();
-  //     navigate("/mortgages/new");
-  //   }
-  // }
-
   const handleAddMortgage =  async (e: React.MouseEvent, property: Property)  => {
     console.log('handleAddMortgage', property)
     const allowed = await canCreate('mortgages')
@@ -84,6 +74,9 @@ export default function Dashboard() {
     setHasProperties(true)
     setOpen(false)
   }
+  useEffect(() => {
+    setHasProperties(propertiesCount > 0)
+  }, [propertiesCount])
 
   return (
     <DashboardLayout
@@ -111,7 +104,14 @@ export default function Dashboard() {
 
                   </p>
                 </div>
-
+                <button onClick={handleOpenEmptyPropertyForm} className="text-xs h-8 flex gap-2">  
+                      <div className="flex-1 text-right text-sm font-medium leading-none">
+                        {t('actions.add_property', { ns: 'properties' })}
+                      </div>
+                      <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
+                        <Plus className="h-4 w-4" />
+                      </div>
+                  </button>
             </div>
 
 
@@ -138,7 +138,7 @@ export default function Dashboard() {
        
         </div>
       )}{
-propertiesCount > 0 && <FeatureCounts 
+<FeatureCounts 
 onOpenEmptyPropertyForm={handleOpenEmptyPropertyForm} />
       }
 
@@ -151,7 +151,7 @@ onOpenEmptyPropertyForm={handleOpenEmptyPropertyForm} />
    </div>
   <Alert className="w-80 mb-16 mt-12">
     <Terminal className="h-4 w-4" />
-    <AlertTitle>v May20 10:36aM </AlertTitle>
+    <AlertTitle>v May20 4:38PM </AlertTitle>
     {/* <AlertDescription>
       You can add components and dependencies to your app using the cli.
     </AlertDescription> */}
@@ -161,14 +161,7 @@ onOpenEmptyPropertyForm={handleOpenEmptyPropertyForm} />
 <Sheet open={open} onOpenChange={setOpen}>
 
 <SheetTrigger asChild>
-  <button className="text-xs h-8 flex gap-2">  
-    <div className="flex-1 text-right text-sm font-medium leading-none">
-      {t('actions.add_property', { ns: 'properties' })}
-    </div>
-    <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
-      <Plus className="h-4 w-4" />
-    </div>
-  </button>
+
 
 </SheetTrigger>
 <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
