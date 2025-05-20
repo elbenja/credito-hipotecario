@@ -93,26 +93,7 @@ export default function Mortgages() {
     })
   }, [captureMortgage, canCreate, queryClient])
 
-  // const handleDuplicate = useCallback(async (e: React.MouseEvent, mortgage: Mortgage) => {
-  //   e.stopPropagation()
-    
-  //   // Use the previously initialized mortgage capture service
-  //   await captureMortgage({
-  //     mortgageId: mortgage.id,
-  //     successCallback: () => {
-  //       // Refresh the data after capture
-  //       queryClient.invalidateQueries({ queryKey: ["properties-with-mortgages"] })
-        
-  //       // Also invalidate the mortgage bundle for the duplicated mortgage
-  //       queryClient.invalidateQueries({ 
-  //         queryKey: ["mortgage-bundle", mortgage.id],
-  //         exact: true
-  //       })
-  //     },
-  //     stayOnPage: false // Always redirect when duplicating from the mortgages list
-  //   });
-    
-  // }, [captureMortgage, queryClient])
+
 
 
   const handleDelete = useCallback(
@@ -232,6 +213,7 @@ export default function Mortgages() {
                 <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4">
                   <Sheet open={open} onOpenChange={setOpen}>
                     <SheetTrigger asChild>
+                      {/* TODO: validate a button to add a property */}
                       <button className="text-xs h-8 flex gap-2">  
                         <div className="flex-1 text-right text-sm font-medium leading-none">
                           {t('actions.add_property', { ns: 'properties' })}

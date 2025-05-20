@@ -42,35 +42,10 @@ export function FeatureCounts({
   // Fetch properties count
   const { data: propertiesCount = 0 } = usePropertyCount()
 
-  // const { data: propertiesCount = 0, refetch: refetchPropertiesCount } = useQuery({
-  //   queryKey: ['properties-count', user?.id],
-  //   queryFn: async () => {
-  //     const { count, error } = await supabase
-  //       .from('properties')
-  //       .select('*', { count: 'exact', head: true })
-  //       .eq('user_id', user?.id)
-
-  //     if (error) throw error
-  //     return count || 0
-  //   },
-  //   enabled: !!user?.id,
-  //   staleTime: 30 * 1000, // 30 seconds
-  //   gcTime: 2 * 60 * 1000 // 2 minutes
-  // })
 
   // Fetch mortgages count
   const { data: mortgagesCount = 0 } = useMortgageCount()
-  //       .from('amortizations')
-  //       .select('*', { count: 'exact', head: true })
-  //       .eq('user_id', user?.id)
 
-  //     if (error) throw error
-  //     return count || 0
-  //   },
-  //   enabled: !!user?.id,
-  //   staleTime: 30 * 1000, // 30 seconds
-  //   gcTime: 2 * 60 * 1000 // 2 minutes
-  // })
   
   // Container background and text color based on variant
   const containerStyles = {
@@ -83,21 +58,7 @@ export function FeatureCounts({
   const propertyLimit = planData?.limits['properties'] ?? 10
   const mortgageLimit = planData?.limits['mortgages'] ?? 10
 
-  // const handlePropertyAdded = async () => {
-  //   // Invalidate and refetch to ensure fresh data
-  //   await queryClient.invalidateQueries({ queryKey: ['propertyCount', user?.id] })
-    
-  //   // Broadcast property created message
-  //   // const channel = supabase.channel('property-updates');
-  //   // channel.send({
-  //   //   type: 'broadcast',
-  //   //   event: 'property-created',
-  //   //   payload: { action: 'create', userId: user?.id },
-  //   // });
-    
-  //   // Close the sheet after successful property creation
-  //   setOpen(false)
-  // }
+
 
   return (
     <div className={cn(
