@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 import { User, Session } from "@supabase/supabase-js"
 import { supabase } from "@/integrations/supabase/client"
 import { useNavigate, useLocation } from "react-router-dom"
+import { useQueryClient } from "@tanstack/react-query"
 
 type AuthContextType = {
   user: User | null
@@ -21,6 +22,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const qc = useQueryClient() // for invalidating queries May20
+
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -36,7 +39,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Clear storage
       localStorage.removeItem('supabase.auth.token')
-      
+      // 1) Clear all React-Query cache
+      qc.clear()
+          
       // Use navigate with replace to prevent adding to history stack
       navigate('/', { replace: true })
     } catch (error) {
@@ -45,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(null)
       setUser(null)
       navigate('/', { replace: true })
+
     }
   }
 
