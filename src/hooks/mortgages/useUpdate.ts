@@ -43,6 +43,7 @@ export function useUpdateMortgage() {
       });
       qc.invalidateQueries({ queryKey: ['mortgages'] });
       qc.invalidateQueries({ queryKey: ['mortgage-bundle', data.id] });
+      qc.invalidateQueries({ queryKey: ['properties-mortgages-bonus'] });
     },
 
     // 3) On error, log and show destructive toast

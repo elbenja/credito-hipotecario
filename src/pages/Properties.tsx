@@ -189,14 +189,14 @@ const handleDuplicate = async (property: PropertyWithBonus) => {
 
              <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4 ">
                 <Sheet open={open} onOpenChange={setOpen}>
-                  <Button onClick={handleOpenEmptyPropertyForm} className="text-xs h-8 flex gap-2">  
+                  <button onClick={handleOpenEmptyPropertyForm} className="text-xs h-8 flex gap-2">  
                     <div className="flex-1 text-right text-sm font-medium leading-none">
                       {t('actions.add_property', { ns: 'properties' })}
                     </div>
                     <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
                       <Plus className="h-4 w-4" />
                     </div>
-                  </Button>
+                  </button>
                   <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
                     <SheetHeader>
                       <SheetTitle>

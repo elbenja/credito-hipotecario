@@ -104,6 +104,7 @@ export default function Dashboard() {
 
                   </p>
                 </div>
+                <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4 ">
                 <button onClick={handleOpenEmptyPropertyForm} className="text-xs h-8 flex gap-2">  
                       <div className="flex-1 text-right text-sm font-medium leading-none">
                         {t('actions.add_property', { ns: 'properties' })}
@@ -112,6 +113,8 @@ export default function Dashboard() {
                         <Plus className="h-4 w-4" />
                       </div>
                   </button>
+                  </div>
+               
             </div>
 
 
@@ -137,12 +140,11 @@ export default function Dashboard() {
           </div>
        
         </div>
-      )}{
-<FeatureCounts 
-onOpenEmptyPropertyForm={handleOpenEmptyPropertyForm} />
-      }
+      )} 
 
-<PropertyCards 
+      <FeatureCounts 
+      onOpenEmptyPropertyForm={handleOpenEmptyPropertyForm} />
+      <PropertyCards 
         onPropertySelect={() => {}} 
         onPropertiesLoaded={setHasProperties}
         onAddMortgage={handleAddMortgage }
@@ -151,7 +153,7 @@ onOpenEmptyPropertyForm={handleOpenEmptyPropertyForm} />
    </div>
   <Alert className="w-80 mb-16 mt-12">
     <Terminal className="h-4 w-4" />
-    <AlertTitle>v May20 6:28PM </AlertTitle>
+    <AlertTitle>v May20 8:40PM </AlertTitle>
     {/* <AlertDescription>
       You can add components and dependencies to your app using the cli.
     </AlertDescription> */}

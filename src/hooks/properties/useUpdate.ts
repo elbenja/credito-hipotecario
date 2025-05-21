@@ -55,6 +55,7 @@ export function useUpdateProperty() {
     },
     onSuccess: (data, variables) => {
       // console.log("onSuccess", variables, data);
+      qc.invalidateQueries({ queryKey: ['properties-mortgages-bonus'] })
     },
     onError: (error, variables) => {
       // console.error("onError", variables, error);

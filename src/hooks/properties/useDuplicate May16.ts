@@ -93,6 +93,7 @@ export function useDuplicateProperty() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["properties", userId] });
+      queryClient.invalidateQueries({ queryKey: ['properties-mortgages-bonus'] })
     },
   });
 }

@@ -27,7 +27,8 @@ export function useDeleteMortgage() {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ['mortgageCount'] })
-      qc.invalidateQueries({ queryKey: ['mortgages-with-bonus'] })
+      // qc.invalidateQueries({ queryKey: ['mortgages-with-bonus'] })
+      qc.invalidateQueries({ queryKey: ['properties-mortgages-bonus'] })
     },
   })
 }

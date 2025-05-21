@@ -79,7 +79,7 @@ export function useDuplicateProperty() {
       },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['properties'] })
-      queryClient.invalidateQueries({ queryKey: ['properties-with-bonus'] })
+      queryClient.invalidateQueries({ queryKey: ['properties-mortgages-bonus'] })
       toast({
         title: t('ui.success', 'Success', { ns: 'global' }),
         description: t('messages.property_duplicated', 'Property duplicated successfully', { ns: 'properties' }),

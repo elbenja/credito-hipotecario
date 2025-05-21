@@ -58,7 +58,9 @@ export function FeatureCounts({
   const propertyLimit = planData?.limits['properties'] ?? 10
   const mortgageLimit = planData?.limits['mortgages'] ?? 10
 
-
+  if (propertiesCount < 1 ) {
+    return null;
+  }
 
   return (
     <div className={cn(
