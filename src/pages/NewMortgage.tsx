@@ -386,7 +386,7 @@ function DebugMortgageDraft() {
                   </div>
                 )}
 
-               
+<Separator />       
                 <div className="p-1 md:p-2 lg:p-4 space-y-6">
 {/* 
                 <FormField
@@ -404,9 +404,24 @@ function DebugMortgageDraft() {
                   )}
                 /> */}
 
+<FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    
+                    <FormItem>
+                      <FormLabel>{t("amortization.label", { ns: "mortgages" })}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t("amortization.name", { ns: "mortgages" })} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 {property && (
                   <>
-                    <Separator />
+                   
                     
                     <MortgageDetailsForm
                       form={form}

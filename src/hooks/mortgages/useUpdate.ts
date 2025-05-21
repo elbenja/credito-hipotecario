@@ -37,13 +37,16 @@ export function useUpdateMortgage() {
 
     // 2) On success, show a toast and refresh relevant queries
     onSuccess: (data) => {
+
+      qc.invalidateQueries({ queryKey: ['mortgages'] });
+      qc.invalidateQueries({ queryKey: ['mortgage-bundle', data.id] });
+      qc.invalidateQueries({ queryKey: ["scenarios", id] })
+      qc.invalidateQueries({ queryKey: ['properties-mortgages-bonus'] });
+
       toast({
         title: t('ui.success', { ns: 'global' }),
         description: t('messages.mortgage_updated', { ns: 'mortgages' }),
       });
-      qc.invalidateQueries({ queryKey: ['mortgages'] });
-      qc.invalidateQueries({ queryKey: ['mortgage-bundle', data.id] });
-      qc.invalidateQueries({ queryKey: ['properties-mortgages-bonus'] });
     },
 
     // 3) On error, log and show destructive toast
@@ -57,3 +60,6 @@ export function useUpdateMortgage() {
     },
   });
 }
+
+
+

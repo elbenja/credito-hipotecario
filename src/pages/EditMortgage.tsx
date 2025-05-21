@@ -78,23 +78,6 @@ export default function EditMortgageWithZustand(mortgageData: any) {
     refetch
   } = useMortgageDraft(id || null)
   
-
-
-  // 2) Pull the exchange‐rate hook here
-  // const { data: exchangeRate = 1 } = useExchangeRate("USD", "PEN");
-
-  // // 3) Grab the store action
-  // const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
-
-  // // 4) Seed the draft and the rate in one effect
-  // useEffect(() => {
-  //   if (mortgage) {
-  //     setExchangeRate(exchangeRate);   // seed the existing mortgage
-  //   }
-  // }, [mortgage, setExchangeRate]);
-
-// console.log("🔄 exchangeRate:", exchangeRate)
-
   // Initialize calculatedLoanAmount based on mortgage data
   const [calculatedLoanAmount, setCalculatedLoanAmount] = useState<number>(mortgage?.loan_amount || 0)
   
@@ -284,50 +267,25 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
 
 
       
-      const updatedMortgage: Mortgage = { 
+      const updatedMortgage : Mortgage = { 
         ...mortgageData,
         id: id as string // Ensure id is treated as string
       };
 
-  //     updateMortgage.mutate(updatedMortgage);
-      
-  //     // Refresh data
-  //     queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
-  //     queryClient.invalidateQueries({ queryKey: ["scenarios", id] })
-
-  //     // Mark the form as clean in Zustand
-  //     markClean()
-
-        
-  //       toast({
-  //         title: t("ui.success", { ns: "global" }),
-  //         description: t("messages.success_update", { ns: "mortgages" }),
-  //       })
-  //   } catch (error) {
-  //     console.error("Error updating mortgage:", error)
-  //     toast({
-  //       variant: "destructive",
-  //       title: t("ui.error", { ns: "global" }),
-  //       description: error instanceof Error ? error.message : t("messages.error_update", { ns: "mortgages" })
-  //     })
-  //   } finally {
-  //     // setIsSubmitting(false)
-  //   }
-  // }
         updateMortgage.mutate(updatedMortgage, {
-              onSuccess: () => {
-                // Invalidate queries to refresh data after update
-                queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
-                queryClient.invalidateQueries({ queryKey: ["scenarios", id] })
+              // onSuccess: () => {
+              //   // Invalidate queries to refresh data after update
+              //   queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
+              //   queryClient.invalidateQueries({ queryKey: ["scenarios", id] })
                 
-                // Mark the form as clean in Zustand
-                // markClean()
+              //   // Mark the form as clean in Zustand
+              //   // markClean()
                 
-                toast({
-                  title: t("ui.success", { ns: "global" }),
-                  description: t("messages.success_update", { ns: "mortgages" }),
-                })
-              },
+              //   toast({
+              //     title: t("ui.success", { ns: "global" }),
+              //     description: t("messages.success_update", { ns: "mortgages" }),
+              //   })
+              // },
               onError: (error) => {
                 console.error("Error updating mortgage:", error)
                 toast({
@@ -423,27 +381,16 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                  {/* <EditableHeading 
-                    value={mortgage?.name || ""} 
-                    onChange={(newName) => {
-                      // Optimistic update via React Query
-                      updateMortgage.mutate({ id: id as string, name: newName })
-                      // onUpdateMortgage({ name: newName })
-                    }}
-                    // onChange={() => {}} // debt May 16
-                    size="breadcrumb"
-                    as="span"
-                    className="text-foreground"
-                  /> */}
+ 
                   <EditableHeading 
                     value={mortgage?.name || ""} 
                     onChange={(newName) => {
                       // Optimistic update via React Query
                       updateMortgage.mutate({ id: id as string, name: newName }, {
-                        onSuccess: () => {
-                          // Invalidate queries to refresh data after update
-                          queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
-                        }
+                        // onSuccess: () => {
+                        //   // Invalidate queries to refresh data after update
+                        //   // queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
+                        // }
                       })
                     }}
                     size="breadcrumb"
@@ -494,7 +441,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
 
                   
                 </Form>
-              <p className="text-xs text-muted-foreground"> Zustand vMay 16 5:25pm</p>
+              <p className="text-xs text-muted-foreground"> Zustand vMay 20 9:25pm</p>
             </div>
           </div>
 

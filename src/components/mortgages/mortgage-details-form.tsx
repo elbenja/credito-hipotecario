@@ -103,7 +103,7 @@ export function MortgageDetailsForm({
   return (
     
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-
+{/* 
             <FormField
                   control={form.control}
                   name="name"
@@ -118,7 +118,7 @@ export function MortgageDetailsForm({
                     </FormItem>
                   )}
                 />
- <Separator />
+ <Separator /> */}
       {/* Loan Amount Display */}
       <div className="space-y-2">
         <h4 className="font-medium">{t('amortization.loan_amount', { ns: 'mortgages' })}</h4>
