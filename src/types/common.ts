@@ -128,6 +128,7 @@ export interface ScenarioPanelProps {
   scenarioType?: string
   isThisScenarioSaved?: boolean
   onSaveScenario?: (scenarioType: string) => void
+  onShowLimitDialog?: () => void;
   formValues?: MortgageFormValues
   extraInstallments?: Array<{
     id: string;

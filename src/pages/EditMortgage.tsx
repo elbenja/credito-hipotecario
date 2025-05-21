@@ -38,6 +38,7 @@ import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useUpdateMortgage } from '@/hooks/mortgages/useUpdate'
 import { PropertyWithBonus } from "@/types/property"
+import { PlanLimitDialog } from "@/components/common/PlanLimitDialog"
 
 
 
@@ -129,6 +130,7 @@ export default function EditMortgageWithZustand(mortgageData: any) {
     };
   }, []);
 
+  const [showDialog, setShowDialog] = useState(false);
 // EditMortgage.tsx (or NewMortgage.tsx)
 
 const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
@@ -314,19 +316,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
       };
 
         updateMortgage.mutate(updatedMortgage, {
-              // onSuccess: () => {
-              //   // Invalidate queries to refresh data after update
-              //   queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
-              //   queryClient.invalidateQueries({ queryKey: ["scenarios", id] })
-                
-              //   // Mark the form as clean in Zustand
-              //   // markClean()
-                
-              //   toast({
-              //     title: t("ui.success", { ns: "global" }),
-              //     description: t("messages.success_update", { ns: "mortgages" }),
-              //   })
-              // },
+ 
               onError: (error) => {
                 console.error("Error updating mortgage:", error)
                 toast({
@@ -482,7 +472,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
 
                   
                 </Form>
-              <p className="text-xs text-muted-foreground"> Zustand vMay 21 1:40Pm</p>
+              <p className="text-xs text-muted-foreground"> Zustand v May 21 3:40Pm</p>
             </div>
           </div>
 
@@ -541,6 +531,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                   <TabsContent value="regular" className="m-0">
                     {scenarios.regular && (
                       <RegularPanelGraph
+                      onShowLimitDialog={() => setShowDialog(true)}
                         scenario={scenarios.regular}
                       currency={property.currency}
                         installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
@@ -568,6 +559,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                       <>
                       {extraInstallments.length > 0 && (
                           <AcceleratedPanelGraph
+                          onShowLimitDialog={() => setShowDialog(true)}
                             scenario={scenarios.accelerated}
                             regularScenario={scenarios.regular}
                           currency={property.currency}
@@ -606,6 +598,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                       <>
                       {extraInstallments.length > 0 && (
                           <LowerPaymentPanelGraph
+                          onShowLimitDialog={() => setShowDialog(true)}
                             scenario={scenarios.lower_payment}
                             regularScenario={scenarios.regular}
                           currency={property.currency}
@@ -644,6 +637,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                       <>
                       {newRates.length > 0 && (
                           <NewRatePanelGraph
+                          onShowLimitDialog={() => setShowDialog(true)}
                             scenario={scenarios.new_rate}
                             regularScenario={scenarios.regular}
                           currency={property.currency}
@@ -680,6 +674,14 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
           </div> 
         </div>
       </div>
+      <PlanLimitDialog
+        open={showDialog}
+        onClose={() => setShowDialog(false)}
+        onUpgrade={() => {
+          // TODO: Add navigation or logic to upgrade page
+          setShowDialog(false)
+        }}
+      />
     </DashboardLayout>
   )
 } 

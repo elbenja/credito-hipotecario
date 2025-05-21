@@ -20,7 +20,7 @@ import { SVGfixed } from "@/components/ui/svg-fixed"
 import { useMortgageCapture } from "@/services/mortgages/mortgage-capture-service"
 import { useParams, useNavigate } from "react-router-dom"
 import { useToast } from "@/components/ui/use-toast"
-
+import { useCanCreateFeature } from "@/hooks/usePlanLimits"
 
 // Memoize the data transformation function to avoid recalculating on every render
 const transformPaymentsToChartData = (payments: PaymentRow[], totalMonths: number, installmentsPerYear: number = 12) => {
@@ -116,7 +116,8 @@ const ScenarioPanel = ({
   onSaveScenario,
   formValues,
   extraInstallments,
-  newRates
+  newRates,
+  onShowLimitDialog
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
   // ========== All hooks must be at the top ==========
   const { t } = useTranslation()
@@ -124,7 +125,8 @@ const ScenarioPanel = ({
   const navigate = useNavigate()
   const { captureMortgage, captureCurrentScenario } = useMortgageCapture()
   const { toast } = useToast()
-  
+  const { canCreate } = useCanCreateFeature()
+
   // Add a ref for caching chart data to avoid unnecessary transformations
   const chartDataCache = useRef<Record<string, any[]>>({});
 
@@ -335,19 +337,25 @@ const ScenarioPanel = ({
   const yearsLabel = t('scenario_graphs.common.years', 'years', { ns: 'components' });
   
   // Get actual month and year for the break-even point
-  const breakEvenMonthYear = useMemo(() => {
-    if (!breakEvenChartPoint || !breakEvenChartPoint.date) return '';
+  // const breakEvenMonthYear = useMemo(() => {
+  //   if (!breakEvenChartPoint || !breakEvenChartPoint.date) return '';
     
-    try {
-      const date = new Date(breakEvenChartPoint.date);
-      return format(date, 'MMM yyyy');
-    } catch (error) {
-      return '';
-    }
-  }, [breakEvenChartPoint]);
+  //   try {
+  //     const date = new Date(breakEvenChartPoint.date);
+  //     return format(date, 'MMM yyyy');
+  //   } catch (error) {
+  //     return '';
+  //   }
+  // }, [breakEvenChartPoint]);
 
   // Update the handler function for capturing scenarios
   const handleCaptureScenario = async () => {
+    const allowed = await canCreate('mortgages');
+    console.log("allowed", allowed)
+    if (!allowed) {
+      onShowLimitDialog?.(); // trigger the dialog
+      return;
+    }
     // Remove debug logging
     if (!id) {
       console.error("No mortgage ID available for capture");
