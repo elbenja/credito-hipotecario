@@ -182,7 +182,7 @@ const ScenarioPanel = ({
       // Return null if the difference is 0 to hide the badge
       return diff === 0 ? null : diff;
     };
-    console.log( "total_interest_and_insurance", total_interest_and_insurance )
+    // console.log( "total_interest_and_insurance", total_interest_and_insurance )
     return {
       sum: getDifference(
         total_interest_and_insurance,
@@ -220,7 +220,7 @@ const ScenarioPanel = ({
 
     // Optimize chart data transformation with better memoization and caching
     const chartData = useMemo(() => {
-      console.log( "this one never triggers graph", total_interest_and_insurance )
+      // console.log( "this one never triggers graph", total_interest_and_insurance )
       const cacheKey = `${scenarioType}-${totalMonthsToDisplay}-${installmentsPerYear}`;
 
       if (!scenario?.payments?.length) return []; // this is the problem
