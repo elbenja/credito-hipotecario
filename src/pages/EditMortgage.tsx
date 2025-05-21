@@ -230,8 +230,41 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
   const onUpdateMortgage = async (formValues: any) => {
     // setIsSubmitting(true)
     console.log("onUpdateMortgage formValues", formValues)
-  
+    console.log("savedValue", savedScenario)
+    
     try {
+      // MAy 21
+      // Get the appropriate scenario data
+      let totalInterest = 0
+      let totalMonths = 0
+      let monthlyPayment = 0
+      let breakEvenPoint = undefined
+      
+      // Extract data based on scenario type
+      if (savedScenario === "regular" && scenarios?.regular?.summary) {
+        totalInterest = scenarios.regular.summary.total_interest_and_insurance || 0
+        totalMonths = scenarios.regular.summary.total_months || 0
+        monthlyPayment = scenarios.regular.summary.monthly_payment || 0
+        breakEvenPoint = scenarios.regular.summary.breakeven_point || undefined
+      } 
+      else if (savedScenario === "accelerated" && scenarios?.accelerated?.summary) {
+        totalInterest = scenarios.accelerated.summary.total_interest_and_insurance || 0
+        totalMonths = scenarios.accelerated.summary.total_months || 0
+        monthlyPayment = scenarios.accelerated.summary.monthly_payment || 0
+        breakEvenPoint = scenarios.accelerated.summary.breakeven_point || undefined
+      }
+      else if (savedScenario === "lower_payment" && scenarios?.lower_payment?.summary) {
+        totalInterest = scenarios.lower_payment.summary.total_interest_and_insurance || 0
+        totalMonths = scenarios.lower_payment.summary.total_months || 0
+        monthlyPayment = scenarios.lower_payment.summary.monthly_payment || 0
+        breakEvenPoint = scenarios.lower_payment.summary.breakeven_point || undefined
+      }
+      else if (savedScenario === "new_rate" && scenarios?.new_rate?.summary) {
+        totalInterest = scenarios.new_rate.summary.total_interest_and_insurance || 0
+        totalMonths = scenarios.new_rate.summary.total_months || 0
+        monthlyPayment = scenarios.new_rate.summary.monthly_payment || 0
+        breakEvenPoint = scenarios.new_rate.summary.breakeven_point || undefined
+      }
       // Parse numeric values
       const downPayment = parseFloat(formValues.down_payment.replace(/[^0-9.]/g, ""))
       const interestRate = parseFloat(formValues.interest_rate)
@@ -250,8 +283,18 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
         ? `${formValues.first_installment_date.getFullYear()}-${String(formValues.first_installment_date.getMonth() + 1).padStart(2, '0')}-${String(formValues.first_installment_date.getDate()).padStart(2, '0')}`
         : ""
         
+// console.log("totalInterest", totalInterest)
+// console.log("totalMonths", totalMonths)
+// console.log("monthlyPayment", monthlyPayment)
+// console.log("breakEvenPoint", breakEvenPoint)
+
         // Prepare mortgage data
         const mortgageData = {
+          // saved_scenario: scenarioType,
+          saved_scenario_total_interest_and_insurance: totalInterest,
+          saved_scenario_total_months: totalMonths, 
+          saved_scenario_monthly_payment: monthlyPayment,
+          saved_scenario_breakeven_point: breakEvenPoint,
         name: formValues.name,
         property_id: formValues.property_id,
           down_payment: downPayment,
@@ -441,7 +484,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
 
                   
                 </Form>
-              <p className="text-xs text-muted-foreground"> Zustand vMay 21 9:42am</p>
+              <p className="text-xs text-muted-foreground"> Zustand vMay 21 1:40Pm</p>
             </div>
           </div>
 
