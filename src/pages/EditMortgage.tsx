@@ -310,7 +310,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
        
   // Handler for invalidating queries when extra installments or new rates change
   const handleDataChange = () => {
-    queryClient.invalidateQueries({ queryKey: ["scenarios", id] })
+    queryClient.invalidateQueries({ queryKey: ["scenarios"] })
     queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
   }
 

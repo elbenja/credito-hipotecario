@@ -90,7 +90,7 @@ export function ExtraInstallmentsSection({
       setIsLoading(true)
       
       // Log the received date from the form component
-      console.log('Extra installments section - Received date from form:', values.start_date);
+      // console.log('Extra installments section - Received date from form:', values.start_date);
       
       // IMPROVED APPROACH: Create a date string in YYYY-MM-DD format
       // 1. Extract components from the date object
@@ -102,11 +102,11 @@ export function ExtraInstallmentsSection({
       // 2. Create a properly formatted YYYY-MM-DD string
       const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       
-      // Log for debugging
-      console.log('Extra installment submission:');
-      console.log('- Original date object:', dateObj);
-      console.log('- Date components:', { year, month, day });
-      console.log('- Formatted date string:', dateString);
+      // // Log for debugging
+      // console.log('Extra installment submission:');
+      // console.log('- Original date object:', dateObj);
+      // console.log('- Date components:', { year, month, day });
+      // console.log('- Formatted date string:', dateString);
       
       const installmentData = {
         mortgage_id: mortgageId,
@@ -125,7 +125,7 @@ export function ExtraInstallmentsSection({
         throw error
       }
 
-      console.log('Extra installment created:', data);
+      // console.log('Extra installment created:', data);
 
       // Invalidate both queries to trigger recalculation
       await Promise.all([

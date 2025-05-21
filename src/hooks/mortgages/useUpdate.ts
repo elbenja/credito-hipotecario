@@ -40,7 +40,7 @@ export function useUpdateMortgage() {
 
       qc.invalidateQueries({ queryKey: ['mortgages'] });
       qc.invalidateQueries({ queryKey: ['mortgage-bundle', data.id] });
-      qc.invalidateQueries({ queryKey: ["scenarios", id] })
+      qc.invalidateQueries({ queryKey: ["scenarios"] })
       qc.invalidateQueries({ queryKey: ['properties-mortgages-bonus'] });
 
       toast({

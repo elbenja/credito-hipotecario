@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { SVGfixed } from "@/components/ui/svg-fixed"
-import { useMortgageCapture } from "@/services/mortgages/mortgage-capture.service"
+import { useMortgageCapture } from "@/services/mortgages/mortgage-capture-service"
 import { useParams, useNavigate } from "react-router-dom"
 import { useToast } from "@/components/ui/use-toast"
 
