@@ -206,31 +206,32 @@ const ScenarioPanel = ({
       )
     };
   }, [
-    total_interest_and_insurance,
-    totalCost,
-    propertyCost,
-    total_months,
-    monthly_payment,
-    breakeven_point,
-    regularScenario?.summary?.total_interest_and_insurance,
-    regularScenario?.summary?.total_months,
-    regularScenario?.summary?.monthly_payment,
-    regularScenario?.summary?.breakeven_point
+    // total_interest_and_insurance, //May21 this was not listening to changes
+    // totalCost,
+    // propertyCost,
+    // total_months,
+    // monthly_payment,
+    // breakeven_point,
+    // regularScenario?.summary?.total_interest_and_insurance,
+    // regularScenario?.summary?.total_months,
+    // regularScenario?.summary?.monthly_payment,
+    // regularScenario?.summary?.breakeven_point
   ]);
 
     // Optimize chart data transformation with better memoization and caching
     const chartData = useMemo(() => {
+      console.log( "this one never triggers graph", total_interest_and_insurance )
       const cacheKey = `${scenarioType}-${totalMonthsToDisplay}-${installmentsPerYear}`;
-      if (!scenario?.payments?.length) return [];
-      
+
+      if (!scenario?.payments?.length) return []; // this is the problem
       // Create a unique cache key without relying on scenario.id property
      
       
-      // Check if we already have this cached
-      if (chartDataCache.current[cacheKey]) {
-        return chartDataCache.current[cacheKey];
-      }
-      console.log( "this one never triggers graph", total_interest_and_insurance )
+      // Check if we already have this cached //May21 this was the problem
+      // if (chartDataCache.current[cacheKey]) {
+      //   return chartDataCache.current[cacheKey];
+      // }
+
       try {
         // Calculate and cache the result
         const result = transformPaymentsToChartData(
@@ -251,16 +252,11 @@ const ScenarioPanel = ({
         console.error("Error transforming chart data:", error);
         return [];
       }
-    }, [scenario, totalCost,    total_interest_and_insurance,
-      totalCost,
-      propertyCost,
-      total_months,
-      monthly_payment,
-      breakeven_point,
-      regularScenario?.summary?.total_interest_and_insurance,
-      regularScenario?.summary?.total_months,
-      regularScenario?.summary?.monthly_payment,
-      regularScenario?.summary?.breakeven_point , totalMonthsToDisplay, installmentsPerYear, scenarioType]);
+    }, [ // ← NEW: watch the payments array itself
+      scenario?.payments,
+      totalMonthsToDisplay,
+      installmentsPerYear,
+    ]);
   
     const hasChartData = chartData.length > 0;
 
