@@ -31,10 +31,11 @@ const ScenarioIcon = ({ type }: { type: string | null }) => {
       return <Armchair className="h-4 w-4 mr-2" />
     case "accelerated":
       return <TrendingDown className="h-4 w-4 mr-2" />
+      case "lower_payment":
+        return <Wallet className="h-4 w-4 mr-2" />
     case "new_rate":
-      return <Wallet className="h-4 w-4 mr-2" />
-    case "lower_payment":
       return <Axe className="h-4 w-4 mr-2" />
+
     // case "a_plazo":
     //   return <Calendar className="h-4 w-4 mr-2" />
     // case "a_cuotas":

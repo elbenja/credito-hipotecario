@@ -165,51 +165,49 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
       let totalInterest = 0
       let totalMonths = 0
       let monthlyPayment = 0
-      let breakEvenPoint = null
+      let breakEvenPoint = undefined
       
       // Extract data based on scenario type
       if (scenarioType === "regular" && scenarios?.regular?.summary) {
         totalInterest = scenarios.regular.summary.total_interest_and_insurance || 0
         totalMonths = scenarios.regular.summary.total_months || 0
         monthlyPayment = scenarios.regular.summary.monthly_payment || 0
-        breakEvenPoint = scenarios.regular.summary.breakeven_point || null
+        breakEvenPoint = scenarios.regular.summary.breakeven_point 
       } 
       else if (scenarioType === "accelerated" && scenarios?.accelerated?.summary) {
         totalInterest = scenarios.accelerated.summary.total_interest_and_insurance || 0
         totalMonths = scenarios.accelerated.summary.total_months || 0
         monthlyPayment = scenarios.accelerated.summary.monthly_payment || 0
-        breakEvenPoint = scenarios.accelerated.summary.breakeven_point || null
+        breakEvenPoint = scenarios.accelerated.summary.breakeven_point 
       }
       else if (scenarioType === "lower_payment" && scenarios?.lower_payment?.summary) {
         totalInterest = scenarios.lower_payment.summary.total_interest_and_insurance || 0
         totalMonths = scenarios.lower_payment.summary.total_months || 0
         monthlyPayment = scenarios.lower_payment.summary.monthly_payment || 0
-        breakEvenPoint = scenarios.lower_payment.summary.breakeven_point || null
+        breakEvenPoint = scenarios.lower_payment.summary.breakeven_point
       }
       else if (scenarioType === "new_rate" && scenarios?.new_rate?.summary) {
         totalInterest = scenarios.new_rate.summary.total_interest_and_insurance || 0
         totalMonths = scenarios.new_rate.summary.total_months || 0
         monthlyPayment = scenarios.new_rate.summary.monthly_payment || 0
-        breakEvenPoint = scenarios.new_rate.summary.breakeven_point || null
+        breakEvenPoint = scenarios.new_rate.summary.breakeven_point 
       }
       
       // Save to database if we have an ID
       if (id) {
-        const { error } = await supabase
-          .from("mortgages")
-          .update({
-            saved_scenario: scenarioType,
-            saved_scenario_total_interest_and_insurance: totalInterest,
-            saved_scenario_total_months: totalMonths, 
-            saved_scenario_monthly_payment: monthlyPayment,
-            saved_scenario_breakeven_point: breakEvenPoint
-          })
-          .eq("id", id)
-
-        if (error) throw error
-        
-        // Invalidate queries to refresh data
-        queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
+        updateMortgage.mutate({
+          id: id as string,
+          saved_scenario: scenarioType,
+          saved_scenario_total_interest_and_insurance: totalInterest,
+          saved_scenario_total_months: totalMonths,
+          saved_scenario_monthly_payment: monthlyPayment,
+          saved_scenario_breakeven_point: breakEvenPoint || undefined
+        }, {
+          onError: (error) => {
+            console.error("Error saving scenario:", error)
+            throw error
+          }
+        })
       }
 
         toast({
@@ -229,8 +227,8 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
   // Handler for updating mortgage
   const onUpdateMortgage = async (formValues: any) => {
     // setIsSubmitting(true)
-    console.log("onUpdateMortgage formValues", formValues)
-    console.log("savedValue", savedScenario)
+    // console.log("onUpdateMortgage formValues", formValues)
+    // console.log("savedValue", savedScenario)
     
     try {
       // MAy 21
