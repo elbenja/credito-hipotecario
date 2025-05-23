@@ -106,3 +106,31 @@ export const usePlans = (userId: string | null) => {
 //     enabled: Boolean(user)
 //   });
 // }
+
+/**
+ * Hook specifically for checking if user has active subscription access
+ * Used in auth context to determine hasAccess
+ */
+export function useSubscriptionAccess(userId: string | null) {
+  const { data: plans, isLoading, error } = usePlans(userId);
+  
+  // Find the current plan
+  const currentPlan = Array.isArray(plans)
+    ? plans.find((plan) => plan.is_current_plan)
+    : null;
+    
+  // Check if user has access based on current plan and period end
+  const hasAccess = currentPlan ? (() => {
+    if (!currentPlan.current_period_end) return false;
+    const now = new Date();
+    const endDate = new Date(currentPlan.current_period_end);
+    return endDate > now;
+  })() : false;
+  
+  return {
+    hasAccess,
+    isLoading,
+    error,
+    currentPlan
+  };
+}

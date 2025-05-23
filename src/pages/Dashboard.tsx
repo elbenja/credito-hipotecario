@@ -19,8 +19,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { PlanLimitDialog } from "@/components/common/PlanLimitDialog"
 import { useCanCreateFeature } from "@/hooks/usePlanLimits"
 import {  Property, PropertyWithBonus } from "@/types/property"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
+import { toast } from "sonner"
 
 export default function Dashboard() {
   const { t } = useTranslation(['dashboard', 'properties', 'mortgages'])
@@ -29,10 +30,34 @@ export default function Dashboard() {
   const [open, setOpen] = useState(false)
   const [showDialog, setShowDialog] = useState(false)
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   // const queryClient = useQueryClient()
   const { canCreate } = useCanCreateFeature()
   const { resetDraft } = useMortgageDraftStore();
   // const [selectedProperty, setSelectedProperty] = useState<PropertyWithBonus | null>(null)
+
+  // Handle Stripe checkout success
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const cancelled = searchParams.get('cancelled');
+    
+    if (success === 'true') {
+      toast.success('Payment successful! Your subscription has been upgraded.');
+      // Clear the URL parameter
+      setSearchParams(prev => {
+        prev.delete('success');
+        prev.delete('session_id');
+        return prev;
+      });
+    } else if (cancelled === 'true') {
+      toast.info('Payment was cancelled. You can try again anytime.');
+      // Clear the URL parameter
+      setSearchParams(prev => {
+        prev.delete('cancelled');
+        return prev;
+      });
+    }
+  }, [searchParams, setSearchParams]);
  
   const handleOpenEmptyPropertyForm = async () => {
     // console.log('canCreate', canCreate)

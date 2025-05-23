@@ -5,21 +5,28 @@ import { cn } from "@/utils/utils";
 
 interface PlanCardProps {
   plan: {
+    id: string;
     name: string;
     price_yearly: number;
-    limits: Record<string, number | 'Unlimited'>;
-    is_current_plan?: boolean | null;
-    price_id?: string | null;
-    current_period_end?: string | null;
+    price_monthly: number;
+    price_id: string;
+    limits: Record<string, string>; // Updated to match Plan type
+    is_current_plan: boolean;
+    current_period_end: string | null;
   };
-  onSelect: (priceId: string) => void;
+  onSelect: (priceId: string, planName: string) => void;
+  isUpgrading?: string | null; // For showing loading state
 }
 
-export function PlanCard({ plan, onSelect }: PlanCardProps) {
-  const isCurrent = !!plan.is_current_plan;
+export function PlanCard({ plan, onSelect, isUpgrading }: PlanCardProps) {
+  const isCurrent = plan.is_current_plan;
   const isUpgradable = !isCurrent && !!plan.price_id;
+  const isProcessing = isUpgrading === plan.price_id;
+  
   const buttonLabel = isCurrent
     ? "Current Plan"
+    : isProcessing
+    ? "Processing..."
     : isUpgradable
     ? "Upgrade"
     : "Get";
@@ -28,7 +35,7 @@ export function PlanCard({ plan, onSelect }: PlanCardProps) {
   let activeUntil = null;
   if (isCurrent && plan.current_period_end) {
     const date = new Date(plan.current_period_end);
-    activeUntil = `Active until ${date.toISOString().split("T")[0]}`;
+    activeUntil = `Active until ${date.toLocaleDateString()}`;
   }
 
   return (
@@ -41,7 +48,7 @@ export function PlanCard({ plan, onSelect }: PlanCardProps) {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold">{plan.name}</CardTitle>
-          {isCurrent && <Badge variant="primary">Current</Badge>}
+          {isCurrent && <Badge variant="default">Current</Badge>}
         </div>
         {activeUntil && (
           <div className="text-sm text-muted-foreground mt-1">{activeUntil}</div>
@@ -65,8 +72,8 @@ export function PlanCard({ plan, onSelect }: PlanCardProps) {
         <Button
           className="w-full"
           variant={isCurrent ? "outline" : "default"}
-          disabled={isCurrent || !plan.price_id}
-          onClick={() => plan.price_id && onSelect(plan.price_id)}
+          disabled={isCurrent || !plan.price_id || isProcessing}
+          onClick={() => plan.price_id && onSelect(plan.price_id, plan.name)}
         >
           {buttonLabel}
         </Button>

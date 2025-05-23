@@ -3,7 +3,7 @@ import { User, Session } from "@supabase/supabase-js"
 import { supabase } from "@/integrations/supabase/client"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
-import { checkUserSubscriptionStatus } from "@/services/planService"
+import { useSubscriptionAccess } from "@/hooks/usePlanLimits"
 
 type AuthContextType = {
   user: User | null
@@ -31,6 +31,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const location = useLocation()
 
+  // Use the subscription hook to check access
+  const { hasAccess: hookHasAccess, isLoading: subscriptionLoading } = useSubscriptionAccess(user?.id || null)
+
+  // Update hasAccess when hook data changes
+  useEffect(() => {
+    if (!subscriptionLoading && user) {
+      setHasAccess(hookHasAccess)
+    } else if (!user) {
+      setHasAccess(false)
+    }
+  }, [hookHasAccess, subscriptionLoading, user])
+
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut()
@@ -40,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear state
       setSession(null)
       setUser(null)
+      setHasAccess(null)
       
       // Clear storage
       localStorage.removeItem('supabase.auth.token')
@@ -53,10 +66,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Still clear state and redirect
       setSession(null)
       setUser(null)
+      setHasAccess(null)
       navigate('/', { replace: true })
-
     }
   }
+
+  // Handle navigation based on auth and subscription status
+  useEffect(() => {
+    // Only navigate if we have complete information and we're on landing/auth pages
+    if (loading || subscriptionLoading || hasAccess === null) return
+    
+    if (location.pathname === '/' || location.pathname === '/auth') {
+      if (user && hasAccess) {
+        navigate('/dashboard', { replace: true })
+      } else if (user && !hasAccess) {
+        navigate('/account', { replace: true })
+      } else if (!user && location.pathname !== '/') {
+        navigate('/', { replace: true })
+      }
+    }
+  }, [user, hasAccess, loading, subscriptionLoading, location.pathname, navigate])
 
   useEffect(() => {
     let mounted = true
@@ -70,46 +99,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (mounted) {
           setSession(currentSession)
           setUser(currentSession?.user ?? null)
-          
-          // Check subscription status after setting user
-          if (currentSession?.user) {
-            try {
-              // Add timeout to prevent hanging
-              const timeoutPromise = new Promise<boolean>((_, reject) => {
-                setTimeout(() => reject(new Error('Subscription check timeout')), 10000) // 10 second timeout
-              })
-              
-              const subscriptionPromise = checkUserSubscriptionStatus(currentSession.user.id)
-              
-              const access = await Promise.race([subscriptionPromise, timeoutPromise])
-              setHasAccess(access)
-              
-              // Redirect based on access level
-              if (location.pathname === '/' || location.pathname === '/auth') {
-                if (access) {
-                  navigate('/dashboard', { replace: true })
-                } else {
-                  navigate('/account', { replace: true })
-                }
-              }
-            } catch (error) {
-              console.error('❌ Error checking subscription status:', error)
-              setHasAccess(false)
-              if (location.pathname === '/' || location.pathname === '/auth') {
-                navigate('/account', { replace: true })
-              }
-            }
-          } else {
-            console.log('📝 No user session, setting hasAccess to false')
-            setHasAccess(false)
-          }
-          
           setLoading(false)
         }
       } catch (error) {
         console.error('Error initializing auth:', error)
         if (mounted) {
-          setHasAccess(false)
           setLoading(false)
         }
       }
@@ -124,43 +118,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (mounted) {
         setSession(session)
         setUser(session?.user ?? null)
-        
-        if (session?.user) {
-          try {
-            // Add timeout to prevent hanging
-            const timeoutPromise = new Promise<boolean>((_, reject) => {
-              setTimeout(() => reject(new Error('Subscription check timeout')), 10000) // 10 second timeout
-            })
-            
-            const subscriptionPromise = checkUserSubscriptionStatus(session.user.id)
-            
-            // Check subscription status
-            const access = await Promise.race([subscriptionPromise, timeoutPromise])
-            setHasAccess(access)
-            
-            // Redirect based on access level after auth change
-            if (location.pathname === '/' || location.pathname === '/auth') {
-              if (access) {
-                navigate('/dashboard', { replace: true })
-              } else {
-                navigate('/account', { replace: true })
-              }
-            }
-          } catch (error) {
-            console.error('❌ Auth change - Error checking subscription status:', error)
-            setHasAccess(false)
-            if (location.pathname === '/' || location.pathname === '/auth') {
-              navigate('/account', { replace: true })
-            }
-          }
-        } else {
-          console.log('📝 Auth change - No user session, setting hasAccess to false')
-          setHasAccess(false)
-          // If we don't have a session and we're not at the root, redirect to root
-          if (location.pathname !== '/') {
-            navigate('/', { replace: true })
-          }
-        }
       }
     })
 
@@ -170,8 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [navigate, location.pathname])
 
-  // Show loading state while initializing auth
-  if (loading) {
+  // Show loading state while initializing auth or subscription
+  if (loading || (user && subscriptionLoading)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Initializing...</div>
