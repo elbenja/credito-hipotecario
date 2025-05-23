@@ -50,10 +50,10 @@ export function MortgageDetailsForm({
   const { t } = useTranslation(['mortgages', 'global', 'components'])
   
   // Add tracking of previous values to avoid unnecessary recalculations
-  const [prevProperty, setPrevProperty] = useState<string | null>(null)
-  const [prevDownPayment, setPrevDownPayment] = useState<number>(0)
-  const [prevBonus, setPrevBonus] = useState<number | null>(null)
-  const [prevLoanAmount, setPrevLoanAmount] = useState<number>(0)
+  // const [prevProperty, setPrevProperty] = useState<string | null>(null)
+  // const [prevDownPayment, setPrevDownPayment] = useState<number>(0)
+  // const [prevBonus, setPrevBonus] = useState<number | null>(null)
+  // const [prevLoanAmount, setPrevLoanAmount] = useState<number>(0)
   
   // Normalize the first_installment_date when component mounts
   // This fixes timezone issues with date handling
@@ -73,32 +73,12 @@ export function MortgageDetailsForm({
   const loanAmount = useMemo(() => {
     if (!selectedProperty || !selectedProperty.price_cost) return 0;
     
-    // // Skip recalculation when not necessary
-    // if (prevProperty === selectedProperty.id && 
-    //     prevDownPayment === numericDownPayment && 
-    //     prevBonus === propertyBonus) {
-    //   return prevLoanAmount;
-    // }
-    
-    // Use a simplified direct calculation when possible
-    // const calculatedAmount = selectedProperty.price_cost - numericDownPayment - propertyBonus;
+
     const calculatedAmount = mortgageDraft?.loan_amount;
 
-
-    // // Update previous values to enable future skipping
-    // setPrevProperty(selectedProperty.id);
-    // setPrevDownPayment(numericDownPayment);
-    // setPrevBonus(propertyBonus);
-    // setPrevLoanAmount(calculatedAmount);
-    
-    // // Call the callback to update loan amount in parent component
-    // if (onLoanAmountChange) {
-    //   onLoanAmountChange(calculatedAmount);
-    // }
-    
     return calculatedAmount;
   }, [selectedProperty, numericDownPayment, propertyBonus, onLoanAmountChange, 
-      prevProperty, prevDownPayment, prevBonus, prevLoanAmount]);
+      mortgageDraft]);
 
   return (
     

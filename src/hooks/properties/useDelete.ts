@@ -39,6 +39,7 @@ export function useDeleteProperty(property_id?: string) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["propertyCount"] });
+      queryClient.invalidateQueries({ queryKey: ["mortgageCount"] })
       queryClient.invalidateQueries({ queryKey: ["properties-mortgages-bonus"] });
       if (property_id) {
         queryClient.invalidateQueries({ queryKey: ["properties", property_id] });

@@ -9,7 +9,7 @@ import { useProperties } from '@/services/propertyService';
 
 //zustand
 
-import { useMortgageDraftStore } from "@/store/mortgage/store"
+// import { useMortgageDraftStore } from "@/store/mortgage/store"
 
 
 export function PropertySelect({
@@ -26,7 +26,7 @@ export function PropertySelect({
 
   const { user } = useAuth()
   // const { data: PropertyWithBonus = [], isLoading: boolean, refetch } = useProperties(user?.id)
-  const { updateDraft } = useMortgageDraftStore()
+  // const { updateDraft , resetDraft } = useMortgageDraftStore()
 
 //finde the error here
 const {
@@ -57,12 +57,12 @@ useEffect(() => {
               field.onChange(val);
               const sel = list.find((p) => p.id === val) ?? null;
               onPropertyChange?.(sel);
-              if (sel) {
-                updateDraft({
-                  property_id: sel.id,
-                  property: sel,
-                });
-              }
+              // if (sel) {
+              //   updateDraft({
+              //     property_id: sel.id,
+              //     property: sel,
+              //   });
+              // }
             }}
           >
             <SelectTrigger><SelectValue placeholder="Select property" /></SelectTrigger>

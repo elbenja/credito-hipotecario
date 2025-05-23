@@ -101,7 +101,7 @@ export default function Mortgages() {
             title: tGlobal("ui.success"),
             description: tMortgages("messages.success_delete"),
           })
-          console.log("handleDelete success", mortgage.id)
+          // console.log("handleDelete success", mortgage.id)
           queryClient.invalidateQueries({ queryKey: ["properties-mortgages-bonus"] })
         },
         onError: (err) => {

@@ -31,6 +31,7 @@ interface MortgageDraftStore {
   resetDraft: () => void
   markClean: () => void
   setExchangeRate: (rate: number) => void
+  hardResetDraft: () => void
   // calcLoanAmount: () => void;
 }
 
@@ -95,7 +96,26 @@ export const useMortgageDraftStore = create<MortgageDraftStore>()(
         //     isDirty: true
         //   }
         // }),
-        
+        // hardResetDraft: () => {
+        //   console.log("no property", DEFAULT_DRAFT);
+        //   set((state) => {
+        //     // Preserve property data when resetting
+        //     return { 
+        //       mortgageDraft: { 
+        //         ...DEFAULT_DRAFT,
+
+        //       },
+        //       isDirty: false 
+        //     };
+        //   });
+        // },
+        hardResetDraft: () => {
+          console.log("hardResetDraft")
+          return { 
+            mortgageDraft: { ...DEFAULT_DRAFT },
+            isDirty: false,
+          }
+        },
         resetDraft: () => {
           // console.log("Resetting draft to default values:", DEFAULT_DRAFT);
           set((state) => {

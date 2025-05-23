@@ -7,6 +7,7 @@ import { AuthProvider } from "@/context/auth-context"
 import { ProtectedRoute } from "@/components/protected-route"
 import { HelmetProvider } from 'react-helmet-async'
 import { ThemeProvider } from "@/components/theme-provider"
+import { AuthDebug } from "@/components/debug/auth-debug"
 
 import Index from "./pages/Index"
 import Auth from "./pages/account/Auth"
@@ -59,10 +60,11 @@ export default function App () {
     
   return (
     <HelmetProvider>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         {/* <QueryClientProvider client={queryClient}> */}
         <BrowserRouter>
           <AuthProvider>
+            {/* <AuthDebug /> */}
             <TooltipProvider>
               <Toaster />
               {/* <Sonner /> */}

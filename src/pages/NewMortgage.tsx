@@ -33,12 +33,13 @@ import { useToast } from "@/components/ui/use-toast"
 import { normalizeDate } from "@/utils/utils"
 
 import { ScenarioCalculator } from "@/utils/calculations/mortgage/scenarioCalculator"
-import { defaultValues } from "@/components/mortgages/schema"
+import { defaultValues, MortgageFormValues } from "@/components/mortgages/schema"
 import { useAddMortgage } from "@/hooks/mortgages"
 
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { usePropertyBonus } from "@/hooks/usePropertyBonus"
+import { useForm } from "react-hook-form"
 // import { useExchangeRate } from "@/hooks/use-exchange-rate"
 
 export default function NewMortgage() {
@@ -61,6 +62,11 @@ export default function NewMortgage() {
   const { resetDraft: resetStore} = useMortgageDraftStore()
   const { updateDraft } = useMortgageDraftStore()
   const { calculateBonus } = usePropertyBonus();
+  const hardResetDraft = useMortgageDraftStore((state) => state.hardResetDraft);
+  
+  const { reset, setValue } = useForm<MortgageFormValues>({
+    defaultValues: defaultValues
+  });
 
   // const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
   // Now use the mortgage draft hook for form handling
@@ -94,25 +100,38 @@ export default function NewMortgage() {
     }
   };
 
-  useEffect(() => {
-    if (propertyIdFromUrl) {
-      // load it
-      // console.log(" propertyIdFromUrl ⏳ loading property", propertyIdFromUrl);
-      // updateDraft({ property_id: propertyIdFromUrl });
-      fetchPropertyIfNeeded(propertyIdFromUrl);
-    } else {
-      // no query param → clear out any leftover
-      // console.warn("  ⚠️ no propertyIdFromUrl, clearing store");
-      resetStore();
-      resetDraft();
-      
-      setSelectedProperty(null);
-
-          // reset the form controls to completely blank defaults
-    form.reset(defaultValues);
-    }
-  }, [propertyIdFromUrl]);
+  // useEffect(() => {
+  //   if (propertyIdFromUrl) {
+  //     // load it
+  //     // console.log(" propertyIdFromUrl ⏳ loading property", propertyIdFromUrl);
+  //     // updateDraft({ property_id: propertyIdFromUrl });
+  //     fetchPropertyIfNeeded(propertyIdFromUrl);
+  //   } else {
+  //     // no query param → clear out any leftover
+  //     // console.warn("  ⚠️ no propertyIdFromUrl, clearing store");
+  //     resetStore();
+  //     resetDraft();
+  //     setSelectedProperty(null);
+  //     console.log("resetting form")
+  //         // reset the form controls to completely blank defaults
+  //     form.reset(defaultValues);
+  //   }
+  // }, [propertyIdFromUrl]);
   
+  // Add at the top of the component before any other effects
+useEffect(() => {
+  // Clear ALL state on initial mount
+  resetStore();
+  hardResetDraft();
+  setSelectedProperty(null);
+  form.reset(defaultValues);
+  
+  // Only now check for propertyId
+  if (propertyIdFromUrl) {
+    fetchPropertyIfNeeded(propertyIdFromUrl);
+  }
+}, []); // Empty dependency array = only run once on mount
+
 function DebugMortgageDraft() {
   useEffect(() => {
     // Subscribe with a single callback function
@@ -171,7 +190,7 @@ function DebugMortgageDraft() {
       setSelectedProperty(enriched);
       
 
-      form.setValue("property_id", updated.id, { shouldValidate: true })
+      // form.setValue("property_id", updated.id, { shouldValidate: true })
       
       // Update the form name if empty
       if (!form.getValues("name")) {
@@ -181,7 +200,7 @@ function DebugMortgageDraft() {
       
 
     } else {
-      form.setValue("property_id", "", { shouldValidate: true })
+      // form.setValue("property_id", "", { shouldValidate: true })
     }
   }
 
@@ -379,10 +398,15 @@ function DebugMortgageDraft() {
                   </>
                 ) : (
                   <div className="p-1 md:p-2 lg:p-4 space-y-6"> 
-                    <PropertySelect 
+                    {/* <PropertySelect 
                       form={form} 
                       onPropertyChange={handlePropertyChange}
-                    />
+                    /> */}
+                    <PropertySelect 
+                    form={form}
+                    // initialValue={null} // Explicitly set no initial value
+                    onPropertyChange={handlePropertyChange}
+                  />
                   </div>
                 )}
 
@@ -405,6 +429,7 @@ function DebugMortgageDraft() {
                 /> */}
 
 <FormField
+                  
                   control={form.control}
                   name="name"
                   render={({ field }) => (

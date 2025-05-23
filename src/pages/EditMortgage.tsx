@@ -194,7 +194,10 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
         monthlyPayment = scenarios.new_rate.summary.monthly_payment || 0
         breakEvenPoint = scenarios.new_rate.summary.breakeven_point 
       }
-      
+      console.log("totalInterest", totalInterest)
+      console.log("totalMonths", totalMonths)
+      console.log("monthlyPayment", monthlyPayment)
+      console.log("breakEvenPoint", breakEvenPoint)
       // Save to database if we have an ID
       if (id) {
         updateMortgage.mutate({
@@ -283,10 +286,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
         ? `${formValues.first_installment_date.getFullYear()}-${String(formValues.first_installment_date.getMonth() + 1).padStart(2, '0')}-${String(formValues.first_installment_date.getDate()).padStart(2, '0')}`
         : ""
         
-// console.log("totalInterest", totalInterest)
-// console.log("totalMonths", totalMonths)
-// console.log("monthlyPayment", monthlyPayment)
-// console.log("breakEvenPoint", breakEvenPoint)
+
 
         // Prepare mortgage data
         const mortgageData = {
@@ -472,7 +472,15 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
 
                   
                 </Form>
-              <p className="text-xs text-muted-foreground"> Zustand v May 21 3:40Pm</p>
+              <p className="text-xs text-muted-foreground"> Zustand v May 22 6:20Pm</p>
+              {/* <Button onClick={() => {
+                updateDraft({
+                  property: property,
+                  property_id: property.id
+                })
+              }}>
+                updateDraft
+              </Button> */}
             </div>
           </div>
 

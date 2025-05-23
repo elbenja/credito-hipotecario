@@ -3,11 +3,13 @@ import { User, Session } from "@supabase/supabase-js"
 import { supabase } from "@/integrations/supabase/client"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
+import { checkUserSubscriptionStatus } from "@/services/planService"
 
 type AuthContextType = {
   user: User | null
   session: Session | null
   loading: boolean
+  hasAccess: boolean | null
   signOut: () => Promise<void>
 }
 
@@ -15,7 +17,8 @@ const AuthContext = createContext<AuthContextType>({
   user: null, 
   session: null, 
   loading: true,
-  signOut: async () => {} 
+  hasAccess: null,
+  signOut: async () => {}   
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -23,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const qc = useQueryClient() // for invalidating queries May20
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null)
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -64,15 +68,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session: currentSession } } = await supabase.auth.getSession()
         
         if (mounted) {
-  
-
           setSession(currentSession)
           setUser(currentSession?.user ?? null)
           
-          // If we have a session and we're at the root or auth page, redirect to dashboard
-          if (currentSession?.user && (location.pathname === '/' || location.pathname === '/auth')) {
-            console.log('Redirecting to dashboard...')
-            navigate('/dashboard', { replace: true })
+          // Check subscription status after setting user
+          if (currentSession?.user) {
+            try {
+              // Add timeout to prevent hanging
+              const timeoutPromise = new Promise<boolean>((_, reject) => {
+                setTimeout(() => reject(new Error('Subscription check timeout')), 10000) // 10 second timeout
+              })
+              
+              const subscriptionPromise = checkUserSubscriptionStatus(currentSession.user.id)
+              
+              const access = await Promise.race([subscriptionPromise, timeoutPromise])
+              setHasAccess(access)
+              
+              // Redirect based on access level
+              if (location.pathname === '/' || location.pathname === '/auth') {
+                if (access) {
+                  navigate('/dashboard', { replace: true })
+                } else {
+                  navigate('/account', { replace: true })
+                }
+              }
+            } catch (error) {
+              console.error('❌ Error checking subscription status:', error)
+              setHasAccess(false)
+              if (location.pathname === '/' || location.pathname === '/auth') {
+                navigate('/account', { replace: true })
+              }
+            }
+          } else {
+            console.log('📝 No user session, setting hasAccess to false')
+            setHasAccess(false)
           }
           
           setLoading(false)
@@ -80,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error('Error initializing auth:', error)
         if (mounted) {
+          setHasAccess(false)
           setLoading(false)
         }
       }
@@ -92,25 +122,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (mounted) {
-        // console.log('Auth state changed:', { 
-        //   event, 
-        //   userEmail: session?.user?.email,
-        //   currentPath: location.pathname
-        // })
-
         setSession(session)
         setUser(session?.user ?? null)
         
         if (session?.user) {
-          // If we have a session and we're at the root or auth page, redirect to dashboard
-          if (location.pathname === '/' || location.pathname === '/auth') {
-            console.log('Redirecting to dashboard after auth change...')
-            navigate('/dashboard', { replace: true })
+          try {
+            // Add timeout to prevent hanging
+            const timeoutPromise = new Promise<boolean>((_, reject) => {
+              setTimeout(() => reject(new Error('Subscription check timeout')), 10000) // 10 second timeout
+            })
+            
+            const subscriptionPromise = checkUserSubscriptionStatus(session.user.id)
+            
+            // Check subscription status
+            const access = await Promise.race([subscriptionPromise, timeoutPromise])
+            setHasAccess(access)
+            
+            // Redirect based on access level after auth change
+            if (location.pathname === '/' || location.pathname === '/auth') {
+              if (access) {
+                navigate('/dashboard', { replace: true })
+              } else {
+                navigate('/account', { replace: true })
+              }
+            }
+          } catch (error) {
+            console.error('❌ Auth change - Error checking subscription status:', error)
+            setHasAccess(false)
+            if (location.pathname === '/' || location.pathname === '/auth') {
+              navigate('/account', { replace: true })
+            }
           }
         } else {
+          console.log('📝 Auth change - No user session, setting hasAccess to false')
+          setHasAccess(false)
           // If we don't have a session and we're not at the root, redirect to root
           if (location.pathname !== '/') {
-            console.log('Redirecting to root after session end...')
             navigate('/', { replace: true })
           }
         }
@@ -133,7 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signOut, hasAccess }}>
       {children}
     </AuthContext.Provider>
   )
