@@ -14,16 +14,6 @@ import { usePlans } from "@/hooks/usePlanLimits"
 import { createCheckoutSession, redirectToCheckout } from "@/services/stripeService"
 import { toast } from "sonner"
 
-// type PlanLimits = {
-//   plan_name: string
-//   current_period_end: string
-//   limits: Record<string, number>
-// }
-
-// plan_name: string;
-// current_period_end: string;
-// limits: Record<string, number>;
-
 export default function Account() {
   const { t } = useTranslation(['global'])
   // const { theme, setTheme } = useTheme()
@@ -65,16 +55,7 @@ export default function Account() {
 
   if (isLoading) return <p>Loading plans...</p>
   if (error || !plans) return <p>Something went wrong</p>
-  // useEffect(() => {
-  //   const loadPlan = async () => {
-  //     if (!user?.id) return
-  //     const fetchedPlan = await getUserPlanLimits(user.id)
-  //     setPlan(fetchedPlan)
-  //   }
-  //   loadPlan()
-  // }, [user])
 
-  // if (!plan) return null
   return (
     <DashboardLayout
       header={{
@@ -95,43 +76,6 @@ export default function Account() {
           ))}
         </div>
 
-
-        {/* <div className="flex justify-center">
-      <SVGillustration variant="cat" className="size-52 -mb-8" />
-        </div> */}
-
-        {/* <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">Current Plan</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              {plan.plan_name} – Active until{" "}
-              {new Date(plan.current_period_end).toLocaleDateString()}
-            </CardDescription>
-          </CardHeader>
-          <Separator />
-          <CardContent className="mt-4 space-y-4">
-            {Object.entries(plan.limits).map(([feature, limit]) => (
-              <div key={feature} className="flex justify-between text-sm">
-                <span className="text-muted-foreground capitalize">
-                  {feature.replaceAll('_', ' ')}
-                </span>
-                <span className="font-medium">
-                  {limit === -1 ? 'Unlimited' : limit}
-                </span>
-              </div>
-            ))}
-          </CardContent>
-          <CardFooter>
-           
-            <Button className="w-full" onClick={() => {
-
-            }}>
-                  Upgrade Plan
-                </Button>
-          </CardFooter>
-        </Card> */}
-
-  
       </div>
     </DashboardLayout>
   )

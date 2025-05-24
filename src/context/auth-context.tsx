@@ -72,20 +72,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   // Handle navigation based on auth and subscription status
-  useEffect(() => {
-    // Only navigate if we have complete information and we're on landing/auth pages
-    if (loading || subscriptionLoading || hasAccess === null) return
-    
-    if (location.pathname === '/' || location.pathname === '/auth') {
-      if (user && hasAccess) {
-        navigate('/dashboard', { replace: true })
-      } else if (user && !hasAccess) {
-        navigate('/account', { replace: true })
-      } else if (!user && location.pathname !== '/') {
-        navigate('/', { replace: true })
-      }
-    }
-  }, [user, hasAccess, loading, subscriptionLoading, location.pathname, navigate])
+  // useEffect(() => {
+  //   // Only navigate if we have complete information and we're on landing/auth pages
+  //   if (loading || subscriptionLoading || hasAccess === null) return
+  //   // console.log('hasAccess user context', hasAccess, user)
+  //   if (location.pathname === '/' || location.pathname === '/auth') {
+  //     if (user && hasAccess) {
+  //       console.log('user has access, redirecting to /dashboard')
+  //       navigate('/dashboard', { replace: true })
+  //     } else if (user && !hasAccess) {
+  //       console.log('user does not have access, redirecting to /account')
+  //       navigate('/account', { replace: true })
+  //     } else if (!user && location.pathname !== '/') {
+  //       console.log('no user, redirecting to /')
+  //       navigate('/', { replace: true })
+  //     }
+  //   }
+  // }, [user, hasAccess, loading, subscriptionLoading, location.pathname, navigate])
 
   useEffect(() => {
     let mounted = true

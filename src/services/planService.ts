@@ -31,18 +31,6 @@ export async function getUserPlanLimits(
   return data;
 }
 
-/**
- * Fetches all active plans with their limits and indicates the current plan for the user.
- * Returns an array of plans with their details and limits.
- */
-// export async function getActivePlansWithLimits(userId: string): Promise<any[]> {
-//   const { data, error } = await supabase
-//     .rpc('get_active_plans_with_limits', { p_user_id: userId });
-
-//   if (error) throw error;
-//   // The function returns null if no plans, otherwise an array
-//   return data ?? [];
-// }
 
 
 export type PlanFeatureLimits = Record<string, string>
@@ -93,7 +81,7 @@ export async function getActivePlansWithLimits(userId: string): Promise<Plan[] |
       .eq('status', 'active')
       .single()
 
-    console.log('👤 User subscription:', userSubscription)
+    // console.log('👤 User subscription:', userSubscription)
 
     // Transform the data to match expected format
     const plans: Plan[] = (allPlans || []).map(plan => {
@@ -117,35 +105,9 @@ export async function getActivePlansWithLimits(userId: string): Promise<Plan[] |
       }
     })
 
-    console.log('📊 Direct table query result:', plans)
+    // console.log('📊 Direct table query result:', plans)
     
-    // If no plans found or no current plan, add a default Personal plan
-    if (!plans || plans.length === 0 || !plans.find(p => p.is_current_plan)) {
-      console.log('🔄 Adding default Personal plan fallback')
-      const defaultPlan: Plan = {
-        id: 'default-personal',
-        name: 'Personal',
-        price_yearly: 14.90,
-        price_monthly: 1.24,
-        price_id: '',
-        is_current_plan: true,
-        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-        limits: {
-          properties: '3',
-          mortgages: '10',
-          rentals: '1'
-        }
-      }
-      
-      if (plans && plans.length > 0) {
-        // Mark all existing plans as not current and add default
-        plans.forEach(p => p.is_current_plan = false)
-        plans.push(defaultPlan)
-      } else {
-        // Create new array with just the default plan
-        return [defaultPlan]
-      }
-    }
+
     
     return plans
 
@@ -180,11 +142,7 @@ export async function checkUserSubscriptionStatus(userId: string): Promise<boole
     const endDate = new Date(currentPlan.current_period_end ?? '')
     const hasAccess = endDate > now
     
-    //   console.log('📅 Subscription status check:')
-    //   console.log('  - Now:', now.toISOString())
-    //   console.log('  - End Date:', endDate.toISOString())
-    //   console.log('  - Has Access:', hasAccess)
-    
+
     return hasAccess
   } catch (error) {
     //   console.error('❌ Exception in checkUserSubscriptionStatus:', error)

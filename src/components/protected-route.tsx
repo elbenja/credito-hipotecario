@@ -23,12 +23,12 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   // If user doesn't have access, only allow /account page
-  if (hasAccess === false) {
-    if (location.pathname !== '/account') {
-      console.log('No access, redirecting to /account')
-      return <Navigate to="/account" replace />
-    }
-  }
+  // if (hasAccess === false) {
+  //   if (location.pathname !== '/account') {
+  //     console.log('No access, redirecting to /account')
+  //     return <Navigate to="/account" replace />
+  //   }
+  // }
 
   return <>{children}</>
 }

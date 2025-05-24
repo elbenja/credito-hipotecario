@@ -1,7 +1,7 @@
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 // import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useTranslation } from "react-i18next"
-import { Link } from "react-router-dom"
+import { Link, Navigate } from "react-router-dom"
 import SVGillustration from '@/components/ui/SVGillustration'
 import { Badge } from "@/components/ui/badge"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -25,7 +25,7 @@ import { toast } from "sonner"
 
 export default function Dashboard() {
   const { t } = useTranslation(['dashboard', 'properties', 'mortgages'])
-  // const { user } = useAuth()
+  const { user, hasAccess } = useAuth()
   const [hasProperties, setHasProperties] = useState(false)
   const [open, setOpen] = useState(false)
   const [showDialog, setShowDialog] = useState(false)
@@ -102,6 +102,12 @@ export default function Dashboard() {
   useEffect(() => {
     setHasProperties(propertiesCount > 0)
   }, [propertiesCount])
+
+
+
+
+
+
 
   return (
     <DashboardLayout

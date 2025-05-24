@@ -31,6 +31,7 @@ import { useMortgageDraftStore } from "./store/mortgage/store"
 import { useExchangeRate } from "./hooks/use-exchange-rate"
 import Account from "@/pages/account/Account"
 import Settings from "@/pages/account/Settings"
+import HomeRedirect from "./HomeRedirect"
 // const queryClient = new QueryClient({
 //   defaultOptions: {
 //     queries: {
@@ -69,7 +70,8 @@ export default function App () {
               <Toaster />
               <Sonner />
               <Routes>
-                <Route path="/" element={<Auth />} />
+                {/* <Route path="/" element={<Auth />} /> */}
+                <Route path="/" element={<HomeRedirect />} />
                 <Route path="/coming-soon" element={<ComingSoon />} />
                 <Route path="/app" element={<Index />} />
                 <Route path="/update-password" element={<UpdatePassword />} />
