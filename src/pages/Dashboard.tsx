@@ -184,7 +184,7 @@ export default function Dashboard() {
    </div>
   <Alert className="w-80 mb-16 mt-12">
     <Terminal className="h-4 w-4" />
-    <AlertTitle>v May20 8:40PM </AlertTitle>
+    <AlertTitle>v May24 3:02PM </AlertTitle>
     {/* <AlertDescription>
       You can add components and dependencies to your app using the cli.
     </AlertDescription> */}
