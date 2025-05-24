@@ -61,6 +61,7 @@ export async function getActivePlansWithLimits(userId: string): Promise<Plan[] |
         name,
         price_yearly,
         price_monthly,
+        price_id,
         plan_features!inner (
           feature_name,
           feature_limit
@@ -98,7 +99,7 @@ export async function getActivePlansWithLimits(userId: string): Promise<Plan[] |
         name: plan.name,
         price_yearly: plan.price_yearly,
         price_monthly: 0, // Default, as it's not required for our current use
-        price_id: '', // Default, as it's not required for our current use
+        price_id: plan.price_id,
         is_current_plan: userSubscription?.plan_id === plan.id,
         current_period_end: userSubscription?.plan_id === plan.id ? (userSubscription?.current_period_end || null) : null,
         limits
@@ -107,7 +108,6 @@ export async function getActivePlansWithLimits(userId: string): Promise<Plan[] |
 
     // console.log('📊 Direct table query result:', plans)
     
-
     
     return plans
 

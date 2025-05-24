@@ -48,6 +48,7 @@ export function PlanCard({ plan, onSelect, isUpgrading }: PlanCardProps) {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold">{plan.name}</CardTitle>
+          
           {isCurrent && <Badge variant="default">Current</Badge>}
         </div>
         {activeUntil && (
@@ -68,7 +69,11 @@ export function PlanCard({ plan, onSelect, isUpgrading }: PlanCardProps) {
           ))}
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col items-center justify-center">
+     <small className="text-xs text-foreground">
+      IsCurrent: {String(isCurrent)} | Price ID: {plan.price_id || 'None'} | isProcessing: {String(isProcessing)}
+     </small>
+
         <Button
           className="w-full"
           variant={isCurrent ? "outline" : "default"}
@@ -83,3 +88,22 @@ export function PlanCard({ plan, onSelect, isUpgrading }: PlanCardProps) {
 }
 
 export default PlanCard; 
+
+
+{/* <div key={plan.id} className="border p-4 rounded shadow-sm">
+          <h3 className="text-lg font-bold">{plan.name}</h3>
+          <p>${plan.price_yearly} / year</p>
+          <ul className="mt-2 text-sm">
+            {Object.entries(plan.limits).map(([feature, limit]) => (
+              <li key={feature}>✅ {limit} {feature}</li>
+            ))}
+          </ul>
+          <button
+            className={`mt-4 w-full py-2 text-white ${
+              plan.is_current_plan ? 'bg-gray-400 cursor-default' : 'bg-black hover:bg-gray-800'
+            }`}
+            disabled={plan.is_current_plan}
+          >
+            {plan.is_current_plan ? 'Current Plan' : 'Upgrade'}
+          </button>
+        </div> */}

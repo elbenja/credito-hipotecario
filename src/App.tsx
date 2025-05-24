@@ -72,6 +72,8 @@ export default function App () {
               <Routes>
                 {/* <Route path="/" element={<Auth />} /> */}
                 <Route path="/" element={<HomeRedirect />} />
+                <Route path="/auth" element={<Auth />} />
+                
                 <Route path="/coming-soon" element={<ComingSoon />} />
                 <Route path="/app" element={<Index />} />
                 <Route path="/update-password" element={<UpdatePassword />} />

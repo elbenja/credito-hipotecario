@@ -69,20 +69,7 @@ export function useCanCreateFeature() {
 // import { getActivePlansWithLimits, Plan } from '@/services/planService'
 
 export const usePlans = (userId: string | null) => {
-  // return useQuery<Plan[] | null>(
-  //   ['activePlansWithLimits', userId],
-  //   () => {
-  //     if (!userId) return Promise.resolve(null)
-  //     return getActivePlansWithLimits(userId)
-  //   },
-  //   {
-  //     enabled: !!userId,                // Only run when userId exists
-  //     staleTime: 1000 * 60 * 60 * 12,   // 12 hours
-  //     gcTime: 1000 * 60 * 60 * 24,   // 24 hours
-  //     refetchOnWindowFocus: false,
-  //     retry: 1
-  //   }
-  // )
+
   return useQuery<Plan[] | null>({
     queryKey: ['activePlansWithLimits', userId],
     queryFn: () => {

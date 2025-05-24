@@ -17,9 +17,20 @@ export default function Auth() {
   useEffect(() => {
     // If we have a user and we're not loading, redirect to dashboard
     if (!loading && user) {
-      navigate('/dashboard', { replace: true })
+      // navigate('/dashboard', { replace: true })
+      navigate('/', { replace: true })
     }
   }, [user, loading, navigate])
+
+//    if (!loading && user && !hasAccess) {
+//     console.log('no access, redirecting to account from auth')
+//     navigate('/account', { replace: true })
+
+//   } else if (!loading && user) {
+//     navigate('/dashboard', { replace: true })
+//   }
+// }, [user, loading, navigate])
+
 
   // Show loading state
   if (loading || user) {
