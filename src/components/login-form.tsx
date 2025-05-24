@@ -32,24 +32,70 @@ export function LoginForm() {
     const email = formData.get("email") as string
     const password = formData.get("password") as string
 
+    // try {
+    //   const { data, error } = await supabase.auth.signInWithPassword({
+    //     email,
+    //     password,
+    //   })
+
+    //   if (error) {
+    //     throw error
+    //   }
+
+    //   // Success toast
+    //   toast({
+    //     title: t("ui.success"),
+    //     description: t("auth.login.success"),
+    //   })
+
+    //   // Explicitly navigate to dashboard after successful login
+    //   // navigate('/dashboard', { replace: true })
+    //   navigate('/', { replace: true })
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      if (isSignUp) {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              email: email,
+            }
+          }
+        })
 
-      if (error) {
-        throw error
+        if (error) {
+          console.error("Signup error:", error)
+          throw error
+        }
+
+        if (data.user) {
+          toast({
+            title: "Account created!",
+            description: "Please check your email to verify your account.",
+          })
+          // Optionally update profiles table
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ email: email })
+            .eq('id', data.user.id)
+
+          if (profileError) {
+            console.error("Profile update error:", profileError)
+          }
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
+        if (error) {
+          console.error("Login error:", error)
+          throw error
+        }
+        navigate("/dashboard")
       }
+   
 
-      // Success toast
-      toast({
-        title: t("ui.success"),
-        description: t("auth.login.success"),
-      })
-
-      // Explicitly navigate to dashboard after successful login
-      navigate('/dashboard', { replace: true })
     } catch (error: any) {
       setError(error.message || t("ui.error"))
       toast({
@@ -131,7 +177,7 @@ export function LoginForm() {
           <Button
             onClick={() => setIsResettingPassword(false)}
             variant="link"
-            className="mx-auto text-blue-500 font-bold"
+            className="mx-auto  font-bold"
           >
             {t("auth.login.back_to_login")}
           </Button>
@@ -139,12 +185,12 @@ export function LoginForm() {
       ) : (
         <>
           <div className="space-y-2 text-center">
-            <h1 className="text-3xl font-bold">
-              {t("auth.login.early_access")}
-            </h1>
-            <p className="text-md">
-              {t("auth.login.credentials_prompt")}
-            </p>
+          <h1 className="text-2xl font-bold">{isSignUp ? "Create an account" : "Welcome back"}</h1>
+          <p className="text-gray-500">
+            {isSignUp
+              ? "Enter your email below to create your account"
+              : "Enter your credentials to access your account"}
+          </p>
           </div>
           <form onSubmit={onSubmit} className="space-y-4 mt-4">
             {error && (
@@ -178,11 +224,19 @@ export function LoginForm() {
               />
             </div>
             <Button className="w-full" type="submit" disabled={isLoading}>
-              {isLoading ? (
+              {/* {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   {t("auth.login.loading")}
                 </>
+              ) : (
+                t("auth.login.sign_in")
+              )} */}
+               {isLoading ? (
+                
+                t("auth.login.loading")
+              ) : isSignUp ? (
+                t("auth.login.create_account")
               ) : (
                 t("auth.login.sign_in")
               )}
@@ -190,13 +244,22 @@ export function LoginForm() {
             <Button
               type="button"
               variant="link"
-              className="w-full  text-blue-500 font-bold"
+              className="w-full  font-bold"
               onClick={() => setIsResettingPassword(true)}
               disabled={isLoading}
             >
               {t("auth.login.forgot_password")}
             </Button>
           </form>
+          <div className="text-center text-sm">
+        <Button
+          variant="link"
+          className="text-sm"
+          onClick={() => setIsSignUp(!isSignUp)}
+        >
+          {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
+        </Button>
+      </div>
         </>
       )}
     </div>
