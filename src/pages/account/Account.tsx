@@ -53,30 +53,61 @@ export default function Account() {
     }
   };
 
-  if (isLoading) return <p>Loading plans...</p>
-  if (error || !plans) return <p>Something went wrong</p>
+//   if (isLoading) return <p>Loading plans...</p>
+//   if (error || !plans) return <p>Something went wrong</p>
 
-  return (
-    <DashboardLayout
-      header={{
-        title: <h1 className="text-3xl font-bold">Account</h1>,
-      }}
-    >
-      <div className="container py-6 space-y-6">
+//   return (
+//     <DashboardLayout
+//       header={{
+//         title: <h1 className="text-3xl font-bold">Account</h1>,
+//       }}
+//     >
+//       <div className="container py-6 space-y-6">
 
    
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {plans.map(plan => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              onSelect={handleUpgrade}
-              isUpgrading={isUpgrading}
-            />
-          ))}
-        </div>
+//         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+//           {plans.map(plan => (
+//             <PlanCard
+//               key={plan.id}
+//               plan={plan}
+//               onSelect={handleUpgrade}
+//               isUpgrading={isUpgrading}
+//             />
+//           ))}
+//         </div>
 
+//       </div>
+//     </DashboardLayout>
+//   )
+// }
+// ... existing code ...
+
+if (isLoading) return <p>Loading plans...</p>
+if (error || !plans) return <p>Something went wrong</p>
+
+// Sort plans by yearly price (ascending)
+const sortedPlans = plans.slice().sort((a, b) => a.price_yearly - b.price_yearly);
+
+return (
+  <DashboardLayout
+    header={{
+      title: <h1 className="text-3xl font-bold">Account</h1>,
+    }}
+  >
+    <div className="container py-6 space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {sortedPlans.map(plan => (
+          <PlanCard
+            key={plan.id}
+            plan={plan}
+            onSelect={handleUpgrade}
+            isUpgrading={isUpgrading}
+          />
+        ))}
       </div>
-    </DashboardLayout>
-  )
+    </div>
+  </DashboardLayout>
+)
 }
+
+// ... existing code ...

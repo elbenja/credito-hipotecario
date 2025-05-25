@@ -92,7 +92,8 @@ export function LoginForm() {
           console.error("Login error:", error)
           throw error
         }
-        navigate("/dashboard")
+        // navigate("/dashboard")
+        navigate("/")
       }
    
 
