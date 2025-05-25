@@ -373,7 +373,7 @@ export function DashboardSidebar() {
                         <span>{tDashboard('sections.account')}</span>
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
+                    {/* <DropdownMenuItem asChild>
                       <Link to="/dashboard" className="flex items-center">
                         <CreditCard className="mr-2 h-4 w-4" />
                         <span>{tDashboard('sections.billing')}</span>
@@ -384,7 +384,7 @@ export function DashboardSidebar() {
                         <Bell className="mr-2 h-4 w-4" />
                         <span>{tDashboard('sections.notifications')}</span>
                       </Link>
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> */}
                     <DropdownMenuItem asChild>
                       <Link to="/settings" className="flex items-center">
                         <Settings className="mr-2 h-4 w-4" />

@@ -222,10 +222,10 @@ const handleDuplicate = async (property: PropertyWithBonus) => {
       <PlanLimitDialog
         open={showDialog}
         onClose={() => setShowDialog(false)}
-        onUpgrade={() => {
-          // TODO: Add navigation or logic to upgrade page
-          setShowDialog(false)
-        }}
+        // onUpgrade={() => {
+        //   // TODO: Add navigation or logic to upgrade page
+        //   setShowDialog(false)
+        // }}
       />
     </DashboardLayout>
   )

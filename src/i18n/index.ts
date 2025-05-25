@@ -9,6 +9,7 @@ import enProperties from './locales/en/properties.json';
 import enMortgages from './locales/en/mortgages.json';
 import enAdmin from './locales/en/admin.json';
 import enComponents from './locales/en/components.json';
+import enAccount from './locales/en/account.json';
 
 import esGlobal from './locales/es/global.json';
 import esDashboard from './locales/es/dashboard.json';
@@ -16,6 +17,7 @@ import esProperties from './locales/es/properties.json';
 import esMortgages from './locales/es/mortgages.json';
 import esAdmin from './locales/es/admin.json';
 import esComponents from './locales/es/components.json';
+import esAccount from './locales/es/account.json';
 
 export const resources = {
   en: {
@@ -25,6 +27,7 @@ export const resources = {
     mortgages: enMortgages,
     admin: enAdmin,
     components: enComponents,
+    account: enAccount,
   },
   es: {
     global: esGlobal,
@@ -33,6 +36,7 @@ export const resources = {
     mortgages: esMortgages,
     admin: esAdmin,
     components: esComponents,
+    account: esAccount,
   },
 };
 
@@ -43,7 +47,7 @@ i18n
     resources,
     fallbackLng: 'en',
     defaultNS: 'global',
-    ns: ['global', 'dashboard', 'properties', 'mortgages', 'admin', 'components'],
+    ns: ['global', 'dashboard', 'properties', 'mortgages', 'admin', 'components', 'account'],
     interpolation: {
       escapeValue: false,
     },

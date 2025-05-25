@@ -96,6 +96,13 @@ export function DashboardNoAccessSidebar() {
                     </SidebarMenuButton>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="start" side="right">
+                    <DropdownMenuItem asChild>
+                      <Link to="/settings" className="flex items-center">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>{tGlobal('settings.title')}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
                     <DropdownMenuItem onClick={handleLogout} className="flex items-center text-red-500 focus:text-red-500">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>{tGlobal('ui.log_out')}</span>

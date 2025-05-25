@@ -15,7 +15,7 @@ import { createCheckoutSession, redirectToCheckout } from "@/services/stripeServ
 import { toast } from "sonner"
 
 export default function Account() {
-  const { t } = useTranslation(['global'])
+  const { t } = useTranslation('account')
   // const { theme, setTheme } = useTheme()
   const { user } = useAuth()
   const [isUpgrading, setIsUpgrading] = useState<string | null>(null)
@@ -82,8 +82,8 @@ export default function Account() {
 // }
 // ... existing code ...
 
-if (isLoading) return <p>Loading plans...</p>
-if (error || !plans) return <p>Something went wrong</p>
+if (isLoading) return <p>{t('loading_plans')}</p>
+if (error || !plans) return <p>{t('error_loading_plans')}</p>
 
 // Sort plans by yearly price (ascending)
 const sortedPlans = plans.slice().sort((a, b) => a.price_yearly - b.price_yearly);
@@ -91,7 +91,7 @@ const sortedPlans = plans.slice().sort((a, b) => a.price_yearly - b.price_yearly
 return (
   <DashboardLayout
     header={{
-      title: <h1 className="text-3xl font-bold">Account</h1>,
+      title: <h1 className="text-xl font-bold">{t('title')}</h1>,
     }}
   >
     <div className="container py-6 space-y-6">

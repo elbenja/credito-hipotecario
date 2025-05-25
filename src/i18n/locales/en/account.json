@@ -1,0 +1,16 @@
+{
+  "title": "Account",
+  "loading_plans": "Loading plans...",
+  "error_loading_plans": "Something went wrong",
+  "current_plan": "Current Plan",
+  "processing": "Processing...",
+  "upgrade": "Upgrade",
+  "get": "Get",
+  "current": "Current",
+  "active_until": "Active until {{date}}",
+  "yearly": "yearly",
+  "unlimited": "Unlimited",
+  "feature_rentals": "Rentals",
+  "feature_mortgages": "Mortgages",
+  "feature_properties": "Properties"
+} 

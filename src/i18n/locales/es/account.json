@@ -1,0 +1,16 @@
+{
+  "title": "Cuenta",
+  "loading_plans": "Cargando planes...",
+  "error_loading_plans": "Algo salió mal",
+  "current_plan": "Plan Actual",
+  "processing": "Procesando...",
+  "upgrade": "Mejorar",
+  "get": "Obtener",
+  "current": "Actual",
+  "active_until": "Activo hasta {{date}}",
+  "yearly": "anual",
+  "unlimited": "Ilimitado",
+  "feature_rentals": "Rentabilidad",
+  "feature_mortgages": "Hipotecas",
+  "feature_properties": "Propiedades"
+} 
