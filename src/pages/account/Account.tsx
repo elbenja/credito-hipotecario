@@ -21,6 +21,7 @@ export default function Account() {
   const [isUpgrading, setIsUpgrading] = useState<string | null>(null)
   const { data: planLimits, isLoading: isPlanLimitsLoading, error: planLimitsError } = useUserPlanLimits()
   // const [plan, setPlan] = useState<PlanLimits | null>(null)
+  // console.log('planLimits', planLimits)
 
   const { data: plans, isLoading, error } = usePlans(user?.id || null)
 
@@ -108,6 +109,7 @@ export default function Account() {
                 plan={plan}
                 onSelect={handleUpgrade}
                 isUpgrading={isUpgrading}
+                planLimits={planLimits}
               />
             ))}
           </div>
