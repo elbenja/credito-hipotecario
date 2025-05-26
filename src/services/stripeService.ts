@@ -1,7 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export interface CheckoutSessionResponse {
-  checkout_url: string;
+  checkout_url?: string;
+  message?: string;
+  subscription_id?: string;
+  status?: string;
 }
 
 export async function createCheckoutSession(priceId: string): Promise<CheckoutSessionResponse> {
@@ -29,10 +32,7 @@ export async function createCheckoutSession(priceId: string): Promise<CheckoutSe
       throw new Error(response.error.message || 'Failed to create checkout session');
     }
 
-    if (!response.data?.checkout_url) {
-      throw new Error('No checkout URL received from server');
-    }
-
+    // Return the full response data (may include checkout_url or message)
     return response.data as CheckoutSessionResponse;
   } catch (error) {
     console.error('Error creating checkout session:', error);
@@ -80,3 +80,4 @@ export async function createCustomerPortalSession(): Promise<{ url: string }> {
 export function redirectToCustomerPortal(url: string) {
   window.location.href = url;
 } 
+

@@ -13,6 +13,7 @@ import { PlanCard } from "@/components/blocks/PlanCard"
 import { usePlans, useSubscriptionAccess, useUserPlanLimits } from "@/hooks/usePlanLimits"
 import { createCheckoutSession, redirectToCheckout, createCustomerPortalSession, redirectToCustomerPortal } from "@/services/stripeService"
 import { toast } from "sonner"
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Account() {
   const { t } = useTranslation('account')
@@ -23,9 +24,10 @@ export default function Account() {
   const hasAccess = useSubscriptionAccess(user?.id || null)
   // console.log('planLimits', planLimits)
 
-  const { data: plans, isLoading, error } = usePlans(user?.id || null)
+  const { data: plans, isLoading, error, refetch } = usePlans(user?.id || null)
 
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleUpgrade = async (priceId: string, planName: string) => {
     console.log('handleUpgrade', priceId, planName)
@@ -40,14 +42,16 @@ export default function Account() {
     
     try {
       console.log(`Starting checkout for plan: ${planName} with price_id: ${priceId}`);
-      const { checkout_url } = await createCheckoutSession(priceId);
-      
-      if (checkout_url) {
+      const response = await createCheckoutSession(priceId);
+      if (response.checkout_url) {
         toast.success('Redirecting to checkout...');
-        // Redirect to Stripe Checkout
-        redirectToCheckout(checkout_url);
+        redirectToCheckout(response.checkout_url);
+      } else if (response.message === 'Subscription updated') {
+        toast.success('Your plan was updated!');
+        queryClient.invalidateQueries({ queryKey: ['activePlansWithLimits', user?.id] });
+        await refetch();
       } else {
-        throw new Error('No checkout URL received');
+        throw new Error('Something went wrong');
       }
     } catch (error: any) {
       console.error('Error creating checkout session:', error);
