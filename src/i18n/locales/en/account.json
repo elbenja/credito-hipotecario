@@ -17,5 +17,10 @@
   "need_more_space": "You need more space",
   "upgrade_plan": "Upgrade your plan to unlock more properties and mortgages!",
   "review_account": "Review my Account",
-  "ok_button": "OK"
+  "ok_button": "OK",
+  "manage_subscription": "Manage Subscription",
+  "change_plan_below": "Change your plan below",
+  "currently_on_plan": "You're currently on plan: ",
+  "free": "Free",
+  "loading": "Loading..."
 } 

@@ -17,5 +17,10 @@
   "need_more_space": "Necesitas más espacio",
   "upgrade_plan": "¡Mejora tu plan para desbloquear más propiedades e hipotecas!",
   "review_account": "Revisar mi cuenta",
-  "ok_button": "OK"
+  "ok_button": "OK",
+  "manage_subscription": "Administrar suscripción",
+  "change_plan_below": "Cambia tu plan abajo",
+  "currently_on_plan": "Actualmente estás en el plan:",
+  "free": "Gratis",
+  "loading": "Cargando..."
 } 

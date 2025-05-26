@@ -8,9 +8,9 @@ import { useEffect, useState } from "react"
 import { Separator } from "@/components/ui/separator"
 // import { getUserPlanLimits } from "@/services/planService"
 import { useAuth } from "@/context/auth-context"
-import SVGillustration from "@/components/ui/SVGillustration"
+// import SVGillustration from "@/components/ui/SVGillustration"
 import { PlanCard } from "@/components/blocks/PlanCard"
-import { usePlans, useUserPlanLimits } from "@/hooks/usePlanLimits"
+import { usePlans, useSubscriptionAccess, useUserPlanLimits } from "@/hooks/usePlanLimits"
 import { createCheckoutSession, redirectToCheckout, createCustomerPortalSession, redirectToCustomerPortal } from "@/services/stripeService"
 import { toast } from "sonner"
 
@@ -20,7 +20,7 @@ export default function Account() {
   const { user } = useAuth()
   const [isUpgrading, setIsUpgrading] = useState<string | null>(null)
   const { data: planLimits, isLoading: isPlanLimitsLoading, error: planLimitsError } = useUserPlanLimits()
-  // const [plan, setPlan] = useState<PlanLimits | null>(null)
+  const hasAccess = useSubscriptionAccess(user?.id || null)
   // console.log('planLimits', planLimits)
 
   const { data: plans, isLoading, error } = usePlans(user?.id || null)
@@ -90,18 +90,18 @@ export default function Account() {
         <div className="flex flex-col space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p>You're currently on plan: <span className="font-bold">{planLimits?.plan_name ?? 'Free'}</span></p>
+              <p>{t('currently_on_plan')}: <span className="font-bold">{planLimits?.plan_name ?? t('free')}</span></p>
             </div>
             <Button
               onClick={handleManageSubscription}
               disabled={isLoadingPortal}
               variant="outline"
             >
-              {isLoadingPortal ? 'Loading...' : 'Manage Subscription'}
+              {isLoadingPortal ? t('loading') : t('manage_subscription')}
             </Button>
           </div>
           <Separator />
-          <p className="text-muted-foreground">Change your plan below</p>
+          <p className="text-muted-foreground">{t('change_plan_below')}</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {sortedPlans.map(plan => (
               <PlanCard
@@ -109,7 +109,7 @@ export default function Account() {
                 plan={plan}
                 onSelect={handleUpgrade}
                 isUpgrading={isUpgrading}
-                planLimits={planLimits}
+                hasAccess={hasAccess.hasAccess}
               />
             ))}
           </div>

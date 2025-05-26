@@ -17,14 +17,10 @@ interface PlanCardProps {
   };
   onSelect: (priceId: string, planName: string) => void;
   isUpgrading?: string | null; // For showing loading state
-  planLimits?: {
-    plan_name: string;
-    current_period_end: string | null;
-    limits: Record<string, string>;
-  } | null;
+  hasAccess: boolean;
 }
 
-export function PlanCard({ plan, onSelect, isUpgrading, planLimits }: PlanCardProps) {
+export function PlanCard({ plan, onSelect, isUpgrading, hasAccess }: PlanCardProps) {
   const { t } = useTranslation('account');
   const isCurrent = plan.is_current_plan;
   const isUpgradable = !isCurrent && !!plan.price_id;
@@ -35,7 +31,7 @@ export function PlanCard({ plan, onSelect, isUpgrading, planLimits }: PlanCardPr
     : isProcessing
     ? t('processing')
     // : isUpgradable
-    : planLimits?.plan_name != null
+    : hasAccess
     ? t('upgrade')
     : t('get');
 
