@@ -119,7 +119,13 @@
       "submitting": "Enviando...",
       "send_reset_link": "Enviar Enlace",
       "back_to_login": "Volver al Inicio de Sesión",
-      "success": "Sesión iniciada exitosamente"
+      "success": "Sesión iniciada exitosamente",
+      "welcome_back": "Bienvenido de nuevo",
+      "create_account": "Crear Cuenta",
+      "create_account_title": "Crear Cuenta",
+      "create_account_description": "Crea una cuenta para continuar",
+      "already_have_account": "¿Ya tienes una cuenta?",
+      "no_account": "¿No tienes una cuenta?"
     }
   },
   "test_extra_installments": "Prueba de Cuotas Extra",

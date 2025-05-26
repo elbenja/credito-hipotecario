@@ -64,7 +64,7 @@ export default function Auth() {
         </div>
 
         <div className="text-center mt-8">
-         <p className="mb-4">
+         {/* <p className="mb-4">
           {t('auth.no_credentials_prompt')} &nbsp;
           
           <a 
@@ -73,6 +73,9 @@ export default function Auth() {
           >
             {t('auth.register_prompt')}
           </a>
+        </p> */}
+        <p className="text-sm text-muted-foreground">
+          May 2025
         </p>
       </div>
       
