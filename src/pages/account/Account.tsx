@@ -10,8 +10,8 @@ import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/context/auth-context"
 import SVGillustration from "@/components/ui/SVGillustration"
 import { PlanCard } from "@/components/blocks/PlanCard"
-import { usePlans } from "@/hooks/usePlanLimits"
-import { createCheckoutSession, redirectToCheckout } from "@/services/stripeService"
+import { usePlans, useUserPlanLimits } from "@/hooks/usePlanLimits"
+import { createCheckoutSession, redirectToCheckout, createCustomerPortalSession, redirectToCustomerPortal } from "@/services/stripeService"
 import { toast } from "sonner"
 
 export default function Account() {
@@ -19,9 +19,12 @@ export default function Account() {
   // const { theme, setTheme } = useTheme()
   const { user } = useAuth()
   const [isUpgrading, setIsUpgrading] = useState<string | null>(null)
+  const { data: planLimits, isLoading: isPlanLimitsLoading, error: planLimitsError } = useUserPlanLimits()
   // const [plan, setPlan] = useState<PlanLimits | null>(null)
 
   const { data: plans, isLoading, error } = usePlans(user?.id || null)
+
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
 
   const handleUpgrade = async (priceId: string, planName: string) => {
     console.log('handleUpgrade', priceId, planName)
@@ -53,61 +56,63 @@ export default function Account() {
     }
   };
 
-//   if (isLoading) return <p>Loading plans...</p>
-//   if (error || !plans) return <p>Something went wrong</p>
+  const handleManageSubscription = async () => {
+    if (!user) {
+      toast.error('Please log in to manage your subscription');
+      return;
+    }
+    setIsLoadingPortal(true);
+    try {
+      const { url } = await createCustomerPortalSession();
+      redirectToCustomerPortal(url);
+    } catch (error: any) {
+      console.error('Error creating customer portal session:', error);
+      toast.error(`Failed to open customer portal: ${error.message}`);
+    } finally {
+      setIsLoadingPortal(false);
+    }
+  };
 
-//   return (
-//     <DashboardLayout
-//       header={{
-//         title: <h1 className="text-3xl font-bold">Account</h1>,
-//       }}
-//     >
-//       <div className="container py-6 space-y-6">
+  if (isLoading) return <p>{t('loading_plans')}</p>
+  if (error || !plans) return <p>{t('error_loading_plans')}</p>
 
-   
-//         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-//           {plans.map(plan => (
-//             <PlanCard
-//               key={plan.id}
-//               plan={plan}
-//               onSelect={handleUpgrade}
-//               isUpgrading={isUpgrading}
-//             />
-//           ))}
-//         </div>
+  // Sort plans by yearly price (ascending)
+  const sortedPlans = plans.slice().sort((a, b) => a.price_yearly - b.price_yearly);
 
-//       </div>
-//     </DashboardLayout>
-//   )
-// }
-// ... existing code ...
-
-if (isLoading) return <p>{t('loading_plans')}</p>
-if (error || !plans) return <p>{t('error_loading_plans')}</p>
-
-// Sort plans by yearly price (ascending)
-const sortedPlans = plans.slice().sort((a, b) => a.price_yearly - b.price_yearly);
-
-return (
-  <DashboardLayout
-    header={{
-      title: <h1 className="text-xl font-bold">{t('title')}</h1>,
-    }}
-  >
-    <div className="container py-6 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {sortedPlans.map(plan => (
-          <PlanCard
-            key={plan.id}
-            plan={plan}
-            onSelect={handleUpgrade}
-            isUpgrading={isUpgrading}
-          />
-        ))}
+  return (
+    <DashboardLayout
+      header={{
+        title: <h1 className="text-xl font-bold">{t('title')}</h1>,
+      }}
+    >
+      <div className="container py-6 space-y-6">
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p>You're currently on plan: <span className="font-bold">{planLimits?.plan_name ?? 'Free'}</span></p>
+            </div>
+            <Button
+              onClick={handleManageSubscription}
+              disabled={isLoadingPortal}
+              variant="outline"
+            >
+              {isLoadingPortal ? 'Loading...' : 'Manage Subscription'}
+            </Button>
+          </div>
+          <Separator />
+          <p className="text-muted-foreground">Change your plan below</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {sortedPlans.map(plan => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                onSelect={handleUpgrade}
+                isUpgrading={isUpgrading}
+              />
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
-  </DashboardLayout>
-)
+    </DashboardLayout>
+  )
 }
-
-// ... existing code ...

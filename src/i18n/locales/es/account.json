@@ -12,5 +12,10 @@
   "unlimited": "Ilimitado",
   "feature_rentals": "Rentabilidad",
   "feature_mortgages": "Hipotecas",
-  "feature_properties": "Propiedades"
+  "feature_properties": "Propiedades",
+  "oh_no": "¡oh no!",
+  "need_more_space": "Necesitas más espacio",
+  "upgrade_plan": "¡Mejora tu plan para desbloquear más propiedades e hipotecas!",
+  "review_account": "Revisar mi cuenta",
+  "ok_button": "OK"
 } 

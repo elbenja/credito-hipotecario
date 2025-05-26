@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button"
 import SVGillustration from "@/components/ui/SVGillustration"
 import { useNavigate } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 //   import Image from "next/image"
 //   import astronaut from "@/assets/astronaut.png"
   
@@ -19,6 +20,7 @@ interface PlanLimitDialogProps {
 }
 
 export function PlanLimitDialog({ open, onClose, onUpgrade }: PlanLimitDialogProps) {
+  const { t } = useTranslation('account');
   const navigate = useNavigate();
 
   const handleUpgrade = () => {
@@ -39,21 +41,21 @@ export function PlanLimitDialog({ open, onClose, onUpgrade }: PlanLimitDialogPro
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col justify-center mt-4">
-          <p className=" w-full text-center text-6xl font-black -mb-4">¡oh no!</p>
+          <p className=" w-full text-center text-6xl font-black -mb-4">{t('oh_no')}</p>
         <SVGillustration variant="astroGirl" className="size-80" />
         </div>
         <DialogDescription className="text-lg font-medium mt-4">
-          You need more space
+          {t('need_more_space')}
         </DialogDescription>
         <p className="text-sm text-muted-foreground mb-6">
-          Upgrade your plan to unlock more properties and mortgages!
+          {t('upgrade_plan')}
         </p>
         <DialogFooter className="flex flex-col gap-2">
           <Button className="w-full" onClick={handleUpgrade}>
-            Review my Account            
+            {t('review_account')}
           </Button>
           <Button variant="secondary" className="w-full" onClick={onClose}>
-            OK
+            {t('ok_button')}
           </Button>
         </DialogFooter>
       </DialogContent>

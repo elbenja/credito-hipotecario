@@ -50,7 +50,6 @@ export function LoginForm() {
 
     //   // Explicitly navigate to dashboard after successful login
     //   // navigate('/dashboard', { replace: true })
-    //   navigate('/', { replace: true })
     try {
       if (isSignUp) {
         const { data, error } = await supabase.auth.signUp({
@@ -186,12 +185,12 @@ export function LoginForm() {
       ) : (
         <>
           <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold">{isSignUp ? "Create an account" : "Welcome back"}</h1>
-          <p className="text-gray-500">
-            {isSignUp
-              ? "Enter your email below to create your account"
-              : "Enter your credentials to access your account"}
-          </p>
+            <h1 className="text-2xl font-bold">{isSignUp ? t("auth.login.create_account_title") : t("auth.login.welcome_back")}</h1>
+            <p className="text-gray-500">
+              {isSignUp
+                ? t("auth.login.create_account_description")
+                : t("auth.login.credentials_prompt")}
+            </p>
           </div>
           <form onSubmit={onSubmit} className="space-y-4 mt-4">
             {error && (
@@ -258,7 +257,7 @@ export function LoginForm() {
           className="text-sm"
           onClick={() => setIsSignUp(!isSignUp)}
         >
-          {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
+          {isSignUp ? t("auth.login.already_have_account") : t("auth.login.no_account")}
         </Button>
       </div>
         </>

@@ -12,5 +12,10 @@
   "unlimited": "Unlimited",
   "feature_rentals": "Rentals",
   "feature_mortgages": "Mortgages",
-  "feature_properties": "Properties"
+  "feature_properties": "Properties",
+  "oh_no": "oh no!",
+  "need_more_space": "You need more space",
+  "upgrade_plan": "Upgrade your plan to unlock more properties and mortgages!",
+  "review_account": "Review my Account",
+  "ok_button": "OK"
 } 
