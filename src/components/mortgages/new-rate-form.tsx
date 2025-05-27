@@ -1,13 +1,14 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Trash2 } from "lucide-react"
-import { format, addYears, subWeeks, startOfDay, isBefore, isAfter, isSameDay, isValid } from "date-fns"
+import { format, addYears, subWeeks, startOfDay, isBefore, isAfter, isSameDay, isValid, lastDayOfMonth } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useQueryClient } from "@tanstack/react-query"
 import { z } from "zod"
+import { Controller } from "react-hook-form"
 
 import {
   Form,
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
+import { MonthYearPicker } from "@/components/ui/month-year-picker"
 import {
   Select,
   SelectContent,
@@ -32,7 +33,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { cn, formatDate, createLocalDate } from "@/utils/utils"
+import { cn, formatDate, createLocalDate, normalizeDate } from "@/utils/utils"
 import { newRateSchema, type NewRateFormValues } from "@/components/mortgages/new-rate-schema"
 
 interface NewRateFormProps {
@@ -143,11 +144,6 @@ export function NewRateForm({
   const lastWeek = startOfDay(subWeeks(new Date(), 1));
   const thirtyYearsFromNow = startOfDay(addYears(new Date(), 30));
 
-  // Calculate years range from last week to 30 years ahead
-  const startYear = lastWeek.getFullYear();
-  const endYear = thirtyYearsFromNow.getFullYear();
-  const yearsRange = endYear - startYear + 1;
-
   // Get the initial date based on priority
   const getInitialDate = () => {
     // 1. Last chronological date from refinancing options
@@ -183,26 +179,6 @@ export function NewRateForm({
     return createLocalDate(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`);
   };
 
-  // Function to determine if a date should be disabled
-  const isDateDisabled = (date: Date) => {
-    const normalizedDate = createLocalDate(date.toISOString().split('T')[0]);
-    
-    // Don't allow dates before firstInstallmentDate
-    if (firstInstallmentDate) {
-      const normalizedFirstInstallmentDate = createLocalDate(firstInstallmentDate.toISOString().split('T')[0]);
-      if (isBefore(normalizedDate, normalizedFirstInstallmentDate)) {
-        return true;
-      }
-    }
-    
-    return (
-      isBefore(normalizedDate, lastWeek) || 
-      isAfter(normalizedDate, thirtyYearsFromNow) ||
-      isSameDay(normalizedDate, lastWeek) || 
-      isSameDay(normalizedDate, thirtyYearsFromNow)
-    );
-  };
-
   const form = useForm<NewRateFormValues>({
     resolver: zodResolver(newRateSchema),
     defaultValues: {
@@ -224,8 +200,30 @@ export function NewRateForm({
     try {
       setIsSubmitting(true);
       
-      // Use the date's ISO string to get YYYY-MM-DD format
-      const formattedDate = values.effective_date.toISOString().split('T')[0];
+      // Get the target day from the firstInstallmentDate for consistency
+      const targetDay = firstInstallmentDate ? firstInstallmentDate.getDate() : values.effective_date.getDate();
+      
+      // Create the final date using the selected month/year but with the target day
+      let finalDate = new Date(
+        values.effective_date.getFullYear(),
+        values.effective_date.getMonth(),
+        targetDay,
+        12, 0, 0, 0
+      );
+      
+      // Check if the month rolled over (e.g., Feb 31 became Mar 2/3)
+      if (finalDate.getMonth() !== values.effective_date.getMonth()) {
+        // If month rolled over, the targetDay is invalid for the selected month.
+        // Get the last valid day of the intended month.
+        const lastDay = lastDayOfMonth(new Date(values.effective_date.getFullYear(), values.effective_date.getMonth(), 1, 12, 0, 0, 0));
+        finalDate = new Date(values.effective_date.getFullYear(), values.effective_date.getMonth(), lastDay.getDate(), 12, 0, 0, 0);
+      }
+
+      // Normalize the date to handle timezone issues
+      const normalizedDate = normalizeDate(finalDate);
+      
+      // Use the normalized date's ISO string to get YYYY-MM-DD format
+      const formattedDate = normalizedDate.toISOString().split('T')[0];
       
       const { data, error } = await supabase
         .from("new_rates")
@@ -353,170 +351,29 @@ export function NewRateForm({
                     )}
                   />
 
-                  <FormField
+                  <Controller
                     control={form.control}
                     name="effective_date"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('payment_scenarios.new_rate_form.start_date', 'New Start Date', { ns: 'components' })}</FormLabel>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Select
-                            onValueChange={(month) => {
-                              try {
-                                const currentDate = field.value || new Date();
-                                if (!isValid(currentDate)) {
-                                  // If current date is invalid, use today
-                                  const today = new Date();
-                                  field.onChange(today);
-                                  return;
-                                }
-                                
-                                const targetMonth = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(month);
-                                const currentYear = currentDate.getFullYear();
-                                
-                                // Get the target day from firstInstallmentDate or current date
-                                const targetDay = firstInstallmentDate && isValid(firstInstallmentDate) 
-                                  ? firstInstallmentDate.getDate() 
-                                  : currentDate.getDate();
-                                
-                                // Create a date with the target day, handling month length issues
-                                let newDate = new Date(currentYear, targetMonth, targetDay, 12, 0, 0, 0);
-                                
-                                // Check if the month rolled over (e.g., trying to set Feb 31 would become Mar 3)
-                                if (newDate.getMonth() !== targetMonth) {
-                                  // Get the last day of the intended month
-                                  const lastDayOfMonth = new Date(currentYear, targetMonth + 1, 0).getDate();
-                                  newDate = new Date(currentYear, targetMonth, lastDayOfMonth, 12, 0, 0, 0);
-                                }
-                                
-                                // Ensure the date is valid
-                                if (!isValid(newDate)) {
-                                  console.error("Generated invalid date with month:", month);
-                                  return;
-                                }
-                                
-                                // Check if this would create a date before firstInstallmentDate
-                                if (firstInstallmentDate && isValid(firstInstallmentDate) && isBefore(newDate, firstInstallmentDate)) {
-                                  // Use firstInstallmentDate instead
-                                  field.onChange(firstInstallmentDate);
-                                  return;
-                                }
-                                
-                                field.onChange(newDate);
-                              } catch (error) {
-                                console.error("Error changing month:", error);
-                              }
-                            }}
-                            value={field.value && isValid(field.value) 
-                              ? format(field.value, "MMM") 
-                              : format(new Date(), "MMM")}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Month" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((month) => {
-                                // Disable months that would create a date before firstInstallmentDate
-                                const isDisabled = firstInstallmentDate &&
-                                  format(field.value || new Date(), "yyyy") === format(firstInstallmentDate, "yyyy") &&
-                                  ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(month) < firstInstallmentDate.getMonth();
-                                
-                                return (
-                                  <SelectItem 
-                                    key={month} 
-                                    value={month}
-                                    disabled={isDisabled}
-                                  >
-                                    {month}
-                                  </SelectItem>
-                                );
-                              })}
-                            </SelectContent>
-                          </Select>
-                          
-                          <Select
-                            onValueChange={(year) => {
-                              try {
-                                const currentDate = field.value || new Date();
-                                if (!isValid(currentDate)) {
-                                  // If current date is invalid, use today
-                                  const today = new Date();
-                                  field.onChange(today);
-                                  return;
-                                }
-                                
-                                const currentMonth = currentDate.getMonth();
-                                
-                                // Get the target day from firstInstallmentDate or current date
-                                const targetDay = firstInstallmentDate && isValid(firstInstallmentDate) 
-                                  ? firstInstallmentDate.getDate() 
-                                  : currentDate.getDate();
-                                
-                                // Create a date with the target day, handling month length issues
-                                let newDate = new Date(parseInt(year), currentMonth, targetDay, 12, 0, 0, 0);
-                                
-                                // Check if the month rolled over (e.g., trying to set Feb 31 would become Mar 3)
-                                if (newDate.getMonth() !== currentMonth) {
-                                  // Get the last day of the intended month
-                                  const lastDayOfMonth = new Date(parseInt(year), currentMonth + 1, 0).getDate();
-                                  newDate = new Date(parseInt(year), currentMonth, lastDayOfMonth, 12, 0, 0, 0);
-                                }
-                                
-                                // Ensure the date is valid
-                                if (!isValid(newDate)) {
-                                  console.error("Generated invalid date with year:", year);
-                                  return;
-                                }
-                                
-                                // Check if this would create a date before firstInstallmentDate
-                                if (firstInstallmentDate && isValid(firstInstallmentDate) && isBefore(newDate, firstInstallmentDate)) {
-                                  // Use firstInstallmentDate instead
-                                  field.onChange(firstInstallmentDate);
-                                  return;
-                                }
-                                
-                                field.onChange(newDate);
-                              } catch (error) {
-                                console.error("Error changing year:", error);
-                              }
-                            }}
-                            value={field.value && isValid(field.value) 
-                              ? format(field.value, "yyyy") 
-                              : format(new Date(), "yyyy")}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Year" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: yearsRange }, (_, i) => startYear + i).map((year) => {
-                                // Disable years before the firstInstallmentDate year
-                                const isDisabled = firstInstallmentDate && year < firstInstallmentDate.getFullYear();
-                                
-                                return (
-                                  <SelectItem 
-                                    key={year} 
-                                    value={year.toString()}
-                                    disabled={isDisabled}
-                                  >
-                                    {year}
-                                  </SelectItem>
-                                );
-                              })}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {firstInstallmentDate && isValid(firstInstallmentDate)
-                            ? t('payment_scenarios.new_rate_form.day_info', 'Day will match installment day ({{day}})', { 
-                                ns: 'components', 
-                                day: firstInstallmentDate.getDate() 
-                              })
-                            : t('payment_scenarios.new_rate_form.default_day_info', 'Using current day', { ns: 'components' })}
-                        </p>
-                        <FormMessage />
-                      </FormItem>
+                      <MonthYearPicker
+                        field={field}
+                        form={form}
+                        minDate={firstInstallmentDate}
+                        maxDate={thirtyYearsFromNow}
+                        labelKey="payment_scenarios.new_rate_form.start_date"
+                        ns="components"
+                      />
                     )}
                   />
+
+                  {firstInstallmentDate && isValid(firstInstallmentDate) && (
+                    <p className="text-xs text-muted-foreground">
+                      {t('payment_scenarios.new_rate_form.day_info', 'Day will match installment day ({{day}})', { 
+                        ns: 'components', 
+                        day: firstInstallmentDate.getDate() 
+                      })}
+                    </p>
+                  )}
 
                   <Button 
                     type="submit"

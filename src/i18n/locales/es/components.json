@@ -31,7 +31,9 @@
       "month_required": "El mes es requerido",
       "day_required": "El día es requerido",
       "year_required": "El año es requerido",
-      "add_button": "Agregar"
+      "add_button": "Agregar",
+      "date_required": "Fecha es requerida",
+      "start_date": "Fecha de Inicio"
     },
     "table": {
       "number": "#",

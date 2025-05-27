@@ -478,15 +478,8 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
 
                   
                 </Form>
-              <p className="text-xs text-muted-foreground"> Zustand v May 22 6:20Pm</p>
-              {/* <Button onClick={() => {
-                updateDraft({
-                  property: property,
-                  property_id: property.id
-                })
-              }}>
-                updateDraft
-              </Button> */}
+              <p className="text-xs text-muted-foreground"> Zustand v May 27 5:04Pm</p>
+ 
             </div>
           </div>
 
