@@ -40,6 +40,9 @@
     "insurance": {
       "manual": "Manual",
       "type": "Tipo"
+    },
+    "validation": {
+      "down_payment_max": "Debe ser menor al 90% del costo de la propiedad"
     }
   },
   "scenarios": {

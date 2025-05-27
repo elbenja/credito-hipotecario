@@ -129,6 +129,8 @@ useEffect(() => {
   // Only now check for propertyId
   if (propertyIdFromUrl) {
     fetchPropertyIfNeeded(propertyIdFromUrl);
+    // Explicitly set the property_id in the form to pass validation
+    form.setValue("property_id", propertyIdFromUrl, { shouldValidate: true });
   }
 }, []); // Empty dependency array = only run once on mount
 

@@ -145,5 +145,24 @@
     "password_updated": "Contraseña actualizada con éxito",
     "error_updating_password": "Error al actualizar la contraseña",
     "invalid_or_expired_link": "Enlace de recuperación inválido o expirado"
+  },
+  "data_table": {
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "no_results": "Sin resultados."
+  },
+  "months_short": {
+    "jan": "Ene",
+    "feb": "Feb",
+    "mar": "Mar",
+    "apr": "Abr",
+    "may": "May",
+    "jun": "Jun",
+    "jul": "Jul",
+    "aug": "Ago",
+    "sep": "Set",
+    "oct": "Oct",
+    "nov": "Nov",
+    "dec": "Dic"
   }
 } 

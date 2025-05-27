@@ -160,7 +160,7 @@ export default function App () {
                 />
                 <Route path="/test" element={<Test />} />
                 <Route path="/test-calculator" element={<TestCalculator />} />
-                <Route path="/test-extra-installments" element={<TestExtraInstallments />} />
+                {/* <Route path="/test-extra-installments" element={<TestExtraInstallments />} /> */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </TooltipProvider>

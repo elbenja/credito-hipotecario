@@ -145,5 +145,24 @@
     "password_updated": "Password updated successfully",
     "error_updating_password": "Error updating password",
     "invalid_or_expired_link": "Invalid or expired recovery link"
+  },
+  "data_table": {
+    "previous": "Previous",
+    "next": "Next",
+    "no_results": "No results."
+  },
+  "months_short": {
+    "jan": "Jan",
+    "feb": "Feb",
+    "mar": "Mar",
+    "apr": "Apr",
+    "may": "May",
+    "jun": "Jun",
+    "jul": "Jul",
+    "aug": "Aug",
+    "sep": "Sep",
+    "oct": "Oct",
+    "nov": "Nov",
+    "dec": "Dec"
   }
 } 

@@ -6,7 +6,7 @@ import { useAuth } from '@/context/auth-context';
 // import { supabase } from '@/integrations/supabase/client';
 import type { PropertyWithBonus } from '@/types/property';
 import { useProperties } from '@/services/propertyService';
-
+import { useTranslation } from 'react-i18next';
 //zustand
 
 // import { useMortgageDraftStore } from "@/store/mortgage/store"
@@ -25,6 +25,7 @@ export function PropertySelect({
   const [loading, setLoading] = useState(false);
 
   const { user } = useAuth()
+  const { t } = useTranslation('properties');
   // const { data: PropertyWithBonus = [], isLoading: boolean, refetch } = useProperties(user?.id)
   // const { updateDraft , resetDraft } = useMortgageDraftStore()
 
@@ -48,7 +49,7 @@ useEffect(() => {
   return (
     <FormField control={form.control} name="property_id" render={({ field }) => (
       <FormItem>
-        <FormLabel>Property</FormLabel>
+        <FormLabel>{t('property')}</FormLabel>
         <FormControl>
           <Select
             disabled={disabled || loading}
@@ -65,7 +66,7 @@ useEffect(() => {
               // }
             }}
           >
-            <SelectTrigger><SelectValue placeholder="Select property" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('form.select_property')} /></SelectTrigger>
             <SelectContent>
               {PropertyWithBonus.map((p) => (
                 <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>

@@ -57,6 +57,11 @@ declare module 'i18next' {
           error_updating_password: string;
           invalid_or_expired_link: string;
         };
+        data_table: {
+          previous: string;
+          next: string;
+          no_results: string;
+        };
       };
       dashboard: {
         sections: {

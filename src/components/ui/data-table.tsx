@@ -23,6 +23,7 @@ import {
 import { cn } from "@/utils/utils"
 import { ColumnToggle } from "@/components/ui/column-toggle"
 import { Button } from "./button"
+import { useTranslation } from "react-i18next"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -61,6 +62,8 @@ export function DataTable<TData extends { id: string }, TValue>({
       columnVisibility,
     },
   })
+
+  const { t } = useTranslation("global")
 
   return (
     <div className="space-y-4">
@@ -107,7 +110,7 @@ export function DataTable<TData extends { id: string }, TValue>({
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
+                  {t("data_table.no_results")}
                 </TableCell>
               </TableRow>
             )}
@@ -121,7 +124,7 @@ export function DataTable<TData extends { id: string }, TValue>({
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
         >
-          Previous
+          {t("data_table.previous")}
         </Button>
         <Button
           variant="outline"
@@ -129,7 +132,7 @@ export function DataTable<TData extends { id: string }, TValue>({
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
         >
-          Next
+          {t("data_table.next")}
         </Button>
       </div>
     {/* < */}
