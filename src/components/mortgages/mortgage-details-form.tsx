@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { addYears, subYears, startOfDay, isBefore, isAfter, isSameDay, format, isValid } from "date-fns"
 import {
@@ -27,6 +27,7 @@ import { CurrencyInput } from "@/components/ui/currency-input"
 import { zodResolver } from "@hookform/resolvers/zod"
 // import { mortgageFormSchema } from "./schema"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
+import { MonthYearPicker } from "../ui/month-year-picker"
 
 interface MortgageDetailsFormProps {
   form: ReturnType<typeof useForm<MortgageFormValues>>
@@ -413,7 +414,7 @@ export function MortgageDetailsForm({
                 </FormItem>
               )}
             />
-            <FormField
+            {/* <FormField
               control={form.control}
               name="first_installment_date"
               render={({ field }) => (
@@ -514,6 +515,20 @@ export function MortgageDetailsForm({
                   </FormControl>
                   <FormMessage />
                 </FormItem>
+              )}
+            /> */}
+            <Controller
+              control={form.control}
+              name="first_installment_date"
+              render={({ field }) => (
+                <MonthYearPicker
+                  field={field}
+                  form={form}
+                  minDate={new Date(new Date().getFullYear() - 15, 0, 1)}
+                  maxDate={new Date(new Date().getFullYear() + 20, 11, 1)}
+                  labelKey={t('amortization.first_date', { ns: 'mortgages' })}
+                  ns="global"
+                />
               )}
             />
           </div>

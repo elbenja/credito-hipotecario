@@ -17,7 +17,7 @@ import {
 import { Form } from "@/components/ui/form"
 import { MortgageDetailsForm } from "@/components/mortgages/mortgage-details-form"
 import { useToast } from "@/components/ui/use-toast"
-import { parseDatabaseDate } from "@/utils/utils"
+import { normalizeDate, parseDatabaseDate } from "@/utils/utils"
 import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
 import { 
   RegularPanelGraph,
@@ -79,6 +79,9 @@ export default function EditMortgageWithZustand(mortgageData: any) {
     refetch
   } = useMortgageDraft(id || null)
   
+  // console.log("✅ Supabase raw first_installment_date:", mortgage?.first_installment_date);
+  // console.log("✅ Zustand draft first_installment_date:", mortgageDraft?.first_installment_date);
+
   // Initialize calculatedLoanAmount based on mortgage data
   const [calculatedLoanAmount, setCalculatedLoanAmount] = useState<number>(mortgage?.loan_amount || 0)
   
@@ -116,8 +119,11 @@ export default function EditMortgageWithZustand(mortgageData: any) {
       installmentsPerYear: parseInt(mortgageForm.getValues().installments_per_year || "12"),
       loanProtectionType: mortgageForm.getValues().loan_protection_type,
       loanProtectionInsurance: parseFloat(mortgageForm.getValues().loan_protection_insurance || "0"),
-      firstInstallmentDate: mortgageForm.getValues().first_installment_date || new Date()
+      // firstInstallmentDate: mortgageForm.getValues().first_installment_date || new Date()
+      firstInstallmentDate: normalizeDate(mortgageForm.getValues().first_installment_date || new Date()),
+      
     }
+
   }
 
   // Reset draft on unmount

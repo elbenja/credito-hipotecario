@@ -6,7 +6,7 @@ import { useMortgageDraftStore } from '@/store/mortgage/store'
 import { mortgageFormSchema, defaultValues, type MortgageFormValues } from '@/components/mortgages/schema'
 // import { supabase } from '@/integrations/supabase/client'
 import { useMortgageBundle } from './useMortgageBundle'
-import { normalizeDate } from '@/utils/utils'
+import { normalizeDate, parseDatabaseDate } from '@/utils/utils'
 
 /**
  * This hook combines React Query for server state with Zustand for client state.
@@ -43,8 +43,8 @@ export function useMortgageDraft(mortgageId: string | null) {
     term_years: mortgage.term_years?.toString() || '20',
     installments_per_year: mortgage.installments_per_year?.toString() || '12',
     first_installment_date: mortgage.first_installment_date 
-      ? normalizeDate(new Date(mortgage.first_installment_date))
-      : normalizeDate(new Date()),
+      ? parseDatabaseDate(mortgage.first_installment_date)
+      : parseDatabaseDate(new Date()),
     loan_amount: mortgage.loan_amount?.toString() || '0', //  May 13
     loan_protection_type: mortgage.loan_protection_type || 'individual',
     loan_protection_insurance: mortgage.loan_protection_insurance?.toString() || '0'
@@ -62,8 +62,8 @@ export function useMortgageDraft(mortgageId: string | null) {
     if (mortgage && !isDirty) {
       // Format first_installment_date as Date object
       const firstInstallmentDate = mortgage.first_installment_date 
-        ? normalizeDate(new Date(mortgage.first_installment_date)) 
-        : normalizeDate(new Date())
+        ? parseDatabaseDate(mortgage.first_installment_date) 
+        : parseDatabaseDate(new Date())
       
       // Prepare form values with string conversions for numeric fields
       const formValues = {

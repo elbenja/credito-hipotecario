@@ -22,19 +22,26 @@ export function formatDate(date: Date) {
 /**
  * Normalize a date to noon to avoid timezone issues
  */
-export function normalizeDate(date: Date): Date {
-  // Set the time to noon to avoid any timezone issues
-  const normalizedDate = new Date(date);
-  normalizedDate.setHours(12, 0, 0, 0);
-  return normalizedDate;
-}
+// export function normalizeDate(date: Date): Date {
+//   // Set the time to noon to avoid any timezone issues
+//   const normalizedDate = new Date(date);
+//   normalizedDate.setHours(12, 0, 0, 0);
+//   return normalizedDate;
+// }
 
+// benjamin + chatGPT May27 2025
+export function normalizeDate(input: string | Date): Date {
+  const date = new Date(input);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
+}
 /**
  * Safe date parser for database dates - use this for dates coming from database
  * This function ensures consistent date handling regardless of navigation path
  * or browser timezone settings
  */
 export function parseDatabaseDate(dateStr: string | Date | null): Date {
+  // console.log("parseDatabaseDate", dateStr)
+
   if (!dateStr) return new Date();
   
   try {
@@ -63,7 +70,9 @@ export function parseDatabaseDate(dateStr: string | Date | null): Date {
     }
     
     // JavaScript months are 0-indexed
+
     return new Date(year, month - 1, day, 12, 0, 0, 0);
+
   } catch (error) {
     console.error("Error parsing database date:", error);
     return normalizeDate(new Date());
