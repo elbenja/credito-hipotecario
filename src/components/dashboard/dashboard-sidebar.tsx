@@ -30,6 +30,8 @@ import { useState, useEffect } from "react"
 import { Logo } from "@/components/ui/logo"
 import { useMortgageCount } from "@/hooks/mortgages/useCount"
 import { usePropertyCount } from "@/hooks/properties/useCount"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@radix-ui/react-tooltip"
+import { TooltipProvider } from "@radix-ui/react-tooltip"
 
 function PropertyIcon({ className }: { className?: string }) {
   return (
@@ -274,8 +276,17 @@ export function DashboardSidebar() {
     <Sidebar className="bg-background">
       <SidebarHeader className="border-b">
         <Link to="/dashboard" className="flex items-center gap-2 px-3 py-3">
-          <Logo />
-          <span className="font-bold text-md">CreditoHipotecar.io</span>
+         
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger className="flex items-center gap-2">  
+                <Logo /> <span className="font-bold text-md">CreditoHipotecar.io</span> 
+              </TooltipTrigger>
+              <TooltipContent className="bg-black text-white text-xs rounded-md py-2 px-4">
+                   Beta May28 2025
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </Link>
       </SidebarHeader>
       <SidebarContent>
