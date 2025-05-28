@@ -164,5 +164,10 @@
     "oct": "Oct",
     "nov": "Nov",
     "dec": "Dec"
+  },
+  "support": {
+    "title": "Support",
+    "found_mistake": "Found a mistake or have suggestions?",
+    "contact_us": "Contact us"
   }
 } 

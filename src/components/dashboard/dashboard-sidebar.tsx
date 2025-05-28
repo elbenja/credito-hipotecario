@@ -1,4 +1,4 @@
-import { Building, Calculator, LayoutDashboard, MessageSquare, User, CreditCard, Bell, Settings, LogOut, ChevronsUpDown, UserCog, UsersRound, Sun, Moon } from "lucide-react"
+import { LayoutDashboard, MessageSquare, User, CreditCard, Settings, LogOut, ChevronsUpDown, UserCog, UsersRound, Sun, Moon, LifeBuoy } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -202,7 +202,7 @@ const adminNavItems: NavItem[] = [
   { title: "user_management", namespace: "admin", icon: UsersRound, href: "/admin/users" },
   { title: "subscription_plans", namespace: "admin", icon: CreditCard, href: "/admin/subscription-plans" },
   { title: "early_access", namespace: "admin", icon: UserCog, href: "/admin/early-access" },
-  { title: "test", namespace: "admin", icon: Calculator, href: "/test-extra-installments" },
+  // { title: "test", namespace: "admin", icon: Calculator, href: "/test-extra-installments" },
 ]
 
 const footerNavItems: NavItem[] = [
@@ -385,6 +385,12 @@ export function DashboardSidebar() {
                         <span>{tDashboard('sections.notifications')}</span>
                       </Link>
                     </DropdownMenuItem> */}
+                     <DropdownMenuItem asChild>
+                      <Link to="/support" className="flex items-center">
+                        <LifeBuoy className="mr-2 h-4 w-4" />
+                        <span>{tDashboard('sections.support')}</span>
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/settings" className="flex items-center">
                         <Settings className="mr-2 h-4 w-4" />

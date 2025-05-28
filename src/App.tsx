@@ -32,6 +32,7 @@ import { useExchangeRate } from "./hooks/use-exchange-rate"
 import Account from "@/pages/account/Account"
 import Settings from "@/pages/account/Settings"
 import HomeRedirect from "./HomeRedirect"
+import Support from "./pages/Support"
 // const queryClient = new QueryClient({
 //   defaultOptions: {
 //     queries: {
@@ -147,6 +148,14 @@ export default function App () {
                   element={
                     <ProtectedRoute>
                       <Account />
+                    </ProtectedRoute>
+                  }
+                />
+                 <Route
+                  path="/support"
+                  element={
+                    <ProtectedRoute>
+                      <Support />
                     </ProtectedRoute>
                   }
                 />
