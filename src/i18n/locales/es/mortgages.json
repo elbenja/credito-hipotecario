@@ -32,6 +32,7 @@
     "breakeven": "Punto de Equilibrio",
     "short_breakeven": "P.E.",
     "scenario": "Escenario",
+    "sum_interest_insurance": "Suma de Intereses y Seguros",
     "installment_type": {
       "title": "Tipo de Cuota",
       "regular": "Simple",

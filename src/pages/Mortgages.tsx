@@ -50,8 +50,6 @@ export default function Mortgages() {
   const { canCreate } = useCanCreateFeature()
   const [showDialog, setShowDialog] = useState(false)
 
-
-
   const { data: propertiesWithMortgages, isLoading } = usePropertiesWithMortgagesAndBonus(user?.id);
 
   const handleNewMortgage = async () => {
@@ -88,8 +86,6 @@ export default function Mortgages() {
       stayOnPage: false
     })
   }, [captureMortgage, canCreate, queryClient])
-
-
 
 
   const handleDelete = useCallback(

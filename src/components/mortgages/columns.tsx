@@ -262,6 +262,33 @@ export const getColumns = (
       size: 150,
     },
     {
+      accessorKey: "sum_interest_insurance",
+      header: ({ column }) => (
+        <SortableHeader column={column}>
+          <div className="line-clamp-1">{tMortgages('amortization.sum_interest_insurance')}</div>
+        </SortableHeader>
+      ),
+      enableHiding: true,
+      enableSorting: true,
+      sortingFn: (rowA, rowB, columnId) => {
+        const valueA = rowA.original.saved_scenario_total_interest_and_insurance || 0;
+        const valueB = rowB.original.saved_scenario_total_interest_and_insurance || 0;
+        return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
+      },
+      cell: ({ row }) => {
+        const currency = getPropertyCurrency(properties, row.original.id);
+        if (row.original.saved_scenario_total_interest_and_insurance) {
+          return (
+            <div className="text-nowrap">
+              {formatCurrency(row.original.saved_scenario_total_interest_and_insurance, currency)}
+            </div>
+          );
+        }
+        return "-";
+      },
+      size: 180,
+    },
+    {
       accessorKey: "years",
       header: ({ column }) => (
         <SortableHeader column={column}>
