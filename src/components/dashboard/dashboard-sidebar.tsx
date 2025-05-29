@@ -1,6 +1,6 @@
 import { LayoutDashboard, MessageSquare, User, CreditCard, Settings, LogOut, ChevronsUpDown, UserCog, UsersRound, Sun, Moon, LifeBuoy } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
-import { useQuery } from "@tanstack/react-query"
+// import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import {
   Sidebar,
@@ -32,6 +32,7 @@ import { useMortgageCount } from "@/hooks/mortgages/useCount"
 import { usePropertyCount } from "@/hooks/properties/useCount"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@radix-ui/react-tooltip"
 import { TooltipProvider } from "@radix-ui/react-tooltip"
+import { APP_VERSION } from "../common/version"
 
 function PropertyIcon({ className }: { className?: string }) {
   return (
@@ -283,7 +284,7 @@ export function DashboardSidebar() {
                 <Logo /> <span className="font-bold text-md">CreditoHipotecar.io</span> 
               </TooltipTrigger>
               <TooltipContent className="bg-black text-white text-xs rounded-md py-2 px-4">
-                   Beta May28 2025
+              {APP_VERSION}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
