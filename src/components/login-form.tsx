@@ -11,9 +11,13 @@ import { useAuth } from "@/context/auth-context"
 import { useTranslation } from "react-i18next"
 import { Loader2 } from "lucide-react"
 
-export function LoginForm() {
+interface LoginFormProps {
+  defaultIsSignUp?: boolean
+}
+
+export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [isSignUp, setIsSignUp] = useState(false)
+  const [isSignUp, setIsSignUp] = useState(defaultIsSignUp)
   const [isResettingPassword, setIsResettingPassword] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -69,8 +73,8 @@ export function LoginForm() {
 
         if (data.user) {
           toast({
-            title: "Account created!",
-            description: "Please check your email to verify your account.",
+            title: t("auth.login.account_created", "Account created!"),
+            description: t("auth.login.check_email_verification", "Please check your email to verify your account."),
           })
           // Optionally update profiles table
           const { error: profileError } = await supabase
@@ -92,7 +96,7 @@ export function LoginForm() {
           throw error
         }
         // navigate("/dashboard")
-        navigate("/")
+        navigate("/", { replace: true })
       }
    
 
@@ -115,7 +119,7 @@ export function LoginForm() {
       toast({
         variant: "destructive",
         title: t("ui.error"),
-        description: t("auth.login.valid_email_required"),
+        description: t("auth.login.valid_email_required", "Please enter a valid email address."),
       })
       return
     }
@@ -130,7 +134,7 @@ export function LoginForm() {
 
       toast({
         title: t("ui.success"),
-        description: t("auth.login.reset_email_sent"),
+        description: t("auth.login.reset_email_sent", "Password reset email sent."),
       })
       setIsResettingPassword(false)
     } catch (error: any) {

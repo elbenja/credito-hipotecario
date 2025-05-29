@@ -13,6 +13,8 @@ export default function Auth() {
   const location = useLocation()
   const { user, loading } = useAuth()
   const { t } = useTranslation('global')
+  const searchParams = new URLSearchParams(location.search)
+  const isCreateAccount = searchParams.get('v') === 'create'
 
   useEffect(() => {
     // If we have a user and we're not loading, redirect to dashboard
@@ -47,19 +49,19 @@ export default function Auth() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <SEO 
-        title={t('auth.title')}
-        description={t('auth.description')}
+        title={t('auth.title', 'CreditoHipotecar.io')}
+        description={t('auth.description', 'Credito Hipotecario Simple y Claro')}
       />
       <div className="flex flex-col gap-4 p-6 md:p-10 min-h-[700px]">
         <div className="flex justify-center gap-2 md:justify-start">
           <a href="/" className="flex items-center gap-2 ">
             <Logo className="h-6 w-6" />
-            <span class="font-bold text-md"> {t('auth.brand_name')}</span>
+            <span className="font-bold text-md">{t('auth.brand_name', 'CreditoHipotecar.io')}</span>
           </a>
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-sm">
-            <LoginForm />
+            <LoginForm defaultIsSignUp={isCreateAccount} />
           </div>
         </div>
 
@@ -75,7 +77,7 @@ export default function Auth() {
           </a>
         </p> */}
         <p className="text-sm text-muted-foreground">
-          May 2025
+          Junio 2025
         </p>
       </div>
       

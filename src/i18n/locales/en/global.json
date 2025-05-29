@@ -125,7 +125,9 @@
       "create_account_title": "Create Account",
       "create_account_description": "Create an account to continue",
       "already_have_account": "Already have an account?",
-      "no_account": "Don't have an account?"
+      "no_account": "Don't have an account?",
+      "account_created": "Account created!",
+      "check_email_verification": "Please check your email to verify your account."
     }
   },
   "test_extra_installments": "Test Extra Installments",

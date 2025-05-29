@@ -125,7 +125,9 @@
       "create_account_title": "Crear Cuenta",
       "create_account_description": "Crea una cuenta para continuar",
       "already_have_account": "¿Ya tienes una cuenta?",
-      "no_account": "¿No tienes una cuenta?"
+      "no_account": "¿No tienes una cuenta?",
+      "account_created": "Cuenta creada",
+      "check_email_verification": "Por favor, verifica tu correo electrónico para continuar"
     }
   },
   "test_extra_installments": "Prueba de Cuotas Extra",
