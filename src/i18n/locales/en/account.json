@@ -22,5 +22,19 @@
   "change_plan_below": "Change your plan below",
   "currently_on_plan": "You're currently on plan: ",
   "free": "Free",
-  "loading": "Loading..."
+  "loading": "Loading...",
+  "toast": {
+    "please_login_upgrade": "Please log in to upgrade your plan",
+    "please_login_manage": "Please log in to manage your subscription",
+    "redirecting_checkout": "Redirecting to checkout...",
+    "plan_updated": "Your plan was updated!",
+    "checkout_failed": "Failed to start checkout: {{message}}",
+    "customer_portal_failed": "Failed to open customer portal: {{message}}"
+  },
+  "stripe": {
+    "no_active_session": "No active session. Please log in first.",
+    "failed_create_checkout": "Failed to create checkout session",
+    "failed_create_portal": "Failed to create customer portal session",
+    "no_portal_url": "No portal URL received from server"
+  }
 } 

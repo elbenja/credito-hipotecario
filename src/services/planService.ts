@@ -31,8 +31,6 @@ export async function getUserPlanLimits(
   return data;
 }
 
-
-
 export type PlanFeatureLimits = Record<string, string>
 
 export interface Plan {
@@ -44,11 +42,10 @@ export interface Plan {
   is_current_plan: boolean
   current_period_end: string | null
   limits: PlanFeatureLimits
+  stripe_customer_id: string | null
 }
 
-
 export async function getActivePlansWithLimits(userId: string): Promise<Plan[] | null> {
-  //   console.log('🚀 getActivePlansWithLimits called for user:', userId)
   
   try {
     // First try the RPC function (may not exist)
@@ -60,9 +57,7 @@ export async function getActivePlansWithLimits(userId: string): Promise<Plan[] |
         // console.log('📊 RPC get_active_plans_with_limits result:', rpcData)
       return rpcData as Plan[]
     }
-
     //   console.log('⚠️ RPC function not available, using fallback method')
-
     // Fallback: Query tables directly
     // Get all subscription plans
     const { data: allPlans, error: plansError } = await supabase

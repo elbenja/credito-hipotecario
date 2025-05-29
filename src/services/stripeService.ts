@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import i18n from '@/i18n';
 
 export interface CheckoutSessionResponse {
   checkout_url?: string;
@@ -12,7 +13,7 @@ export async function createCheckoutSession(priceId: string): Promise<CheckoutSe
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session?.access_token) {
-      throw new Error('No active session. Please log in first.');
+      throw new Error(i18n.t('account:stripe.no_active_session'));
     }
 
     console.log('Creating checkout session for price:', priceId);
@@ -29,7 +30,7 @@ export async function createCheckoutSession(priceId: string): Promise<CheckoutSe
     });
 
     if (response.error) {
-      throw new Error(response.error.message || 'Failed to create checkout session');
+      throw new Error(response.error.message || i18n.t('account:stripe.failed_create_checkout'));
     }
 
     // Return the full response data (may include checkout_url or message)
@@ -50,7 +51,7 @@ export async function createCustomerPortalSession(): Promise<{ url: string }> {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session?.access_token) {
-      throw new Error('No active session. Please log in first.');
+      throw new Error(i18n.t('account:stripe.no_active_session'));
     }
 
     const response = await supabase.functions.invoke('create-customer-portal-session', {
@@ -63,11 +64,11 @@ export async function createCustomerPortalSession(): Promise<{ url: string }> {
     });
 
     if (response.error) {
-      throw new Error(response.error.message || 'Failed to create customer portal session');
+      throw new Error(response.error.message || i18n.t('account:stripe.failed_create_portal'));
     }
 
     if (!response.data?.url) {
-      throw new Error('No portal URL received from server');
+      throw new Error(i18n.t('account:stripe.no_portal_url'));
     }
 
     return response.data as { url: string };

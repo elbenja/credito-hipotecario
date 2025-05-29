@@ -28,26 +28,78 @@ export default function Account() {
 
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const queryClient = useQueryClient();
+  if (isLoading) return <p>{t('loading_plans')}</p>
+  if (error || !plans) return <p>{t('error_loading_plans')}</p>
+
+  // Sort plans by yearly price (ascending)
+  const sortedPlans = plans.slice().sort((a, b) => a.price_yearly - b.price_yearly);
+
+  const stripeCustomerId = plans.find(p => p.is_current_plan)?.stripe_customer_id
+
+  const hasStripeCustomerId = !!stripeCustomerId
+
+  // const handleUpgrade = async (priceId: string, planName: string) => {
+  //   console.log('handleUpgrade', priceId, planName)
+  //   if (!priceId || isUpgrading || !user) {
+  //     if (!user) {
+  //       toast.error(t('toast.please_login_upgrade'));
+  //     }
+  //     return;
+  //   }
+    
+  //   setIsUpgrading(priceId);
+    
+  //   try {
+  //     console.log(`Starting checkout for plan: ${planName} with price_id: ${priceId}`);
+  //     const response = await createCheckoutSession(priceId);
+  //     if (response.checkout_url) {
+  //       toast.success(t('toast.redirecting_checkout'));
+  //       redirectToCheckout(response.checkout_url);
+  //     } else if (response.message === 'Subscription updated') {
+  //       toast.success(t('toast.plan_updated'));
+  //       queryClient.invalidateQueries({ queryKey: ['activePlansWithLimits', user?.id] });
+  //       await refetch();
+  //     } else {
+  //       throw new Error('Something went wrong');
+  //     }
+  //   } catch (error: any) {
+  //     console.error('Error creating checkout session:', error);
+  //     toast.error(t('toast.checkout_failed', { message: error.message }));
+  //   } finally {
+  //     setIsUpgrading(null);
+  //   }
+  // };
 
   const handleUpgrade = async (priceId: string, planName: string) => {
-    console.log('handleUpgrade', priceId, planName)
+    console.log('handleUpgrade stripeCustomerId', priceId, planName, stripeCustomerId);
+  
     if (!priceId || isUpgrading || !user) {
       if (!user) {
-        toast.error('Please log in to upgrade your plan');
+        toast.error(t('toast.please_login_upgrade'));
       }
       return;
     }
-    
+  
+    // ✅ Send existing customers to the portal instead of direct checkout
+    if (stripeCustomerId) {
+      // toast.success(t('toast.redirecting_billing_portal'));
+      // await redirectToCustomerPortal(); // You might want to await or just navigate
+      console.log('stripeCustomerId', stripeCustomerId)
+      handleManageSubscription()
+      return;
+    }
+  
     setIsUpgrading(priceId);
-    
+  
     try {
       console.log(`Starting checkout for plan: ${planName} with price_id: ${priceId}`);
       const response = await createCheckoutSession(priceId);
+      
       if (response.checkout_url) {
-        toast.success('Redirecting to checkout...');
+        toast.success(t('toast.redirecting_checkout'));
         redirectToCheckout(response.checkout_url);
       } else if (response.message === 'Subscription updated') {
-        toast.success('Your plan was updated!');
+        toast.success(t('toast.plan_updated'));
         queryClient.invalidateQueries({ queryKey: ['activePlansWithLimits', user?.id] });
         await refetch();
       } else {
@@ -55,7 +107,7 @@ export default function Account() {
       }
     } catch (error: any) {
       console.error('Error creating checkout session:', error);
-      toast.error(`Failed to start checkout: ${error.message}`);
+      toast.error(t('toast.checkout_failed', { message: error.message }));
     } finally {
       setIsUpgrading(null);
     }
@@ -63,7 +115,7 @@ export default function Account() {
 
   const handleManageSubscription = async () => {
     if (!user) {
-      toast.error('Please log in to manage your subscription');
+      toast.error(t('toast.please_login_manage'));
       return;
     }
     setIsLoadingPortal(true);
@@ -72,17 +124,15 @@ export default function Account() {
       redirectToCustomerPortal(url);
     } catch (error: any) {
       console.error('Error creating customer portal session:', error);
-      toast.error(`Failed to open customer portal: ${error.message}`);
+      toast.error(t('toast.customer_portal_failed', { message: error.message }));
     } finally {
       setIsLoadingPortal(false);
     }
   };
 
-  if (isLoading) return <p>{t('loading_plans')}</p>
-  if (error || !plans) return <p>{t('error_loading_plans')}</p>
 
-  // Sort plans by yearly price (ascending)
-  const sortedPlans = plans.slice().sort((a, b) => a.price_yearly - b.price_yearly);
+  
+
 
   return (
     <DashboardLayout
@@ -96,13 +146,24 @@ export default function Account() {
             <div>
               <p>{t('currently_on_plan')}: <span className="font-bold">{planLimits?.plan_name ?? t('free')}</span></p>
             </div>
-            <Button
+            {/* <Button
               onClick={handleManageSubscription}
               disabled={isLoadingPortal}
               variant="outline"
             >
               {isLoadingPortal ? t('loading') : t('manage_subscription')}
-            </Button>
+            </Button> */}
+
+
+            {hasStripeCustomerId && (
+              <Button
+                  onClick={handleManageSubscription}
+                  disabled={isLoadingPortal}
+                  variant="outline"
+                >
+                  {isLoadingPortal ? t('loading') : t('manage_subscription')} 
+                </Button>
+              )}
           </div>
           <Separator />
           <p className="text-muted-foreground">{t('change_plan_below')}</p>

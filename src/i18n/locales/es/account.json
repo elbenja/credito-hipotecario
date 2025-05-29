@@ -22,5 +22,19 @@
   "change_plan_below": "Cambia tu plan abajo",
   "currently_on_plan": "Actualmente estás en el plan:",
   "free": "Gratis",
-  "loading": "Cargando..."
+  "loading": "Cargando...",
+  "toast": {
+    "please_login_upgrade": "Por favor, inicia sesión para mejorar tu plan",
+    "please_login_manage": "Por favor, inicia sesión para administrar tu suscripción",
+    "redirecting_checkout": "Redirigiendo al pago...",
+    "plan_updated": "¡Tu plan ha sido actualizado!",
+    "checkout_failed": "No se pudo iniciar el pago: {{message}}",
+    "customer_portal_failed": "No se pudo abrir el portal del cliente: {{message}}"
+  },
+  "stripe": {
+    "no_active_session": "No hay sesión activa. Por favor, inicia sesión primero.",
+    "failed_create_checkout": "No se pudo crear la sesión de pago",
+    "failed_create_portal": "No se pudo crear la sesión del portal del cliente",
+    "no_portal_url": "No se recibió la URL del portal desde el servidor"
+  }
 } 
