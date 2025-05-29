@@ -111,7 +111,7 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
         if (data.user) {
           toast({
             title: t("auth.login.account_created", "Account created!"),
-            description: t("auth.login.check_email_verification", "Please check your email to verify your account."),
+            // description: t("auth.login.check_email_verification", "Please check your email to verify your account."),
           })
           // Optionally update profiles table
           const { error: profileError } = await supabase
