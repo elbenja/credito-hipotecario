@@ -117,7 +117,7 @@ export function DataTable<TData extends { id: string }, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
+      {/* <div className="flex items-center justify-end space-x-2 py-4">
         <Button
           variant="outline"
           size="sm"
@@ -134,7 +134,27 @@ export function DataTable<TData extends { id: string }, TValue>({
         >
           {t("data_table.next")}
         </Button>
-      </div>
+      </div> */}
+            {data.length > 10 && (
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {t("data_table.previous")}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            {t("data_table.next")}
+          </Button>
+        </div>
+      )}
     {/* < */}
     </div>
   )
