@@ -15,6 +15,11 @@ import { createCheckoutSession, redirectToCheckout, createCustomerPortalSession,
 import { toast } from "sonner"
 import { useQueryClient } from '@tanstack/react-query';
 
+
+// import { testErrorMapping } from "@/utils/test-error-mapping"; // it works
+
+
+
 export default function Account() {
   const { t } = useTranslation('account')
   // const { theme, setTheme } = useTheme()
@@ -69,6 +74,11 @@ export default function Account() {
   //     setIsUpgrading(null);
   //   }
   // };
+
+  // useEffect(() => { // it works
+  //   // Only run once
+  //   testErrorMapping();
+  // }, []);
 
   const handleUpgrade = async (priceId: string, planName: string) => {
     console.log('handleUpgrade stripeCustomerId', priceId, planName, stripeCustomerId);
