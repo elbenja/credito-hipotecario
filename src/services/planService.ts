@@ -107,7 +107,8 @@ export async function getActivePlansWithLimits(userId: string): Promise<Plan[] |
         price_id: '', // Default, as it's not required for our current use
         is_current_plan: userSubscription?.plan_id === plan.id,
         current_period_end: userSubscription?.plan_id === plan.id ? (userSubscription?.current_period_end || null) : null,
-        limits
+        limits,
+        stripe_customer_id: null
       }
     })
 
@@ -128,7 +129,8 @@ export async function getActivePlansWithLimits(userId: string): Promise<Plan[] |
           properties: '3',
           mortgages: '10',
           rentals: '1'
-        }
+        },
+        stripe_customer_id: null
       }
       
       if (plans && plans.length > 0) {

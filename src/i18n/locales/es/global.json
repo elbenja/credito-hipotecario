@@ -103,6 +103,12 @@
     "no_credentials_prompt": "¿Aún no tienes credenciales?",
     "register_prompt": "Solicitar Acceso Anticipado",
     "clear_and_simple": "Análisis hipotecario claro y simple",
+    "validation": {
+      "password_min_length": "La contraseña debe tener al menos 6 caracteres",
+      "password_lowercase": "La contraseña debe contener al menos una letra minúscula (a-z)",
+      "password_uppercase": "La contraseña debe contener al menos una letra mayúscula (A-Z)",
+      "password_number": "La contraseña debe contener al menos un número (0-9)"
+    },
     "login": {
       "early_access": "Acceso Anticipado",
       "credentials_prompt": "Por favor ingresa tus credenciales para continuar",
@@ -171,5 +177,13 @@
     "title": "Soporte",
     "found_mistake": "¿Encontraste un error o tienes sugerencias?",
     "contact_us": "Contáctanos"
+  },
+  "account": {
+    "stripe": {
+      "no_active_session": "No hay una sesión activa. Por favor, inicia sesión primero.",
+      "failed_create_checkout": "Error al crear la sesión de pago",
+      "failed_create_portal": "Error al crear la sesión de portal",
+      "no_portal_url": "No se recibió una URL de portal"
+    }
   }
 } 

@@ -36,24 +36,61 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
     const email = formData.get("email") as string
     const password = formData.get("password") as string
 
-    // try {
-    //   const { data, error } = await supabase.auth.signInWithPassword({
-    //     email,
-    //     password,
-    //   })
+    // Client-side password validation for sign up
+    if (isSignUp) {
+      // Check minimum length
+      if (password.length < 6) {
+        const errorMsg = t("auth.validation.password_min_length", "Password must be at least 6 characters long")
+        setError(errorMsg)
+        toast({
+          variant: "destructive",
+          title: t("ui.error"),
+          description: errorMsg,
+        })
+        setIsLoading(false)
+        return
+      }
 
-    //   if (error) {
-    //     throw error
-    //   }
+      // Check for at least one lowercase letter
+      if (!/[a-z]/.test(password)) {
+        const errorMsg = t("auth.validation.password_lowercase", "Password must contain at least one lowercase letter (a-z)")
+        setError(errorMsg)
+        toast({
+          variant: "destructive",
+          title: t("ui.error"),
+          description: errorMsg,
+        })
+        setIsLoading(false)
+        return
+      }
 
-    //   // Success toast
-    //   toast({
-    //     title: t("ui.success"),
-    //     description: t("auth.login.success"),
-    //   })
+      // Check for at least one uppercase letter
+      if (!/[A-Z]/.test(password)) {
+        const errorMsg = t("auth.validation.password_uppercase", "Password must contain at least one uppercase letter (A-Z)")
+        setError(errorMsg)
+        toast({
+          variant: "destructive",
+          title: t("ui.error"),
+          description: errorMsg,
+        })
+        setIsLoading(false)
+        return
+      }
 
-    //   // Explicitly navigate to dashboard after successful login
-    //   // navigate('/dashboard', { replace: true })
+      // Check for at least one number
+      if (!/[0-9]/.test(password)) {
+        const errorMsg = t("auth.validation.password_number", "Password must contain at least one number (0-9)")
+        setError(errorMsg)
+        toast({
+          variant: "destructive",
+          title: t("ui.error"),
+          description: errorMsg,
+        })
+        setIsLoading(false)
+        return
+      }
+    }
+
     try {
       if (isSignUp) {
         const { data, error } = await supabase.auth.signUp({
@@ -153,20 +190,20 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
       {isResettingPassword ? (
         <div className="grid gap-6">
           <div className="space-y-2 text-center">
-            <h1 className="text-3xl font-bold">{t("auth.login.reset_password")}</h1>
-            <p className="text-md">{t("auth.login.reset_instructions")}</p>
+            <h1 className="text-3xl font-bold">{t("auth.login.reset_password", "Reset Password")}</h1>
+            <p className="text-md">{t("auth.login.reset_instructions", "Enter your email and we'll send you a link to reset your password")}</p>
           </div>
           <form onSubmit={handleResetPassword} className="space-y-4 mt-4">
             <div className="space-y-2">
               <Label htmlFor="reset-email">
-                {t("auth.login.email")}
+                {t("auth.login.email", "Email")}
               </Label>
               <Input
                 id="reset-email"
                 type="email"
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
-                placeholder={t("auth.login.email_placeholder")}
+                placeholder={t("auth.login.email_placeholder", "Enter your email")}
                 required
               />
             </div>
@@ -175,7 +212,7 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
               className="w-full"
               disabled={isSubmitting}
             >
-              {isSubmitting ? t("auth.login.submitting") : t("auth.login.send_reset_link")}
+              {isSubmitting ? t("auth.login.submitting", "Submitting...") : t("auth.login.send_reset_link", "Send Reset Link")}
             </Button>
           </form>
           <Button
@@ -183,17 +220,17 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
             variant="link"
             className="mx-auto  font-bold"
           >
-            {t("auth.login.back_to_login")}
+            {t("auth.login.back_to_login", "Back to Login")}
           </Button>
         </div>
       ) : (
         <>
           <div className="space-y-2 text-center">
-            <h1 className="text-2xl font-bold">{isSignUp ? t("auth.login.create_account_title") : t("auth.login.welcome_back")}</h1>
+            <h1 className="text-2xl font-bold">{isSignUp ? t("auth.login.create_account_title", "Create Account") : t("auth.login.welcome_back", "Welcome back")}</h1>
             <p className="text-gray-500">
               {isSignUp
-                ? t("auth.login.create_account_description")
-                : t("auth.login.credentials_prompt")}
+                ? t("auth.login.create_account_description", "Create an account to continue")
+                : t("auth.login.credentials_prompt", "Please enter your credentials to continue")}
             </p>
           </div>
           <form onSubmit={onSubmit} className="space-y-4 mt-4">
@@ -203,11 +240,11 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">{t("auth.login.email")}</Label>
+              <Label htmlFor="email">{t("auth.login.email", "Email")}</Label>
               <Input
                 id="email"
                 name="email"
-                placeholder={t("auth.login.email_placeholder")}
+                placeholder={t("auth.login.email_placeholder", "Enter your email")}
                 required
                 type="email"
                 disabled={isLoading}
@@ -216,7 +253,7 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">{t("auth.login.password")}</Label>
+              <Label htmlFor="password">{t("auth.login.password", "Password")}</Label>
               <Input
                 id="password"
                 name="password"
@@ -228,21 +265,13 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
               />
             </div>
             <Button className="w-full" type="submit" disabled={isLoading}>
-              {/* {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t("auth.login.loading")}
-                </>
-              ) : (
-                t("auth.login.sign_in")
-              )} */}
                {isLoading ? (
                 
-                t("auth.login.loading")
+                t("auth.login.loading", "Signing in...")
               ) : isSignUp ? (
-                t("auth.login.create_account")
+                t("auth.login.create_account", "Create Account")
               ) : (
-                t("auth.login.sign_in")
+                t("auth.login.sign_in", "Sign In")
               )}
             </Button>
             <Button
@@ -252,7 +281,7 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
               onClick={() => setIsResettingPassword(true)}
               disabled={isLoading}
             >
-              {t("auth.login.forgot_password")}
+              {t("auth.login.forgot_password", "Forgot Password?")}
             </Button>
           </form>
           <div className="text-center text-sm">
@@ -261,7 +290,7 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
           className="text-sm"
           onClick={() => setIsSignUp(!isSignUp)}
         >
-          {isSignUp ? t("auth.login.already_have_account") : t("auth.login.no_account")}
+          {isSignUp ? t("auth.login.already_have_account", "Already have an account?") : t("auth.login.no_account", "Don't have an account?")}
         </Button>
       </div>
         </>

@@ -144,7 +144,7 @@ export default function Account() {
         <div className="flex flex-col space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p>{t('currently_on_plan')}: <span className="font-bold">{planLimits?.plan_name ?? t('free')}</span></p>
+              <p>{t('currently_on_plan')} <span className="font-bold">{planLimits?.plan_name ?? t('free')}</span></p>
             </div>
             {/* <Button
               onClick={handleManageSubscription}
