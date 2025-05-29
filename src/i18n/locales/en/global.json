@@ -109,6 +109,21 @@
       "password_uppercase": "Password must contain at least one uppercase letter (A-Z)",
       "password_number": "Password must contain at least one number (0-9)"
     },
+    "errors": {
+      "user_already_registered": "This email is already registered. Please sign in instead.",
+      "invalid_credentials": "Invalid email or password. Please check your credentials and try again.",
+      "email_not_confirmed": "Please check your email and click the confirmation link before signing in.",
+      "too_many_requests": "Too many requests. Please wait a moment before trying again.",
+      "signup_disabled": "Sign up is currently disabled. Please contact support.",
+      "weak_password": "Password is too weak. Please choose a stronger password.",
+      "email_address_invalid": "Please enter a valid email address.",
+      "email_rate_limit_exceeded": "Too many emails sent. Please wait before requesting another.",
+      "password_reset_limit_exceeded": "Too many password reset attempts. Please wait before trying again.",
+      "token_expired": "Your session has expired. Please sign in again.",
+      "invalid_token": "Invalid or expired token. Please try again.",
+      "user_not_found": "No account found with this email address.",
+      "generic_error": "An unexpected error occurred. Please try again."
+    },
     "login": {
       "early_access": "Early Access",
       "credentials_prompt": "Please enter your credentials to continue",

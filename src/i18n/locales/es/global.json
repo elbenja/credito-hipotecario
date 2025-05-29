@@ -109,6 +109,21 @@
       "password_uppercase": "La contraseña debe contener al menos una letra mayúscula (A-Z)",
       "password_number": "La contraseña debe contener al menos un número (0-9)"
     },
+    "errors": {
+      "user_already_registered": "Este correo ya está registrado. Por favor, inicia sesión en su lugar.",
+      "invalid_credentials": "Correo o contraseña inválidos. Por favor, verifica tus credenciales e inténtalo de nuevo.",
+      "email_not_confirmed": "Por favor, revisa tu correo y haz clic en el enlace de confirmación antes de iniciar sesión.",
+      "too_many_requests": "Demasiadas solicitudes. Por favor, espera un momento antes de intentar de nuevo.",
+      "signup_disabled": "El registro está actualmente deshabilitado. Por favor, contacta al soporte.",
+      "weak_password": "La contraseña es muy débil. Por favor, elige una contraseña más fuerte.",
+      "email_address_invalid": "Por favor, ingresa una dirección de correo válida.",
+      "email_rate_limit_exceeded": "Demasiados correos enviados. Por favor, espera antes de solicitar otro.",
+      "password_reset_limit_exceeded": "Demasiados intentos de restablecimiento de contraseña. Por favor, espera antes de intentar de nuevo.",
+      "token_expired": "Tu sesión ha expirado. Por favor, inicia sesión de nuevo.",
+      "invalid_token": "Token inválido o expirado. Por favor, inténtalo de nuevo.",
+      "user_not_found": "No se encontró una cuenta con esta dirección de correo.",
+      "generic_error": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo."
+    },
     "login": {
       "early_access": "Acceso Anticipado",
       "credentials_prompt": "Por favor ingresa tus credenciales para continuar",

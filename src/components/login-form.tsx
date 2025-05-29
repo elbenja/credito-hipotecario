@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
 import { useTranslation } from "react-i18next"
 import { Loader2 } from "lucide-react"
+import { mapSupabaseErrorToTranslationKey } from "@/utils/supabase-error-mapper"
 
 interface LoginFormProps {
   defaultIsSignUp?: boolean
@@ -138,11 +139,21 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
    
 
     } catch (error: any) {
-      setError(error.message || t("ui.error"))
+      const errorKey = mapSupabaseErrorToTranslationKey(error)
+      
+      // Try to get translated error, fallback to original message or generic error
+      let translatedError: string
+      try {
+        translatedError = t(errorKey as any)
+      } catch {
+        translatedError = error.message || t("ui.error")
+      }
+      
+      setError(translatedError)
       toast({
         variant: "destructive",
         title: t("ui.error"),
-        description: error.message || t("ui.error"),
+        description: translatedError,
       })
       console.error("Auth error:", error)
     } finally {
@@ -175,10 +186,20 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
       })
       setIsResettingPassword(false)
     } catch (error: any) {
+      const errorKey = mapSupabaseErrorToTranslationKey(error)
+      
+      // Try to get translated error, fallback to original message or generic error
+      let translatedError: string
+      try {
+        translatedError = t(errorKey as any)
+      } catch {
+        translatedError = error.message || t("ui.error")
+      }
+      
       toast({
         variant: "destructive",
         title: t("ui.error"),
-        description: error.message || t("ui.error"),
+        description: translatedError,
       })
     } finally {
       setIsSubmitting(false)

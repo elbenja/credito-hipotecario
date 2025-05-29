@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { supabase } from "@/integrations/supabase/client"
 import { useTranslation } from "react-i18next"
+import { mapSupabaseErrorToTranslationKey } from "@/utils/supabase-error-mapper"
 
 export default function UpdatePassword() {
   const [password, setPassword] = useState("")
@@ -88,7 +89,17 @@ export default function UpdatePassword() {
       } catch (error: any) {
         console.error("Error validating recovery token:", error)
         setValidRecoveryToken(false)
-        toast.error(error.message || t("update_password_page.invalid_or_expired_link", { ns: "global" }))
+        
+        // Use error mapping for consistent translated error messages
+        const errorKey = mapSupabaseErrorToTranslationKey(error)
+        let translatedError: string
+        try {
+          translatedError = t(errorKey as any)
+        } catch {
+          translatedError = error.message || t("update_password_page.invalid_or_expired_link", { ns: "global" })
+        }
+        
+        toast.error(translatedError)
       }
     }
     
@@ -122,7 +133,15 @@ export default function UpdatePassword() {
       toast.success(t("update_password_page.password_updated", { ns: "global" }))
       navigate("/dashboard")
     } catch (error: any) {
-      toast.error(error.message || t("update_password_page.error_updating_password", { ns: "global" }))
+      const errorKey = mapSupabaseErrorToTranslationKey(error)
+      let translatedError: string
+      try {
+        translatedError = t(errorKey as any)
+      } catch {
+        translatedError = error.message || t("update_password_page.error_updating_password", { ns: "global" })
+      }
+      
+      toast.error(translatedError)
     } finally {
       setLoading(false)
     }

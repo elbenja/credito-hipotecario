@@ -40,6 +40,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { formatDateTime } from "@/utils/date-utils"
+import { mapSupabaseErrorToTranslationKey } from "@/utils/supabase-error-mapper"
 
 type User = {
   id: string
@@ -308,7 +311,15 @@ export default function UserManagement() {
       
       toast.success(`Password reset email sent to ${email}`)
     } catch (error: any) {
-      toast.error(`Failed to send reset email: ${error.message || "Unknown error"}`)
+      const errorKey = mapSupabaseErrorToTranslationKey(error)
+      let translatedError: string
+      try {
+        translatedError = t(errorKey as any)
+      } catch {
+        translatedError = error.message || "Unknown error"
+      }
+      
+      toast.error(`Failed to send reset email: ${translatedError}`)
     } finally {
       setSendingResetEmail({...sendingResetEmail, [email]: false})
     }
