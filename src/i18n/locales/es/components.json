@@ -46,7 +46,7 @@
   },
   "scenario_graphs": {
     "common": {
-      "sum_interest_insurance": "Suma Interés & Seguros",
+      "sum_interest_insurance": "Interés & Seguros",
       "months": "Meses",
       "years": "Años",
       "monthly_payment": "Pago Mensual",
