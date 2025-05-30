@@ -9,6 +9,7 @@
     "name": "Nombre",
     "new_name": "- nueva hipoteca",
     "label": "Nombre de la Hipoteca",
+    "mortgage_suffix": "Hipoteca",
     "loan_amount": "Monto del Préstamo",
     "short_loan_amount": "Préstamo",
     "loan_amount_formula": "= Costo de Propiedad - Bono MiVivienda - Cuota Inicial",

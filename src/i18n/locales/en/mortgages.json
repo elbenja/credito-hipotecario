@@ -9,6 +9,7 @@
     "name": "Name",
     "new_name": "- new mortgage",
     "label": "Mortgage Name",
+    "mortgage_suffix": "Mortgage",
     "loan_amount": "Loan Amount",
     "short_loan_amount": "Loan",
     "loan_amount_formula": "= Property Cost - First Home Bonus - Down Payment",

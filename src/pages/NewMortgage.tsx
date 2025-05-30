@@ -88,35 +88,23 @@ export default function NewMortgage() {
     }
     try {
       const property = await fetchPropertyWithBonus(user.id, propertyId);
-      // console.log("Fetch If Needed 🔄 property:", property)
+      const defaultName = `${property.name} ${t("amortization.mortgage_suffix", { ns: "mortgages" })}`;
+      
       setSelectedProperty(property);
       updateDraft({
         property_id: property.id,
         property,
-        name: `${property.name} Mortgage`,
+        name: defaultName,
       });
+      
+      // Sync the form name with the store name
+      form.setValue("name", defaultName, { shouldValidate: true });
     } catch (error) {
       console.error("Error fetching property:", error);
     }
   };
 
-  // useEffect(() => {
-  //   if (propertyIdFromUrl) {
-  //     // load it
-  //     // console.log(" propertyIdFromUrl ⏳ loading property", propertyIdFromUrl);
-  //     // updateDraft({ property_id: propertyIdFromUrl });
-  //     fetchPropertyIfNeeded(propertyIdFromUrl);
-  //   } else {
-  //     // no query param → clear out any leftover
-  //     // console.warn("  ⚠️ no propertyIdFromUrl, clearing store");
-  //     resetStore();
-  //     resetDraft();
-  //     setSelectedProperty(null);
-  //     console.log("resetting form")
-  //         // reset the form controls to completely blank defaults
-  //     form.reset(defaultValues);
-  //   }
-  // }, [propertyIdFromUrl]);
+
   
   // Add at the top of the component before any other effects
 useEffect(() => {
@@ -196,7 +184,7 @@ function DebugMortgageDraft() {
       
       // Update the form name if empty
       if (!form.getValues("name")) {
-        const defaultName = `${updated.name} Mortgage`
+        const defaultName = `${updated.name} ${t("amortization.mortgage_suffix", { ns: "mortgages" })}`
         form.setValue("name", defaultName, { shouldValidate: true })
       }
       
@@ -414,21 +402,7 @@ function DebugMortgageDraft() {
 
 <Separator />       
                 <div className="p-1 md:p-2 lg:p-4 space-y-6">
-{/* 
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    
-                    <FormItem>
-                      <FormLabel>{t("amortization.label", { ns: "mortgages" })}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t("amortization.name", { ns: "mortgages" })} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                /> */}
+
 
 <FormField
                   
