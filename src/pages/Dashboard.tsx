@@ -6,7 +6,7 @@ import SVGillustration from '@/components/ui/SVGillustration'
 // import { Badge } from "@/components/ui/badge"
 // import { useQuery, useQueryClient } from "@tanstack/react-query"
 // import { supabase } from "@/integrations/supabase/client"
-import { useAuth } from "@/context/auth-context"
+// import { useAuth } from "@/context/auth-context"
 // import { Separator } from "@radix-ui/react-separator"
 import { FeatureCounts } from "@/components/dashboard/feature-counts"
 import { PropertyCards } from "@/components/dashboard/property-cards"

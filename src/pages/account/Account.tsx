@@ -1,5 +1,5 @@
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+// import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 import { Button } from "@/components/ui/button"
 import { useTranslation } from "react-i18next"
@@ -14,11 +14,11 @@ import { usePlans, useSubscriptionAccess, useUserPlanLimits } from "@/hooks/useP
 import { createCheckoutSession, redirectToCheckout, createCustomerPortalSession, redirectToCustomerPortal } from "@/services/stripeService"
 import { toast } from "sonner"
 import { useQueryClient } from '@tanstack/react-query';
-
+import { AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Alert } from "@/components/ui/alert"
+import { Terminal } from "lucide-react"
 
 // import { testErrorMapping } from "@/utils/test-error-mapping"; // it works
-
-
 
 export default function Account() {
   const { t } = useTranslation('account')
@@ -42,43 +42,6 @@ export default function Account() {
   const stripeCustomerId = plans.find(p => p.is_current_plan)?.stripe_customer_id
 
   const hasStripeCustomerId = !!stripeCustomerId
-
-  // const handleUpgrade = async (priceId: string, planName: string) => {
-  //   console.log('handleUpgrade', priceId, planName)
-  //   if (!priceId || isUpgrading || !user) {
-  //     if (!user) {
-  //       toast.error(t('toast.please_login_upgrade'));
-  //     }
-  //     return;
-  //   }
-    
-  //   setIsUpgrading(priceId);
-    
-  //   try {
-  //     console.log(`Starting checkout for plan: ${planName} with price_id: ${priceId}`);
-  //     const response = await createCheckoutSession(priceId);
-  //     if (response.checkout_url) {
-  //       toast.success(t('toast.redirecting_checkout'));
-  //       redirectToCheckout(response.checkout_url);
-  //     } else if (response.message === 'Subscription updated') {
-  //       toast.success(t('toast.plan_updated'));
-  //       queryClient.invalidateQueries({ queryKey: ['activePlansWithLimits', user?.id] });
-  //       await refetch();
-  //     } else {
-  //       throw new Error('Something went wrong');
-  //     }
-  //   } catch (error: any) {
-  //     console.error('Error creating checkout session:', error);
-  //     toast.error(t('toast.checkout_failed', { message: error.message }));
-  //   } finally {
-  //     setIsUpgrading(null);
-  //   }
-  // };
-
-  // useEffect(() => { // it works
-  //   // Only run once
-  //   testErrorMapping();
-  // }, []);
 
   const handleUpgrade = async (priceId: string, planName: string) => {
     console.log('handleUpgrade stripeCustomerId', priceId, planName, stripeCustomerId);
@@ -141,9 +104,6 @@ export default function Account() {
   };
 
 
-  
-
-
   return (
     <DashboardLayout
       header={{
@@ -156,14 +116,6 @@ export default function Account() {
             <div>
               <p>{t('currently_on_plan')} <span className="font-bold">{planLimits?.plan_name ?? t('free')}</span></p>
             </div>
-            {/* <Button
-              onClick={handleManageSubscription}
-              disabled={isLoadingPortal}
-              variant="outline"
-            >
-              {isLoadingPortal ? t('loading') : t('manage_subscription')}
-            </Button> */}
-
 
             {hasStripeCustomerId && (
               <Button
@@ -188,7 +140,19 @@ export default function Account() {
               />
             ))}
           </div>
+           
         </div>
+         
+        <Alert className="w-full mb-16 mt-12">
+          <Terminal className="h-4 w-4" />
+         
+          <AlertTitle >
+            <span className="bg-brand text-brand-foreground xl:text-lg py-0.5 px-2 rounded-md"> {t('alert.title')}</span> 
+            </AlertTitle>
+              <AlertDescription>
+                {t('alert.description')}
+              </AlertDescription>
+        </Alert>
       </div>
     </DashboardLayout>
   )

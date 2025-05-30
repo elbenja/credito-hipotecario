@@ -23,6 +23,10 @@
   "currently_on_plan": "You're currently on plan: ",
   "free": "Free",
   "loading": "Loading...",
+  "alert": {
+    "title": "Plan Limits",
+    "description": "The amounts are the limits of properties, mortgages, and rentals you can have at the same time. Example: if your limit is 3 properties and you already have 3, you can delete one and create another."
+  },
   "toast": {
     "please_login_upgrade": "Please log in to upgrade your plan",
     "please_login_manage": "Please log in to manage your subscription",

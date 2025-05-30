@@ -23,6 +23,10 @@
   "currently_on_plan": "Actualmente estás en el plan:",
   "free": "Gratis",
   "loading": "Cargando...",
+  "alert": {
+    "title": "Límites de Plan",
+    "description": "Los montos son los limites de propiedades. hipotecas y rentas que puedes tener al mismo tiempo. Ejemplo: si tu limite es 3 propiedades y ya tienes 3, puedes borrar una y crear otra."
+  },
   "toast": {
     "please_login_upgrade": "Por favor, inicia sesión para mejorar tu plan",
     "please_login_manage": "Por favor, inicia sesión para administrar tu suscripción",
