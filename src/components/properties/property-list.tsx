@@ -21,12 +21,15 @@ import { useNavigate } from "react-router-dom"
 
 import { useMortgageDraftStore } from "@/store/mortgage/store"
 // import { usePropertyBonus } from "@/hooks/usePropertyBonus"
-import { useDuplicateProperty } from "@/hooks/properties/useDuplicate"
+// import { useDuplicateProperty } from "@/hooks/properties/useDuplicate"
 import { useDeleteProperty } from "@/hooks/properties/useDelete"
 
 import type { Property, PropertyWithBonus } from "@/types/property";
 // import type { BonusRule } from "@/types/property";
 import { formatCurrency } from "@/utils/utils"
+import { useAddMortgageToProperty } from "@/hooks/mortgages/useAddMortgageToProperty"
+// import { PlanLimitDialog } from "@/components/common/PlanLimitDialog"
+// import { usePlanLimitDialog } from "@/components/dashboard/dashboard-layout"
 
 
 export type PropertyListProps = {
@@ -43,17 +46,17 @@ export type PropertyListProps = {
 
 export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, sortConfig, onSort, onDuplicate }: PropertyListProps) {
   const { t } = useTranslation(['properties', 'global'])
-  const { toast } = useToast()
+  // const { toast } = useToast()
   // const { data: exchangeRate } = useExchangeRate()
   // const { user } = useAuth()
-  const navigate = useNavigate()
-
-  // do we need this?
-  const { resetDraft } = useMortgageDraftStore()
+  // const navigate = useNavigate()
+  // const { showDialog } = usePlanLimitDialog()
+  // // do we need this?
+  // const { resetDraft } = useMortgageDraftStore()
   
   // const { calculateBonus } = usePropertyBonus()
   const deleteProperty = useDeleteProperty()
-  const duplicateProperty = useDuplicateProperty()
+  // const duplicateProperty = useDuplicateProperty()
 
   const getSortIcon = (key: keyof Property) => {
     if (sortConfig?.key === key) {
@@ -64,12 +67,13 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
     return <ChevronsUpDown className="inline h-4 w-4 ml-1 text-muted-foreground opacity-50" />
   }
 
-  const handleAddMortgage = (e: React.MouseEvent, property: Property) => {
-    e.stopPropagation()
-    // do we need this?
-    resetDraft()
-    navigate(`/mortgages/new?propertyId=${property.id}`)
-  }
+  // const handleAddMortgage = (e: React.MouseEvent, property: Property) => {
+  //   e.stopPropagation()
+  //   // do we need this?
+  //   resetDraft()
+  //   navigate(`/mortgages/new?propertyId=${property.id}`)
+  // }
+  const { AddMortgageToProperty } = useAddMortgageToProperty()
 
   // const handleDuplicate = (e: React.MouseEvent, property: Property) => {
   //   e.stopPropagation();
@@ -160,7 +164,8 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
                       <span className="sr-only">{t('ui.open_menu', 'Open menu', { ns: 'global' })}</span>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" sideOffset={5} className="touch-none">
-                      <DropdownMenuItem onClick={(e) => handleAddMortgage(e, property)}>
+                      <DropdownMenuItem onClick={e => AddMortgageToProperty(e, property.id)}>
+                      {/* onClick={(e) => handleAddMortgage(e, property)}> */}
                         <Home className="mr-2 h-4 w-4" />
                         <span>{t('ui.add_mortgage', 'Add Mortgage', { ns: 'global' })}</span>
                       </DropdownMenuItem>
@@ -184,5 +189,7 @@ export function PropertyList({ properties, onPropertySelect, onPropertyUpdate, s
         )}
       </TableBody>
     </Table>
+    
   )
+
 }

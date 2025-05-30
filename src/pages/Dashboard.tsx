@@ -3,9 +3,9 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { useTranslation } from "react-i18next"
 import { Link, Navigate } from "react-router-dom"
 import SVGillustration from '@/components/ui/SVGillustration'
-import { Badge } from "@/components/ui/badge"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { supabase } from "@/integrations/supabase/client"
+// import { Badge } from "@/components/ui/badge"
+// import { useQuery, useQueryClient } from "@tanstack/react-query"
+// import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/auth-context"
 // import { Separator } from "@radix-ui/react-separator"
 import { FeatureCounts } from "@/components/dashboard/feature-counts"
@@ -15,25 +15,25 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Plus, Terminal } from "lucide-react"
 import { PropertyForm } from "@/components/properties/property-form"
 import { usePropertyCount } from "@/hooks/properties/useCount"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+// import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { PlanLimitDialog } from "@/components/common/PlanLimitDialog"
 import { useCanCreateFeature } from "@/hooks/usePlanLimits"
-import {  Property, PropertyWithBonus } from "@/types/property"
+// import {  Property, PropertyWithBonus } from "@/types/property"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { useMortgageDraftStore } from "@/store/mortgage/store"
+// import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { toast } from "sonner"
 
 export default function Dashboard() {
   const { t } = useTranslation(['dashboard', 'properties', 'mortgages'])
-  const { user, hasAccess } = useAuth()
+  // const { user, hasAccess } = useAuth()
   const [hasProperties, setHasProperties] = useState(false)
   const [open, setOpen] = useState(false)
   const [showDialog, setShowDialog] = useState(false)
-  const navigate = useNavigate()
+  // const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   // const queryClient = useQueryClient()
   const { canCreate } = useCanCreateFeature()
-  const { resetDraft } = useMortgageDraftStore();
+  // const { resetDraft } = useMortgageDraftStore();
   // const [selectedProperty, setSelectedProperty] = useState<PropertyWithBonus | null>(null)
 
   // Handle Stripe checkout success
@@ -72,21 +72,7 @@ export default function Dashboard() {
     }
   }
 
-  const handleAddMortgage =  async (e: React.MouseEvent, property: Property)  => {
-    // console.log('handleAddMortgage', property)
-    const allowed = await canCreate('mortgages')
 
-    if (!allowed) {
-      console.log('allowed', allowed)
-      setShowDialog(true)
-    } else {
-      resetDraft();
-      // navigate("/mortgages/new");
-      // console.log('allowed', allowed)
-      e.stopPropagation();
-      navigate(`/mortgages/new?propertyId=${property.id}`);
-    }
-  };
 
   // // Fetch properties count with optimized caching
   const { data: propertiesCount = 0 } = usePropertyCount()
@@ -102,11 +88,6 @@ export default function Dashboard() {
   useEffect(() => {
     setHasProperties(propertiesCount > 0)
   }, [propertiesCount])
-
-
-
-
-
 
 
   return (
@@ -178,7 +159,7 @@ export default function Dashboard() {
       <PropertyCards 
         onPropertySelect={() => {}} 
         onPropertiesLoaded={setHasProperties}
-        onAddMortgage={handleAddMortgage }
+        // onAddMortgage={handleAddMortgage }
       />
 
    </div>
@@ -210,10 +191,7 @@ export default function Dashboard() {
 <PlanLimitDialog
         open={showDialog}
         onClose={() => setShowDialog(false)}
-        // onUpgrade={() => {
-        //   // TODO: Add navigation or logic to upgrade page
-        //   setShowDialog(false)
-        // }}
+
       />
     </DashboardLayout>
   )

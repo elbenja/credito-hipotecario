@@ -20,12 +20,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 // import { fetchProperties } from '@/services/propertyService';
 import { formatCurrency } from "@/utils/utils";
 import { useCanCreateFeature } from "@/hooks/usePlanLimits"
-
+import { useAddMortgageToProperty } from "@/hooks/mortgages/useAddMortgageToProperty";
+import { PlanLimitDialog } from "../common/PlanLimitDialog";
 
 type PropertyCardsProps = {
   onPropertySelect?: (property: Property) => void;
   onPropertiesLoaded?: (hasProperties: boolean) => void;
-  onAddMortgage?: (e: React.MouseEvent, property: Property) => void;
+  // onAddMortgage?: (e: React.MouseEvent, property: Property) => void;
 }
 
 interface PropertyEditSheetProps {
@@ -81,13 +82,13 @@ function PropertyEditSheet({ property, open, onOpenChange, onPropertyUpdate
   );
 }
 
-export function PropertyCards({ onPropertySelect, onPropertiesLoaded, onAddMortgage }: PropertyCardsProps) {
+export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: PropertyCardsProps) {
   const { t } = useTranslation(['properties', 'global', 'dashboard']);
   const { user } = useAuth();
-  const { toast } = useToast();
+  // const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [mortgageCounts, setMortgageCounts] = useState<Record<string, number>>({});
+  // const [mortgageCounts, setMortgageCounts] = useState<Record<string, number>>({});
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [propertyEditSheetOpen, setPropertyEditSheetOpen] = useState(false);
   const fetchedPropertyIds = useRef<Set<string>>(new Set());
@@ -95,33 +96,6 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded, onAddMortg
   // hook to fetch PropertyWithBonus
 //  const { data: properties = [], isLoading, refetch } = useProperties(user?.id)
  const { data: propertiesWithMortgages=[], isLoading } = usePropertiesWithMortgagesAndBonus(user?.id);
-
-  // Update mortgage counts and onPropertiesLoaded callback
-  // useEffect(() => {
-  //   onPropertiesLoaded?.(propertiesWithMortgages.length > 0);
-    
-  //   const fetchMortgageCounts = async () => {
-  //     if (propertiesWithMortgages.length === 0) return;
-      
-  //     const newCounts = { ...mortgageCounts };
-  //     let hasUpdates = false;
-      
-  //     for (const property of propertiesWithMortgages) {
-  //       if (!fetchedPropertyIds.current.has(property.id)) {
-  //         newCounts[property.id] = await getPropertyMortgagesCount(property.id);
-  //         fetchedPropertyIds.current.add(property.id);
-  //         hasUpdates = true;
-  //       }
-  //     }
-      
-  //     if (hasUpdates) {
-  //       setMortgageCounts(newCounts);
-  //     }
-  //   };
-    
-  //   fetchMortgageCounts();
-  // }, [properties, onPropertiesLoaded]);
-
 
 
   const handleEditProperty = (e: React.MouseEvent, property: Property) => {
@@ -140,7 +114,7 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded, onAddMortg
     queryClient.invalidateQueries({ queryKey: ['properties-mortgages-bonus'] });
   };
 
-
+  const { AddMortgageToProperty, showLimitDialog, setShowLimitDialog } = useAddMortgageToProperty();
   // note to self i think this can be merged with properties-mortgages-bonus from Mortgages.tsx
   // const getPropertyMortgagesCount = async (propertyId: string): Promise<number> => {
   //   try {
@@ -213,15 +187,16 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded, onAddMortg
 
 
             <button 
-            type="button"  
-              className="size-8 border border-foreground text-foreground rounded-[99px] flex justify-center items-center"
-              onClick={(e) => {
-                if (onAddMortgage) {
-                  onAddMortgage(e, property);
-                }
-                // console.log('property', property);
-              }}
-            >
+            // type="button"  
+            //   className="size-8 border border-foreground text-foreground rounded-[99px] flex justify-center items-center"
+            //   onClick={(e) => {
+            //     if (onAddMortgage) {
+            //       onAddMortgage(e, property);
+            //     }
+            //     // console.log('property', property);
+            //   }}
+            // >
+            onClick={(e) => AddMortgageToProperty(e, property.id)}>
               <Plus className="h-4 w-4" />
             </button>
 
@@ -239,6 +214,13 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded, onAddMortg
           }}
           onPropertyUpdate={handlePropertyUpdate}
         />
+      )}
+       {showLimitDialog && (
+        <PlanLimitDialog
+        open={showLimitDialog}
+        onClose={() => setShowLimitDialog(false)}
+
+      />
       )}
     </>
   );
