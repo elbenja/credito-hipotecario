@@ -1,5 +1,7 @@
 {
   "extra_installments_section": {
+    "monthly": "Monthly",
+    "one_time": "One time",
     "title": "Extra Installments",
     "add_button": "Add",
     "success": {

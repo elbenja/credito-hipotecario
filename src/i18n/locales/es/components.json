@@ -1,5 +1,7 @@
 {
   "extra_installments_section": {
+    "monthly": "Mensual",
+    "one_time": "Una vez",
     "title": "Amortizaciones Extra",
     "add_button": "Agregar",
     "success": {
