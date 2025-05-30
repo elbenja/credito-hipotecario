@@ -366,14 +366,14 @@ export function NewRateForm({
                     )}
                   />
 
-                  {firstInstallmentDate && isValid(firstInstallmentDate) && (
+                  {/* {firstInstallmentDate && isValid(firstInstallmentDate) && (
                     <p className="text-xs text-muted-foreground">
                       {t('payment_scenarios.new_rate_form.day_info', 'Day will match installment day ({{day}})', { 
                         ns: 'components', 
                         day: firstInstallmentDate.getDate() 
                       })}
                     </p>
-                  )}
+                  )} */}
 
                   <Button 
                     type="submit"
