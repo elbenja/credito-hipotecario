@@ -21,7 +21,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatCurrency } from "@/utils/utils";
 import { useCanCreateFeature } from "@/hooks/usePlanLimits"
 import { useAddMortgageToProperty } from "@/hooks/mortgages/useAddMortgageToProperty";
-import { PlanLimitDialog } from "../common/PlanLimitDialog";
+// import { PlanLimitDialog } from "../common/PlanLimitDialog";
 
 type PropertyCardsProps = {
   onPropertySelect?: (property: Property) => void;
@@ -114,23 +114,8 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
     queryClient.invalidateQueries({ queryKey: ['properties-mortgages-bonus'] });
   };
 
-  const { AddMortgageToProperty, showLimitDialog, setShowLimitDialog } = useAddMortgageToProperty();
-  // note to self i think this can be merged with properties-mortgages-bonus from Mortgages.tsx
-  // const getPropertyMortgagesCount = async (propertyId: string): Promise<number> => {
-  //   try {
-      
-  //     const { error, count } = await supabase
-  //       .from('mortgages')
-  //       .select('*', { count: 'exact' })
-  //       .eq('property_id', propertyId);
+  const { AddMortgageToProperty } = useAddMortgageToProperty();
 
-  //     if (error) throw error;
-  //     return count || 0;
-  //   } catch (error) {
-  //     console.error('Error counting mortgages:', error);
-  //     return 0;
-  //   }
-  // };
 
   // Get SVG variant for properties
   const getSVGVariant = (index: number): "stool" | "dog" | "armchair" | "hangingPlant" | "plant" | "beanBag" => {
@@ -187,15 +172,8 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
 
 
             <button 
-            // type="button"  
-            //   className="size-8 border border-foreground text-foreground rounded-[99px] flex justify-center items-center"
-            //   onClick={(e) => {
-            //     if (onAddMortgage) {
-            //       onAddMortgage(e, property);
-            //     }
-            //     // console.log('property', property);
-            //   }}
-            // >
+ 
+              className="size-8 border border-foreground text-foreground rounded-[99px] flex justify-center items-center" 
             onClick={(e) => AddMortgageToProperty(e, property.id)}>
               <Plus className="h-4 w-4" />
             </button>
@@ -215,13 +193,7 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
           onPropertyUpdate={handlePropertyUpdate}
         />
       )}
-       {showLimitDialog && (
-        <PlanLimitDialog
-        open={showLimitDialog}
-        onClose={() => setShowLimitDialog(false)}
-
-      />
-      )}
+      
     </>
   );
 } 
