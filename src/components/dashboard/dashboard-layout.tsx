@@ -5,6 +5,24 @@ import { DashboardNoAccessSidebar } from "./dashboard-noaccess-sidebar"
 import { Separator } from "@/components/ui/separator"
 import { useSidebarAutoCollapse } from "@/hooks/use-sidebar-auto-collapse"
 import { useAuth } from "@/context/auth-context"
+// ... existing imports ...
+import { PlanLimitDialog } from "@/components/common/PlanLimitDialog"
+import { useState, createContext, useContext } from "react"
+
+// Create a context for the dialog
+interface PlanLimitDialogContextType {
+  showDialog: () => void
+}
+
+const PlanLimitDialogContext = createContext<PlanLimitDialogContextType | undefined>(undefined)
+
+export function usePlanLimitDialog() {
+  const context = useContext(PlanLimitDialogContext)
+  if (!context) {
+    throw new Error('usePlanLimitDialog must be used within DashboardLayout')
+  }
+  return context
+}
 
 interface HeaderProps {
   title?: React.ReactNode
@@ -44,16 +62,41 @@ function DashboardContent({ children, header }: DashboardLayoutProps) {
   )
 }
 
+// export function DashboardLayout({ children, header }: DashboardLayoutProps) {
+//   return (
+//     <SidebarProvider defaultOpen={true}>
+//       <SEO 
+//         title="Dashboard - CreditoHipotecar.io"
+//         description="Dashboard for CreditoHipotecar.io"
+//       />
+//       <DashboardContent header={header}>
+//         {children}
+//       </DashboardContent>
+//     </SidebarProvider>
+//   )
+// }
 export function DashboardLayout({ children, header }: DashboardLayoutProps) {
+  const [showLimitDialog, setShowLimitDialog] = useState(false)
+
   return (
     <SidebarProvider defaultOpen={true}>
       <SEO 
         title="Dashboard - CreditoHipotecar.io"
         description="Dashboard for CreditoHipotecar.io"
       />
-      <DashboardContent header={header}>
-        {children}
-      </DashboardContent>
+      <PlanLimitDialogContext.Provider 
+        value={{ showDialog: () => setShowLimitDialog(true) }}
+      >
+        <DashboardContent header={header}>
+          {children}
+        </DashboardContent>
+        
+        {/* Global Plan Limit Dialog */}
+        <PlanLimitDialog
+          open={showLimitDialog}
+          onClose={() => setShowLimitDialog(false)}
+        />
+      </PlanLimitDialogContext.Provider>
     </SidebarProvider>
   )
 }
