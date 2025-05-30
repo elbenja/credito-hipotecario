@@ -1,4 +1,4 @@
-// src/hooks/useAddMortgage.ts
+// src/hooks/useAddMortgageToProperty.ts
 import { useNavigate } from "react-router-dom";
 import { useMortgageDraftStore } from "@/store/mortgage/store";
 import { useCallback } from "react";

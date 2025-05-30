@@ -134,7 +134,7 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
           throw error
         }
         // navigate("/dashboard")
-        navigate("/", { replace: true })
+        navigate("/dashboard", { replace: true })
       }
    
 
