@@ -30,6 +30,65 @@ declare module 'i18next' {
           open_menu: string;
           add: string;
         };
+        auth: {
+          title: string;
+          description: string;
+          brand_name: string;
+          no_credentials_prompt: string;
+          register_prompt: string;
+          clear_and_simple: string;
+          initializing: string;
+          authentication_error: string;
+          session_expired: string;
+          sign_out_error: string;
+          validation: {
+            password_min_length: string;
+            password_lowercase: string;
+            password_uppercase: string;
+            password_number: string;
+          };
+          errors: {
+            user_already_registered: string;
+            invalid_credentials: string;
+            email_not_confirmed: string;
+            too_many_requests: string;
+            signup_disabled: string;
+            weak_password: string;
+            email_address_invalid: string;
+            email_rate_limit_exceeded: string;
+            password_reset_limit_exceeded: string;
+            token_expired: string;
+            invalid_token: string;
+            user_not_found: string;
+            generic_error: string;
+          };
+          login: {
+            early_access: string;
+            credentials_prompt: string;
+            email: string;
+            email_placeholder: string;
+            password: string;
+            loading: string;
+            sign_in: string;
+            forgot_password: string;
+            reset_password: string;
+            reset_instructions: string;
+            reset_email_sent: string;
+            valid_email_required: string;
+            submitting: string;
+            send_reset_link: string;
+            back_to_login: string;
+            success: string;
+            welcome_back: string;
+            create_account: string;
+            create_account_title: string;
+            create_account_description: string;
+            already_have_account: string;
+            no_account: string;
+            account_created: string;
+            check_email_verification: string;
+          };
+        };
         settings: {
           title: string;
           appearance: string;

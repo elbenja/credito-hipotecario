@@ -103,6 +103,10 @@
     "no_credentials_prompt": "¿Aún no tienes credenciales?",
     "register_prompt": "Solicitar Acceso Anticipado",
     "clear_and_simple": "Análisis hipotecario claro y simple",
+    "initializing": "Inicializando...",
+    "authentication_error": "Error de autenticación",
+    "session_expired": "Tu sesión ha expirado",
+    "sign_out_error": "Error al cerrar sesión",
     "validation": {
       "password_min_length": "La contraseña debe tener al menos 6 caracteres",
       "password_lowercase": "La contraseña debe contener al menos una letra minúscula (a-z)",

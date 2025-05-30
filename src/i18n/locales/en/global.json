@@ -103,6 +103,10 @@
     "no_credentials_prompt": "Don't have credentials yet?",
     "register_prompt": "Request Early Access",
     "clear_and_simple": "Clear and simple mortgage analysis",
+    "initializing": "Initializing...",
+    "authentication_error": "Authentication error occurred",
+    "session_expired": "Your session has expired",
+    "sign_out_error": "Error during sign out",
     "validation": {
       "password_min_length": "Password must be at least 6 characters long",
       "password_lowercase": "Password must contain at least one lowercase letter (a-z)",

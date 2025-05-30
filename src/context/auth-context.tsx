@@ -4,6 +4,18 @@ import { supabase } from "@/integrations/supabase/client"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
 import { useSubscriptionAccess } from "@/hooks/usePlanLimits"
+import { useTranslation } from "react-i18next"
+
+/**
+ * AuthContext with i18n support
+ * 
+ * Translation keys used:
+ * - auth.initializing: Loading message while initializing authentication
+ * - auth.authentication_error: Console error message for auth initialization errors  
+ * - auth.sign_out_error: Console error message for sign out errors
+ * 
+ * Available in both English and Spanish via global translation namespace
+ */
 
 type AuthContextType = {
   user: User | null
@@ -27,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const qc = useQueryClient() // for invalidating queries May20
   const [hasAccess, setHasAccess] = useState<boolean | null>(null)
+  const { t } = useTranslation('global')
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -62,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Use navigate with replace to prevent adding to history stack
       navigate('/', { replace: true })
     } catch (error) {
-      console.error('Error during sign out:', error)
+      console.error(t('auth.sign_out_error'), error)
       // Still clear state and redirect
       setSession(null)
       setUser(null)
@@ -105,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false)
         }
       } catch (error) {
-        console.error('Error initializing auth:', error)
+        console.error(t('auth.authentication_error'), error)
         if (mounted) {
           setLoading(false)
         }
@@ -128,13 +141,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [navigate, location.pathname])
+  }, [navigate, location.pathname, t])
 
   // Show loading state while initializing auth or subscription
   if (loading || (user && subscriptionLoading)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Initializing...</div>
+        <div className="text-lg">{t('auth.initializing')}</div>
       </div>
     )
   }
