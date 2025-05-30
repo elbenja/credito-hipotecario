@@ -89,7 +89,9 @@ export default function NewMortgage() {
     try {
       const property = await fetchPropertyWithBonus(user.id, propertyId);
       const defaultName = `${property.name} ${t("amortization.mortgage_suffix", { ns: "mortgages" })}`;
-      
+      // Sync the form name with the store name, form need to be change before zustand or it resets the calcmount
+      form.setValue("name", defaultName, { shouldValidate: true });
+
       setSelectedProperty(property);
       updateDraft({
         property_id: property.id,
@@ -97,15 +99,13 @@ export default function NewMortgage() {
         name: defaultName,
       });
       
-      // Sync the form name with the store name
-      form.setValue("name", defaultName, { shouldValidate: true });
+
     } catch (error) {
       console.error("Error fetching property:", error);
     }
   };
 
 
-  
   // Add at the top of the component before any other effects
 useEffect(() => {
   // Clear ALL state on initial mount
@@ -122,28 +122,28 @@ useEffect(() => {
   }
 }, []); // Empty dependency array = only run once on mount
 
-function DebugMortgageDraft() {
-  useEffect(() => {
-    // Subscribe with a single callback function
-    const unsub = useMortgageDraftStore.subscribe((state) => {
-      // Extract the properties we want to log
-      const property = state.mortgageDraft?.property;
-      const property_id = state.mortgageDraft?.property_id;
+// function DebugMortgageDraft() {
+//   useEffect(() => {
+//     // Subscribe with a single callback function
+//     const unsub = useMortgageDraftStore.subscribe((state) => {
+//       // Extract the properties we want to log
+//       const property = state.mortgageDraft?.property;
+//       const property_id = state.mortgageDraft?.property_id;
       
-      // console.log(
-      //   "%c[MORTGAGE DRAFT STORE] property:",
-      //   "color:teal;font-weight:bold",
-      //   property,
-      //   "property_id:",
-      //   property_id
-      // );
-    });
+//       // console.log(
+//       //   "%c[MORTGAGE DRAFT STORE] property:",
+//       //   "color:teal;font-weight:bold",
+//       //   property,
+//       //   "property_id:",
+//       //   property_id
+//       // );
+//     });
     
-    return unsub;
-  }, []);
+//     return unsub;
+//   }, []);
 
-  return null;
-}
+//   return null;
+// }
 
 
   // State to track if form is being submitted
