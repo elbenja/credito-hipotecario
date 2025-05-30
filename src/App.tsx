@@ -20,7 +20,7 @@ import EditMortgage from "./pages/EditMortgage"
 
 import Test from "./pages/tests/Test"
 import TestCalculator from "./pages/tests/TestCalculator"
-import TestExtraInstallments from "./pages/tests/TestExtraInstallments"
+// import TestExtraInstallments from "./pages/tests/TestExtraInstallments"
 import ComingSoon from "./pages/account/coming-soon"
 import EarlyAccessAdmin from "./pages/admin/early-access"
 import UserManagement from "./pages/admin/user-management"
@@ -30,6 +30,7 @@ import { useEffect } from "react"
 import { useMortgageDraftStore } from "./store/mortgage/store"
 import { useExchangeRate } from "./hooks/use-exchange-rate"
 import Account from "@/pages/account/Account"
+import Courses from "@/pages/account/Courses"
 import Settings from "@/pages/account/Settings"
 import HomeRedirect from "./HomeRedirect"
 import Support from "./pages/Support"
@@ -140,6 +141,14 @@ export default function App () {
                   element={
                     <ProtectedRoute>
                       <EditMortgage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/courses"
+                  element={
+                    <ProtectedRoute>
+                      <Courses />
                     </ProtectedRoute>
                   }
                 />

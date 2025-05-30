@@ -196,7 +196,7 @@ const mainNavItems: NavItem[] = [
     title: "courses", 
     namespace: "dashboard",
     icon: CoursesIcon, 
-    href: "/",
+    href: "/courses",
     badge: "coming"
   },
 ]
