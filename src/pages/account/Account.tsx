@@ -147,7 +147,7 @@ export default function Account() {
           <Terminal className="h-4 w-4" />
          
           <AlertTitle >
-            <span className="bg-brand text-brand-foreground xl:text-lg py-0.5 px-2 rounded-md"> {t('alert.title')}</span> 
+            <span className="bg-brand text-black xl:text-lg py-0.5 px-2 rounded-md"> {t('alert.title')}</span> 
             </AlertTitle>
               <AlertDescription>
                 {t('alert.description')}
