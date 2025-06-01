@@ -20,7 +20,7 @@ export default function YouTubeCard({ url, children }: { url: string; children: 
     return (
       <Card className="cursor-pointer hover:shadow-lg transition">
         <CardContent className="p-0">
-          <img src={url} alt="Image" className="w-full h-[200px] object-cover rounded-t-md" />
+          <img src={url} alt="Image" className="w-full lg:h-[200px] object-cover rounded-t-md" />
           <div className="p-4 text-sm font-medium "> <p className="line-clamp-1"> {children}</p></div>
         </CardContent>
       </Card>
@@ -34,7 +34,7 @@ export default function YouTubeCard({ url, children }: { url: string; children: 
       <DialogTrigger asChild>
         <Card className="cursor-pointer hover:shadow-lg transition">
           <CardContent className="p-0">
-            <img src={getThumbnail(url)} alt="YouTube Thumbnail" className="w-full h-[200px] object-cover rounded-t-md" />
+            <img src={getThumbnail(url)} alt="YouTube Thumbnail" className="w-full lg:h-[200px] object-cover rounded-t-md" />
             <div className="p-4 text-sm font-medium">{children}</div>
           </CardContent>
         </Card>
