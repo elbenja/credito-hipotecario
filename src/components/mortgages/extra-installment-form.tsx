@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
 // import { Plus } from "lucide-react"
-import { addYears, subWeeks, startOfDay, isBefore, isAfter, isSameDay, subYears, lastDayOfMonth } from "date-fns"
+import { addYears, subWeeks, startOfDay, isBefore, isAfter, isSameDay, subYears, lastDayOfMonth, addMonths } from "date-fns"
 import { useTranslation } from "react-i18next"
 // import { useEffect, useMemo } from "react"
 
@@ -222,7 +222,8 @@ export function ExtraInstallmentForm({
             <MonthYearPicker
               field={field}
               form={form}
-              minDate={firstInstallmentDate}
+              // minDate={firstInstallmentDate}
+              minDate={firstInstallmentDate ? addMonths(firstInstallmentDate, 1) : undefined}
               labelKey="extra_installments_section.form.start_date"
               ns="components"
             />
