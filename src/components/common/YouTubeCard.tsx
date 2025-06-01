@@ -2,6 +2,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { useState } from "react"
 
+// Utility to check if URL is a YouTube link
+const isYouTubeUrl = (url: string) => {
+  return url.includes("youtube.com") || url.includes("youtu.be")
+}
+
 // Utility to extract thumbnail from YouTube URL
 const getThumbnail = (url: string) => {
   const videoId = new URL(url).searchParams.get("v") || url.split("/").pop()?.split("?")[0]
@@ -10,6 +15,18 @@ const getThumbnail = (url: string) => {
 
 export default function YouTubeCard({ url, children }: { url: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
+
+  if (!isYouTubeUrl(url)) {
+    return (
+      <Card className="cursor-pointer hover:shadow-lg transition">
+        <CardContent className="p-0">
+          <img src={url} alt="Image" className="w-full h-[200px] object-cover rounded-t-md" />
+          <div className="p-4 text-sm font-medium "> <p className="line-clamp-1"> {children}</p></div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   const videoId = new URL(url).searchParams.get("v") || url.split("/").pop()?.split("?")[0]
 
   return (
@@ -17,8 +34,8 @@ export default function YouTubeCard({ url, children }: { url: string; children: 
       <DialogTrigger asChild>
         <Card className="cursor-pointer hover:shadow-lg transition">
           <CardContent className="p-0">
-            <img src={getThumbnail(url)} alt="YouTube Thumbnail" className="w-full rounded-t-md" />
-      <div className="p-4 text-sm font-medium">{children}</div>
+            <img src={getThumbnail(url)} alt="YouTube Thumbnail" className="w-full h-[200px] object-cover rounded-t-md" />
+            <div className="p-4 text-sm font-medium">{children}</div>
           </CardContent>
         </Card>
       </DialogTrigger>

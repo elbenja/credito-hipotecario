@@ -29,14 +29,15 @@ export default function Courses() {
         
           <div className="flex items-center justify-between gap-4">
          
-          <YouTubeCard url="https://youtu.be/JG-jjhJxjfM?si=zMSlVp-q--3UbXZz">Crear Propiedad</YouTubeCard>
+          <YouTubeCard url="https://youtu.be/psZ37ue7_04?si=pc5nAAqFiLkBg_9V">Crear Propiedad</YouTubeCard>
+          <YouTubeCard url="https://framerusercontent.com/images/60VzkfO1FfyY0Qk6kdFNYZOzlk.jpg"> <small className="xs"> Pronto:</small> Crear Hipotecas</YouTubeCard>
 
-             <YouTubeCard url="https://youtu.be/JG-jjhJxjfM?si=zMSlVp-q--3UbXZz">Crear Amortizaciones y Compra de deuda</YouTubeCard>
+             <YouTubeCard url="https://framerusercontent.com/images/QMrgq7wtnstgN2rTCSktS120xh4.jpg"> <small className="xs"> Pronto:</small>Crear Amortizaciones y Compra de deuda</YouTubeCard>
 
 
-             <YouTubeCard url="https://youtu.be/JG-jjhJxjfM?si=zMSlVp-q--3UbXZz">Crear Hipotecas</YouTubeCard>
+         
 
-             <YouTubeCard url="https://youtu.be/JG-jjhJxjfM?si=zMSlVp-q--3UbXZz">Escenarios Favoritos y Captura</YouTubeCard>
+             <YouTubeCard url="https://framerusercontent.com/images/bzkYpstKh46CY3UqJhaNxFxXgM.jpg"> <small className="xs"> Pronto:</small> Escenarios Favoritos y Captura</YouTubeCard>
            
 
            
