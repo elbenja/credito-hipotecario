@@ -478,7 +478,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
 
                   
                 </Form>
-              <p className="text-xs text-muted-foreground"> Zustand v May 27 5:04Pm</p>
+              {/* <p className="text-xs text-muted-foreground"> Zustand v May 27 5:04Pm</p> */}
  
             </div>
           </div>

@@ -137,11 +137,33 @@ export function MortgageDetailsForm({
                           Number(((parseFloat(form.watch("down_payment").replace(/[^0-9.]/g, "") || "0") / selectedProperty.price_cost) * 100).toFixed(2)) : 
                           ""}
                         onFocus={handleInputFocus}
+                        // onChange={(e) => {
+                        //   const value = e.target.value
+                        //   // Allow empty input
+                        //   if (value === "" || !selectedProperty || !selectedProperty.price_cost) {
+                        //     return
+                        //   }
+                          
+                        //   // Parse the percentage input and calculate down payment
+                        //   const percentage = parseFloat(value)
+                        //   if (!isNaN(percentage)) {
+                        //     const downPayment = (percentage / 100 * selectedProperty.price_cost).toFixed(2)
+                        //     form.setValue("down_payment", downPayment, { shouldValidate: true })
+                        //   }
+                        // }}
+// ... existing code ...
                         onChange={(e) => {
                           const value = e.target.value
-                          // Allow empty input
-                          if (value === "" || !selectedProperty || !selectedProperty.price_cost) {
-                            return
+                          
+                          // Check for valid property data first
+                          if (!selectedProperty || !selectedProperty.price_cost) {
+                            return;
+                          }
+                          
+                          // Handle empty input - set down payment to "0"
+                          if (value === "") {
+                            form.setValue("down_payment", "0", { shouldValidate: true })
+                            return;
                           }
                           
                           // Parse the percentage input and calculate down payment
@@ -151,6 +173,7 @@ export function MortgageDetailsForm({
                             form.setValue("down_payment", downPayment, { shouldValidate: true })
                           }
                         }}
+                        
                         onBlur={(e) => {
                           // Check for valid property data
                           if (!selectedProperty || !selectedProperty.price_cost) {
