@@ -30,7 +30,7 @@ serve(async (req) => {
 
     // Create a Supabase client with the service role key
     const supabaseAdmin = createClient(
-      'https://ojhbihizejrsbintroie.supabase.co',
+      Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SERVICE_ROLE_KEY') ?? '',
       {
         auth: {
