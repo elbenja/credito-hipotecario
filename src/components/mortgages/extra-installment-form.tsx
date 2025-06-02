@@ -28,6 +28,7 @@ import { cn, normalizeDate } from "@/utils/utils"
 import { CurrencyInput } from "@/components/ui/currency-input"
 
 import { z } from "zod"
+import { useMortgageDraftStore } from "@/store/mortgage/store"
 // import { formatCurrency, formatDate } from "@/utils/utils"
 
 // Create a function to generate the schema with dynamic validation based on firstInstallmentDate
@@ -59,7 +60,6 @@ interface ExtraInstallmentFormProps {
   loanAmount: number
   currency: "USD" | "PEN"
   lastExtraInstallmentDate?: Date
-  firstInstallmentDate?: Date
 }
 
 export function ExtraInstallmentForm({ 
@@ -67,11 +67,12 @@ export function ExtraInstallmentForm({
   isLoading, 
   loanAmount, 
   currency,
-  lastExtraInstallmentDate,
-  firstInstallmentDate 
+  lastExtraInstallmentDate
 }: ExtraInstallmentFormProps) {
   const { t } = useTranslation(['components'])
-
+  
+  const mortgageDraft = useMortgageDraftStore((state) => state.mortgageDraft)
+  const firstInstallmentDate = mortgageDraft?.first_installment_date
   // Get the initial date based on priority - prefer a date on or after firstInstallmentDate
   const getInitialDate = () => {
     // Start with a base date (today or last installment date)

@@ -593,7 +593,6 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                           currency={property.currency}
                             loanAmount={calculatedLoanAmount}
                           onInstallmentsChange={handleDataChange}
-                            firstInstallmentDate={mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined}
                           />
                         </div>
                       </>
@@ -632,7 +631,6 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                           currency={property.currency}
                             loanAmount={calculatedLoanAmount}
                           onInstallmentsChange={handleDataChange}
-                            firstInstallmentDate={mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined}
                           />
                         </div>
                       </>
@@ -670,7 +668,6 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                           mortgageId={id || ""}
                           onSuccess={handleDataChange}
                             className="space-y-4"
-                            firstInstallmentDate={mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined}
                           />
                         </div>
                       </>

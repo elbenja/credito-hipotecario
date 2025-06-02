@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next"
 import { useQueryClient } from "@tanstack/react-query"
 import { z } from "zod"
 import { Controller } from "react-hook-form"
+import { useMortgageDraftStore } from "@/store/mortgage/store"
 
 import {
   Form,
@@ -40,7 +41,6 @@ interface NewRateFormProps {
   mortgageId: string
   onSuccess?: () => void
   className?: string
-  firstInstallmentDate?: Date
 }
 
 interface RefinancingOption {
@@ -53,14 +53,17 @@ interface RefinancingOption {
 export function NewRateForm({
   mortgageId,
   onSuccess,
-  className,
-  firstInstallmentDate
+  className
 }: NewRateFormProps) {
   const { toast } = useToast()
   const { t } = useTranslation(['components'])
   const [refinancingOptions, setRefinancingOptions] = useState<RefinancingOption[]>([])
   const queryClient = useQueryClient()
   
+  // Get firstInstallmentDate from Zustand store
+  const mortgageDraft = useMortgageDraftStore((state) => state.mortgageDraft)
+  const firstInstallmentDate = mortgageDraft?.first_installment_date
+
   useEffect(() => {
     if (!mortgageId) return
     
@@ -142,77 +145,37 @@ export function NewRateForm({
 
   // Get the date boundaries
   const lastWeek = startOfDay(subWeeks(new Date(), 1));
-  const thirtyYearsFromNow = startOfDay(addYears(new Date(), 30));
 
   // Get the initial date based on priority
-  // const getInitialDate = () => {
-  //   // 1. Last chronological date from refinancing options
-  //   if (refinancingOptions.length > 0) {
-  //     try {
-  //       const lastDate = refinancingOptions
-  //         .map(option => createLocalDate(option.effective_date))
-  //         .filter(date => isValid(date))
-  //         .sort((a, b) => b.getTime() - a.getTime())[0];
+  const getInitialDate = () => {
+    // 1. Last chronological date from refinancing options
+    if (refinancingOptions.length > 0) {
+      try {
+        const lastDate = refinancingOptions
+          .map(option => createLocalDate(option.effective_date))
+          .filter(date => isValid(date))
+          .sort((a, b) => b.getTime() - a.getTime())[0];
         
-  //       if (lastDate && isValid(lastDate)) {
-  //         return lastDate;
-  //       }
-  //     } catch (error) {
-  //       console.error("Error parsing dates from refinancing options:", error);
-  //     }
-  //   }
-    
-  //   // 2. First installment date if available
-  //   if (firstInstallmentDate && isValid(firstInstallmentDate)) {
-  //     try {
-  //       const date = createLocalDate(firstInstallmentDate.toISOString().split('T')[0]);
-  //       if (isValid(date)) {
-  //         return date;
-  //       }
-  //     } catch (error) {
-  //       console.error("Error using firstInstallmentDate:", error);
-  //     }
-  //   }
-    
-  //   // 3. Today's date as fallback
-  //   const today = new Date();
-  //   return createLocalDate(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`);
-  // };
-// Get the initial date based on priority
-const getInitialDate = () => {
-  // 1. Last chronological date from refinancing options
-  if (refinancingOptions.length > 0) {
-    try {
-      const lastDate = refinancingOptions
-        .map(option => createLocalDate(option.effective_date))
-        .filter(date => isValid(date))
-        .sort((a, b) => b.getTime() - a.getTime())[0];
-      
-      if (lastDate && isValid(lastDate)) {
-        return lastDate;
+        if (lastDate && isValid(lastDate)) {
+          return lastDate;
+        }
+      } catch (error) {
+        console.error("Error processing refinancing options:", error);
       }
-    } catch (error) {
-      console.error("Error parsing dates from refinancing options:", error);
     }
-  }
-  
-  // 2. First installment date + 1 month if available (to respect minDate logic)
-  if (firstInstallmentDate && isValid(firstInstallmentDate)) {
-    try {
-      const nextMonth = addMonths(firstInstallmentDate, 1);
-      const date = createLocalDate(nextMonth.toISOString().split('T')[0]);
-      if (isValid(date)) {
-        return date;
-      }
-    } catch (error) {
-      console.error("Error using firstInstallmentDate:", error);
+    
+    // 2. First installment date + 1 month (even if it's in the past)
+    if (firstInstallmentDate && isValid(firstInstallmentDate)) {
+      const firstInstallmentPlusMonth = addMonths(firstInstallmentDate, 1);
+      return firstInstallmentPlusMonth;
     }
-  }
-  
-  // 3. Today's date as fallback
-  const today = new Date();
-  return createLocalDate(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`);
-};
+    
+    // 3. Tomorrow as fallback
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const fallbackDate = createLocalDate(`${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`);
+    return fallbackDate;
+  };
 
   const form = useForm<NewRateFormValues>({
     resolver: zodResolver(newRateSchema),
@@ -393,16 +356,27 @@ const getInitialDate = () => {
                       <MonthYearPicker
                         field={field}
                         form={form}
-                         // minDate={firstInstallmentDate}
-                         minDate={firstInstallmentDate ? addMonths(firstInstallmentDate, 1) : undefined}
-                        maxDate={thirtyYearsFromNow}
+                        minDate={(() => {
+                          // Historical dates allowed: minimum is first_installment_date + 1 month
+                          if (firstInstallmentDate && isValid(firstInstallmentDate)) {
+                            return addMonths(firstInstallmentDate, 1);
+                          }
+                          // Fallback: next month from today
+                          return addMonths(new Date(), 1);
+                        })()}
+                        maxDate={(() => {
+                          // Maximum: 25 years from first_installment_date
+                          if (firstInstallmentDate && isValid(firstInstallmentDate)) {
+                            return addYears(firstInstallmentDate, 25);
+                          }
+                          // Fallback: 25 years from today
+                          return addYears(new Date(), 25);
+                        })()}
                         labelKey="payment_scenarios.new_rate_form.start_date"
                         ns="components"
                       />
                     )}
                   />
-
-{/* <p className="text-xs text-muted-foreground">{firstInstallmentDate?.toISOString()}</p> */}
 
                   <Button 
                     type="submit"

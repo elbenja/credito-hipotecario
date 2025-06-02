@@ -35,15 +35,13 @@ interface ExtraInstallmentsSectionProps {
   currency: "USD" | "PEN"
   loanAmount: number
   onInstallmentsChange: () => void
-  firstInstallmentDate?: Date
 }
 
 export function ExtraInstallmentsSection({
   mortgageId,
   currency,
   loanAmount,
-  onInstallmentsChange,
-  firstInstallmentDate
+  onInstallmentsChange
 }: ExtraInstallmentsSectionProps) {
   const { toast } = useToast()
   const { t } = useTranslation(['components'])
@@ -51,17 +49,16 @@ export function ExtraInstallmentsSection({
   const queryClient = useQueryClient()
 
   // Debug information for firstInstallmentDate
-  useEffect(() => {
-    if (firstInstallmentDate) {
-
-      
-      // Try to normalize the date to see if that helps
-      const normalized = normalizeDate(firstInstallmentDate);
-
-    } else {
+  // useEffect(() => {
+  //   if (firstInstallmentDate) {
      
-    }
-  }, [firstInstallmentDate]);
+  //     // Try to normalize the date to see if that helps
+  //     const normalized = normalizeDate(firstInstallmentDate);
+
+  //   } else {
+     
+  //   }
+  // }, [firstInstallmentDate]);
 
   // Use React Query for installments
   const { data: installments = [] } = useQuery({
@@ -89,9 +86,7 @@ export function ExtraInstallmentsSection({
     try {
       setIsLoading(true)
       
-      // Log the received date from the form component
-      // console.log('Extra installments section - Received date from form:', values.start_date);
-      
+      // Log the received date from the form componen 
       // IMPROVED APPROACH: Create a date string in YYYY-MM-DD format
       // 1. Extract components from the date object
       const dateObj = values.start_date;
@@ -102,11 +97,7 @@ export function ExtraInstallmentsSection({
       // 2. Create a properly formatted YYYY-MM-DD string
       const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       
-      // // Log for debugging
-      // console.log('Extra installment submission:');
-      // console.log('- Original date object:', dateObj);
-      // console.log('- Date components:', { year, month, day });
-      // console.log('- Formatted date string:', dateString);
+
       
       const installmentData = {
         mortgage_id: mortgageId,
@@ -211,8 +202,6 @@ export function ExtraInstallmentsSection({
             isLoading={isLoading}
             loanAmount={loanAmount}
             currency={currency}
-            // Make sure we're passing a normalized date to avoid timezone issues
-            firstInstallmentDate={firstInstallmentDate ? normalizeDate(firstInstallmentDate) : undefined}
           />
         </PopoverContent>
       </Popover>
