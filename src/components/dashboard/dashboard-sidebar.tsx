@@ -371,7 +371,7 @@ export function DashboardSidebar() {
                   <DropdownMenuTrigger asChild>
                     <SidebarMenuButton className="w-full justify-between">
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
+                        <Settings className="h-4 w-4" />
                         <span className="truncate">{user?.email}</span>
                       </div>
                       <ChevronsUpDown className="h-4 w-4" />
