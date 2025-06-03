@@ -134,7 +134,7 @@ export default function Account() {
               <div className="  flex justify-center items-center gap-2">
                 <div className="flex-1 justify-start  font-medium  leading-none">{t('no_plan_copy')}</div>
               </div>
-              <div className="size- flex justify-start items-center gap-4">
+              <div className="size- flex justify-start items-center gap-5">
                 <div className="text-center justify-start text-base font-medium leading-none">{t('code_description')}</div>
                 <ButtonToClipboard className="bg-brand text-black px-4 py-2 rounded-md">
                   {t('code_name')}
