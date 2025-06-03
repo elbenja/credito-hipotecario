@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from "@/integrations/supabase/client"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import {
@@ -25,9 +26,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Download, Search, UserPlus, Mail, UserCog, Trash2, CreditCard, EllipsisVertical } from "lucide-react"
+import { Download, Search, UserPlus, Mail, UserCog, Trash2, CreditCard, EllipsisVertical, ChevronUp, ChevronDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -41,7 +48,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { formatDateTime } from "@/utils/date-utils"
+import { UserTabs } from "@/components/admin/user-tabs"
 import { mapSupabaseErrorToTranslationKey } from "@/utils/supabase-error-mapper"
 
 type User = {
@@ -58,23 +65,176 @@ type User = {
   mortgages_count?: number
 }
 
+type SortField = 'email' | 'role' | 'created_at' | 'last_sign_in_at' | 'plan' | 'mortgages_count'
+type SortDirection = 'asc' | 'desc'
+
+// Custom hooks using React Query
+function useUsers() {
+  return useQuery({
+    queryKey: ['admin-users'],
+    queryFn: async (): Promise<User[]> => {
+      try {
+        const { data, error } = await supabase.rpc('get_all_users')
+        
+        if (!error && data) {
+          const userIds = data.map((user: User) => user.id);
+          
+          // Fetch subscriptions
+          const { data: subscriptions, error: subscriptionError } = await supabase
+            .from('user_subscriptions')
+            .select('id, user_id, plan_id, plan:plan_id(name)')
+            .in('user_id', userIds)
+            .eq('status', 'active');
+            
+          if (subscriptionError) {
+            console.error("Error fetching subscriptions:", subscriptionError);
+          }
+          
+          // Fetch mortgage counts
+          const { data: mortgageCounts, error: mortgageError } = await supabase
+            .rpc('get_mortgage_counts_for_admins');
+            
+          if (mortgageError) {
+            console.error("Error fetching mortgage counts:", mortgageError);
+          }
+          
+          return data.map((user: User) => {
+            const userSubscription = subscriptions?.find(s => s.user_id === user.id);
+            const userMortgageCount = mortgageCounts?.find((m: { user_id: string, count: number }) => m.user_id === user.id);
+            
+            return {
+              ...user,
+              subscription: userSubscription ? {
+                id: userSubscription.id,
+                plan_id: userSubscription.plan_id,
+                plan_name: (userSubscription.plan as any)?.name
+              } : null,
+              mortgages_count: userMortgageCount ? userMortgageCount.count : 0
+            };
+          });
+        }
+        throw new Error('Failed to fetch users')
+      } catch (error) {
+        console.error("Error fetching users:", error)
+        throw error
+      }
+    },
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
+
+function useCreateUser() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async ({ email, role }: { email: string, role: string }) => {
+      try {
+        const { data, error } = await supabase.functions.invoke('create-user', {
+          body: { email, role }
+        })
+        if (error) throw error
+        return data
+      } catch (edgeFunctionError) {
+        // Fallback method
+        const { data, error } = await supabase.auth.resetPasswordForEmail(
+          email,
+          { redirectTo: `${window.location.origin}/update-password` }
+        );
+        if (error) throw error;
+        return data;
+      }
+    },
+    onSuccess: () => {
+      toast.success("User created successfully!")
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to create user: ${error.message || "Unknown error"}`)
+    }
+  })
+}
+
+function useDeleteUser() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      try {
+        const { data, error } = await supabase.functions.invoke('delete-user', {
+          body: { userId }
+        })
+        if (error) throw error
+        return data
+      } catch (edgeFunctionError) {
+        // Fallback: delete from profiles table
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', userId)
+        if (profileError) throw profileError
+        return null
+      }
+    },
+    onSuccess: () => {
+      toast.success("User deleted successfully")
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete user: ${error.message || "Unknown error"}`)
+    }
+  })
+}
+
+function useSendPasswordReset() {
+  const { t } = useTranslation(['admin'])
+  
+  return useMutation({
+    mutationFn: async (email: string) => {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      })
+      if (error) throw error
+    },
+    onSuccess: (_, email) => {
+      toast.success(`Password reset email sent to ${email}`)
+    },
+    onError: (error: any, email) => {
+      const errorKey = mapSupabaseErrorToTranslationKey(error)
+      let translatedError: string
+      try {
+        translatedError = t(errorKey as any)
+      } catch {
+        translatedError = error.message || "Unknown error"
+      }
+      toast.error(`Failed to send reset email: ${translatedError}`)
+    }
+  })
+}
+
 export default function UserManagement() {
   const { t } = useTranslation(["admin", "global"])
   const navigate = useNavigate()
-  const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
+  
+  // State for filters and UI
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("all")
+  const [activeTab, setActiveTab] = useState("all")
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
   const [newUserEmail, setNewUserEmail] = useState("")
   const [newUserRole, setNewUserRole] = useState("user")
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [creatingUser, setCreatingUser] = useState(false)
-  const [sendingResetEmail, setSendingResetEmail] = useState<{[key: string]: boolean}>({})
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
   const [subscriptionPlans, setSubscriptionPlans] = useState<PlanWithFeatures[]>([])
   const [changingSubscription, setChangingSubscription] = useState<{[key: string]: boolean}>({})
+  const [sortField, setSortField] = useState<SortField>('email')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+
+  // React Query hooks
+  const { data: users = [], isLoading, error } = useUsers()
+  const createUserMutation = useCreateUser()
+  const deleteUserMutation = useDeleteUser()
+  const sendPasswordResetMutation = useSendPasswordReset()
 
   useEffect(() => {
     checkAdminStatus()
@@ -85,7 +245,7 @@ export default function UserManagement() {
       const { data: { user }, error } = await supabase.auth.getUser()
       
       if (error || !user) {
-        toast.error(t('admin:messages.please_login'))
+        toast.error(t('messages.please_login'))
         navigate('/')
         return
       }
@@ -97,25 +257,22 @@ export default function UserManagement() {
         .single()
 
       if (profileError) {
-        toast.error(t('admin:messages.error_fetching_profile'))
+        toast.error(t('messages.error_fetching_profile'))
         navigate('/')
         return
       }
 
       if (!profile.is_admin) {
-        toast.error(t('admin:messages.admin_only'))
+        toast.error(t('messages.admin_only'))
         navigate('/')
         return
       }
 
       setIsAdmin(true)
-      fetchUsers()
       fetchSubscriptionPlans()
     } catch (error) {
-      toast.error(t('admin:messages.error_checking_admin'))
+      toast.error(t('messages.error_checking_admin'))
       navigate('/')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -136,242 +293,6 @@ export default function UserManagement() {
     } catch (error) {
       console.error("Error fetching subscription plans:", error)
       toast.error("Failed to fetch subscription plans")
-    }
-  }
-
-  async function fetchUsers() {
-    try {
-      // First try to get all users from auth.users using the RPC function
-      try {
-        const { data, error } = await supabase.rpc('get_all_users')
-        
-        if (!error && data) {
-          // Fetch subscription data for all users
-          const userIds = data.map((user: User) => user.id);
-          const { data: subscriptions, error: subscriptionError } = await supabase
-            .from('user_subscriptions')
-            .select('id, user_id, plan_id, plan:plan_id(name)')
-            .in('user_id', userIds)
-            .eq('status', 'active');
-            
-          if (subscriptionError) {
-            console.error("Error fetching subscriptions:", subscriptionError);
-          }
-          
-          // Fetch mortgage counts for each user using the admin RPC function
-          const { data: mortgageCounts, error: mortgageError } = await supabase
-            .rpc('get_mortgage_counts_for_admins');
-            
-          if (mortgageError) {
-            console.error("Error fetching mortgage counts:", mortgageError);
-          }
-          
-          // Map subscriptions and mortgage counts to users
-          const usersWithData = data.map((user: User) => {
-            const userSubscription = subscriptions?.find(s => s.user_id === user.id);
-            const userMortgageCount = mortgageCounts?.find((m: { user_id: string, count: number }) => m.user_id === user.id);
-            
-            return {
-              ...user,
-              subscription: userSubscription ? {
-                id: userSubscription.id,
-                plan_id: userSubscription.plan_id,
-                plan_name: userSubscription.plan?.name
-              } : null,
-              mortgages_count: userMortgageCount ? userMortgageCount.count : 0
-            };
-          });
-          
-          setUsers(usersWithData);
-          return;
-        }
-        console.error("RPC error:", error)
-      } catch (rpcError) {
-        console.error("RPC failed:", rpcError)
-      }
-      
-      // If RPC fails, fall back to querying profiles table
-      toast.info("Using alternative method to fetch users...")
-      
-      // Get users from profiles table
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, email, is_admin, created_at')
-      
-      if (profileError) {
-        throw profileError
-      }
-      
-      // Get mortgage counts using the admin RPC function
-      const { data: profileMortgageCounts, error: mortgageError } = await supabase
-        .rpc('get_mortgage_counts_for_admins');
-      
-      if (mortgageError) {
-        console.error("Error fetching mortgage counts:", mortgageError);
-      }
-      
-      // Transform the data to match our User type
-      const transformedUsers = (profiles || []).map(profile => {
-        const profileMortgageCount = profileMortgageCounts?.find((m: { user_id: string, count: number }) => m.user_id === profile.id);
-        
-        return {
-          id: profile.id,
-          email: profile.email || 'No email',
-          role: profile.is_admin ? 'admin' : 'user',
-          created_at: profile.created_at,
-          last_sign_in_at: null, // We don't have this info in profiles table
-          subscription: null,
-          mortgages_count: profileMortgageCount ? profileMortgageCount.count : 0
-        };
-      });
-      
-      setUsers(transformedUsers)
-    } catch (error) {
-      console.error("Error fetching users:", error)
-      toast.error("Failed to fetch users")
-    }
-  }
-
-  async function createUser() {
-    if (!newUserEmail) {
-      toast.error("Email is required")
-      return
-    }
-
-    setCreatingUser(true)
-    try {
-      try {
-        // Try using admin API via Supabase Edge Function
-        const { data, error } = await supabase.functions.invoke('create-user', {
-          body: { 
-            email: newUserEmail, 
-            role: newUserRole 
-          }
-        })
-
-        if (error) throw error
-
-        if (data?.user?.id) {
-          toast.success("User created successfully!")
-          // Send password reset email
-          await sendPasswordResetEmail(newUserEmail)
-          setNewUserEmail("")
-          setNewUserRole("user")
-          setCreateDialogOpen(false)
-          fetchUsers() // Refresh user list
-          return
-        }
-      } catch (edgeFunctionError) {
-        console.error("Edge function error:", edgeFunctionError)
-        
-        // If Edge Function fails, fall back to using resetPasswordForEmail
-        toast.info("Trying alternative method to create user...")
-        
-        // Use resetPasswordForEmail, which will create the user if it doesn't exist
-        // and send a password reset email
-        const { data, error } = await supabase.auth.resetPasswordForEmail(
-          newUserEmail,
-          {
-            redirectTo: `${window.location.origin}/update-password`,
-          }
-        );
-        
-        if (error) throw error;
-        
-        toast.success("User invited successfully! They will receive an email to set their password.");
-        
-        // Note: with this method we can't set admin rights directly
-        // Show notice about this limitation
-        if (newUserRole === 'admin') {
-          toast.info("Note: You'll need to update this user to admin status after they sign in.");
-        }
-        
-        setNewUserEmail("");
-        setNewUserRole("user");
-        setCreateDialogOpen(false);
-        fetchUsers(); // Refresh user list
-      }
-    } catch (error: any) {
-      toast.error(`Failed to create user: ${error.message || "Unknown error"}`)
-      console.error("User creation error:", error)
-    } finally {
-      setCreatingUser(false)
-    }
-  }
-
-  async function sendPasswordResetEmail(email: string) {
-    try {
-      setSendingResetEmail({...sendingResetEmail, [email]: true})
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/update-password`,
-      })
-
-      if (error) throw error
-      
-      toast.success(`Password reset email sent to ${email}`)
-    } catch (error: any) {
-      const errorKey = mapSupabaseErrorToTranslationKey(error)
-      let translatedError: string
-      try {
-        translatedError = t(errorKey as any)
-      } catch {
-        translatedError = error.message || "Unknown error"
-      }
-      
-      toast.error(`Failed to send reset email: ${translatedError}`)
-    } finally {
-      setSendingResetEmail({...sendingResetEmail, [email]: false})
-    }
-  }
-
-  async function deleteUser(user: User) {
-    setIsDeleting(true)
-    try {
-      // Try using admin API via Supabase Edge Function first
-      try {
-        console.log("Attempting to delete user via Edge Function:", user.id)
-        const { data, error } = await supabase.functions.invoke('delete-user', {
-          body: { userId: user.id }
-        })
-
-        if (error) throw error
-
-        toast.success(`User ${user.email} deleted successfully`)
-        fetchUsers() // Refresh the user list
-        setUserToDelete(null) // Close the modal
-        return
-      } catch (edgeFunctionError) {
-        console.error("Edge function error:", edgeFunctionError)
-        
-        // If Edge Function fails, display a more informative error
-        toast.error(`Failed to delete user via Edge Function. This is likely because the user exists in the auth system but can't be deleted through the application interface.`)
-        toast.info(`Please use the Supabase dashboard to delete this user: ${user.email}`)
-        
-        // We'll still try to delete from profiles table to keep things clean
-        try {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .delete()
-            .eq('id', user.id)
-
-          if (profileError) {
-            console.error("Profile deletion error:", profileError)
-            toast.error(`Also failed to delete user profile: ${profileError.message}`)
-          } else {
-            toast.info(`User profile data was removed, but the auth account remains.`)
-          }
-        } catch (profileDeleteError) {
-          console.error("Profile deletion error:", profileDeleteError)
-        }
-        
-        setUserToDelete(null) // Close the modal regardless
-      }
-    } catch (error: any) {
-      toast.error(`Failed to delete user: ${error.message || "Unknown error"}`)
-      console.error("User deletion error:", error)
-    } finally {
-      setIsDeleting(false)
     }
   }
 
@@ -426,7 +347,7 @@ export default function UserManagement() {
       }
       
       toast.success('Subscription plan updated successfully');
-      fetchUsers(); // Refresh the user list
+      // Use refetch from React Query instead of manual refresh
     } catch (error: any) {
       console.error('Error changing subscription plan:', error);
       toast.error(`Failed to update subscription: ${error.message || "Unknown error"}`);
@@ -435,91 +356,219 @@ export default function UserManagement() {
     }
   }
 
+  // Handle sorting
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  // Sort function
+  const sortUsers = (users: User[]) => {
+    return [...users].sort((a, b) => {
+      let aValue: any
+      let bValue: any
+
+      switch (sortField) {
+        case 'email':
+          aValue = a.email.toLowerCase()
+          bValue = b.email.toLowerCase()
+          break
+        case 'role':
+          aValue = a.role
+          bValue = b.role
+          break
+        case 'created_at':
+          aValue = new Date(a.created_at)
+          bValue = new Date(b.created_at)
+          break
+        case 'last_sign_in_at':
+          aValue = a.last_sign_in_at ? new Date(a.last_sign_in_at) : new Date(0)
+          bValue = b.last_sign_in_at ? new Date(b.last_sign_in_at) : new Date(0)
+          break
+        case 'plan':
+          aValue = a.subscription?.plan_name?.toLowerCase() || ''
+          bValue = b.subscription?.plan_name?.toLowerCase() || ''
+          break
+        case 'mortgages_count':
+          aValue = a.mortgages_count || 0
+          bValue = b.mortgages_count || 0
+          break
+        default:
+          return 0
+      }
+
+      if (aValue < bValue) {
+        return sortDirection === 'asc' ? -1 : 1
+      }
+      if (aValue > bValue) {
+        return sortDirection === 'asc' ? 1 : -1
+      }
+      return 0
+    })
+  }
+
+  // Filter users based on active tab, search, and role
+  const filteredUsers = sortUsers(users.filter((user: User) => {
+    const matchesSearch = user.email.toLowerCase().includes(search.toLowerCase())
+    const matchesRole = roleFilter === "all" || user.role === roleFilter
+    
+    // Tab filtering
+    let matchesTab = true
+    if (activeTab === 'personal') {
+      matchesTab = user.subscription?.plan_name?.toLowerCase() === 'personal'
+    } else if (activeTab === 'profesional') {
+      matchesTab = user.subscription?.plan_name?.toLowerCase() === 'profesional'
+    } else if (activeTab === 'inversionista') {
+      matchesTab = user.subscription?.plan_name?.toLowerCase() === 'inversionista'
+    } else if (activeTab === 'none') {
+      matchesTab = !user.subscription
+    }
+    
+    return matchesSearch && matchesRole && matchesTab
+  }))
+
+  const handleCreateUser = async () => {
+    if (!newUserEmail) {
+      toast.error("Email is required")
+      return
+    }
+
+    createUserMutation.mutate(
+      { email: newUserEmail, role: newUserRole },
+      {
+        onSuccess: () => {
+          setNewUserEmail("")
+          setNewUserRole("user")
+          setCreateDialogOpen(false)
+        }
+      }
+    )
+  }
+
+  const handleDeleteUser = (user: User) => {
+    deleteUserMutation.mutate(user.id, {
+      onSuccess: () => {
+        setUserToDelete(null)
+      }
+    })
+  }
+
   // If still checking admin status or not an admin, show loading
   if (isAdmin === null || !isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg">{t("ui.loading")}...</p>
+        <p className="text-lg">{t("ui.loading", { ns: "global" })}...</p>
       </div>
     )
   }
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch = user.email
-      .toLowerCase()
-      .includes(search.toLowerCase())
-    const matchesRole =
-      roleFilter === "all" || user.role === roleFilter
-    return matchesSearch && matchesRole
-  })
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-lg">{t("loading")}...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-lg text-destructive">Error loading users</p>
+      </div>
+    )
+  }
 
   return (
     <DashboardLayout
       header={{
-        title: <h1 className="text-3xl font-bold">{t("admin:user_management")}</h1>,
+        title: <h1 className="text-xl font-bold">{t("user_management")}</h1>,
       }}
     >
       <div className="container mx-auto py-4 px-2 sm:py-10 sm:px-10">
-        <div className="mb-8 flex items-center justify-between">
+        {/* <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">{t("admin:user_management")}  
+            <h1 className="text-xl font-bold">{t("user_management")}  
             <span className="text-sm"> {filteredUsers.length}</span></h1>
           </div>
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                {t("admin:create_user")}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t("admin:create_new_user")}</DialogTitle>
-                <DialogDescription>
-                  {t("admin:create_user_description")}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">{t("admin:email")}</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newUserEmail}
-                    onChange={(e) => setNewUserEmail(e.target.value)}
-                    placeholder="user@example.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">{t("admin:role")}</Label>
-                  <Select value={newUserRole} onValueChange={setNewUserRole}>
-                    <SelectTrigger id="role">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user">{t("admin:user")}</SelectItem>
-                      <SelectItem value="admin">{t("admin:admin")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                  {t("admin:cancel")}
-                </Button>
-                <Button onClick={createUser} disabled={creatingUser || !newUserEmail}>
-                  {creatingUser ? t("admin:creating") : t("admin:create")}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+     
+        </div> */}
+
+        {/* Tab Filtering */}
+
+
+  <div className="w-full self-stretch inline-flex justify-between items-start">
+    <div className="size- flex justify-start items-center gap-3">
+          <UserTabs 
+                users={users} 
+                activeTab={activeTab} 
+                onTabChange={setActiveTab} 
+              />
+    </div>
+        {/* button Add user */}
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        {t("create_user")}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{t("create_new_user")}</DialogTitle>
+                        <DialogDescription>
+                          {t("create_user_description")}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="email">{t("email")}</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={newUserEmail}
+                            onChange={(e) => setNewUserEmail(e.target.value)}
+                            placeholder="user@example.com"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="role">{t("role")}</Label>
+                          <Select value={newUserRole} onValueChange={setNewUserRole}>
+                            <SelectTrigger id="role">
+                              <SelectValue placeholder="Select role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="user">{t("user")}</SelectItem>
+                              <SelectItem value="admin">{t("admin")}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+                          {t("cancel")}
+                        </Button>
+                        <Button 
+                          onClick={handleCreateUser} 
+                          disabled={Boolean(createUserMutation.isPending) || !newUserEmail}
+                        >
+                          {createUserMutation.isPending ? t("creating") : t("create")}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+  </div>
+
+
 
         <div className="mb-6 flex gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder={t("admin:search_by_email")}
+              placeholder={t("search_by_email")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -530,12 +579,12 @@ export default function UserManagement() {
             onValueChange={(value) => setRoleFilter(value)}
           >
             <SelectTrigger className="w-40">
-              <SelectValue placeholder={t("admin:filter_by_role")} />
+              <SelectValue placeholder={t("filter_by_role")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t("admin:all")}</SelectItem>
-              <SelectItem value="user">{t("admin:user")}</SelectItem>
-              <SelectItem value="admin">{t("admin:admin")}</SelectItem>
+              <SelectItem value="all">{t("all")}</SelectItem>
+              <SelectItem value="user">{t("user")}</SelectItem>
+              <SelectItem value="admin">{t("admin")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -544,46 +593,126 @@ export default function UserManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("admin:email")}</TableHead>
-                <TableHead className="hidden sm:table-cell">{t("admin:role")}</TableHead>
-                <TableHead>{t("admin:created_at")}</TableHead>
-                <TableHead className="hidden sm:table-cell">{t("admin:last_sign_in")}</TableHead>
-                <TableHead className="hidden md:table-cell">Plan</TableHead>
-                <TableHead className="hidden md:table-cell">{t("admin:mortgages")}</TableHead>
-                <TableHead>{t("admin:actions")}</TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('email')}
+                  >
+                    {t("email")}
+                    {sortField === 'email' && (
+                      sortDirection === 'asc' ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
+                    )}
+                  </Button>
+                </TableHead>
+                <TableHead className="hidden sm:table-cell">
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('role')}
+                  >
+                    {t("role")}
+                    {sortField === 'role' && (
+                      sortDirection === 'asc' ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
+                    )}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('created_at')}
+                  >
+                    {t("created_at")}
+                    {sortField === 'created_at' && (
+                      sortDirection === 'asc' ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
+                    )}
+                  </Button>
+                </TableHead>
+                <TableHead className="hidden sm:table-cell">
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('last_sign_in_at')}
+                  >
+                    {t("last_sign_in")}
+                    {sortField === 'last_sign_in_at' && (
+                      sortDirection === 'asc' ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
+                    )}
+                  </Button>
+                </TableHead>
+                <TableHead className="hidden md:table-cell">
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('plan')}
+                  >
+                    Plan
+                    {sortField === 'plan' && (
+                      sortDirection === 'asc' ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
+                    )}
+                  </Button>
+                </TableHead>
+                <TableHead className="hidden md:table-cell">
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('mortgages_count')}
+                  >
+                    Mortgages
+                    {sortField === 'mortgages_count' && (
+                      sortDirection === 'asc' ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
+                    )}
+                  </Button>
+                </TableHead>
+                <TableHead>{t("actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">
-                    {t("admin:loading")}...
-                  </TableCell>
-                </TableRow>
-              ) : filteredUsers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center">
-                    {t("admin:no_users_found")}
+                  <TableCell colSpan={7} className="text-center">
+                    {t("no_users_found")}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredUsers.map((user) => (
+                filteredUsers.map((user: User) => (
                   <TableRow key={user.id}>
                     <TableCell>{user.email}</TableCell>
                     <TableCell className="capitalize hidden sm:table-cell">{user.role}</TableCell>
                     <TableCell>
-                      {new Date(user.created_at).toLocaleString()}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            {new Date(user.created_at).toLocaleDateString()}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {new Date(user.created_at).toLocaleString()}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      {user.last_sign_in_at
-                        ? new Date(user.last_sign_in_at).toLocaleString()
-                        : t("admin:never")}
+                      {user.last_sign_in_at ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              {new Date(user.last_sign_in_at).toLocaleDateString()}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {new Date(user.last_sign_in_at).toLocaleString()}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        t("never")
+                      )}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <Select 
                         value={user.subscription?.plan_id || ''}
                         onValueChange={(value) => changeSubscriptionPlan(user.id, value)}
-                        disabled={changingSubscription[user.id]}
+                        disabled={Boolean(changingSubscription[user.id])}
                       >
                         <SelectTrigger className="w-40">
                           <SelectValue placeholder="Select plan">
@@ -611,14 +740,17 @@ export default function UserManagement() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => sendPasswordResetEmail(user.email)} disabled={sendingResetEmail[user.id]}>
+                          <DropdownMenuItem 
+                            onClick={() => sendPasswordResetMutation.mutate(user.email)} 
+                            disabled={Boolean(sendPasswordResetMutation.isPending)}
+                          >
                             <Mail className="mr-2 h-4 w-4" />
-                            {sendingResetEmail[user.id] ? t("admin:sending") : t("admin:send_reset_email")}
+                            {sendPasswordResetMutation.isPending ? t("sending") : t("send_reset_email")}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => setUserToDelete(user)} className="text-destructive">
                             <Trash2 className="mr-2 h-4 w-4" />
-                            {t("ui.delete")}
+                            {t("ui.delete", { ns: "global" })}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -634,12 +766,12 @@ export default function UserManagement() {
         <Dialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{t("admin:confirm_delete_user")}</DialogTitle>
+              <DialogTitle>{t("confirm_delete_user")}</DialogTitle>
               <DialogDescription>
-                {t("admin:delete_user_description", { email: userToDelete?.email })}
+                {t("delete_user_description", { email: userToDelete?.email })}
                 {userToDelete?.role === 'admin' && (
                   <p className="mt-2 text-destructive">
-                    {t("admin:warning_deleting_admin")}
+                    {t("warning_deleting_admin")}
                   </p>
                 )}
               </DialogDescription>
@@ -648,16 +780,16 @@ export default function UserManagement() {
               <Button
                 variant="outline"
                 onClick={() => setUserToDelete(null)}
-                disabled={isDeleting}
+                disabled={Boolean(deleteUserMutation.isPending)}
               >
-                {t("admin:cancel")}
+                {t("cancel")}
               </Button>
               <Button
                 variant="destructive"
-                onClick={() => userToDelete && deleteUser(userToDelete)}
-                disabled={isDeleting}
+                onClick={() => userToDelete && handleDeleteUser(userToDelete)}
+                disabled={Boolean(deleteUserMutation.isPending)}
               >
-                {isDeleting ? t("admin:deleting") : t("admin:delete")}
+                {deleteUserMutation.isPending ? t("deleting") : t("delete")}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -734,7 +734,7 @@ For component-specific implementation details, refer to:
 ### Database Structure
 - **Profiles (`profiles`)**: Contains user profile information
 - **Subscription Plans (`subscription_plans`)**:
-  - Defines available subscription tiers (e.g., Personal, Professional, Investor)
+  - Defines available subscription tiers (e.g., Personal, Profesional, Inversionista)
   - Plans can be modified as needed for business requirements
   - Each plan has its own set of features and limits
 
