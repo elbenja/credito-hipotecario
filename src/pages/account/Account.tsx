@@ -130,7 +130,7 @@ export default function Account() {
           </div>
 
             
-                <div className="self-stretch inline-flex justify-between items-center">
+                {/* <div className="self-stretch inline-flex justify-between items-center">
                   <div className="w-96  flex justify-center items-center gap-2">
                     <div className="flex-1 justify-start  font-medium  leading-none">Actualmente no tienes plan, obten uno para vencer al banco 💪</div>
                   </div>
@@ -141,7 +141,7 @@ export default function Account() {
                     </Button>
                    
                   </div>
-                </div>
+                </div> */}
            
           <Separator />
           <p className="text-muted-foreground">{t('change_plan_below')}</p>
