@@ -23,6 +23,9 @@
   "currently_on_plan": "You're currently on plan: ",
   "free": "Free",
   "loading": "Loading...",
+  "no_plan_copy": "Currently you don't have a plan, get one to beat the bank 💪",
+  "code_description": "Launch discount",
+  "code_name": "20CREDITO",
   "alert": {
     "title": "Plan Limits",
     "description": "The amounts are the limits of properties, mortgages, and rentals you can have at the same time. Example: if your limit is 3 properties and you already have 3, you can delete one and create another."

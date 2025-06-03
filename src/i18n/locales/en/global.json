@@ -25,6 +25,7 @@
     "add_mortgage": "Add Mortgage",
     "short_year": "y",
     "copy": "Copy",
+    "copied": "Copied!",
     "term_type": {
       "regular": "regular",
       "double": "double"

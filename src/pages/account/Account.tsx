@@ -17,6 +17,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Alert } from "@/components/ui/alert"
 import { Copy, Terminal } from "lucide-react"
+import { ButtonToClipboard } from "@/components/ui/ben/toClipboard"
 
 // import { testErrorMapping } from "@/utils/test-error-mapping"; // it works
 
@@ -112,14 +113,14 @@ export default function Account() {
     >
       <div className="container py-6 space-y-6">
         <div className="flex flex-col space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p>{t('currently_on_plan')} <span className="font-bold">{planLimits?.plan_name ?? t('free')}</span></p>
-            </div>
 
-            
-            {hasStripeCustomerId && (
-              <Button
+          {hasStripeCustomerId ? (
+            <div className="flex items-center justify-between">
+              <div>
+                <p>{t('currently_on_plan')} <span className="font-bold">{planLimits?.plan_name ?? t('free')}</span></p>
+              </div>
+              {hasStripeCustomerId && (
+                <Button
                   onClick={handleManageSubscription}
                   disabled={isLoadingPortal}
                   variant="outline"
@@ -127,21 +128,20 @@ export default function Account() {
                   {isLoadingPortal ? t('loading') : t('manage_subscription')} 
                 </Button>
               )}
-          </div>
-
-            
-                {/* <div className="self-stretch inline-flex justify-between items-center">
-                  <div className="w-96  flex justify-center items-center gap-2">
-                    <div className="flex-1 justify-start  font-medium  leading-none">Actualmente no tienes plan, obten uno para vencer al banco 💪</div>
-                  </div>
-                  <div className="size- flex justify-start items-center gap-4">
-                    <div className="text-center justify-start text-neutral-800 text-base font-medium leading-none">Descuento de lanzamiento</div>
-                    <Button variant="outline" className="bg-brand  text-center justify-start text-base font-extrabold uppercase leading-tight border-0">
-                    <div className="">20CREDITO</div> <Copy className="w-4 h-4" />
-                    </Button>
-                   
-                  </div>
-                </div> */}
+            </div>
+          ) : (
+            <div className="self-stretch inline-flex justify-between items-center">
+              <div className="  flex justify-center items-center gap-2">
+                <div className="flex-1 justify-start  font-medium  leading-none">{t('no_plan_copy')}</div>
+              </div>
+              <div className="size- flex justify-start items-center gap-4">
+                <div className="text-center justify-start text-base font-medium leading-none">{t('code_description')}</div>
+                <ButtonToClipboard className="bg-brand text-black px-4 py-2 rounded-md">
+                  {t('code_name')}
+                </ButtonToClipboard>
+              </div>
+            </div>
+          )}
            
           <Separator />
           <p className="text-muted-foreground">{t('change_plan_below')}</p>
