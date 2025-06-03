@@ -27,7 +27,7 @@ export default function Courses() {
 
           </div>
         
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-center justify-between gap-4">
          
           <YouTubeCard url="https://youtu.be/psZ37ue7_04?si=pc5nAAqFiLkBg_9V">Crear Propiedad</YouTubeCard>
           <YouTubeCard url="https://framerusercontent.com/images/60VzkfO1FfyY0Qk6kdFNYZOzlk.jpg"> <small className="xs"> Pronto:</small> Crear Hipotecas</YouTubeCard>

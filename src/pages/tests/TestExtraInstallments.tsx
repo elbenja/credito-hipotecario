@@ -333,13 +333,13 @@ export default function TestExtraInstallments() {
       if (isNaN(interestRate) || interestRate < 0) {
         throw new Error("Invalid interest rate")
       }
-      if (isNaN(termYears) || termYears < 1) {
+      if (isNaN(termYears) || termYears < 10 || termYears > 30) {
         throw new Error("Invalid term years")
       }
       // Validate term years against allowed values
-      const allowedTermYears = [5, 10, 15, 20, 25, 30]
+      const allowedTermYears = Array.from({ length: 21 }, (_, i) => i + 10) // 10-30 years
       if (!allowedTermYears.includes(termYears)) {
-        throw new Error("Term years must be one of: 5, 10, 15, 20, 25, or 30 years")
+        throw new Error("Term years must be between 10 and 30 years")
       }
       if (![12, 14].includes(installmentsPerYear)) {
         throw new Error("Invalid installments per year")

@@ -380,7 +380,13 @@ export function MortgageDetailsForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {[10, 15, 20, 25, 30].map((years) => (
+                      
+                      {/* {Array.from({ length: 21 }, (_, i) => i + 10).map((years) => (
+                        <SelectItem key={years} value={years.toString()}>
+                          {years} {t('scenarios.new_rate.form.years', { ns: 'mortgages', value: years })}
+                        </SelectItem>
+                      ))} */}
+                       {[10, 15, 20, 25, 30].map((years) => (
                         <SelectItem key={years} value={years.toString()}>
                           {years} {t('scenarios.new_rate.form.years', { ns: 'mortgages', value: years })}
                         </SelectItem>

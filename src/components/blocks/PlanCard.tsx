@@ -62,7 +62,23 @@ export function PlanCard({ plan, onSelect, isUpgrading, hasAccess }: PlanCardPro
       <CardContent className="flex flex-col items-center gap-2 py-2">
         <div className="text-4xl font-bold">${plan.price_yearly.toFixed(2)}</div>
         <div className="text-muted-foreground text-sm mb-2">{t('yearly')}</div>
-        <div className="flex flex-col gap-2 w-full">
+        <Button
+          className="w-full"
+          variant={isCurrent ? "outline" : "default"}
+          disabled={isCurrent || !plan.price_id || isProcessing}
+          onClick={() => plan.price_id && onSelect(plan.price_id, plan.name)}
+        >
+          {buttonLabel}
+        </Button>
+
+
+  
+      </CardContent>
+      <CardFooter className="flex flex-col items-center justify-center">
+     {/* <small className="text-xs text-foreground">
+      IsCurrent: {String(isCurrent)} | Price ID: {plan.price_id || 'None'} | isProcessing: {String(isProcessing)}
+     </small> */}
+      <div className="flex flex-col gap-2 w-full">
           {/* Ensure features are listed in the order: properties, mortgages, rentals */}
           {['properties', 'mortgages', 'rentals'].map(feature => (
             plan.limits[feature] !== undefined && (
@@ -75,20 +91,7 @@ export function PlanCard({ plan, onSelect, isUpgrading, hasAccess }: PlanCardPro
             )
           ))}
         </div>
-      </CardContent>
-      <CardFooter className="flex flex-col items-center justify-center">
-     {/* <small className="text-xs text-foreground">
-      IsCurrent: {String(isCurrent)} | Price ID: {plan.price_id || 'None'} | isProcessing: {String(isProcessing)}
-     </small> */}
 
-        <Button
-          className="w-full"
-          variant={isCurrent ? "outline" : "default"}
-          disabled={isCurrent || !plan.price_id || isProcessing}
-          onClick={() => plan.price_id && onSelect(plan.price_id, plan.name)}
-        >
-          {buttonLabel}
-        </Button>
       </CardFooter>
     </Card>
   );
