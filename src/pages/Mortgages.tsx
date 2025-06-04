@@ -89,25 +89,28 @@ export default function Mortgages() {
 
 
   const handleDelete = useCallback(
-    (e: React.MouseEvent, mortgage: Mortgage) => {
+    async (e: React.MouseEvent, mortgage: Mortgage) => {
       e.stopPropagation()
-      deleteMortgage.mutate(mortgage.id, {
-        onSuccess: () => {
-          toast({
-            title: tGlobal("ui.success"),
-            description: tMortgages("messages.success_delete"),
-          })
-          // console.log("handleDelete success", mortgage.id)
-          queryClient.invalidateQueries({ queryKey: ["properties-mortgages-bonus"] })
-        },
-        onError: (err) => {
-          console.error("Error deleting mortgage:", err)
-          toast({
-            variant: "destructive",
-            title: tGlobal("ui.error"),
-            description: tMortgages("messages.error_delete"),
-          })
-        },
+      return new Promise<void>((resolve, reject) => {
+        deleteMortgage.mutate(mortgage.id, {
+          onSuccess: () => {
+            toast({
+              title: tGlobal("ui.success"),
+              description: tMortgages("messages.success_delete"),
+            })
+            queryClient.invalidateQueries({ queryKey: ["properties-mortgages-bonus"] })
+            resolve()
+          },
+          onError: (err) => {
+            console.error("Error deleting mortgage:", err)
+            toast({
+              variant: "destructive",
+              title: tGlobal("ui.error"),
+              description: tMortgages("messages.error_delete"),
+            })
+            reject(err)
+          },
+        })
       })
     },
     [deleteMortgage, queryClient, tGlobal, tMortgages, toast]
