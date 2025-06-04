@@ -661,6 +661,8 @@ export class ScenarioCalculator {
           is_different_from_base: true // Mark recalculated payments
         }))
       ];
+
+
     }
 
     return {

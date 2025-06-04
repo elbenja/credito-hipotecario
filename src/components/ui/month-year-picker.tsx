@@ -70,7 +70,7 @@ export function MonthYearPicker({
               const monthIndex = monthLabels.indexOf(month);
               const newDate = new Date(parseInt(selectedYear), monthIndex, 1);
               if (isValid(newDate)) {
-                console.log("Selected date:", newDate.toISOString().split("T")[0]);
+                // console.log("Selected date:", newDate.toISOString().split("T")[0]);
                 field.onChange(newDate);
                 form.trigger(field.name);
               }
@@ -95,7 +95,7 @@ export function MonthYearPicker({
               const monthIndex = selectedDate.getMonth();
               const newDate = new Date(year, monthIndex, 1);
               if (isValid(newDate)) {
-                console.log("Selected date:", newDate.toISOString().split("T")[0]);
+                // console.log("Selected date:", newDate.toISOString().split("T")[0]);
                 field.onChange(newDate);
                 form.trigger(field.name);
               }
