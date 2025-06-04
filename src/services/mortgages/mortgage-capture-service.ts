@@ -78,7 +78,7 @@ export const useMortgageCapture = () => {
       // Create name for the duplicated mortgage
       const mortgageName = `${originalMortgage.name} (${scenarioType})`;
 
-      // 2. Create duplicate mortgage
+      // 2. Create duplicate mortgage using the hook
       const duplicatedMortgage = {
         name: mortgageName,
         property_id: originalMortgage.property_id,
@@ -98,17 +98,8 @@ export const useMortgageCapture = () => {
         saved_scenario_breakeven_point: originalMortgage.saved_scenario_breakeven_point
       };
 
-      // Insert into mortgages (using amortizations table since that's the actual table)
-      // This creates a DUPLICATE mortgage record with saved scenario data - the original mortgage is not modified
-      const { data: newMortgage, error: createError } = await supabase
-        .from("mortgages")
-        .insert(duplicatedMortgage)
-        .select()
-        .single();
-
-      if (createError || !newMortgage) {
-        throw new Error(createError?.message || "Failed to create mortgage");
-      }
+      // Use the hook to create the mortgage
+      const newMortgage = await createMortgage.mutateAsync(duplicatedMortgage);
 
       // 3. Copy extra installments
       const { data: extraInstallments, error: extraInstallmentsError } = await supabase
@@ -382,6 +373,7 @@ export const useMortgageCapture = () => {
   };
 
   return {
+    captureMortgage,
     captureCurrentScenario,
   };
 }; 

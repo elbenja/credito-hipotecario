@@ -42,7 +42,7 @@ export default function Mortgages() {
   const { t } = useTranslation('properties')
   const [open, setOpen] = useState(false)
   // const { data: exchangeRate } = useExchangeRate()
-  const { captureMortgage } = useMortgageCapture();
+  const { captureCurrentScenario, captureMortgage } = useMortgageCapture();
   // const [bonusValues, setBonusValues] = useState<Record<string, number | null>>({});
   const { resetDraft } = useMortgageDraftStore();
 
