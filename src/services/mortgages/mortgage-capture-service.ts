@@ -98,22 +98,8 @@ export const useMortgageCapture = () => {
         saved_scenario_breakeven_point: originalMortgage.saved_scenario_breakeven_point
       };
 
-<<<<<<< HEAD
       // Use the hook to create the mortgage
       const newMortgage = await createMortgage.mutateAsync(duplicatedMortgage);
-=======
-      // Insert into mortgages (using amortizations table since that's the actual table)
-      // This creates a DUPLICATE mortgage record with saved scenario data - the original mortgage is not modified
-      const { data: newMortgage, error: createError } = await supabase
-        .from("mortgages")
-        .insert(duplicatedMortgage)
-        .select()
-        .single();
-
-      if (createError || !newMortgage) {
-        throw new Error(createError?.message || "Failed to create mortgage");
-      }
->>>>>>> b495762 (Update APP_VERSION to "Jun 3 - 10pm 2025" and enhance ScenarioPanel component by adding onUpdateSavedScenarioUI prop for improved scenario management. Refactor mortgage capture service to utilize draft data and streamline mortgage creation process.)
 
       // 3. Copy extra installments
       const { data: extraInstallments, error: extraInstallmentsError } = await supabase
@@ -387,6 +373,7 @@ export const useMortgageCapture = () => {
   };
 
   return {
+    captureMortgage,
     captureCurrentScenario,
   };
 }; 
