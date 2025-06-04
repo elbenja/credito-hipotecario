@@ -34,6 +34,7 @@ import Courses from "@/pages/account/Courses"
 import Settings from "@/pages/account/Settings"
 import HomeRedirect from "./HomeRedirect"
 import Support from "./pages/Support"
+import TestExtraInstallments from "./pages/tests/TestExtraInstallments"
 // const queryClient = new QueryClient({
 //   defaultOptions: {
 //     queries: {
@@ -178,7 +179,7 @@ export default function App () {
                 />
                 <Route path="/test" element={<Test />} />
                 <Route path="/test-calculator" element={<TestCalculator />} />
-                {/* <Route path="/test-extra-installments" element={<TestExtraInstallments />} /> */}
+                <Route path="/test-extra-installments" element={<TestExtraInstallments />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </TooltipProvider>

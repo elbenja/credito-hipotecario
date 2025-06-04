@@ -1,4 +1,4 @@
-import { LayoutDashboard, MessageSquare, User, CreditCard, Settings, LogOut, ChevronsUpDown, UserCog, UsersRound, Sun, Moon, LifeBuoy } from "lucide-react"
+import { LayoutDashboard, MessageSquare, User, CreditCard, Settings, LogOut, ChevronsUpDown, UserCog, UsersRound, Sun, Moon, LifeBuoy, Calculator } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 // import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -204,7 +204,7 @@ const adminNavItems: NavItem[] = [
   { title: "user_management", namespace: "admin", icon: UsersRound, href: "/admin/users" },
   { title: "subscription_plans", namespace: "admin", icon: CreditCard, href: "/admin/subscription-plans" },
   { title: "early_access", namespace: "admin", icon: UserCog, href: "/admin/early-access" },
-  // { title: "test", namespace: "admin", icon: Calculator, href: "/test-extra-installments" },
+  { title: "test", namespace: "admin", icon: Calculator, href: "/test-extra-installments" },
 ]
 
 const footerNavItems: NavItem[] = [
