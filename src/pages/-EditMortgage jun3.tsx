@@ -17,7 +17,7 @@ import {
 import { Form } from "@/components/ui/form"
 import { MortgageDetailsForm } from "@/components/mortgages/mortgage-details-form"
 import { useToast } from "@/components/ui/use-toast"
-import { parseDatabaseDate } from "@/utils/utils"
+import { normalizeDate, parseDatabaseDate } from "@/utils/utils"
 import { useScenarioCalculations } from "@/hooks/use-scenario-calculations"
 import { 
   RegularPanelGraph,
@@ -38,6 +38,7 @@ import { useMortgageDraftStore } from "@/store/mortgage/store"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useUpdateMortgage } from '@/hooks/mortgages/useUpdate'
 import { PropertyWithBonus } from "@/types/property"
+import { PlanLimitDialog } from "@/components/common/PlanLimitDialog"
 
 
 
@@ -78,22 +79,8 @@ export default function EditMortgageWithZustand(mortgageData: any) {
     refetch
   } = useMortgageDraft(id || null)
   
-
-
-  // 2) Pull the exchange‐rate hook here
-  // const { data: exchangeRate = 1 } = useExchangeRate("USD", "PEN");
-
-  // // 3) Grab the store action
-  // const setExchangeRate = useMortgageDraftStore((s) => s.setExchangeRate);
-
-  // // 4) Seed the draft and the rate in one effect
-  // useEffect(() => {
-  //   if (mortgage) {
-  //     setExchangeRate(exchangeRate);   // seed the existing mortgage
-  //   }
-  // }, [mortgage, setExchangeRate]);
-
-// console.log("🔄 exchangeRate:", exchangeRate)
+  // console.log("✅ Supabase raw first_installment_date:", mortgage?.first_installment_date);
+  // console.log("✅ Zustand draft first_installment_date:", mortgageDraft?.first_installment_date);
 
   // Initialize calculatedLoanAmount based on mortgage data
   const [calculatedLoanAmount, setCalculatedLoanAmount] = useState<number>(mortgage?.loan_amount || 0)
@@ -132,8 +119,11 @@ export default function EditMortgageWithZustand(mortgageData: any) {
       installmentsPerYear: parseInt(mortgageForm.getValues().installments_per_year || "12"),
       loanProtectionType: mortgageForm.getValues().loan_protection_type,
       loanProtectionInsurance: parseFloat(mortgageForm.getValues().loan_protection_insurance || "0"),
-      firstInstallmentDate: mortgageForm.getValues().first_installment_date || new Date()
+      // firstInstallmentDate: mortgageForm.getValues().first_installment_date || new Date()
+      firstInstallmentDate: normalizeDate(mortgageForm.getValues().first_installment_date || new Date()),
+      
     }
+
   }
 
   // Reset draft on unmount
@@ -146,6 +136,7 @@ export default function EditMortgageWithZustand(mortgageData: any) {
     };
   }, []);
 
+  const [showDialog, setShowDialog] = useState(false);
 // EditMortgage.tsx (or NewMortgage.tsx)
 
 const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
@@ -182,51 +173,52 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
       let totalInterest = 0
       let totalMonths = 0
       let monthlyPayment = 0
-      let breakEvenPoint = null
+      let breakEvenPoint = undefined
       
       // Extract data based on scenario type
       if (scenarioType === "regular" && scenarios?.regular?.summary) {
         totalInterest = scenarios.regular.summary.total_interest_and_insurance || 0
         totalMonths = scenarios.regular.summary.total_months || 0
         monthlyPayment = scenarios.regular.summary.monthly_payment || 0
-        breakEvenPoint = scenarios.regular.summary.breakeven_point || null
+        breakEvenPoint = scenarios.regular.summary.breakeven_point 
       } 
       else if (scenarioType === "accelerated" && scenarios?.accelerated?.summary) {
         totalInterest = scenarios.accelerated.summary.total_interest_and_insurance || 0
         totalMonths = scenarios.accelerated.summary.total_months || 0
         monthlyPayment = scenarios.accelerated.summary.monthly_payment || 0
-        breakEvenPoint = scenarios.accelerated.summary.breakeven_point || null
+        breakEvenPoint = scenarios.accelerated.summary.breakeven_point 
       }
       else if (scenarioType === "lower_payment" && scenarios?.lower_payment?.summary) {
         totalInterest = scenarios.lower_payment.summary.total_interest_and_insurance || 0
         totalMonths = scenarios.lower_payment.summary.total_months || 0
         monthlyPayment = scenarios.lower_payment.summary.monthly_payment || 0
-        breakEvenPoint = scenarios.lower_payment.summary.breakeven_point || null
+        breakEvenPoint = scenarios.lower_payment.summary.breakeven_point
       }
       else if (scenarioType === "new_rate" && scenarios?.new_rate?.summary) {
         totalInterest = scenarios.new_rate.summary.total_interest_and_insurance || 0
         totalMonths = scenarios.new_rate.summary.total_months || 0
         monthlyPayment = scenarios.new_rate.summary.monthly_payment || 0
-        breakEvenPoint = scenarios.new_rate.summary.breakeven_point || null
+        breakEvenPoint = scenarios.new_rate.summary.breakeven_point 
       }
-      
+      console.log("totalInterest", totalInterest)
+      console.log("totalMonths", totalMonths)
+      console.log("monthlyPayment", monthlyPayment)
+      console.log("breakEvenPoint", breakEvenPoint)
       // Save to database if we have an ID
       if (id) {
-        const { error } = await supabase
-          .from("mortgages")
-          .update({
-            saved_scenario: scenarioType,
-            saved_scenario_total_interest_and_insurance: totalInterest,
-            saved_scenario_total_months: totalMonths, 
-            saved_scenario_monthly_payment: monthlyPayment,
-            saved_scenario_breakeven_point: breakEvenPoint
-          })
-          .eq("id", id)
-
-        if (error) throw error
-        
-        // Invalidate queries to refresh data
-        queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
+        updateMortgage.mutate({
+          id: id as string,
+          saved_scenario: scenarioType,
+          saved_scenario_total_interest_and_insurance: totalInterest,
+          saved_scenario_total_months: totalMonths,
+          saved_scenario_monthly_payment: monthlyPayment,
+          saved_scenario_breakeven_point: breakEvenPoint || undefined
+        }, {
+          onError: (error) => {
+            console.error("Error saving scenario:", error)
+            throw error
+          }
+        })
       }
 
         toast({
@@ -246,8 +238,42 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
   // Handler for updating mortgage
   const onUpdateMortgage = async (formValues: any) => {
     // setIsSubmitting(true)
+    // console.log("onUpdateMortgage formValues", formValues)
+    // console.log("savedValue", savedScenario)
     
     try {
+      // MAy 21
+      // Get the appropriate scenario data
+      let totalInterest = 0
+      let totalMonths = 0
+      let monthlyPayment = 0
+      let breakEvenPoint = undefined
+      
+      // Extract data based on scenario type
+      if (savedScenario === "regular" && scenarios?.regular?.summary) {
+        totalInterest = scenarios.regular.summary.total_interest_and_insurance || 0
+        totalMonths = scenarios.regular.summary.total_months || 0
+        monthlyPayment = scenarios.regular.summary.monthly_payment || 0
+        breakEvenPoint = scenarios.regular.summary.breakeven_point || undefined
+      } 
+      else if (savedScenario === "accelerated" && scenarios?.accelerated?.summary) {
+        totalInterest = scenarios.accelerated.summary.total_interest_and_insurance || 0
+        totalMonths = scenarios.accelerated.summary.total_months || 0
+        monthlyPayment = scenarios.accelerated.summary.monthly_payment || 0
+        breakEvenPoint = scenarios.accelerated.summary.breakeven_point || undefined
+      }
+      else if (savedScenario === "lower_payment" && scenarios?.lower_payment?.summary) {
+        totalInterest = scenarios.lower_payment.summary.total_interest_and_insurance || 0
+        totalMonths = scenarios.lower_payment.summary.total_months || 0
+        monthlyPayment = scenarios.lower_payment.summary.monthly_payment || 0
+        breakEvenPoint = scenarios.lower_payment.summary.breakeven_point || undefined
+      }
+      else if (savedScenario === "new_rate" && scenarios?.new_rate?.summary) {
+        totalInterest = scenarios.new_rate.summary.total_interest_and_insurance || 0
+        totalMonths = scenarios.new_rate.summary.total_months || 0
+        monthlyPayment = scenarios.new_rate.summary.monthly_payment || 0
+        breakEvenPoint = scenarios.new_rate.summary.breakeven_point || undefined
+      }
       // Parse numeric values
       const downPayment = parseFloat(formValues.down_payment.replace(/[^0-9.]/g, ""))
       const interestRate = parseFloat(formValues.interest_rate)
@@ -266,8 +292,15 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
         ? `${formValues.first_installment_date.getFullYear()}-${String(formValues.first_installment_date.getMonth() + 1).padStart(2, '0')}-${String(formValues.first_installment_date.getDate()).padStart(2, '0')}`
         : ""
         
+
+
         // Prepare mortgage data
         const mortgageData = {
+          // saved_scenario: scenarioType,
+          saved_scenario_total_interest_and_insurance: totalInterest,
+          saved_scenario_total_months: totalMonths, 
+          saved_scenario_monthly_payment: monthlyPayment,
+          saved_scenario_breakeven_point: breakEvenPoint,
         name: formValues.name,
         property_id: formValues.property_id,
           down_payment: downPayment,
@@ -283,38 +316,38 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
 
 
       
-      const updatedMortgage: Mortgage = { 
+      const updatedMortgage : Mortgage = { 
         ...mortgageData,
         id: id as string // Ensure id is treated as string
       };
-      updateMortgage.mutate(updatedMortgage);
 
-      // Mark the form as clean in Zustand
-      markClean()
-      
-      // Refresh data
-      queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
-      queryClient.invalidateQueries({ queryKey: ["scenarios", id] })
-        
-        toast({
-          title: t("ui.success", { ns: "global" }),
-          description: t("messages.success_update", { ns: "mortgages" }),
-        })
-    } catch (error) {
-      console.error("Error updating mortgage:", error)
-      toast({
-        variant: "destructive",
-        title: t("ui.error", { ns: "global" }),
-        description: error instanceof Error ? error.message : t("messages.error_update", { ns: "mortgages" })
-      })
-    } finally {
-      // setIsSubmitting(false)
-    }
-  }
-
+        updateMortgage.mutate(updatedMortgage, {
+ 
+              onError: (error) => {
+                console.error("Error updating mortgage:", error)
+                toast({
+                  variant: "destructive",
+                  title: t("ui.error", { ns: "global" }),
+                  description: error instanceof Error ? error.message : t("messages.error_update", { ns: "mortgages" })
+                })
+              }
+            });
+          } catch (error) {
+            // Handle other errors not related to the mutation
+            console.error("Error preparing update:", error)
+            toast({
+              variant: "destructive",
+              title: t("ui.error", { ns: "global" }),
+              description: error instanceof Error ? error.message : t("messages.error_update", { ns: "mortgages" })
+            })
+          } finally {
+            // setIsSubmitting(false)
+          }
+       }
+       
   // Handler for invalidating queries when extra installments or new rates change
   const handleDataChange = () => {
-    queryClient.invalidateQueries({ queryKey: ["scenarios", id] })
+    queryClient.invalidateQueries({ queryKey: ["scenarios"] })
     queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
   }
 
@@ -385,24 +418,18 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
+ 
                   <EditableHeading 
                     value={mortgage?.name || ""} 
-                    onChange={async (newName) => {
-                      try {
-                        const { error } = await supabase
-                          .from("mortgages")
-                          .update({ name: newName })
-                          .eq("id", id)
-
-                        if (error) throw error
-                        
-                      // Refresh the data
-                      queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
-                      } catch (error) {
-                        console.error("Error updating name:", error)
-                      }
+                    onChange={(newName) => {
+                      // Optimistic update via React Query
+                      updateMortgage.mutate({ id: id as string, name: newName }, {
+                        // onSuccess: () => {
+                        //   // Invalidate queries to refresh data after update
+                        //   // queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
+                        // }
+                      })
                     }}
-                    // onChange={() => {}} // debt May 16
                     size="breadcrumb"
                     as="span"
                     className="text-foreground"
@@ -451,7 +478,8 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
 
                   
                 </Form>
-              <p className="text-xs text-muted-foreground"> Zustand vMay 16 5:25pm</p>
+              {/* <p className="text-xs text-muted-foreground"> Zustand v May 27 5:04Pm</p> */}
+ 
             </div>
           </div>
 
@@ -510,6 +538,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                   <TabsContent value="regular" className="m-0">
                     {scenarios.regular && (
                       <RegularPanelGraph
+                      onShowLimitDialog={() => setShowDialog(true)}
                         scenario={scenarios.regular}
                       currency={property.currency}
                         installmentsPerYear={parseInt(mortgageForm.getValues().installments_per_year || "12")}
@@ -537,6 +566,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                       <>
                       {extraInstallments.length > 0 && (
                           <AcceleratedPanelGraph
+                          onShowLimitDialog={() => setShowDialog(true)}
                             scenario={scenarios.accelerated}
                             regularScenario={scenarios.regular}
                           currency={property.currency}
@@ -563,7 +593,6 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                           currency={property.currency}
                             loanAmount={calculatedLoanAmount}
                           onInstallmentsChange={handleDataChange}
-                            firstInstallmentDate={mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined}
                           />
                         </div>
                       </>
@@ -575,6 +604,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                       <>
                       {extraInstallments.length > 0 && (
                           <LowerPaymentPanelGraph
+                          onShowLimitDialog={() => setShowDialog(true)}
                             scenario={scenarios.lower_payment}
                             regularScenario={scenarios.regular}
                           currency={property.currency}
@@ -601,7 +631,6 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                           currency={property.currency}
                             loanAmount={calculatedLoanAmount}
                           onInstallmentsChange={handleDataChange}
-                            firstInstallmentDate={mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined}
                           />
                         </div>
                       </>
@@ -613,6 +642,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                       <>
                       {newRates.length > 0 && (
                           <NewRatePanelGraph
+                          onShowLimitDialog={() => setShowDialog(true)}
                             scenario={scenarios.new_rate}
                             regularScenario={scenarios.regular}
                           currency={property.currency}
@@ -638,7 +668,6 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                           mortgageId={id || ""}
                           onSuccess={handleDataChange}
                             className="space-y-4"
-                            firstInstallmentDate={mortgage.first_installment_date ? parseDatabaseDate(mortgage.first_installment_date) : undefined}
                           />
                         </div>
                       </>
@@ -649,6 +678,14 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
           </div> 
         </div>
       </div>
+      <PlanLimitDialog
+        open={showDialog}
+        onClose={() => setShowDialog(false)}
+        // onUpgrade={() => {
+        //   // TODO: Add navigation or logic to upgrade page
+        //   setShowDialog(false)
+        // }}
+      />
     </DashboardLayout>
   )
 } 

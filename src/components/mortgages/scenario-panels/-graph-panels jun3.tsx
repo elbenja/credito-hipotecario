@@ -20,25 +20,7 @@ import { SVGfixed } from "@/components/ui/svg-fixed"
 import { useMortgageCapture } from "@/services/mortgages/mortgage-capture-service"
 import { useParams, useNavigate } from "react-router-dom"
 import { useToast } from "@/components/ui/use-toast"
-
-// type Currency = "USD" | "PEN"
-
-// Extend PaymentRow with additional properties we know exist
-// interface ExtendedPaymentRow extends PaymentRow {
-//   monthly_interest?: number
-//   monthly_loan_insurance?: number
-//   principal?: number
-// }
-
-// interface ScenarioSummaryResult {
-//   total_interest_and_insurance: number
-//   total_months: number
-//   monthly_payment: number
-//   breakeven_point?: number | null
-// }
-
-
-
+import { useCanCreateFeature } from "@/hooks/usePlanLimits"
 
 // Memoize the data transformation function to avoid recalculating on every render
 const transformPaymentsToChartData = (payments: PaymentRow[], totalMonths: number, installmentsPerYear: number = 12) => {
@@ -134,7 +116,8 @@ const ScenarioPanel = ({
   onSaveScenario,
   formValues,
   extraInstallments,
-  newRates
+  newRates,
+  onShowLimitDialog
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
   // ========== All hooks must be at the top ==========
   const { t } = useTranslation()
@@ -142,7 +125,8 @@ const ScenarioPanel = ({
   const navigate = useNavigate()
   const { captureMortgage, captureCurrentScenario } = useMortgageCapture()
   const { toast } = useToast()
-  
+  const { canCreate } = useCanCreateFeature()
+
   // Add a ref for caching chart data to avoid unnecessary transformations
   const chartDataCache = useRef<Record<string, any[]>>({});
 
@@ -185,41 +169,7 @@ const ScenarioPanel = ({
     ? total_months
     : (regularScenario?.summary?.total_months || 360);
 
-  // Optimize chart data transformation with better memoization and caching
-  const chartData = useMemo(() => {
-    if (!scenario?.payments?.length) return [];
-    
-    // Create a unique cache key without relying on scenario.id property
-    const cacheKey = `${scenarioType}-${totalMonthsToDisplay}-${installmentsPerYear}`;
-    
-    // Check if we already have this cached
-    if (chartDataCache.current[cacheKey]) {
-      return chartDataCache.current[cacheKey];
-    }
-    
-    try {
-      // Calculate and cache the result
-      const result = transformPaymentsToChartData(
-        scenario?.payments || [], 
-        totalMonthsToDisplay, 
-        installmentsPerYear
-      );
-      
-      // Store in cache with a maximum of 10 cache entries
-      const cacheKeys = Object.keys(chartDataCache.current);
-      if (cacheKeys.length >= 10) {
-        delete chartDataCache.current[cacheKeys[0]];
-      }
-      
-      chartDataCache.current[cacheKey] = result;
-      return result;
-    } catch (error) {
-      console.error("Error transforming chart data:", error);
-      return [];
-    }
-  }, [scenario?.payments, totalMonthsToDisplay, installmentsPerYear, scenarioType]);
 
-  const hasChartData = chartData.length > 0;
 
   // Calculate total cost (property cost + interest and insurances)
   const totalCost = useMemo(() => {
@@ -234,7 +184,7 @@ const ScenarioPanel = ({
       // Return null if the difference is 0 to hide the badge
       return diff === 0 ? null : diff;
     };
-
+    // console.log( "total_interest_and_insurance", total_interest_and_insurance )
     return {
       sum: getDifference(
         total_interest_and_insurance,
@@ -258,17 +208,60 @@ const ScenarioPanel = ({
       )
     };
   }, [
-    total_interest_and_insurance,
-    totalCost,
-    propertyCost,
-    total_months,
-    monthly_payment,
-    breakeven_point,
-    regularScenario?.summary?.total_interest_and_insurance,
-    regularScenario?.summary?.total_months,
-    regularScenario?.summary?.monthly_payment,
-    regularScenario?.summary?.breakeven_point
+    // total_interest_and_insurance, //May21 this was not listening to changes
+    // totalCost,
+    // propertyCost,
+    // total_months,
+    // monthly_payment,
+    // breakeven_point,
+    // regularScenario?.summary?.total_interest_and_insurance,
+    // regularScenario?.summary?.total_months,
+    // regularScenario?.summary?.monthly_payment,
+    // regularScenario?.summary?.breakeven_point
   ]);
+
+    // Optimize chart data transformation with better memoization and caching
+    const chartData = useMemo(() => {
+      // console.log( "this one never triggers graph", total_interest_and_insurance )
+      const cacheKey = `${scenarioType}-${totalMonthsToDisplay}-${installmentsPerYear}`;
+
+      if (!scenario?.payments?.length) return []; // this is the problem
+      // Create a unique cache key without relying on scenario.id property
+     
+      
+      // Check if we already have this cached //May21 this was the problem
+      // if (chartDataCache.current[cacheKey]) {
+      //   return chartDataCache.current[cacheKey];
+      // }
+
+      try {
+        // Calculate and cache the result
+        const result = transformPaymentsToChartData(
+          scenario?.payments || [], 
+          totalMonthsToDisplay, 
+          installmentsPerYear
+        );
+        
+        // Store in cache with a maximum of 10 cache entries
+        const cacheKeys = Object.keys(chartDataCache.current);
+        if (cacheKeys.length >= 10) {
+          delete chartDataCache.current[cacheKeys[0]];
+        }
+        
+        chartDataCache.current[cacheKey] = result;
+        return result;
+      } catch (error) {
+        console.error("Error transforming chart data:", error);
+        return [];
+      }
+    }, [ // ← NEW: watch the payments array itself
+      scenario?.payments,
+      totalMonthsToDisplay,
+      installmentsPerYear,
+    ]);
+  
+    const hasChartData = chartData.length > 0;
+
 
   const getBadgeVariant = (difference: number | null, isMonths = false): "default" | "destructive" | "primary" | "outline" | "blue" | "green" => {
     if (difference === null || showBaseline) return "primary"
@@ -344,19 +337,25 @@ const ScenarioPanel = ({
   const yearsLabel = t('scenario_graphs.common.years', 'years', { ns: 'components' });
   
   // Get actual month and year for the break-even point
-  const breakEvenMonthYear = useMemo(() => {
-    if (!breakEvenChartPoint || !breakEvenChartPoint.date) return '';
+  // const breakEvenMonthYear = useMemo(() => {
+  //   if (!breakEvenChartPoint || !breakEvenChartPoint.date) return '';
     
-    try {
-      const date = new Date(breakEvenChartPoint.date);
-      return format(date, 'MMM yyyy');
-    } catch (error) {
-      return '';
-    }
-  }, [breakEvenChartPoint]);
+  //   try {
+  //     const date = new Date(breakEvenChartPoint.date);
+  //     return format(date, 'MMM yyyy');
+  //   } catch (error) {
+  //     return '';
+  //   }
+  // }, [breakEvenChartPoint]);
 
   // Update the handler function for capturing scenarios
   const handleCaptureScenario = async () => {
+    const allowed = await canCreate('mortgages');
+    console.log("allowed", allowed)
+    if (!allowed) {
+      onShowLimitDialog?.(); // trigger the dialog
+      return;
+    }
     // Remove debug logging
     if (!id) {
       console.error("No mortgage ID available for capture");

@@ -39,6 +39,8 @@ import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useUpdateMortgage } from '@/hooks/mortgages/useUpdate'
 import { PropertyWithBonus } from "@/types/property"
 import { PlanLimitDialog } from "@/components/common/PlanLimitDialog"
+import { useSaveMortgageScenario, SaveScenarioParams } from '@/services/mortgages/mortgage-save-scenario-service'
+import type { Scenarios } from '@/types/common';
 
 
 
@@ -152,6 +154,8 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
   const readyForScenarios = !!(mortgageDraft?.loan_amount && mortgageDraft?.interest_rate);
   const { data: scenarios, isLoading: isLoadingScenarios, error: scenariosError } = useScenarioCalculations();
 
+  const { saveScenario } = useSaveMortgageScenario();
+
   // Handler for tab changes
   const handleTabChange = (value: string) => {
     setActiveTab(value)
@@ -159,80 +163,30 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
 
   // Handler for saving scenario
   const handleSaveScenario = async (scenarioType: string) => {
-    try {
-      // Save current form values first
-      await onUpdateMortgage(mortgageForm.getValues())
-      
-      // Save to state
-      setSavedScenario(scenarioType)
-      
-      // Save to localStorage for persistence
-      localStorage.setItem(`savedScenario_${id}`, scenarioType)
-      
-      // Get the appropriate scenario data
-      let totalInterest = 0
-      let totalMonths = 0
-      let monthlyPayment = 0
-      let breakEvenPoint = undefined
-      
-      // Extract data based on scenario type
-      if (scenarioType === "regular" && scenarios?.regular?.summary) {
-        totalInterest = scenarios.regular.summary.total_interest_and_insurance || 0
-        totalMonths = scenarios.regular.summary.total_months || 0
-        monthlyPayment = scenarios.regular.summary.monthly_payment || 0
-        breakEvenPoint = scenarios.regular.summary.breakeven_point 
-      } 
-      else if (scenarioType === "accelerated" && scenarios?.accelerated?.summary) {
-        totalInterest = scenarios.accelerated.summary.total_interest_and_insurance || 0
-        totalMonths = scenarios.accelerated.summary.total_months || 0
-        monthlyPayment = scenarios.accelerated.summary.monthly_payment || 0
-        breakEvenPoint = scenarios.accelerated.summary.breakeven_point 
-      }
-      else if (scenarioType === "lower_payment" && scenarios?.lower_payment?.summary) {
-        totalInterest = scenarios.lower_payment.summary.total_interest_and_insurance || 0
-        totalMonths = scenarios.lower_payment.summary.total_months || 0
-        monthlyPayment = scenarios.lower_payment.summary.monthly_payment || 0
-        breakEvenPoint = scenarios.lower_payment.summary.breakeven_point
-      }
-      else if (scenarioType === "new_rate" && scenarios?.new_rate?.summary) {
-        totalInterest = scenarios.new_rate.summary.total_interest_and_insurance || 0
-        totalMonths = scenarios.new_rate.summary.total_months || 0
-        monthlyPayment = scenarios.new_rate.summary.monthly_payment || 0
-        breakEvenPoint = scenarios.new_rate.summary.breakeven_point 
-      }
-      console.log("totalInterest", totalInterest)
-      console.log("totalMonths", totalMonths)
-      console.log("monthlyPayment", monthlyPayment)
-      console.log("breakEvenPoint", breakEvenPoint)
-      // Save to database if we have an ID
-      if (id) {
-        updateMortgage.mutate({
-          id: id as string,
-          saved_scenario: scenarioType,
-          saved_scenario_total_interest_and_insurance: totalInterest,
-          saved_scenario_total_months: totalMonths,
-          saved_scenario_monthly_payment: monthlyPayment,
-          saved_scenario_breakeven_point: breakEvenPoint || undefined
-        }, {
-          onError: (error) => {
-            console.error("Error saving scenario:", error)
-            throw error
-          }
-        })
-      }
-
-        toast({
-          title: t("ui.success", { ns: "global" }),
-        description: t("messages.scenario_saved", "Scenario saved as default", { ns: "mortgages" }),
-      })
-    } catch (error) {
-      console.error("Error saving scenario:", error)
-      toast({
-        variant: "destructive",
-        title: t("ui.error", { ns: "global" }),
-        description: t("messages.error_saving_scenario", "Error saving scenario", { ns: "mortgages" }),
-      })
+    // Get the appropriate scenario data
+    let scenarioData: SaveScenarioParams['scenarioData'] = {
+      total_interest_and_insurance: 0,
+      total_months: 0,
+      monthly_payment: 0,
+      breakeven_point: undefined
+    };
+    const scenarioKey = scenarioType as keyof Scenarios;
+    if (scenarios && scenarios[scenarioKey]?.summary) {
+      const summary = scenarios[scenarioKey].summary;
+      scenarioData = {
+        total_interest_and_insurance: summary.total_interest_and_insurance || 0,
+        total_months: summary.total_months || 0,
+        monthly_payment: summary.monthly_payment || 0,
+        breakeven_point: summary.breakeven_point
+      };
     }
+    await saveScenario({
+      mortgageId: id as string,
+      scenarioType,
+      scenarioData,
+      formValues: mortgageForm.getValues(),
+      onSuccess: () => setSavedScenario(scenarioType)
+    });
   }
 
   // Handler for updating mortgage
