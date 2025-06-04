@@ -109,9 +109,15 @@ export default function EditMortgageWithZustand(mortgageData: any) {
   
   // Set active tab to match the saved scenario when appropriate
   useEffect(() => {
-    if (mortgage?.saved_scenario && !tabFromUrl) {
-      setActiveTab(mortgage.saved_scenario)
+    if (mortgage?.saved_scenario) {
+      // Always sync savedScenario with database value
       setSavedScenario(mortgage.saved_scenario)
+      handleUpdateSavedScenarioUI(mortgage.saved_scenario)
+      
+      // Only set activeTab if no tab specified in URL
+      if (!tabFromUrl) {
+        setActiveTab(mortgage.saved_scenario)
+      }
     }
   }, [mortgage, tabFromUrl])
 
