@@ -102,6 +102,11 @@ export default function EditMortgageWithZustand(mortgageData: any) {
     return savedValue || "regular"
   })
   
+  const handleUpdateSavedScenarioUI = (scenarioType: string) => {
+    setSavedScenario(scenarioType);
+    localStorage.setItem(`savedScenario_${id}`, scenarioType);
+  };
+  
   // Set active tab to match the saved scenario when appropriate
   useEffect(() => {
     if (mortgage?.saved_scenario && !tabFromUrl) {
@@ -275,7 +280,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
         id: id as string // Ensure id is treated as string
       };
 
-        updateMortgage.mutate(updatedMortgage, {
+        updateMortgage.mutate(updatedMortgage as any, {
  
               onError: (error) => {
                 console.error("Error updating mortgage:", error)
@@ -373,16 +378,19 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
               <BreadcrumbSeparator />
               <BreadcrumbItem>
  
-                  <EditableHeading 
+              <EditableHeading 
                     value={mortgage?.name || ""} 
                     onChange={(newName) => {
-                      // Optimistic update via React Query
-                      updateMortgage.mutate({ id: id as string, name: newName }, {
-                        // onSuccess: () => {
-                        //   // Invalidate queries to refresh data after update
-                        //   // queryClient.invalidateQueries({ queryKey: ["mortgage-bundle", id] })
-                        // }
-                      })
+                      // Update Zustand store
+                      updateDraft({ name: newName });
+                      
+                      // Optimistic update via React Query - only update the name
+                      if (mortgage) {
+                        updateMortgage.mutate({ 
+                          id: mortgage.id,
+                          name: newName
+                        });
+                      }
                     }}
                     size="breadcrumb"
                     as="span"
@@ -499,6 +507,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                       propertyCost={property.price_cost}
                         isThisScenarioSaved={savedScenario === "regular"}
                         onSaveScenario={handleSaveScenario}
+                        onUpdateSavedScenarioUI={handleUpdateSavedScenarioUI}
                         formValues={{
                           loan_amount: calculatedLoanAmount,
                           down_payment: getFormattedMortgageValues().downPayment,
@@ -528,6 +537,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                           propertyCost={property.price_cost}
                             isThisScenarioSaved={savedScenario === "accelerated"}
                             onSaveScenario={handleSaveScenario}
+                            onUpdateSavedScenarioUI={handleUpdateSavedScenarioUI}
                             formValues={{
                               loan_amount: calculatedLoanAmount,
                               down_payment: getFormattedMortgageValues().downPayment,
@@ -566,6 +576,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                           propertyCost={property.price_cost}
                             isThisScenarioSaved={savedScenario === "lower_payment"}
                             onSaveScenario={handleSaveScenario}
+                            onUpdateSavedScenarioUI={handleUpdateSavedScenarioUI}
                             formValues={{
                               loan_amount: calculatedLoanAmount,
                               down_payment: getFormattedMortgageValues().downPayment,
@@ -604,6 +615,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                           propertyCost={property.price_cost}
                             isThisScenarioSaved={savedScenario === "new_rate"}
                             onSaveScenario={handleSaveScenario}
+                            onUpdateSavedScenarioUI={handleUpdateSavedScenarioUI}
                             formValues={{
                               loan_amount: calculatedLoanAmount,
                               down_payment: getFormattedMortgageValues().downPayment,

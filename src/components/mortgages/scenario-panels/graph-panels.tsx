@@ -114,6 +114,7 @@ const ScenarioPanel = ({
   scenarioType = "regular",
   isThisScenarioSaved = false,
   onSaveScenario,
+  onUpdateSavedScenarioUI,  // 🆕 ADD THIS LINE
   formValues,
   extraInstallments,
   newRates,
@@ -123,7 +124,7 @@ const ScenarioPanel = ({
   const { t } = useTranslation()
   const { id } = useParams()
   const navigate = useNavigate()
-  const { captureMortgage, captureCurrentScenario } = useMortgageCapture()
+  const { captureCurrentScenario } = useMortgageCapture()
   const { toast } = useToast()
   const { canCreate } = useCanCreateFeature()
 
@@ -208,16 +209,7 @@ const ScenarioPanel = ({
       )
     };
   }, [
-    // total_interest_and_insurance, //May21 this was not listening to changes
-    // totalCost,
-    // propertyCost,
-    // total_months,
-    // monthly_payment,
-    // breakeven_point,
-    // regularScenario?.summary?.total_interest_and_insurance,
-    // regularScenario?.summary?.total_months,
-    // regularScenario?.summary?.monthly_payment,
-    // regularScenario?.summary?.breakeven_point
+
   ]);
 
     // Optimize chart data transformation with better memoization and caching
@@ -336,17 +328,7 @@ const ScenarioPanel = ({
 
   const yearsLabel = t('scenario_graphs.common.years', 'years', { ns: 'components' });
   
-  // Get actual month and year for the break-even point
-  // const breakEvenMonthYear = useMemo(() => {
-  //   if (!breakEvenChartPoint || !breakEvenChartPoint.date) return '';
-    
-  //   try {
-  //     const date = new Date(breakEvenChartPoint.date);
-  //     return format(date, 'MMM yyyy');
-  //   } catch (error) {
-  //     return '';
-  //   }
-  // }, [breakEvenChartPoint]);
+
 
   // Update the handler function for capturing scenarios
   const handleCaptureScenario = async () => {
@@ -356,7 +338,7 @@ const ScenarioPanel = ({
       onShowLimitDialog?.(); // trigger the dialog
       return;
     }
-    // Remove debug logging
+    
     if (!id) {
       console.error("No mortgage ID available for capture");
       toast({
@@ -377,30 +359,10 @@ const ScenarioPanel = ({
       return;
     }
     
-    if (!formValues) {
-      console.error("No form values provided for capture");
-      toast({
-        variant: "destructive",
-        title: t('scenario_graphs.common.error', 'Error', { ns: 'components' }),
-        description: t('scenario_graphs.common.error_no_form_values', 'Cannot capture scenario: No form values available', { ns: 'components' })
-      });
-      return;
-    }
-    
     try {
-      // Create a properly formatted object for capture
-      const captureData = {
+      // Use the simplified service interface - form values come from Zustand store
+      await captureCurrentScenario({
         mortgageId: id,
-        currentValues: {
-          loan_amount: formValues.loan_amount,
-          down_payment: formValues.down_payment,
-          interest_rate: formValues.interest_rate,
-          term_years: formValues.term_years,
-          installments_per_year: formValues.installments_per_year,
-          loan_protection_type: formValues.loan_protection_type,
-          loan_protection_insurance: formValues.loan_protection_insurance,
-          first_installment_date: formValues.first_installment_date
-        },
         scenarioType: scenarioType,
         scenarioSummary: {
           total_interest_and_insurance: scenario.summary.total_interest_and_insurance,
@@ -409,10 +371,7 @@ const ScenarioPanel = ({
           breakeven_point: scenario.summary.breakeven_point
         },
         stayOnPage: true
-      };
-      
-      // Use the formValues from parent component
-      await captureCurrentScenario(captureData);
+      });
       
       // Update the URL to include the tab parameter without causing a full page reload
       const url = new URL(window.location.href);
@@ -420,8 +379,14 @@ const ScenarioPanel = ({
       window.history.pushState({}, '', url);
       
       // Call the onSaveScenario handler to update the parent component's state
-      if (onSaveScenario) {
-        onSaveScenario(scenarioType);
+      // if (onSaveScenario) {
+      //   // onSaveScenario(scenarioType);
+      //   onSuccess: () => setSavedScenario(scenarioType) 
+      //   console.log("onSaveScenario", scenarioType)
+      // }
+      if (onUpdateSavedScenarioUI) {
+        onUpdateSavedScenarioUI(scenarioType);
+        console.log("UI updated for scenario:", scenarioType)
       }
     } catch (error) {
       console.error("Error capturing scenario:", error);

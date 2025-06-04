@@ -13,13 +13,13 @@ export function useUpdateMortgage() {
   const qc = useQueryClient();
   const { t } = useTranslation(['mortgages', 'global']);
 
-  return useMutation<Mortgage, Error, Mortgage>({
+  return useMutation<Mortgage, Error, Partial<Mortgage> & { id: string }>({
     mutationKey: ['updateMortgage'],
 
     // 1) The actual update call to Supabase
-    mutationFn: async (updatedMortgage) => {
+    mutationFn: async (partialMortgage) => {
       // If you have any computed-only fields (like `bonus`), strip them out:
-      const { bonus, ...payload } = updatedMortgage as any;
+      const { bonus, ...payload } = partialMortgage as any;
 
       const { data, error } = await supabase
         .from('mortgages')

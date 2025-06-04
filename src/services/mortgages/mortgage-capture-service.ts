@@ -3,6 +3,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMortgageCount } from "@/hooks/mortgages/useCount";
+import { useMortgageDraftStore } from "@/store/mortgage/store";
+import { useCreateMortgage } from "@/hooks/mortgages/useCreate";
 
 /**
  * Types for mortgage capture service
@@ -16,16 +18,6 @@ export interface MortgageCapture {
 
 export interface CurrentScenarioCapture {
   mortgageId: string;
-  currentValues: {
-    loan_amount: number;
-    down_payment: number;
-    interest_rate: number;
-    term_years: number;
-    installments_per_year: number;
-    loan_protection_type: string;
-    loan_protection_insurance: number;
-    first_installment_date: string | Date;
-  };
   scenarioType: string;
   scenarioSummary: {
     total_interest_and_insurance: number;
@@ -39,7 +31,7 @@ export interface CurrentScenarioCapture {
 
 /**
  * Mortgage capture service
- * Creates a duplicate of a mortgage with all its dependencies
+ * Creates new mortgages using the useCreateMortgage hook
  */
 export const useMortgageCapture = () => {
   const { toast } = useToast();
@@ -47,7 +39,8 @@ export const useMortgageCapture = () => {
   const { t: tGlobal } = useTranslation('global');
   const { t: tMortgages } = useTranslation('mortgages');
   const { incrementMortgageCount } = useMortgageCount();
-
+  const mortgageDraft = useMortgageDraftStore((state) => state.mortgageDraft);
+  const createMortgage = useCreateMortgage();
 
   /**
    * Captures a mortgage with all its dependencies
@@ -106,6 +99,7 @@ export const useMortgageCapture = () => {
       };
 
       // Insert into mortgages (using amortizations table since that's the actual table)
+      // This creates a DUPLICATE mortgage record with saved scenario data - the original mortgage is not modified
       const { data: newMortgage, error: createError } = await supabase
         .from("mortgages")
         .insert(duplicatedMortgage)
@@ -209,7 +203,6 @@ export const useMortgageCapture = () => {
    */
   const captureCurrentScenario = async ({ 
     mortgageId, 
-    currentValues, 
     scenarioType, 
     scenarioSummary,
     successCallback, 
@@ -222,6 +215,16 @@ export const useMortgageCapture = () => {
           variant: "destructive",
           title: tGlobal('ui.error'),
           description: tMortgages('messages.error_invalid_id', "Invalid mortgage ID"),
+        });
+        return null;
+      }
+
+      if (!mortgageDraft) {
+        console.error("No mortgage draft data available");
+        toast({
+          variant: "destructive",
+          title: tGlobal('ui.error'),
+          description: tMortgages('messages.error_no_draft_data', "No draft data available"),
         });
         return null;
       }
@@ -262,44 +265,33 @@ export const useMortgageCapture = () => {
       // Create name for the captured mortgage
       const mortgageName = `${originalMortgage.name} (${scenarioType})`;
 
-      // Format the date if it's a Date object
-      let formattedDate = currentValues.first_installment_date;
-      if (formattedDate instanceof Date) {
-        formattedDate = formattedDate.toISOString().split('T')[0];
-      }
+      // Format the date for database storage
+      const formattedDate = mortgageDraft.first_installment_date.toISOString().split('T')[0];
 
-      // 2. Create new mortgage with current form values
-      const newMortgage = {
+      // 2. Create new mortgage with current values from the store using the hook
+      const newMortgageData = {
         name: mortgageName,
         property_id: originalMortgage.property_id,
         user_id: originalMortgage.user_id,
-        // Use current values from the form
-        loan_amount: currentValues.loan_amount,
-        down_payment: currentValues.down_payment,
-        interest_rate: currentValues.interest_rate,
-        term_years: currentValues.term_years,
-        installments_per_year: currentValues.installments_per_year,
-        loan_protection_type: currentValues.loan_protection_type,
-        loan_protection_insurance: currentValues.loan_protection_insurance,
+        // Use current values from the store
+        loan_amount: mortgageDraft.loan_amount || 0,
+        down_payment: parseFloat(mortgageDraft.down_payment) || 0,
+        interest_rate: parseFloat(mortgageDraft.interest_rate) || 0,
+        term_years: parseInt(mortgageDraft.term_years) || 0,
+        installments_per_year: parseInt(mortgageDraft.installments_per_year) || 12,
+        loan_protection_type: mortgageDraft.loan_protection_type,
+        loan_protection_insurance: parseFloat(mortgageDraft.loan_protection_insurance) || 0,
         first_installment_date: formattedDate,
         // Set the current scenario as the saved scenario
         saved_scenario: scenarioType,
         saved_scenario_total_interest_and_insurance: scenarioSummary.total_interest_and_insurance,
         saved_scenario_total_months: scenarioSummary.total_months,
         saved_scenario_monthly_payment: scenarioSummary.monthly_payment,
-        saved_scenario_breakeven_point: scenarioSummary.breakeven_point
+        saved_scenario_breakeven_point: scenarioSummary.breakeven_point !== null ? scenarioSummary.breakeven_point : undefined
       };
 
-      // Insert into mortgages (using amortizations table since that's the actual table)
-      const { data: createdMortgage, error: createError } = await supabase
-        .from("mortgages")
-        .insert(newMortgage)
-        .select()
-        .single();
-
-      if (createError || !createdMortgage) {
-        throw new Error(createError?.message || "Failed to create mortgage");
-      }
+      // Use the hook to create the mortgage (this handles toasts, query invalidation, etc.)
+      const createdMortgage = await createMortgage.mutateAsync(newMortgageData);
 
       // 3. Copy extra installments
       const { data: extraInstallments, error: extraInstallmentsError } = await supabase
@@ -390,8 +382,6 @@ export const useMortgageCapture = () => {
   };
 
   return {
-    captureMortgage,
     captureCurrentScenario,
-    // checkMortgageLimits
   };
 }; 
