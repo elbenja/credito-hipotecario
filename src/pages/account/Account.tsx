@@ -130,12 +130,12 @@ export default function Account() {
               )}
             </div>
           ) : (
-            <div className="self-stretch inline-flex justify-between items-center">
-              <div className="  flex justify-center items-center gap-2">
+            <div className="flex flex-col lg:flex-row justify-between gap-4 lg:gap-8 items-center">
+              <div className="  flex justify-start items-center gap-2">
                 <div className="flex-1 justify-start  font-medium  leading-none">{t('no_plan_copy')}</div>
               </div>
-              <div className="size- flex justify-start items-center gap-5">
-                <div className="text-center justify-start text-base font-medium leading-none">{t('code_description')}</div>
+              <div className="size- flex justify-start items-center gap-3">
+                <div className="text-left justify-start text-base font-medium leading-none">{t('code_description')}</div>
                 <ButtonToClipboard className="bg-brand text-black px-4 py-2 rounded-md">
                   {t('code_name')}
                 </ButtonToClipboard>
