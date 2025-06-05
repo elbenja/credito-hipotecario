@@ -165,8 +165,11 @@ export default function Account() {
           <AlertTitle >
             <span className="bg-brand text-black xl:text-lg py-0.5 px-2 rounded-md"> {t('alert.title')}</span> 
             </AlertTitle>
-              <AlertDescription>
+              <AlertDescription className="mb-2">
                 {t('alert.description')}
+              </AlertDescription>
+              <AlertDescription>
+                {t('alert.description_2')}
               </AlertDescription>
         </Alert>
       </div>

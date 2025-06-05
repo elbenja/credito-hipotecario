@@ -28,7 +28,8 @@
   "code_name": "20CREDITO",
   "alert": {
     "title": "Límites de Plan",
-    "description": "Los montos son los limites de propiedades. hipotecas y rentas que puedes tener al mismo tiempo. Ejemplo: si tu limite es 3 propiedades y ya tienes 3, puedes borrar una y crear otra."
+    "description": "Los límites indican la cantidad máxima de propiedades, hipotecas o análisis de rentabilidad que puedes tener activos al mismo tiempo. Pero si llegas al límite, puedes borrar simulaciones para liberar espacio y seguir creando nuevas.",
+    "description_2" :"Si necesitas comparar varias opciones simultáneamente, te conviene elegir un plan con más espacio para tener todo a la mano y facilitar tu análisis."
   },
   "toast": {
     "please_login_upgrade": "Por favor, inicia sesión para mejorar tu plan",

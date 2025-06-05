@@ -28,7 +28,8 @@
   "code_name": "20CREDITO",
   "alert": {
     "title": "Plan Limits",
-    "description": "The amounts are the limits of properties, mortgages, and rentals you can have at the same time. Example: if your limit is 3 properties and you already have 3, you can delete one and create another."
+    "description": "The limits indicate the maximum number of properties, mortgages, or rental analyses you can have active at the same time. But if you reach the limit, you can delete simulations to free up space and continue creating new ones.",
+    "description_2" :"If you need to compare multiple options simultaneously, it's better to choose a plan with more space to have everything at your fingertips and make your analysis easier."
   },
   "toast": {
     "please_login_upgrade": "Please log in to upgrade your plan",
