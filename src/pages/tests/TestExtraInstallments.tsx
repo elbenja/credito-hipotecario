@@ -104,7 +104,8 @@ export default function TestExtraInstallments() {
             />
             <ExpensesGroup
               name="Costos de Implementación"
-              suggestedNames={["Amoblamiento", "Equipo de Cocina"]}
+              // suggestedNames={["Amoblamiento", "Equipo de Cocina"]}
+              suggestedNames={["Gas Natural", "Cortinas", "Luces", "Mamparas De Vidrio", "Espejo"]}
               viewPeriod={false}
               viewRelation={false}
             />
