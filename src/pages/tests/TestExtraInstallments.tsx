@@ -97,7 +97,8 @@ export default function TestExtraInstallments() {
 
             <ExpensesGroup
               name="Costos de Compra"
-              suggestedNames={["Mantenimiento", "Internet", "Agente", "Condo Fees"]}
+              // suggestedNames={["Mantenimiento", "Internet", "Agente", "Condo Fees"]}
+              suggestedNames={["Tasación", "Minuta", "Alcabala", "Notario", "Registro"]}
               viewPeriod={true}
               viewRelation={true}
             />
