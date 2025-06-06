@@ -13,6 +13,7 @@ interface PopExpenseProps {
   onConfirm: (values: { name: string; amount: string; period: string; relation: string }) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialValues?: { name: string; amount: string; period: string; relation: string } | null;
 }
 
 export const PopExpense: React.FC<PopExpenseProps> = ({
@@ -23,6 +24,7 @@ export const PopExpense: React.FC<PopExpenseProps> = ({
   onConfirm,
   open,
   onOpenChange,
+  initialValues = null,
 }) => {
   const [name, setName] = useState("");
   const [showNameInput, setShowNameInput] = useState(
@@ -34,12 +36,24 @@ export const PopExpense: React.FC<PopExpenseProps> = ({
   const [nameError, setNameError] = useState("");
   const [amountError, setAmountError] = useState("");
 
-  // Sync with suggestedNames if only one
   React.useEffect(() => {
-    if (suggestedNames && suggestedNames.length === 1) {
+    if (initialValues) {
+      setName(initialValues.name);
+      setAmount(initialValues.amount);
+      setPeriodTab(initialValues.period);
+      setRelationTab(initialValues.relation);
+      setShowNameInput(true);
+    } else if (suggestedNames && suggestedNames.length === 1) {
       setName(suggestedNames[0]);
+      setShowNameInput(true);
+    } else if (open && suggestedNames && suggestedNames.length > 1) {
+      setShowNameInput(false);
+      setName("");
+      setAmount("");
+      setPeriodTab("Monthly");
+      setRelationTab("Fixed");
     }
-  }, [suggestedNames]);
+  }, [initialValues, suggestedNames, open]);
 
   const handleSelect = (val: string) => {
     setShowNameInput(true);
@@ -81,8 +95,8 @@ export const PopExpense: React.FC<PopExpenseProps> = ({
       <PopoverContent>
         <div className="flex flex-col gap-2">
           <div className="font-bold text-lg">{title}</div>
-          {/* Select for suggested names if more than one */}
-          {suggestedNames && suggestedNames.length > 1 && !showNameInput && (
+          {/* Select for suggested names if more than one and not editing */}
+          {(!initialValues && suggestedNames && suggestedNames.length > 1 && !showNameInput) && (
             <div className="grid w-full max-w-sm items-center gap-3">
               <Label htmlFor="suggested-name">Suggested Name</Label>
               <select
@@ -131,6 +145,7 @@ export const PopExpense: React.FC<PopExpenseProps> = ({
               id="period"
               options={["Monthly", "Annually"]}
               defaultValue="Monthly"
+              value={periodTab}
               onCheckedChange={setPeriodTab}
             />
           )}
@@ -139,12 +154,11 @@ export const PopExpense: React.FC<PopExpenseProps> = ({
               id="relation"
               options={["Fixed", "Rent Percentage"]}
               defaultValue="Fixed"
+              value={relationTab}
               onCheckedChange={setRelationTab}
             />
           )}
           <Button className="mt-2" onClick={handleConfirm}>Confirm</Button>
-
-          
         </div>
       </PopoverContent>
     </Popover>

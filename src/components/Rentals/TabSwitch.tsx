@@ -1,10 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { cn } from "@/utils/utils";
 
 interface TabSwitchProps {
   id: string;
   options: string[];
   defaultValue?: string;
+  value?: string;
   onCheckedChange?: (value: string) => void;
   className?: string;
 }
@@ -13,15 +14,26 @@ export const TabSwitch: React.FC<TabSwitchProps> = ({
   id,
   options,
   defaultValue,
+  value,
   onCheckedChange,
   className,
 }) => {
   const [selected, setSelected] = useState(defaultValue || options[0]);
   const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const handleSelect = (value: string, idx: number) => {
-    setSelected(value);
-    onCheckedChange?.(value);
+  // Keep internal state in sync with defaultValue if it changes
+  useEffect(() => {
+    if (defaultValue && options.includes(defaultValue)) {
+      setSelected(defaultValue);
+    }
+  }, [defaultValue, options]);
+
+  // Use controlled value if provided and valid
+  const current = value && options.includes(value) ? value : selected;
+
+  const handleSelect = (val: string, idx: number) => {
+    setSelected(val);
+    onCheckedChange?.(val);
     btnRefs.current[idx]?.focus();
   };
 
@@ -55,11 +67,11 @@ export const TabSwitch: React.FC<TabSwitchProps> = ({
           key={option}
           ref={el => (btnRefs.current[idx] = el)}
           role="tab"
-          aria-selected={selected === option}
-          tabIndex={selected === option ? 0 : -1}
+          aria-selected={current === option}
+          tabIndex={current === option ? 0 : -1}
           className={cn(
             "inline-flex w-full items-center justify-center whitespace-nowrap rounded-sm px-0 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            selected === option
+            current === option
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground hover:bg-accent",
             idx === 0 && "rounded-l-md",

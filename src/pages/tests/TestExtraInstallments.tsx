@@ -19,12 +19,13 @@ import type { Mortgage } from "@/types";
 // import { SavedScenarioExample } from "@/components/Rentals/ScenarioPayments";
 import { MortgageSelectionSheet } from "../../components/ui/sheets/MortgageSelectionSheet";
 import { PaymentsSheet } from "../../components/ui/sheets/PaymentsSheet";
+import { ExpensesGroup } from "@/components/Rentals/ExpensesGroup";
 // import { Switch } from "@/components/ui/switch";
 // import { Input } from "@/components/ui/input";
-import { PopExpense } from "@/components/Rentals/PopExpense";
+// import { PopExpense } from "@/components/Rentals/PopExpense";
 // import { TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 // import { TableBody } from "@/components/ui/table";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+// import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export default function TestExtraInstallments() {
   const [selectedMortgageId, setSelectedMortgageId] = useState<string | null>(null);
@@ -34,8 +35,8 @@ export default function TestExtraInstallments() {
   // Add state for PopExpense fields
   // const [expenseName, setExpenseName] = useState("");
   // const [expenseAmount, setExpenseAmount] = useState("");
-  const [showPopover, setShowPopover] = useState(false);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  // const [showPopover, setShowPopover] = useState(false);
+  // const [expenses, setExpenses] = useState<Expense[]>([]);
 
   // Switches for showing/hiding TabSwitches
   // const [periodSwitch, setPeriodSwitch] = useState(true); // true = hidden
@@ -59,12 +60,12 @@ export default function TestExtraInstallments() {
 
   // const { payments, summary, savedScenarioType } = useSavedScenarioPayments(selectedMortgageId);
 
-  type Expense = {
-    name: string;
-    amount: string;
-    period: string;
-    relation: string;
-  };
+  // type Expense = {
+  //   name: string;
+  //   amount: string;
+  //   period: string;
+  //   relation: string;
+  // };
 
   // // Handler for adding expense
   // const handleAddExpense = (periodTabValue: string, relationTabValue: string) => {
@@ -82,9 +83,9 @@ export default function TestExtraInstallments() {
   //   setShowPopover(false);
   // };
 
-  const handleDeleteExpense = (idx: number) => {
-    setExpenses(expenses.filter((_, i) => i !== idx));
-  };
+  // const handleDeleteExpense = (idx: number) => {
+  //   setExpenses(expenses.filter((_, i) => i !== idx));
+  // };
 
   return (
     <DashboardLayout header={{ title: "Test Extra Installments" }}>
@@ -128,7 +129,14 @@ export default function TestExtraInstallments() {
 
           <div className="flex flex-col gap-2">
 
-          <Accordion
+            <ExpensesGroup
+              name="Costos de Compra"
+              suggestedNames={["Mantenimiento", "Internet", "Agente", "Condo Fees"]}
+              viewPeriod={true}
+              viewRelation={false}
+            />
+
+          {/* <Accordion
             type="single"
             collapsible
             className="w-full"
@@ -149,7 +157,7 @@ export default function TestExtraInstallments() {
               </AccordionContent>
             </AccordionItem>
         
-          </Accordion>
+          </Accordion> */}
 
             {/* <div className="grid w-full max-w-sm items-center gap-3">
               <Label htmlFor="name">Name</Label>
@@ -168,7 +176,7 @@ export default function TestExtraInstallments() {
         
 
             {/* Expenses Table */}
-            <table className="mt-4 w-full border">
+            {/* <table className="mt-4 w-full border">
               <thead>
                 <tr>
                   <th className="border px-2 py-1">Name</th>
@@ -203,7 +211,7 @@ export default function TestExtraInstallments() {
               }}
               open={showPopover}
               onOpenChange={setShowPopover}
-            />
+            /> */}
           </div>
           
         </div>
