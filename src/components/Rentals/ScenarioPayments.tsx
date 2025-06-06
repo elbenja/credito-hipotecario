@@ -1,5 +1,5 @@
 import React from "react";
-import { useSavedScenarioPayments } from "@/hooks/useSavedScenarioPayments";
+import { useSavedScenarioPayments } from "@/hooks/mortgages/useSavedScenarioPayments";
 import { 
   formatCurrency, 
   generateScenarioReport, 

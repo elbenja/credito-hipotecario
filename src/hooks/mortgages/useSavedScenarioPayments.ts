@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useMortgageBundle, MortgageBundle } from "./useMortgageBundle";
+import { useMortgageBundle, MortgageBundle } from "../useMortgageBundle";
 import { ScenarioCalculator } from "@/utils/calculations/mortgage/scenarioCalculator";
 import { ScenarioResult, Scenarios } from "@/types/common";
 
