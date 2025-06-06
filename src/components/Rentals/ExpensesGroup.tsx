@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { PopExpense } from "./PopExpense";
 import { Trash2 } from "lucide-react";
+import { Button } from "../ui/button";
 
 interface ExpensesGroupProps {
   name: string;
@@ -56,7 +57,7 @@ export const ExpensesGroup: React.FC<ExpensesGroupProps> = ({ name, viewPeriod, 
             <div className="flex items-center justify-between w-full">
               <span className="truncate mr-2">{name}</span>
               <span className="font-medium">
-                Total S/. {expenses.reduce((acc, exp) => {
+                 S/. {expenses.reduce((acc, exp) => {
                   const amt = parseFloat(exp.amount) || 0;
                   return acc + (exp.period === "Annually" ? amt / 12 : amt);
                 }, 0).toFixed(2)}
@@ -64,34 +65,36 @@ export const ExpensesGroup: React.FC<ExpensesGroupProps> = ({ name, viewPeriod, 
             </div>
           </AccordionTrigger>
           <AccordionContent className="gap-4">
-            <table className="mt-4 w-full border">
-              <thead>
-                <tr>
-                  <th className="border px-2 py-1">Name</th>
-                  <th className="border px-2 py-1">Amount</th>
-                  <th className="border px-2 py-1">Period</th>
-                  <th className="border px-2 py-1">Relation</th>
-                  <th className="border px-2 py-1">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {expenses.map((exp, idx) => (
-                  <tr key={idx} className="cursor-pointer" onClick={() => handleEditExpense(idx)}>
-                    <td className="border px-2 py-1">{exp.name}</td>
-                    <td className="border px-2 py-1">
-                      {exp.period === "Annually"
-                        ? (parseFloat(exp.amount) / 12).toFixed(2)
-                        : parseFloat(exp.amount).toFixed(2)}
-                    </td>
-                    <td className="border px-2 py-1">{exp.period}</td>
-                    <td className="border px-2 py-1">{exp.relation}</td>
-                    <td className="border px-2 py-1" onClick={e => { e.stopPropagation(); handleDeleteExpense(idx); }}>
-                      <button className="text-red-500"><Trash2 className="w-4 h-4" /></button>
-                    </td>
+            {expenses.length > 0 && (
+              <table className="mt-4 w-full border">
+                <thead>
+                  <tr>
+                    <th className="border px-2 py-1">Name</th>
+                    <th className="border px-2 py-1">Amount</th>
+                    <th className="border px-2 py-1">Period</th>
+                    <th className="border px-2 py-1">Relation</th>
+                    <th className="border px-2 py-1">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {expenses.map((exp, idx) => (
+                    <tr key={idx} className="cursor-pointer" onClick={() => handleEditExpense(idx)}>
+                      <td className="border px-2 py-1">{exp.name}</td>
+                      <td className="border px-2 py-1">
+                        {exp.period === "Annually"
+                          ? (parseFloat(exp.amount) / 12).toFixed(2)
+                          : parseFloat(exp.amount).toFixed(2)}
+                      </td>
+                      <td className="border px-2 py-1">{exp.period}</td>
+                      <td className="border px-2 py-1">{exp.relation}</td>
+                      <td className="border px-2 py-1" onClick={e => { e.stopPropagation(); handleDeleteExpense(idx); }}>
+                        <button className="text-red-500"><Trash2 className="w-4 h-4" /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
             <PopExpense
               title="Other Expense"
               suggestedNames={suggestedNames}
@@ -107,10 +110,10 @@ export const ExpensesGroup: React.FC<ExpensesGroupProps> = ({ name, viewPeriod, 
                 }
               }}
               initialValues={editExpense}
+              trigger={
+                <Button onClick={handleAddClick}>Add Expense</Button>
+              }
             />
-            <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded" onClick={handleAddClick}>
-              Add Expense
-            </button>
           </AccordionContent>
         </AccordionItem>
       </Accordion>

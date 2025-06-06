@@ -14,6 +14,7 @@ interface PopExpenseProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialValues?: { name: string; amount: string; period: string; relation: string } | null;
+  trigger?: React.ReactNode;
 }
 
 export const PopExpense: React.FC<PopExpenseProps> = ({
@@ -25,6 +26,7 @@ export const PopExpense: React.FC<PopExpenseProps> = ({
   open,
   onOpenChange,
   initialValues = null,
+  trigger,
 }) => {
   const [name, setName] = useState("");
   const [showNameInput, setShowNameInput] = useState(
@@ -89,9 +91,7 @@ export const PopExpense: React.FC<PopExpenseProps> = ({
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>
-        <Button variant="outline">Add Expense</Button>
-      </PopoverTrigger>
+      {trigger && <PopoverTrigger asChild>{trigger}</PopoverTrigger>}
       <PopoverContent>
         <div className="flex flex-col gap-2">
           <div className="font-bold text-lg">{title}</div>

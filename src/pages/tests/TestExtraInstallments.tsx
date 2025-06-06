@@ -20,27 +20,14 @@ import type { Mortgage } from "@/types";
 import { MortgageSelectionSheet } from "../../components/ui/sheets/MortgageSelectionSheet";
 import { PaymentsSheet } from "../../components/ui/sheets/PaymentsSheet";
 import { ExpensesGroup } from "@/components/Rentals/ExpensesGroup";
-// import { Switch } from "@/components/ui/switch";
-// import { Input } from "@/components/ui/input";
-// import { PopExpense } from "@/components/Rentals/PopExpense";
-// import { TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-// import { TableBody } from "@/components/ui/table";
-// import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
 
 export default function TestExtraInstallments() {
   const [selectedMortgageId, setSelectedMortgageId] = useState<string | null>(null);
   const [isSelectionSheetOpen, setIsSelectionSheetOpen] = useState(false);
   const [isPaymentsSheetOpen, setIsPaymentsSheetOpen] = useState(false);
   
-  // Add state for PopExpense fields
-  // const [expenseName, setExpenseName] = useState("");
-  // const [expenseAmount, setExpenseAmount] = useState("");
-  // const [showPopover, setShowPopover] = useState(false);
-  // const [expenses, setExpenses] = useState<Expense[]>([]);
 
-  // Switches for showing/hiding TabSwitches
-  // const [periodSwitch, setPeriodSwitch] = useState(true); // true = hidden
-  // const [relationSwitch, setRelationSwitch] = useState(true); // true = hidden
 
   const { user } = useAuth();
   const { t } = useTranslation(['properties', 'global']);
@@ -58,40 +45,15 @@ export default function TestExtraInstallments() {
     return null;
   })() : null;
 
-  // const { payments, summary, savedScenarioType } = useSavedScenarioPayments(selectedMortgageId);
 
-  // type Expense = {
-  //   name: string;
-  //   amount: string;
-  //   period: string;
-  //   relation: string;
-  // };
-
-  // // Handler for adding expense
-  // const handleAddExpense = (periodTabValue: string, relationTabValue: string) => {
-  //   setExpenses([
-  //     ...expenses,
-  //     {
-  //       name: expenseName,
-  //       amount: expenseAmount,
-  //       period: periodTabValue,
-  //       relation: relationSwitch ? "Fixed" : relationTabValue,
-  //     },
-  //   ]);
-  //   setExpenseName("");
-  //   setExpenseAmount("");
-  //   setShowPopover(false);
-  // };
-
-  // const handleDeleteExpense = (idx: number) => {
-  //   setExpenses(expenses.filter((_, i) => i !== idx));
-  // };
 
   return (
     <DashboardLayout header={{ title: "Test Extra Installments" }}>
       <div className="flex min-h-[60vh] items-center justify-center flex-col gap-16">
 
-        <div className="flex items-center justify-center gap-1">
+
+{/* future component Inherit payments */}
+        {/* <div className="flex items-center justify-center gap-1">
           <Button onClick={() => setIsSelectionSheetOpen(true)}>
             {selectedMortgageInfo ? (
               <div className="flex justify-between w-full">
@@ -122,7 +84,11 @@ export default function TestExtraInstallments() {
             <Eye className="w-4 h-4" />
             Payments
           </Button>
-        </div>
+        </div> */}
+
+
+
+
         <div className="flex flex-col gap-4">
 
  
@@ -133,9 +99,14 @@ export default function TestExtraInstallments() {
               name="Costos de Compra"
               suggestedNames={["Mantenimiento", "Internet", "Agente", "Condo Fees"]}
               viewPeriod={true}
+              viewRelation={true}
+            />
+            <ExpensesGroup
+              name="Costos de Implementación"
+              suggestedNames={["Amoblamiento", "Equipo de Cocina"]}
+              viewPeriod={false}
               viewRelation={false}
             />
-
           {/* <Accordion
             type="single"
             collapsible
