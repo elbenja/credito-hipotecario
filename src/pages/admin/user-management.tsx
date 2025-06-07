@@ -61,11 +61,12 @@ type User = {
     id: string
     plan_id: string
     plan_name?: string
+    current_period_start: string
   } | null
   mortgages_count?: number
 }
 
-type SortField = 'email' | 'role' | 'created_at' | 'last_sign_in_at' | 'plan' | 'mortgages_count'
+type SortField = 'email' | 'role' | 'created_at' | 'last_sign_in_at' | 'plan' | 'current_period_start' | 'mortgages_count'
 type SortDirection = 'asc' | 'desc'
 
 // Custom hooks using React Query
@@ -82,7 +83,7 @@ function useUsers() {
           // Fetch subscriptions
           const { data: subscriptions, error: subscriptionError } = await supabase
             .from('user_subscriptions')
-            .select('id, user_id, plan_id, plan:plan_id(name)')
+            .select('id, user_id, plan_id, current_period_start, plan:plan_id(name)')
             .in('user_id', userIds)
             .eq('status', 'active');
             
@@ -107,7 +108,8 @@ function useUsers() {
               subscription: userSubscription ? {
                 id: userSubscription.id,
                 plan_id: userSubscription.plan_id,
-                plan_name: (userSubscription.plan as any)?.name
+                plan_name: (userSubscription.plan as any)?.name,
+                current_period_start: userSubscription.current_period_start
               } : null,
               mortgages_count: userMortgageCount ? userMortgageCount.count : 0
             };
@@ -393,6 +395,10 @@ export default function UserManagement() {
           aValue = a.subscription?.plan_name?.toLowerCase() || ''
           bValue = b.subscription?.plan_name?.toLowerCase() || ''
           break
+        case 'current_period_start':
+          aValue = a.subscription?.current_period_start ? new Date(a.subscription.current_period_start) : new Date(0)
+          bValue = b.subscription?.current_period_start ? new Date(b.subscription.current_period_start) : new Date(0)
+          break
         case 'mortgages_count':
           aValue = a.mortgages_count || 0
           bValue = b.mortgages_count || 0
@@ -654,6 +660,18 @@ export default function UserManagement() {
                   </Button>
                 </TableHead>
                 <TableHead className="hidden md:table-cell">
+                  <Button
+                    variant="ghost"
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('current_period_start')}
+                  >
+                    {'Current Period Start'}
+                    {sortField === 'current_period_start' && (
+                      sortDirection === 'asc' ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
+                    )}
+                  </Button>
+                </TableHead>
+                <TableHead className="hidden md:table-cell">
                   <Button 
                     variant="ghost" 
                     className="h-auto p-0 font-semibold hover:bg-transparent"
@@ -727,6 +745,20 @@ export default function UserManagement() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {user.subscription?.current_period_start ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              {new Date(user.subscription.current_period_start).toLocaleDateString()}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {new Date(user.subscription.current_period_start).toLocaleString()}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : ''}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       {user.mortgages_count || 0}
