@@ -2,7 +2,7 @@ import { Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTranslation } from "react-i18next"
 import { formatCurrency, formatDate } from "@/utils/utils"
-
+// ignore  
 interface ExtraInstallment {
   id: string
   amount: number
