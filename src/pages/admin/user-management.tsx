@@ -214,6 +214,15 @@ function useSendPasswordReset() {
   })
 }
 
+// Add a helper function for date formatting
+function formatDateDDMMYYYY(dateString: string) {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
 export default function UserManagement() {
   const { t } = useTranslation(["admin", "global"])
   const navigate = useNavigate()
@@ -572,9 +581,9 @@ export default function UserManagement() {
             variant="outline"
             onClick={() => {
               // Prepare CSV header
-              const header = 'email,created_at\n';
-              // Prepare CSV rows
-              const rows = filteredUsers.map(user => `${user.email},${new Date(user.created_at).toISOString()}`);
+              const header = '"email";"plan";"created_at"\n';
+              // Prepare CSV rows with DD-MM-YYYY format and plan, all fields quoted
+              const rows = filteredUsers.map(user => `"${user.email}";"${user.subscription?.plan_name || ''}";"${formatDateDDMMYYYY(user.created_at)}"`);
               const csvContent = header + rows.join('\n');
               // Create a blob and trigger download
               const blob = new Blob([csvContent], { type: 'text/csv' });
