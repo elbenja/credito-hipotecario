@@ -47,6 +47,8 @@ export function ExtraInstallmentsSection({
   const { t } = useTranslation(['components'])
   const [isLoading, setIsLoading] = useState(false)
   const queryClient = useQueryClient()
+  const [editingInstallment, setEditingInstallment] = useState<ExtraInstallment | null>(null)
+  const [popoverOpen, setPopoverOpen] = useState(false)
 
   // Debug information for firstInstallmentDate
   // useEffect(() => {
@@ -82,43 +84,29 @@ export function ExtraInstallmentsSection({
     staleTime: 0 // Always fetch fresh data
   })
 
+  // --- Add/Edit Handlers ---
   const handleSubmit = async (values: ExtraInstallmentFormValues) => {
     try {
       setIsLoading(true)
-      
-      // Log the received date from the form componen 
-      // IMPROVED APPROACH: Create a date string in YYYY-MM-DD format
-      // 1. Extract components from the date object
       const dateObj = values.start_date;
       const year = dateObj.getFullYear();
-      const month = dateObj.getMonth() + 1; // Convert to 1-based month
+      const month = dateObj.getMonth() + 1;
       const day = dateObj.getDate();
-      
-      // 2. Create a properly formatted YYYY-MM-DD string
       const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      
-
-      
       const installmentData = {
         mortgage_id: mortgageId,
-        start_date: dateString, // Use the YYYY-MM-DD string
+        start_date: dateString,
         amount: parseFloat(values.amount),
         frequency: values.frequency
       }
-
       const { data, error } = await supabase
         .from("extra_installments")
         .insert([installmentData])
         .select()
-
       if (error) {
         console.error('Supabase error:', error)
         throw error
       }
-
-      // console.log('Extra installment created:', data);
-
-      // Invalidate both queries to trigger recalculation
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["extra-installments", mortgageId]
@@ -127,18 +115,65 @@ export function ExtraInstallmentsSection({
           queryKey: ["scenarios", mortgageId]
         })
       ])
-      
       onInstallmentsChange()
       toast({
         title: t('extra_installments_section.success.title', 'Success', { ns: 'components' }),
         description: t('extra_installments_section.success.add', 'Extra installment added successfully', { ns: 'components' }),
         variant: "default"
       })
+      setPopoverOpen(false)
     } catch (error) {
       console.error("Error details:", error)
       toast({
         title: t('extra_installments_section.error.title', 'Error', { ns: 'components' }),
         description: t('extra_installments_section.error.add', 'Error adding extra installment', { ns: 'components' }),
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // --- Edit handler ---
+  const handleEdit = async (values: ExtraInstallmentFormValues) => {
+    if (!editingInstallment) return;
+    try {
+      setIsLoading(true)
+      const dateObj = values.start_date;
+      const year = dateObj.getFullYear();
+      const month = dateObj.getMonth() + 1;
+      const day = dateObj.getDate();
+      const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const { error } = await supabase
+        .from("extra_installments")
+        .update({
+          start_date: dateString,
+          amount: parseFloat(values.amount),
+          frequency: values.frequency
+        })
+        .eq("id", editingInstallment.id)
+      if (error) throw error
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["extra-installments", mortgageId]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["scenarios", mortgageId]
+        })
+      ])
+      onInstallmentsChange()
+      toast({
+        title: t('extra_installments_section.success.title', 'Success', { ns: 'components' }),
+        description: t('extra_installments_section.success.edit', 'Extra installment updated successfully', { ns: 'components' }),
+        variant: "default"
+      })
+      setPopoverOpen(false)
+      setEditingInstallment(null)
+    } catch (error) {
+      console.error("Error editing extra installment:", error)
+      toast({
+        title: t('extra_installments_section.error.title', 'Error', { ns: 'components' }),
+        description: t('extra_installments_section.error.edit', 'Error editing extra installment', { ns: 'components' }),
         variant: "destructive"
       })
     } finally {
@@ -183,34 +218,50 @@ export function ExtraInstallmentsSection({
     }
   }
 
+  // --- Helper to get initial values for form ---
+  const getInitialFormValues = () => {
+    if (!editingInstallment) return undefined;
+    return {
+      amount: editingInstallment.amount.toString(),
+      frequency: editingInstallment.frequency,
+      startDate: new Date(editingInstallment.start_date)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className=" p-2 inline-flex justify-start items-center gap-8">
         <h3 className="text-lg font-medium">{t('extra_installments_section.title', 'Extra Installments', { ns: 'components' })}</h3>
-    
-
-      <Popover>
+      <Popover open={popoverOpen} onOpenChange={(open) => {
+        setPopoverOpen(open)
+        if (!open) setEditingInstallment(null)
+      }}>
         <PopoverTrigger asChild>
-          <Button size="sm" className="flex items-center gap-2">
+          <Button size="sm" className="flex items-center gap-2" onClick={() => { setEditingInstallment(null); setPopoverOpen(true); }}>
             <Plus className="h-4 w-4" />
             {t('extra_installments_section.add_button', 'Add Extra Installment', { ns: 'components' })}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-4" align="start">
           <ExtraInstallmentForm
-            onSubmit={handleSubmit}
+            onSubmit={editingInstallment ? handleEdit : handleSubmit}
             isLoading={isLoading}
             loanAmount={loanAmount}
             currency={currency}
+            initialValues={getInitialFormValues()}
+            onClose={() => { setPopoverOpen(false); setEditingInstallment(null); }}
           />
         </PopoverContent>
       </Popover>
     </div>
-
       <ExtraInstallmentsTable
         installments={installments}
         currency={currency}
         onDelete={handleDelete}
+        onRowClick={(installment) => {
+          setEditingInstallment(installment)
+          setPopoverOpen(true)
+        }}
       />
     </div>
   )

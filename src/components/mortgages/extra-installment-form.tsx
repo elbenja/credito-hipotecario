@@ -61,6 +61,12 @@ interface ExtraInstallmentFormProps {
   loanAmount: number
   currency: "USD" | "PEN"
   lastExtraInstallmentDate?: Date
+  initialValues?: {
+    amount: string
+    frequency: "monthly" | "one-time"
+    startDate: Date
+  }
+  onClose?: () => void
 }
 
 export function ExtraInstallmentForm({ 
@@ -68,7 +74,9 @@ export function ExtraInstallmentForm({
   isLoading, 
   loanAmount, 
   currency,
-  lastExtraInstallmentDate
+  lastExtraInstallmentDate,
+  initialValues,
+  onClose
 }: ExtraInstallmentFormProps) {
   const { t } = useTranslation(['components'])
   
@@ -116,7 +124,7 @@ export function ExtraInstallmentForm({
 
   const form = useForm<ExtraInstallmentFormValues>({
     resolver: zodResolver(extraInstallmentSchema),
-    defaultValues: {
+    defaultValues: initialValues || {
       amount: "",
       frequency: "one-time",
       startDate: initialDate,
@@ -168,6 +176,7 @@ export function ExtraInstallmentForm({
       frequency: "one-time",
       startDate: values.startDate, // Keep the same date for convenience
     }); 
+    if (onClose) onClose();
   }
 
   return (

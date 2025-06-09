@@ -14,12 +14,14 @@ interface ExtraInstallmentsTableProps {
   installments: ExtraInstallment[]
   currency: "USD" | "PEN"
   onDelete: (id: string) => void
+  onRowClick?: (installment: ExtraInstallment) => void
 }
 
 export function ExtraInstallmentsTable({
   installments,
   currency,
-  onDelete
+  onDelete,
+  onRowClick
 }: ExtraInstallmentsTableProps) {
   const { t } = useTranslation(['components'])
 
@@ -49,7 +51,11 @@ export function ExtraInstallmentsTable({
             </tr>
           ) : (
             sortedInstallments.map((installment, index) => (
-              <tr key={installment.id} className="border-b last:border-0">
+              <tr
+                key={installment.id}
+                className="border-b last:border-0 cursor-pointer"
+                onClick={() => onRowClick && onRowClick(installment)}
+              >
                 <td className="p-2 text-sm">{index + 1}</td>
                 <td className="p-2 text-sm">{formatDate(new Date(installment.start_date))}</td>
                 <td className="p-2 text-sm">{formatCurrency(installment.amount, currency)}</td>
@@ -62,7 +68,10 @@ export function ExtraInstallmentsTable({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => onDelete(installment.id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDelete(installment.id)
+                    }}
                     className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     title={t('extra_installments_section.table.delete_tooltip', 'Delete installment', { ns: 'components' })}
                   >
