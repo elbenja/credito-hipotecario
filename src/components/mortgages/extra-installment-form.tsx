@@ -45,7 +45,8 @@ const createExtraInstallmentSchema = (firstInstallmentDate?: Date, t?: any) => {
       required_error: t ? t('extra_installments_section.form.date_required', 'Date is required', { ns: 'components' }) : 'Date is required',
     }).refine((date) => {
       if (!firstInstallmentDate) return true;
-      return !isBefore(date, firstInstallmentDate);
+      // Allow same day or after
+      return !isBefore(date, firstInstallmentDate) || isSameDay(date, firstInstallmentDate);
     }, {
       message: t ? t('extra_installments_section.form.date_before_first_installment', 'Date cannot be before first installment date', { ns: 'components' }) : 'Date cannot be before first installment date',
     }),
@@ -146,7 +147,7 @@ export function ExtraInstallmentForm({
     const normalizedDate = normalizeDate(finalDate);
     
     // Final validation check before submission
-    if (firstInstallmentDate && isBefore(normalizedDate, firstInstallmentDate)) {
+    if (firstInstallmentDate && isBefore(normalizedDate, firstInstallmentDate) && !isSameDay(normalizedDate, firstInstallmentDate)) {
       form.setError("startDate", {
         type: "custom", 
         message: t('extra_installments_section.form.date_before_first_installment', 'Calculated date cannot be before first installment date', { ns: 'components' }) 
@@ -223,8 +224,8 @@ export function ExtraInstallmentForm({
             <MonthYearPicker
               field={field}
               form={form}
-              // minDate={firstInstallmentDate}
-              minDate={firstInstallmentDate ? addMonths(firstInstallmentDate, 1) : undefined}
+              minDate={firstInstallmentDate}
+              // minDate={firstInstallmentDate ? addMonths(firstInstallmentDate, 1) : undefined}
               labelKey="extra_installments_section.form.start_date"
               ns="components"
             />
