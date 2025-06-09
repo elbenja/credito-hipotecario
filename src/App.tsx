@@ -35,6 +35,7 @@ import Settings from "@/pages/account/Settings"
 import HomeRedirect from "./HomeRedirect"
 import Support from "./pages/Support"
 import TestExtraInstallments from "./pages/tests/TestExtraInstallments"
+import EditRental from "./pages/rentals/EditRental"
 // const queryClient = new QueryClient({
 //   defaultOptions: {
 //     queries: {
@@ -150,6 +151,14 @@ export default function App () {
                   element={
                     <ProtectedRoute>
                       <Courses />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/rentals"
+                  element={
+                    <ProtectedRoute>
+                      <EditRental />
                     </ProtectedRoute>
                   }
                 />

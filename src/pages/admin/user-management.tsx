@@ -514,58 +514,84 @@ export default function UserManagement() {
                 onTabChange={setActiveTab} 
               />
     </div>
-        {/* button Add user */}
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        {t("create_user")}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{t("create_new_user")}</DialogTitle>
-                        <DialogDescription>
-                          {t("create_user_description")}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="email">{t("email")}</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            value={newUserEmail}
-                            onChange={(e) => setNewUserEmail(e.target.value)}
-                            placeholder="user@example.com"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="role">{t("role")}</Label>
-                          <Select value={newUserRole} onValueChange={setNewUserRole}>
-                            <SelectTrigger id="role">
-                              <SelectValue placeholder="Select role" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="user">{t("user")}</SelectItem>
-                              <SelectItem value="admin">{t("admin")}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                          {t("cancel")}
-                        </Button>
-                        <Button 
-                          onClick={handleCreateUser} 
-                          disabled={Boolean(createUserMutation.isPending) || !newUserEmail}
-                        >
-                          {createUserMutation.isPending ? t("creating") : t("create")}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+        {/* button Add user and Download CSV */}
+        <div className="flex gap-2">
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="mr-2 h-4 w-4" />
+                {t("create_user")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t("create_new_user")}</DialogTitle>
+                <DialogDescription>
+                  {t("create_user_description")}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">{t("email")}</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    placeholder="user@example.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">{t("role")}</Label>
+                  <Select value={newUserRole} onValueChange={setNewUserRole}>
+                    <SelectTrigger id="role">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">{t("user")}</SelectItem>
+                      <SelectItem value="admin">{t("admin")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+                  {t("cancel")}
+                </Button>
+                <Button 
+                  onClick={handleCreateUser} 
+                  disabled={Boolean(createUserMutation.isPending) || !newUserEmail}
+                >
+                  {createUserMutation.isPending ? t("creating") : t("create")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          {/* Download CSV Button */}
+          <Button
+            variant="outline"
+            onClick={() => {
+              // Prepare CSV header
+              const header = 'email,created_at\n';
+              // Prepare CSV rows
+              const rows = filteredUsers.map(user => `${user.email},${new Date(user.created_at).toISOString()}`);
+              const csvContent = header + rows.join('\n');
+              // Create a blob and trigger download
+              const blob = new Blob([csvContent], { type: 'text/csv' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'users.csv';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Download CSV
+          </Button>
+        </div>
   </div>
 
 

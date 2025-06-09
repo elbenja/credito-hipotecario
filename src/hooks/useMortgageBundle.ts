@@ -35,8 +35,9 @@ export interface MortgageBundle {
   newRates: Array<{
     id: string;
     mortgage_id: string;
-    interest_rate: number;
+    new_interest_rate: number;
     effective_date: string;
+    new_term_years: number;
   }>;
 }
 
