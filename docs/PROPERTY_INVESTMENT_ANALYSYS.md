@@ -6,8 +6,15 @@
 
 ### **Data Flow:**
 ```
-Mortgage Data → Calculation Engines → Monthly Normalization → Dynamic Table → Accumulation Graph
+Mortgage Data → Calculation Engines → Monthly Normalization → Zustand Store → Dynamic Table & Charts
 ```
+
+### **Detailed Flow:**
+1. **Mortgage Data** feeds into **Calculation Engines**
+2. **Calculation Engines** process and normalize data into **Monthly Results**
+3. **Monthly Results** are stored in **Zustand Store** (central state management)
+4. **Dynamic Table** reads from **Zustand Store**
+5. **Charts/Visualizations** read from **Zustand Store**
 
 ### **Key Components Structure:**
 
@@ -33,7 +40,7 @@ interface CalculationSource {
   id: string;
   name: string;
   type: 'income' | 'expense';
-  calculationType: 'fixed' | 'percentage_rent' | 'percentage_property' | 'annual' | 'one_time';
+  calculationType: 'fixed' | 'percentage_rent' | 'percentage_property';
   frequency: 'monthly' | 'annually' | 'one_time';
   baseValue?: number;
   percentage?: number;
@@ -208,7 +215,7 @@ This document outlines the architecture and code organization for a dynamic prop
 **Data Flow:**
 
 ```
-Mortgage Data → Calculation Engines → Monthly Normalization → Dynamic Table → Accumulation Graph
+Mortgage Data → Calculation Engines → Monthly Normalization → Zustand Store → Dynamic Table & Charts
 ```
 
 ---
@@ -262,7 +269,7 @@ export function calculateMonthlyPayments(mortgageData) {
 
 - **What:** React hooks that manage state, memoization, and side effects, often using utility functions.
 - **Where:** `src/hooks/calculations/`
-- **Why:** Hooks integrate calculation logic with React’s lifecycle, making results available to components in an optimized way.
+- **Why:** Hooks integrate calculation logic with React's lifecycle, making results available to components in an optimized way.
 - **Example:** `useMortgageCalculations(mortgageData)`
 
 ```typescript
@@ -295,7 +302,7 @@ interface CalculationSource {
   id: string;
   name: string;
   type: 'income' | 'expense';
-  calculationType: 'fixed' | 'percentage_rent' | 'percentage_property' | 'annual' | 'one_time';
+  calculationType: 'fixed' | 'percentage_rent' | 'percentage_property';
   frequency: 'monthly' | 'annually' | 'one_time';
   baseValue?: number;
   percentage?: number;

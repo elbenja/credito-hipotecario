@@ -8,7 +8,7 @@ import { ChartThemeWrapper } from "@/components/ui/chart/theme-wrapper"
 import { format } from "date-fns"
 import { PaymentRow, ScenarioPanelProps, Currency, ScenarioResult } from "@/types/common"
 import { useTranslation } from "react-i18next"
-import { Calendar, Landmark, MousePointerClick, ChevronRight as ChevronRightIcon, Heart, Camera } from "lucide-react"
+import { Calendar, Landmark, MousePointerClick, ChevronRight as ChevronRightIcon, Heart, Camera, Eye } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
@@ -432,10 +432,11 @@ const ScenarioPanel = ({
   // If we've made it here, we have scenario data and chart data
   return (
     <div className="">
-      <div className="flex items-center p-2">
-        <div className="flex items-center gap-2">
+      {/* row of buttons */}
+      <div className="flex flex-col md:flex-row gap-2 items-center p-2">
+        <div className="flex items-center w-full ">
           <Dialog>
-            <DialogTrigger className="flex items-center gap-2 px-4 h-10 rounded-md text-sm border border-input hover:bg-accent hover:text-accent-foreground mr-auto">
+            <DialogTrigger className="flex items-center w-full md:w-auto px-4 h-10 rounded-md text-sm text-center justify-center  border border-input hover:bg-accent hover:text-accent-foreground mr-auto">
               {t('scenario_graphs.tooltip.break_even_point_title', 'Punto de Equilibrio', { ns: 'components' })}
             </DialogTrigger>
             <DialogContent>
@@ -451,30 +452,46 @@ const ScenarioPanel = ({
             </DialogContent>
           </Dialog>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="w-full md:w-auto ml-auto flex items-center gap-2">
           <Button 
             variant="outline" 
             onClick={handleCaptureScenario}
+            className="border-none"
           >
             {t('scenario_graphs.common.capture_scenario', 'Capture scenario', { ns: 'components' })}
-            <Camera className="size-4 ml-2" />
+            <Camera className="size-4 ml-1" />
           </Button>
 
+
+
+
           {isThisScenarioSaved ? (
-            <Button variant="secondary" className="border border-input">             
+            <Button variant="secondary" className="border-none">             
               {t('scenario_graphs.common.favorite', 'Favorite', { ns: 'components' })}
-              <span className="ml-2"> <SVGfixed name="heartFilled" strokeClassName="text-brand" fillClassName="fill-brand" />  </span>
+              <span className="ml-1"> <SVGfixed name="heartFilled" strokeClassName="text-brand" fillClassName="fill-brand" />  </span>
             </Button>
           ) : (
             <Button 
               variant="outline" 
-              className=""
+              className="border-none"
               onClick={() => onSaveScenario && onSaveScenario(scenarioType)}
             >
               {t('scenario_graphs.common.favorite', 'Favorite', { ns: 'components' })}
-              <Heart className="size-4 ml-2" />
+              <Heart className="size-4 ml-1" />
             </Button>
           )}
+            {/* <Button 
+              variant="outline" 
+              className="border-none"
+              onClick={() => {
+                console.log('Payments data:', scenario?.payments);
+                console.log('extraInstallments :', extraInstallments);
+              }}
+            >             
+              Payments
+              <Eye className="size-4 ml-1" />
+            </Button> */}
+
         </div>
       </div>
 {/* summary block */}

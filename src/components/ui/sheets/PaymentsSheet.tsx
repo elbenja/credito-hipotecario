@@ -24,7 +24,7 @@ export function PaymentsSheet({
       <SheetContent className="w-full sm:max-w-4xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>
-            Saved Scenario Payments
+            Mortgage 
             {mortgageInfo && (
               <span className="text-sm font-normal text-muted-foreground ml-2">
                 - {mortgageInfo.mortgage.name}

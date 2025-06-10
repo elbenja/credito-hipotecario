@@ -1,7 +1,7 @@
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { ChartColumnBig, ChevronRight, Eye, TagIcon } from "lucide-react";
+import { ChartColumnBig, ChevronRight, Eye, PencilLine, TagIcon } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useTranslation } from "react-i18next";
@@ -73,64 +73,82 @@ Edit Rental
 
 
 
-              {/* <Button 
-                variant="outline" 
-                onClick={() => {
-                  if (selectedMortgageId) {
-                    setIsPaymentsSheetOpen(true);
-                  } else {
-                    alert("Please select a mortgage first");
-                  }
-                }}
-                disabled={!selectedMortgageId}
-              >
-                <Eye className="w-4 h-4" />
-                Payments
-              </Button> */}
+           
             </div>
             <Accordion type="single" collapsible> 
-  <AccordionItem value="item-1">
-    <AccordionTrigger>Investment</AccordionTrigger>
-    <AccordionContent className="flex flex-col gap-2 p-2">
- 
-        <Button variant="outline" className="p-4 inline-flex justify-start items-start gap-3 h-auto  whitespace-normal">
-          <TagIcon className="w-4 h-4" />
-     
-          <div className="flex-1    inline-flex flex-col justify-start items-start gap-1">
-            <div className="font-medium">Choose a property</div>
-            <div className="text-muted-foreground text-left  justify-start text-sm font-medium  leading-tight ">
-              One-time property payment includes bonus calculation
+              <AccordionItem value="item-1">
+                <AccordionTrigger className="p-2">Investment</AccordionTrigger>
+                <AccordionContent className="flex flex-col gap-2 p-2">
+            
+                    <Button variant="outline" className="p-4 inline-flex justify-start items-start gap-3 h-auto  whitespace-normal"
+                    >
+                      <TagIcon className="w-4 h-4" />
+                
+                      <div className="flex-1    inline-flex flex-col justify-start items-start gap-1">
+                        <div className="font-medium">Choose a property</div>
+                        <div className="text-muted-foreground text-left  justify-start text-sm font-medium  leading-tight ">
+                          One-time property payment includes bonus calculation
 
-            </div>
-          </div>
-        </Button>
+                        </div>
+                      </div>
+                    </Button>
 
-        <Button variant="outline" className="p-4 inline-flex justify-start items-start gap-3 h-auto"
-        onClick={() => setIsSelectionSheetOpen(true)}>
-                {selectedMortgageInfo ? (
-                  <div className="flex justify-between w-full">
-                    <span className="truncate mr-2">
-                      {selectedMortgageInfo.mortgage.name.length > 15 
-                        ? `${selectedMortgageInfo.mortgage.name.substring(0, 15)}...` 
-                        : selectedMortgageInfo.mortgage.name}
-                    </span>
-                    <span className="font-medium">
-                      {formatCurrency(selectedMortgageInfo.mortgage.loan_amount, selectedMortgageInfo.property.currency)}
-                    </span>
-                  </div>
-                ) : (
-                  <> 
-                  <ChartColumnBig className="w-4 h-4" />
+                  <Button variant="outline" className="p-4 inline-flex justify-start items-start gap-3 h-auto  whitespace-normal"
+                    onClick={() => setIsSelectionSheetOpen(true)}>
+                            {selectedMortgageInfo ? (
+                              <div className="flex justify-between w-full">
+                                <span className="truncate mr-2">
+                                  {selectedMortgageInfo.mortgage.name.length > 15 
+                                    ? `${selectedMortgageInfo.mortgage.name.substring(0, 15)}...` 
+                                    : selectedMortgageInfo.mortgage.name}
+                                </span>
+                                <span className="font-medium">
+                                  {formatCurrency(selectedMortgageInfo.mortgage.loan_amount, selectedMortgageInfo.property.currency)}
+                                </span>
+                              </div>
+                            ) : (
+                              <> 
+                              <ChartColumnBig className="w-4 h-4" />
+                              <div className="flex-1    inline-flex flex-col justify-start items-start gap-1">
+                                <div className="font-medium">Choose a mortgage</div>
+                                <div className="text-muted-foreground text-left  justify-start text-sm font-medium  leading-tight ">
+                                Import a mortgage with its monthly payments
+
+                                </div>
+                              </div>
+                              </>
+                            )}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          if (selectedMortgageId) {
+                            setIsPaymentsSheetOpen(true);
+                          } else {
+                            alert("Please select a mortgage first");
+                          }
+                        }}
+                        disabled={!selectedMortgageId}
+                      >
+                        <Eye className="w-4 h-4" />
+                        Payments
+                      </Button>
+                      <Button variant="outline" className="p-4 inline-flex justify-start items-start gap-3 h-auto  whitespace-normal"
+                    >
+                        <PencilLine className="w-4 h-4" />
                   
-                  </>
-                )}
-              </Button>
+                        <div className="flex-1    inline-flex flex-col justify-start items-start gap-1">
+                          <div className="font-medium">Manual </div>
+                          <div className="text-muted-foreground text-left  justify-start text-sm font-medium  leading-tight ">
+                          Enter the property value as a one-time payment
+                          </div>
+                        </div>
+                    </Button>
+                </AccordionContent>
+              </AccordionItem>
 
-    </AccordionContent>
-  </AccordionItem>
-
- 
-</Accordion>
+            
+            </Accordion>
 
 
 

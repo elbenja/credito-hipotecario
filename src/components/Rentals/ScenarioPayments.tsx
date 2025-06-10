@@ -65,7 +65,7 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
       {/* Scenario Overview */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h2 className="text-2xl font-bold mb-4">
-          Saved Scenario: {savedScenarioType?.replace('_', ' ').toUpperCase()}
+          Scenario: {savedScenarioType?.replace('_', ' ').toLowerCase().replace(/^./, c => c.toUpperCase())}
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
