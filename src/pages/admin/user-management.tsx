@@ -64,9 +64,10 @@ type User = {
     current_period_start: string
   } | null
   mortgages_count?: number
+  properties_count?: number
 }
 
-type SortField = 'email' | 'role' | 'created_at' | 'last_sign_in_at' | 'plan' | 'current_period_start' | 'mortgages_count'
+type SortField = 'email' | 'role' | 'created_at' | 'last_sign_in_at' | 'plan' | 'current_period_start' | 'mortgages_count' | 'properties_count'
 type SortDirection = 'asc' | 'desc'
 
 // Custom hooks using React Query
@@ -91,17 +92,17 @@ function useUsers() {
             console.error("Error fetching subscriptions:", subscriptionError);
           }
           
-          // Fetch mortgage counts
-          const { data: mortgageCounts, error: mortgageError } = await supabase
-            .rpc('get_mortgage_counts_for_admins');
+          // Fetch mortgage and property counts
+          const { data: countsData, error: countsError } = await supabase
+            .rpc('get_mortgage_and_property_counts_for_admins');
             
-          if (mortgageError) {
-            console.error("Error fetching mortgage counts:", mortgageError);
+          if (countsError) {
+            console.error("Error fetching counts:", countsError);
           }
           
           return data.map((user: User) => {
             const userSubscription = subscriptions?.find(s => s.user_id === user.id);
-            const userMortgageCount = mortgageCounts?.find((m: { user_id: string, count: number }) => m.user_id === user.id);
+            const userCounts = countsData?.find((c: { user_id: string, mortgage_count: number, property_count: number }) => c.user_id === user.id);
             
             return {
               ...user,
@@ -111,7 +112,8 @@ function useUsers() {
                 plan_name: (userSubscription.plan as any)?.name,
                 current_period_start: userSubscription.current_period_start
               } : null,
-              mortgages_count: userMortgageCount ? userMortgageCount.count : 0
+              mortgages_count: userCounts ? userCounts.mortgage_count : 0,
+              properties_count: userCounts ? userCounts.property_count : 0
             };
           });
         }
@@ -411,6 +413,10 @@ export default function UserManagement() {
         case 'mortgages_count':
           aValue = a.mortgages_count || 0
           bValue = b.mortgages_count || 0
+          break
+        case 'properties_count':
+          aValue = a.properties_count || 0
+          bValue = b.properties_count || 0
           break
         default:
           return 0
@@ -718,13 +724,25 @@ export default function UserManagement() {
                     )}
                   </Button>
                 </TableHead>
+                <TableHead className="hidden md:table-cell">
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('properties_count')}
+                  >
+                    Properties
+                    {sortField === 'properties_count' && (
+                      sortDirection === 'asc' ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
+                    )}
+                  </Button>
+                </TableHead>
                 <TableHead>{t("actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center">
+                  <TableCell colSpan={8} className="text-center">
                     {t("no_users_found")}
                   </TableCell>
                 </TableRow>
@@ -797,6 +815,9 @@ export default function UserManagement() {
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       {user.mortgages_count || 0}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {user.properties_count || 0}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
