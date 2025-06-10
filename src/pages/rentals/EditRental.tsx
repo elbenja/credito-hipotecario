@@ -1,7 +1,7 @@
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Eye } from "lucide-react";
+import { ChartColumnBig, ChevronRight, Eye, TagIcon } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useTranslation } from "react-i18next";
@@ -10,6 +10,7 @@ import { formatCurrency } from "@/utils/utils";
 import type { Mortgage } from "@/types";
 import { PaymentsSheet } from "@/components/ui/sheets/PaymentsSheet";
 import { MortgageSelectionSheet } from "@/components/ui/sheets/MortgageSelectionSheet";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
 
@@ -64,27 +65,15 @@ Edit Rental
       <div className="flex flex-col min-h-screen">
         <div className="flex flex-col md:flex-row flex-1">
           {/* Left Container */}
-          <div className="sm:w-full md:w-[30%] md:min-w-[340px] md:max-w-[520px] relative flex-shrink-0 border-r ">
+          <div className="flex flex-col sm:w-full md:w-[30%] md:min-w-[340px] md:max-w-[520px] relative flex-shrink-0 border-r ">
       
             {/* future component Inherit payments */}
             <div className="flex  gap-1">
-              <Button onClick={() => setIsSelectionSheetOpen(true)}>
-                {selectedMortgageInfo ? (
-                  <div className="flex justify-between w-full">
-                    <span className="truncate mr-2">
-                      {selectedMortgageInfo.mortgage.name.length > 15 
-                        ? `${selectedMortgageInfo.mortgage.name.substring(0, 15)}...` 
-                        : selectedMortgageInfo.mortgage.name}
-                    </span>
-                    <span className="font-medium">
-                      {formatCurrency(selectedMortgageInfo.mortgage.loan_amount, selectedMortgageInfo.property.currency)}
-                    </span>
-                  </div>
-                ) : (
-                  <> Choose mortgage <ChevronRight className="w-4 h-4" /></>
-                )}
-              </Button>
-              <Button 
+
+
+
+
+              {/* <Button 
                 variant="outline" 
                 onClick={() => {
                   if (selectedMortgageId) {
@@ -97,9 +86,54 @@ Edit Rental
               >
                 <Eye className="w-4 h-4" />
                 Payments
-              </Button>
+              </Button> */}
             </div>
-            
+            <Accordion type="single" collapsible> 
+  <AccordionItem value="item-1">
+    <AccordionTrigger>Investment</AccordionTrigger>
+    <AccordionContent className="flex flex-col gap-2 p-2">
+ 
+        <Button variant="outline" className="p-4 inline-flex justify-start items-start gap-3 h-auto  whitespace-normal">
+          <TagIcon className="w-4 h-4" />
+     
+          <div className="flex-1    inline-flex flex-col justify-start items-start gap-1">
+            <div className="font-medium">Choose a property</div>
+            <div className="text-muted-foreground text-left  justify-start text-sm font-medium  leading-tight ">
+              One-time property payment includes bonus calculation
+
+            </div>
+          </div>
+        </Button>
+
+        <Button variant="outline" className="p-4 inline-flex justify-start items-start gap-3 h-auto"
+        onClick={() => setIsSelectionSheetOpen(true)}>
+                {selectedMortgageInfo ? (
+                  <div className="flex justify-between w-full">
+                    <span className="truncate mr-2">
+                      {selectedMortgageInfo.mortgage.name.length > 15 
+                        ? `${selectedMortgageInfo.mortgage.name.substring(0, 15)}...` 
+                        : selectedMortgageInfo.mortgage.name}
+                    </span>
+                    <span className="font-medium">
+                      {formatCurrency(selectedMortgageInfo.mortgage.loan_amount, selectedMortgageInfo.property.currency)}
+                    </span>
+                  </div>
+                ) : (
+                  <> 
+                  <ChartColumnBig className="w-4 h-4" />
+                  
+                  </>
+                )}
+              </Button>
+
+    </AccordionContent>
+  </AccordionItem>
+
+ 
+</Accordion>
+
+
+
          
           </div>
 

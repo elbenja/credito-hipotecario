@@ -21,6 +21,7 @@ import { useMortgageCapture } from "@/services/mortgages/mortgage-capture-servic
 import { useParams, useNavigate } from "react-router-dom"
 import { useToast } from "@/components/ui/use-toast"
 import { useCanCreateFeature } from "@/hooks/usePlanLimits"
+import { enUS, es, Locale } from 'date-fns/locale'
 
 // Memoize the data transformation function to avoid recalculating on every render
 const transformPaymentsToChartData = (payments: PaymentRow[], totalMonths: number, installmentsPerYear: number = 12) => {
@@ -121,7 +122,7 @@ const ScenarioPanel = ({
   onShowLimitDialog
 }: ScenarioPanelProps & { title: string, showBaseline?: boolean }) => {
   // ========== All hooks must be at the top ==========
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { id } = useParams()
   const navigate = useNavigate()
   const { captureCurrentScenario } = useMortgageCapture()
@@ -170,7 +171,13 @@ const ScenarioPanel = ({
     ? total_months
     : (regularScenario?.summary?.total_months || 360);
 
-
+  // Map i18n language to date-fns locale
+  const localeMap: Record<string, Locale> = {
+    en: enUS,
+    es: es,
+    // add more locales as needed
+  }
+  const dateFnsLocale = localeMap[i18n.language] || enUS
 
   // Calculate total cost (property cost + interest and insurances)
   const totalCost = useMemo(() => {
@@ -651,7 +658,7 @@ py-4 xl:py-5 2xl:py-6"
                     return (
                       <div className="rounded-lg bg-black p-2 shadow-sm text-white">
                         <div className="text-sm font-medium mb-2">
-                          {format(new Date(label), 'MMM yyyy')}
+                          {format(new Date(label), 'MMM yyyy', { locale: dateFnsLocale }).replace(/^./, c => c.toUpperCase())}
                         </div>
                         {payload.map((entry) => (
                           <div key={entry.name} className="flex items-center gap-2 text-sm">

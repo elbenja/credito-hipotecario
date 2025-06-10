@@ -7,6 +7,7 @@
     "success": {
       "title": "Éxito",
       "add": "Amortizaciones Extra agregado exitosamente",
+      "edit": "Amortizaciones Extra actualizado exitosamente",
       "delete": "Amortizaciones Extra eliminado exitosamente"
     },
     "error": {

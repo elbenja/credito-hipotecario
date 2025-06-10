@@ -7,6 +7,7 @@
     "success": {
       "title": "Success",
       "add": "Extra installment added successfully",
+      "edit": "Extra installment updated successfully",
       "delete": "Extra installment deleted successfully"
     },
     "error": {
