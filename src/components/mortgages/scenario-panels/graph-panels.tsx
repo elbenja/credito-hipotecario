@@ -216,7 +216,13 @@ const ScenarioPanel = ({
       )
     };
   }, [
-
+    // total_interest_and_insurance,
+    // totalCost,
+    // total_months,
+    monthly_payment,
+    breakeven_point,
+    // regularScenario,
+    // propertyCost
   ]);
 
     // Optimize chart data transformation with better memoization and caching
@@ -471,7 +477,7 @@ const ScenarioPanel = ({
           )}
         </div>
       </div>
-
+{/* summary block */}
       <div className="flex flex-col items-stretch space-y-0 border-t border-b p-0 sm:flex-row">
         {uiState.isTotalViewOn ? (
           <button className="flex flex-1 text-left justify-top gap-2 hover:bg-card/50 px-4 xl:px-6 2xl:px-8
@@ -616,6 +622,8 @@ py-4 xl:py-5 2xl:py-6"
       </div>
     </div>
  
+ {/* end summary block */}
+
     <div className="space-y-4 ">
       <div className="h-[200px] lg:h-[300px] w-full mt-6 relative">
         <ChartThemeWrapper >
