@@ -111,9 +111,10 @@ export default function Test() {
   <SVGfixed name="heartFilled" strokeClassName="text-brand" fillClassName="fill-brand" /> 
  
 </Button>
-<SVGfixed name="girlLuna" size={200}  strokeClassName="text-transparent"  fillClassName="fill-slate-500" />
-<SVGfixed name="heartFilled" strokeClassName="text-transparent" size={200}  fillClassName="fill-green-500" />
 
+<SVGfixed name="fireTest" size={200}  strokeClassName="text-blue-500"  fillClassName="fill-none" />
+<SVGfixed name="heartFilled" strokeClassName="text-red-500" size={200}  fillClassName="fill-green-500" />
+ 
     </div>
   );
 } 

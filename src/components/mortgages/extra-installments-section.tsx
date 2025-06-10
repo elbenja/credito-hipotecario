@@ -8,7 +8,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
-import { normalizeDate } from "@/utils/utils"
+import { normalizeDate, parseDatabaseDate } from "@/utils/utils"
 // ignore  
 
 interface ExtraInstallmentFormValues {
@@ -225,7 +225,7 @@ export function ExtraInstallmentsSection({
     return {
       amount: editingInstallment.amount.toString(),
       frequency: editingInstallment.frequency,
-      startDate: new Date(editingInstallment.start_date)
+      startDate: parseDatabaseDate(editingInstallment.start_date)
     }
   }
 
