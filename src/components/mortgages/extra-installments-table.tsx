@@ -1,7 +1,9 @@
-import { Trash2 } from "lucide-react"
+import { Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTranslation } from "react-i18next"
-import { formatCurrency, formatDate } from "@/utils/utils"
+import { formatCurrency } from "@/utils/utils"
+import { format } from "date-fns"
+
 // ignore  
 interface ExtraInstallment {
   id: string
@@ -15,6 +17,11 @@ interface ExtraInstallmentsTableProps {
   currency: "USD" | "PEN"
   onDelete: (id: string) => void
   onRowClick?: (installment: ExtraInstallment) => void
+}
+
+// Custom date formatter to show only month and year
+const formatMonthYear = (date: Date) => {
+  return format(date, "MMM yyyy")
 }
 
 export function ExtraInstallmentsTable({
@@ -40,12 +47,13 @@ export function ExtraInstallmentsTable({
             <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t('extra_installments_section.table.amount', 'Amount', { ns: 'components' })}</th>
             <th className="p-2 text-left font-medium text-xs text-muted-foreground">{t('extra_installments_section.table.frequency', 'Frequency', { ns: 'components' })}</th>
             <th className="p-2 text-left font-medium w-[50px] text-xs text-muted-foreground"></th>
+            <th className="p-2 text-left font-medium w-[50px] text-xs text-muted-foreground"></th>
           </tr>
         </thead>
         <tbody>
           {sortedInstallments.length === 0 ? (
             <tr>
-              <td colSpan={5} className="p-4 text-center ">
+              <td colSpan={6} className="p-4 text-center ">
                 {t('extra_installments_section.table.no_installments', 'No extra installments added yet', { ns: 'components' })}
               </td>
             </tr>
@@ -53,16 +61,22 @@ export function ExtraInstallmentsTable({
             sortedInstallments.map((installment, index) => (
               <tr
                 key={installment.id}
-                className="border-b last:border-0 cursor-pointer"
+                className="border-b last:border-0 cursor-pointer hover:bg-muted/30"
                 onClick={() => onRowClick && onRowClick(installment)}
               >
                 <td className="p-2 text-sm">{index + 1}</td>
-                <td className="p-2 text-sm">{formatDate(new Date(installment.start_date))}</td>
+                <td className="p-2 text-sm">{formatMonthYear(new Date(installment.start_date))}</td>
                 <td className="p-2 text-sm">{formatCurrency(installment.amount, currency)}</td>
                 <td className="p-2 text-sm">
+             
                   {installment.frequency === "monthly" 
                     ? t('extra_installments_section.monthly', 'Monthly', { ns: 'components' })
                     : t('extra_installments_section.one_time', 'One-time', { ns: 'components' })}
+                </td>
+                <td className="p-2">
+                  <div className="h-8 w-8 flex items-center justify-center">
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                  </div>
                 </td>
                 <td className="p-2">
                   <Button
