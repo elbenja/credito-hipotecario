@@ -58,7 +58,7 @@ export function PropertyDisplay({
         </div>
 
         <div className="flex">
-          <div className="justify-top relative z-30 flex flex-1 flex-col gap-1 border-t px-2 py-2 text-left even:border-l sm:border-t-0 sm:border-l sm:px-4 sm:py-4">
+          <div className="justify-top relative flex flex-1 flex-col gap-1 border-t px-2 py-2 text-left even:border-l sm:border-t-0 sm:border-l sm:px-4 sm:py-4">
             <Label className="text-muted-foreground text-xs">
               {t('bonus.amount_short')}
             </Label>

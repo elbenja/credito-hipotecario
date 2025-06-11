@@ -437,7 +437,7 @@ const ScenarioPanel = ({
   return (
     <div className="">
       {/* row of buttons */}
-      <div className="flex flex-col md:flex-row gap-2 items-center p-2">
+      <div className="flex flex-col lg:flex-row gap-2 items-center p-2">
         <div className="flex items-center w-full ">
           <Dialog>
             <DialogTrigger className="flex items-center w-full md:w-auto px-4 h-10 rounded-md text-sm text-center justify-center  border border-input hover:bg-accent hover:text-accent-foreground mr-auto">
@@ -472,7 +472,7 @@ const ScenarioPanel = ({
               className="border-none"
               onClick={() => setShowLivePayments(true)}
             >             
-              Payments
+              {t('scenario_graphs.common.payments', 'Payments', { ns: 'components' })}
               <Eye className="size-4 ml-1" />
             </Button>
 
