@@ -1,5 +1,7 @@
 import React from "react";
 import { useSavedScenarioPayments } from "@/hooks/mortgages/useSavedScenarioPayments";
+import { useMortgageBundle } from "@/hooks/useMortgageBundle";
+import { useExtraInstallmentsFromBundle } from "@/hooks/mortgages/useExtraInstallmentsFromBundle";
 import { 
   formatCurrency, 
   generateScenarioReport, 
@@ -25,6 +27,21 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
     error,
     hasSavedScenario
   } = useSavedScenarioPayments(mortgageId);
+
+  // Get the mortgage bundle and extract extra installments
+  const { data: bundle } = useMortgageBundle(mortgageId);
+  const extraInstallments = useExtraInstallmentsFromBundle(bundle);
+
+  // Helper function to find extra installment for a specific payment date
+  const getExtraInstallmentForDate = (paymentDate: Date) => {
+    return extraInstallments.find(extra => {
+      const paymentMonth = paymentDate.getMonth();
+      const paymentYear = paymentDate.getFullYear();
+      const extraMonth = extra.start_date.getMonth();
+      const extraYear = extra.start_date.getFullYear();
+      return paymentMonth === extraMonth && paymentYear === extraYear;
+    });
+  };
 
   // Show loading state
   if (isLoading) {
@@ -148,32 +165,45 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
                   <th className="px-4 py-2 font-semibold text-right">Payment</th>
                   <th className="px-4 py-2 font-semibold text-right">Principal</th>
                   <th className="px-4 py-2 font-semibold text-right">Interest</th>
+                  <th className="px-4 py-2 font-semibold text-right">Extra Installments</th>
                   <th className="px-4 py-2 font-semibold text-right">Balance</th>
                 </tr>
               </thead>
               <tbody>
-                {payments.map((payment, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="px-4 py-2 text-xs text-center">
-                      {payment.payment_date.toLocaleDateString('en-US', { 
-                        month: 'short',
-                        year: 'numeric'
-                      })}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-right">
-                      {formatCurrency(payment.monthly_payment)}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-right">
-                      {formatCurrency(payment.principal || payment.capital)}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-right">
-                      {formatCurrency(payment.monthly_interest || payment.interest)}
-                    </td>
-                    <td className="px-4 py-2 text-xs text-right">
-                      {payment.ending_balance ? formatCurrency(payment.ending_balance) : "-"}
-                    </td>
-                  </tr>
-                ))}
+                {payments.map((payment, index) => {
+                  const extraInstallment = getExtraInstallmentForDate(payment.payment_date);
+                  return (
+                    <tr key={index} className="border-b">
+                      <td className="px-4 py-2 text-xs text-center">
+                        {payment.payment_date.toLocaleDateString('en-US', { 
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">
+                        {formatCurrency(payment.monthly_payment)}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">
+                        {formatCurrency(payment.principal || payment.capital)}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">
+                        {formatCurrency(payment.monthly_interest || payment.interest)}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">
+                        {extraInstallment ? (
+                          <span className="font-medium text-green-600">
+                            {formatCurrency(extraInstallment.amount)}
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-xs text-right">
+                        {payment.ending_balance ? formatCurrency(payment.ending_balance) : "-"}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
