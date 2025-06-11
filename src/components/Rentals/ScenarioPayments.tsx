@@ -8,6 +8,7 @@ import {
   getPaymentsByYear,
   calculateScenarioTotals 
 } from "@/utils/mortgage-scenario-utils";
+import { Badge } from "../ui/badge";
 
 interface SavedScenarioExampleProps {
   mortgageId: string;
@@ -191,9 +192,12 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
                       </td>
                       <td className="px-4 py-2 text-sm text-right">
                         {extraInstallment ? (
-                          <span className="font-medium text-green-600">
+                          // <span className="font-medium text-green-600">
+                          //   {formatCurrency(extraInstallment.amount)}
+                          // </span>
+                          <Badge variant="green"  className="text-xs xl:text-sm whitespace-nowrap">
                             {formatCurrency(extraInstallment.amount)}
-                          </span>
+                          </Badge>
                         ) : (
                           "-"
                         )}
