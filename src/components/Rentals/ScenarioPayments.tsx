@@ -230,6 +230,9 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
           }, null, 2)}
         </pre>
       </details> */}
+      <div className="  text-sm  rounded-lg p-6">
+        CreditoHipotecar.io 2025
+      </div>
     </div>
   );
 };
