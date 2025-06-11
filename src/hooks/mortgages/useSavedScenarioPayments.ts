@@ -27,12 +27,15 @@ interface CalculateInput {
  * Transform MortgageBundle data to match ScenarioCalculator input interface
  */
 function transformMortgageBundleToCalculateInput(bundle: MortgageBundle): CalculateInput {
+ 
   return {
     loan_amount: bundle.mortgage.loan_amount,
     interest_rate: bundle.mortgage.interest_rate,
     term_years: bundle.mortgage.term_years,
     installments_per_year: bundle.mortgage.installments_per_year,
-    first_installment_date: new Date(bundle.mortgage.first_installment_date),
+    // first_installment_date: new Date(bundle.mortgage.first_installment_date),
+    // this is the fix
+    first_installment_date: new Date(bundle.mortgage.first_installment_date + 'T12:00:00Z'),
     property_insurance: bundle.mortgage.property.property_insurance || 0,
     loan_insurance: bundle.mortgage.loan_protection_insurance,
     extra_installments: bundle.extraInstallments?.map(ei => ({

@@ -64,72 +64,78 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
     <div className="space-y-6">
       {/* Scenario Overview */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-2xl font-bold mb-4">
-          Scenario: {savedScenarioType?.replace('_', ' ').toLowerCase().replace(/^./, c => c.toUpperCase())}
+        <h2 className="text-xl font-medium mb-4 flex items-center gap-2">
+          <span className="text-md">Scenario: </span> 
+          <span className="font-bold bg-brand text-black px-2 py-1 rounded-md">{savedScenarioType?.replace('_', ' ').toLowerCase().replace(/^./, c => c.toUpperCase())}</span>
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-blue-800">Monthly Payment</h3>
-            <p className="text-2xl font-bold text-blue-900">
-              {formatCurrency(summary.monthly_payment)}
-            </p>
-          </div>
+
           
-          <div className="bg-green-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-green-800">Total Months</h3>
-            <p className="text-2xl font-bold text-green-900">
-              {summary.total_months} <span className="text-sm">({(summary.total_months / 12).toFixed(1)} years)</span>
-            </p>
-          </div>
+        
           
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-purple-800">Total Interest & Insurance</h3>
-            <p className="text-2xl font-bold text-purple-900">
+          <div className=" p-4 rounded-lg">
+            <h3 className="text-xs  ">Total Interest & Insurance</h3>
+            <p className="text-2xl font-bold ">
               {formatCurrency(summary.total_interest_and_insurance)}
             </p>
           </div>
+
+          <div className="p-4 rounded-lg">
+            <h3 className="text-xs  ">Total Months</h3>
+            <p className="text-2xl font-bold">
+              {summary.total_months} <span className="text-sm">({(summary.total_months / 12).toFixed(1)} years)</span>
+            </p>
+          </div>
+          <div className=" p-4 rounded-lg">
+            <h3 className="text-xs  ">Monthly Payment</h3>
+            <p className="text-2xl font-bold ">
+              {formatCurrency(summary.monthly_payment)}
+            </p>
+          </div>
+
         </div>
 
         {summary.breakeven_point && (
-          <div className="mt-4 bg-orange-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-orange-800">Break-even Point</h3>
-            <p className="text-lg text-orange-900">
+          <div className="flex  items-center justify-center mt-4 bg-muted p-4 rounded-lg gap-4">
+            <span className="font-semibold ">Break-even Point</span>
+            <span className="text-lg ">
               {summary.breakeven_point.toFixed(1)} years
-            </p>
+            </span>
           </div>
         )}
-      </div>
-
-      {/* Payment Totals */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 className="text-xl font-bold mb-4">Payment Breakdown</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <p className="text-sm text-gray-600">Total Payments</p>
-            <p className="text-lg font-semibold">{formatCurrency(totals.totalPayments)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Total Principal</p>
-            <p className="text-lg font-semibold">{formatCurrency(totals.totalPrincipal)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Total Interest</p>
-            <p className="text-lg font-semibold">{formatCurrency(totals.totalInterest)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Total Insurance</p>
-            <p className="text-lg font-semibold">
-              {formatCurrency(totals.totalPropertyInsurance + totals.totalLoanInsurance)}
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 mt-6">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Payments</p>
+              <p className="text-lg font-semibold">{formatCurrency(totals.totalPayments)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Principal</p>
+              <p className="text-lg font-semibold">{formatCurrency(totals.totalPrincipal)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Interest</p>
+              <p className="text-lg font-semibold">{formatCurrency(totals.totalInterest)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Insurance</p>
+              <p className="text-lg font-semibold">
+                {formatCurrency(totals.totalPropertyInsurance + totals.totalLoanInsurance)}
+              </p>
           </div>
         </div>
       </div>
 
+      {/* Payment Totals */}
+      {/* <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 className="text-sm font-semibold mb-4">Payment Breakdown</h3>
+        
+      
+      </div> */}
+
       {/* All Payments */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 className="text-xl font-bold mb-4">
+        <h3 className="text-lg font-medium mb-4">
           All Payments ({payments.length} payments)
         </h3>
         
@@ -137,30 +143,33 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
           <div className="overflow-x-auto">
             <table className="min-w-full table-auto">
               <thead>
-                <tr className="bg-gray-50">
-                  <th className="px-4 py-2 text-left">Date</th>
-                  <th className="px-4 py-2 text-right">Payment</th>
-                  <th className="px-4 py-2 text-right">Principal</th>
-                  <th className="px-4 py-2 text-right">Interest</th>
-                  <th className="px-4 py-2 text-right">Balance</th>
+                <tr className="bg-muted">
+                  <th className="px-4 py-2 font-semibold text-center">Date</th>
+                  <th className="px-4 py-2 font-semibold text-right">Payment</th>
+                  <th className="px-4 py-2 font-semibold text-right">Principal</th>
+                  <th className="px-4 py-2 font-semibold text-right">Interest</th>
+                  <th className="px-4 py-2 font-semibold text-right">Balance</th>
                 </tr>
               </thead>
               <tbody>
                 {payments.map((payment, index) => (
                   <tr key={index} className="border-b">
-                    <td className="px-4 py-2">
-                      {payment.payment_date.toLocaleDateString()}
+                    <td className="px-4 py-2 text-xs text-center">
+                      {payment.payment_date.toLocaleDateString('en-US', { 
+                        month: 'short',
+                        year: 'numeric'
+                      })}
                     </td>
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-2 text-sm text-right">
                       {formatCurrency(payment.monthly_payment)}
                     </td>
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-2 text-sm text-right">
                       {formatCurrency(payment.principal || payment.capital)}
                     </td>
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-2 text-sm text-right">
                       {formatCurrency(payment.monthly_interest || payment.interest)}
                     </td>
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-2 text-xs text-right">
                       {payment.ending_balance ? formatCurrency(payment.ending_balance) : "-"}
                     </td>
                   </tr>
@@ -174,7 +183,7 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
       </div>
 
       {/* Raw Data (for debugging) */}
-      <details className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+      {/* <details className="bg-gray-50 border border-gray-200 rounded-lg p-4">
         <summary className="cursor-pointer font-semibold">
           Debug: Raw Data ({payments.length} payments)
         </summary>
@@ -186,7 +195,7 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
             lastPayment: payments[payments.length - 1] 
           }, null, 2)}
         </pre>
-      </details>
+      </details> */}
     </div>
   );
 };

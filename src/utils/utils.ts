@@ -39,6 +39,8 @@ export function normalizeDate(input: string | Date): Date {
  * This function ensures consistent date handling regardless of navigation path
  * or browser timezone settings
  */
+
+// cursor latest both ways  "2025-07-01T16:00:00.000Z", and "2025-07-01"
 export function parseDatabaseDate(dateStr: string | Date | null): Date {
   // console.log("parseDatabaseDate", dateStr)
 
