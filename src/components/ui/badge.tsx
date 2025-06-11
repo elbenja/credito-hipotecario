@@ -17,7 +17,7 @@ const badgeVariants = cva(
         outline: "border-foreground/30 text-foreground",
         // benjamin
         blue: "bg-blue-500/10 text-blue-500",
-        green: "bg-green-600/10 text-green-600",
+        green: "bg-green-600/20 text-green-600",
         primary: "bg-primary/20 text-primary",
         plan: "border-background/50 text-background/50",
 
