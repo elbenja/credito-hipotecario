@@ -480,7 +480,7 @@ const ScenarioPanel = ({
               <Heart className="size-4 ml-1" />
             </Button>
           )}
-            <Button 
+            {/* <Button 
               variant="outline" 
               className="border-none"
               onClick={() => {
@@ -490,7 +490,7 @@ const ScenarioPanel = ({
             >             
               Payments
               <Eye className="size-4 ml-1" />
-            </Button>
+            </Button> */}
 
         </div>
       </div>
