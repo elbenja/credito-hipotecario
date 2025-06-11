@@ -9,7 +9,7 @@ import {
   getPaymentsByYear,
   calculateScenarioTotals 
 } from "@/utils/mortgage-scenario-utils";
-import { Badge } from "../ui/badge";
+import { Badge } from "@/components/ui/badge";
 
 interface SavedScenarioExampleProps {
   mortgageId: string;
@@ -181,6 +181,10 @@ export const SavedScenario: React.FC<SavedScenarioExampleProps> = ({ mortgageId 
                   return (
                     <tr key={index} className="border-b">
                       <td className="px-4 py-2 text-xs text-center">
+                      {/* Render raw date value */}
+                      {/* <div className="text-gray-400">{String(payment.payment_date)}</div> */}
+                      {/* Render formatted date */}
+                      <div>
                         {(() => {
                           const dateStr = payment.payment_date.toLocaleDateString(i18n.language === 'es' ? 'es-ES' : 'en-US', { 
                             month: 'short',
@@ -192,6 +196,7 @@ export const SavedScenario: React.FC<SavedScenarioExampleProps> = ({ mortgageId 
                           }
                           return dateStr;
                         })()}
+                          </div>
                       </td>
                       <td className="px-4 py-2 text-sm text-right">
                         {formatCurrency(payment.monthly_payment)}

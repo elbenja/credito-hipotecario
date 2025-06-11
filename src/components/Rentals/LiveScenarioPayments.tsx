@@ -41,7 +41,8 @@ export const LiveScenarioPayments: React.FC<LiveScenarioPaymentsProps> = ({
     return extraInstallments.find(extra => {
       const paymentMonth = date.getMonth();
       const paymentYear = date.getFullYear();
-      const extraDate = new Date(extra.start_date);
+      const extraDate = new Date(extra.start_date + 'T12:00:00Z') ;
+      // fix fucking date console.log('extraDate', extraDate , extra.start_date) ;
       const extraMonth = extraDate.getMonth();
       const extraYear = extraDate.getFullYear();
       return paymentMonth === extraMonth && paymentYear === extraYear;
@@ -181,6 +182,7 @@ export const LiveScenarioPayments: React.FC<LiveScenarioPaymentsProps> = ({
                   return (
                     <tr key={index} className="border-b">
                       <td className="px-4 py-2 text-xs text-center">
+                        
                         {(() => {
                           const dateStr = paymentDate.toLocaleDateString(i18n.language === 'es' ? 'es-ES' : 'en-US', { 
                             month: 'short',
