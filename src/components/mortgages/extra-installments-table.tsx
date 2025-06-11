@@ -65,7 +65,7 @@ export function ExtraInstallmentsTable({
                 onClick={() => onRowClick && onRowClick(installment)}
               >
                 <td className="p-2 text-sm">{index + 1}</td>
-                <td className="p-2 text-sm">{formatMonthYear(new Date(installment.start_date))}</td>
+                <td className="p-2 text-sm">{formatMonthYear(new Date(installment.start_date + 'T12:00:00Z'))}</td>
                 <td className="p-2 text-sm">{formatCurrency(installment.amount, currency)}</td>
                 <td className="p-2 text-sm">
              
