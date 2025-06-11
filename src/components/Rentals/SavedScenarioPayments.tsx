@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useSavedScenarioPayments } from "@/hooks/mortgages/useSavedScenarioPayments";
 import { useMortgageBundle } from "@/hooks/useMortgageBundle";
 import { useExtraInstallmentsFromBundle } from "@/hooks/mortgages/useExtraInstallmentsFromBundle";
@@ -18,7 +19,9 @@ interface SavedScenarioExampleProps {
  * Example component demonstrating how to use the useSavedScenarioPayments hook
  * This shows various ways to work with the saved scenario data
  */
-export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mortgageId }) => {
+export const SavedScenario: React.FC<SavedScenarioExampleProps> = ({ mortgageId }) => {
+  const { t, i18n } = useTranslation('rentals');
+  
   const {
     scenarioResult,
     payments,
@@ -48,7 +51,7 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-lg">Loading saved scenario...</div>
+        <div className="text-lg">{t('scenario_payments.loading')}</div>
       </div>
     );
   }
@@ -57,8 +60,8 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <h3 className="text-red-800 font-semibold">Error Loading Scenario</h3>
-        <p className="text-red-600">{error.message}</p>
+        <h3 className="text-red-800 font-semibold">{t('scenario_payments.error.title')}</h3>
+        <p className="text-red-600">{t('scenario_payments.error.description', { message: error.message })}</p>
       </div>
     );
   }
@@ -67,8 +70,8 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
   if (!hasSavedScenario || !scenarioResult || !payments || !summary) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <h3 className="text-yellow-800 font-semibold">No Saved Scenario</h3>
-        <p className="text-yellow-600">This mortgage doesn't have a saved scenario yet.</p>
+        <h3 className="text-yellow-800 font-semibold">{t('scenario_payments.no_scenario.title')}</h3>
+        <p className="text-yellow-600">{t('scenario_payments.no_scenario.description')}</p>
       </div>
     );
   }
@@ -83,8 +86,10 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
       {/* Scenario Overview */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h2 className="text-xl font-medium mb-4 flex items-center gap-2">
-          <span className="text-md">Scenario: </span> 
-          <span className="font-bold bg-brand text-black px-2 py-1 rounded-md">{savedScenarioType?.replace('_', ' ').toLowerCase().replace(/^./, c => c.toUpperCase())}</span>
+          <span className="text-md">{t('scenario_payments.overview.title')} </span> 
+          <span className="font-bold bg-brand text-black px-2 py-1 rounded-md">
+            {savedScenarioType ? t(`scenario_payments.scenario_types.${savedScenarioType}` as any) : savedScenarioType?.replace('_', ' ').toLowerCase().replace(/^./, c => c.toUpperCase())}
+          </span>
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -93,20 +98,20 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
         
           
           <div className=" p-4 rounded-lg">
-            <h3 className="text-xs  ">Total Interest & Insurance</h3>
+            <h3 className="text-xs  ">{t('scenario_payments.overview.total_interest_insurance')}</h3>
             <p className="text-2xl font-bold ">
               {formatCurrency(summary.total_interest_and_insurance)}
             </p>
           </div>
 
           <div className="p-4 rounded-lg">
-            <h3 className="text-xs  ">Total Months</h3>
+            <h3 className="text-xs  ">{t('scenario_payments.overview.total_months')}</h3>
             <p className="text-2xl font-bold">
-              {summary.total_months} <span className="text-sm">({(summary.total_months / 12).toFixed(1)} years)</span>
+              {summary.total_months} <span className="text-sm">({(summary.total_months / 12).toFixed(1)} {t('scenario_payments.overview.years_suffix')})</span>
             </p>
           </div>
           <div className=" p-4 rounded-lg">
-            <h3 className="text-xs  ">Monthly Payment</h3>
+            <h3 className="text-xs  ">{t('scenario_payments.overview.monthly_payment')}</h3>
             <p className="text-2xl font-bold ">
               {formatCurrency(summary.monthly_payment)}
             </p>
@@ -115,28 +120,28 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
         </div>
 
         {summary.breakeven_point && (
-          <div className="flex  items-center justify-center mt-4 bg-muted p-4 rounded-lg gap-4">
-            <span className="font-semibold ">Break-even Point</span>
+          <div className="flex  items-center justify-center mt-4 bg-muted p-2 rounded-lg gap-4">
+            <span className="font-semibold ">{t('scenario_payments.overview.breakeven_point')}</span>
             <span className="text-lg ">
-              {summary.breakeven_point.toFixed(1)} years
+              {summary.breakeven_point.toFixed(1)} {t('scenario_payments.overview.years_suffix')}
             </span>
           </div>
         )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 mt-6">
             <div>
-              <p className="text-sm text-muted-foreground">Total Payments</p>
+              <p className="text-sm text-muted-foreground">{t('scenario_payments.payment_breakdown.total_payments')}</p>
               <p className="text-lg font-semibold">{formatCurrency(totals.totalPayments)}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Principal</p>
+              <p className="text-sm text-muted-foreground">{t('scenario_payments.payment_breakdown.total_principal')}</p>
               <p className="text-lg font-semibold">{formatCurrency(totals.totalPrincipal)}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Interest</p>
+              <p className="text-sm text-muted-foreground">{t('scenario_payments.payment_breakdown.total_interest')}</p>
               <p className="text-lg font-semibold">{formatCurrency(totals.totalInterest)}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Insurance</p>
+              <p className="text-sm text-muted-foreground">{t('scenario_payments.payment_breakdown.total_insurance')}</p>
               <p className="text-lg font-semibold">
                 {formatCurrency(totals.totalPropertyInsurance + totals.totalLoanInsurance)}
               </p>
@@ -154,7 +159,7 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
       {/* All Payments */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h3 className="text-lg font-medium mb-4">
-          All Payments ({payments.length} payments)
+          {t('scenario_payments.payments_table.title')} ({t('scenario_payments.payments_table.payments_count', { count: payments.length })})
         </h3>
         
         {payments.length > 0 ? (
@@ -162,12 +167,12 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
             <table className="min-w-full table-auto">
               <thead>
                 <tr className="bg-muted">
-                  <th className="px-4 py-2 font-semibold text-center">Date</th>
-                  <th className="px-4 py-2 font-semibold text-right">Payment</th>
-                  <th className="px-4 py-2 font-semibold text-right">Principal</th>
-                  <th className="px-4 py-2 font-semibold text-right">Interest</th>
-                  <th className="px-4 py-2 font-semibold text-right">Extra Installments</th>
-                  <th className="px-4 py-2 font-semibold text-right">Balance</th>
+                  <th className="px-4 py-2 font-semibold text-sm text-center">{t('scenario_payments.payments_table.headers.date')}</th>
+                  <th className="px-4 py-2 font-semibold text-sm text-right">{t('scenario_payments.payments_table.headers.payment')}</th>
+                  <th className="px-4 py-2 font-semibold text-sm text-right">{t('scenario_payments.payments_table.headers.principal')}</th>
+                  <th className="px-4 py-2 font-semibold text-sm text-right">{t('scenario_payments.payments_table.headers.interest')}</th>
+                  <th className="px-4 py-2 font-semibold text-sm text-right">{t('scenario_payments.payments_table.headers.extra_installments')}</th>
+                  <th className="px-4 py-2 font-semibold text-sm text-right">{t('scenario_payments.payments_table.headers.balance')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -176,10 +181,17 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
                   return (
                     <tr key={index} className="border-b">
                       <td className="px-4 py-2 text-xs text-center">
-                        {payment.payment_date.toLocaleDateString('en-US', { 
-                          month: 'short',
-                          year: 'numeric'
-                        })}
+                        {(() => {
+                          const dateStr = payment.payment_date.toLocaleDateString(i18n.language === 'es' ? 'es-ES' : 'en-US', { 
+                            month: 'short',
+                            year: 'numeric'
+                          });
+                          // Capitalize first letter for Spanish months
+                          if (i18n.language === 'es') {
+                            return dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+                          }
+                          return dateStr;
+                        })()}
                       </td>
                       <td className="px-4 py-2 text-sm text-right">
                         {formatCurrency(payment.monthly_payment)}
@@ -212,7 +224,7 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
             </table>
           </div>
         ) : (
-          <p className="text-gray-500">No payments scheduled</p>
+          <p className="text-gray-500">{t('scenario_payments.payments_table.no_payments')}</p>
         )}
       </div>
 
@@ -231,10 +243,10 @@ export const SavedScenarioExample: React.FC<SavedScenarioExampleProps> = ({ mort
         </pre>
       </details> */}
       <div className="  text-sm  rounded-lg p-6">
-        CreditoHipotecar.io 2025
+        {t('scenario_payments.footer')}
       </div>
     </div>
   );
 };
 
-export default SavedScenarioExample; 
+export default SavedScenario; 

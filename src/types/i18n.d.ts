@@ -182,6 +182,7 @@ declare module 'i18next' {
       mortgages: typeof import('../i18n/locales/en/mortgages.json');
       components: typeof import('../i18n/locales/en/components.json');
       account: typeof import('../i18n/locales/en/account.json');
+      rentals: typeof import('../i18n/locales/en/rentals.json');
     };
   }
 } 

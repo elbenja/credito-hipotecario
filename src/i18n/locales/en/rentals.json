@@ -1,0 +1,52 @@
+{
+  "scenario_payments": {
+    "loading": "Loading saved scenario...",
+    "error": {
+      "title": "Error Loading Scenario",
+      "description": "Error loading scenario: {{message}}"
+    },
+    "no_scenario": {
+      "title": "No Saved Scenario",
+      "description": "This mortgage doesn't have a saved scenario yet."
+    },
+    "overview": {
+      "title": "Scenario:",
+      "total_interest_insurance": "Total Interest & Insurance",
+      "total_months": "Total Months",
+      "years_suffix": "years",
+      "monthly_payment": "Monthly Payment",
+      "breakeven_point": "Break-even Point"
+    },
+    "payment_breakdown": {
+      "title": "Payment Breakdown",
+      "total_payments": "Total Payments",
+      "total_principal": "Total Principal",
+      "total_interest": "Total Interest",
+      "total_insurance": "Total Insurance"
+    },
+    "payments_table": {
+      "title": "All Payments",
+      "payments_count": "{{count}} payments",
+      "headers": {
+        "date": "Date",
+        "payment": "Payment",
+        "principal": "Principal",
+        "interest": "Interest",
+        "extra_installments": "Extra Installments",
+        "balance": "Balance"
+      },
+      "no_payments": "No payments scheduled"
+    },
+    "footer": "CreditoHipotecar.io 2025",
+    "scenario_types": {
+      "regular": "Regular",
+      "accelerated": "Accelerated",
+      "lower_payment": "Lower Payment",
+      "new_rate": "New Rate"
+    }
+  },
+  "payments_sheet": {
+    "title": "Mortgage",
+    "no_mortgage_selected": "No mortgage selected"
+  }
+} 

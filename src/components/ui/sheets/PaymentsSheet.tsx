@@ -4,7 +4,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { SavedScenarioExample } from "@/components/Rentals/ScenarioPayments";
+import { useTranslation } from "react-i18next";
+import { SavedScenario } from "@/components/Rentals/SavedScenarioPayments";
 
 interface PaymentsSheetProps {
   isOpen: boolean;
@@ -19,12 +20,14 @@ export function PaymentsSheet({
   mortgageId,
   mortgageInfo,
 }: PaymentsSheetProps) {
+  const { t } = useTranslation('rentals');
+  
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-4xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>
-            Mortgage 
+            {t('payments_sheet.title')} 
             {mortgageInfo && (
               <span className="text-sm font-normal text-muted-foreground ml-2">
                 - {mortgageInfo.mortgage.name}
@@ -34,10 +37,10 @@ export function PaymentsSheet({
         </SheetHeader>
         <div className="mt-6">
           {mortgageId ? (
-            <SavedScenarioExample mortgageId={mortgageId} />
+            <SavedScenario mortgageId={mortgageId} />
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              No mortgage selected
+              {t('payments_sheet.no_mortgage_selected')}
             </div>
           )}
         </div>

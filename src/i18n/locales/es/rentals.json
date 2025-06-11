@@ -1,0 +1,52 @@
+{
+  "scenario_payments": {
+    "loading": "Cargando escenario guardado...",
+    "error": {
+      "title": "Error al Cargar Escenario",
+      "description": "Error al cargar escenario: {{message}}"
+    },
+    "no_scenario": {
+      "title": "Sin Escenario Guardado",
+      "description": "Esta hipoteca aún no tiene un escenario guardado."
+    },
+    "overview": {
+      "title": "Escenario:",
+      "total_interest_insurance": "Total Interés y Seguros",
+      "total_months": "Total Meses",
+      "years_suffix": "años",
+      "monthly_payment": "Pago Mensual",
+      "breakeven_point": "Punto de Equilibrio"
+    },
+    "payment_breakdown": {
+      "title": "Desglose de Pagos",
+      "total_payments": "Total Pagos",
+      "total_principal": "Total Capital",
+      "total_interest": "Total Interés",
+      "total_insurance": "Total Seguros"
+    },
+    "payments_table": {
+      "title": "Todos los Pagos",
+      "payments_count": "{{count}} pagos",
+      "headers": {
+        "date": "Fecha",
+        "payment": "Pago",
+        "principal": "Capital",
+        "interest": "Interés",
+        "extra_installments": "Cuotas Extra",
+        "balance": "Saldo"
+      },
+      "no_payments": "No hay pagos programados"
+    },
+    "footer": "CreditoHipotecar.io 2025",
+    "scenario_types": {
+      "regular": "Regular",
+      "accelerated": "Amotizaciones a plazo",
+      "lower_payment": "Amotizaciones a cuotas",
+      "new_rate": "Compra de deuda"
+    }
+  },
+  "payments_sheet": {
+    "title": "Hipoteca",
+    "no_mortgage_selected": "Ninguna hipoteca seleccionada"
+  }
+} 

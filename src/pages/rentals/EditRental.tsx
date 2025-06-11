@@ -12,19 +12,12 @@ import { PaymentsSheet } from "@/components/ui/sheets/PaymentsSheet";
 import { MortgageSelectionSheet } from "@/components/ui/sheets/MortgageSelectionSheet";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
-
-
-
 export default function EditRental() {
-
-
 
   const [selectedMortgageId, setSelectedMortgageId] = useState<string | null>(null);
   const [isSelectionSheetOpen, setIsSelectionSheetOpen] = useState(false);
   const [isPaymentsSheetOpen, setIsPaymentsSheetOpen] = useState(false);
   
-
-
   const { user } = useAuth();
   const { t } = useTranslation(['properties', 'global']);
   
@@ -40,8 +33,6 @@ export default function EditRental() {
     }
     return null;
   })() : null;
-
-
 
   return (
     <DashboardLayout
@@ -70,10 +61,6 @@ Edit Rental
             {/* future component Inherit payments */}
             <div className="flex  gap-1">
 
-
-
-
-           
             </div>
             <Accordion type="single" collapsible> 
               <AccordionItem value="item-1">
@@ -147,12 +134,8 @@ Edit Rental
                 </AccordionContent>
               </AccordionItem>
 
-            
             </Accordion>
 
-
-
-         
           </div>
 
           {/* Right Container */}  
