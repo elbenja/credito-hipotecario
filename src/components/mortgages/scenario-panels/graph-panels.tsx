@@ -22,6 +22,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useToast } from "@/components/ui/use-toast"
 import { useCanCreateFeature } from "@/hooks/usePlanLimits"
 import { enUS, es, Locale } from 'date-fns/locale'
+import { LivePaymentsSheet } from "@/components/ui/sheets/LivePaymentsSheet"
 
 // Memoize the data transformation function to avoid recalculating on every render
 const transformPaymentsToChartData = (payments: PaymentRow[], totalMonths: number, installmentsPerYear: number = 12) => {
@@ -131,6 +132,9 @@ const ScenarioPanel = ({
 
   // Add a ref for caching chart data to avoid unnecessary transformations
   const chartDataCache = useRef<Record<string, any[]>>({});
+
+  // State for LivePaymentsSheet
+  const [showLivePayments, setShowLivePayments] = useState(false);
 
   // Update localStorage operations by batching state
   const [uiState, setUiState] = useState(() => {
@@ -463,6 +467,14 @@ const ScenarioPanel = ({
           </Button>
 
 
+          <Button 
+              variant="outline" 
+              className="border-none"
+              onClick={() => setShowLivePayments(true)}
+            >             
+              Payments
+              <Eye className="size-4 ml-1" />
+            </Button>
 
 
           {isThisScenarioSaved ? (
@@ -480,17 +492,6 @@ const ScenarioPanel = ({
               <Heart className="size-4 ml-1" />
             </Button>
           )}
-            <Button 
-              variant="outline" 
-              className="border-none"
-              onClick={() => {
-                console.log('Payments data:', scenario?.payments);
-                console.log('extraInstallments :', extraInstallments);
-              }}
-            >             
-              Payments
-              <Eye className="size-4 ml-1" />
-            </Button>
 
         </div>
       </div>
@@ -746,6 +747,18 @@ py-4 xl:py-5 2xl:py-6"
       </div>
       <div className="flex w-full items-center justify-center"></div>
     </div>
+
+    {/* Live Payments Sheet */}
+    {scenario && (
+      <LivePaymentsSheet
+        isOpen={showLivePayments}
+        onOpenChange={setShowLivePayments}
+        scenario={scenario}
+        extraInstallments={extraInstallments || []}
+        scenarioType={scenarioType}
+        mortgageName={title}
+      />
+    )}
   </div>
   );
 };
