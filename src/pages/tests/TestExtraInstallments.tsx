@@ -1,9 +1,10 @@
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Eye, Plus, Table, TableProperties } from "lucide-react";
+import { Building, ChevronRight, Eye, Plus, Table, TableProperties } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { usePropertiesWithMortgagesAndBonus } from "@/services/propertyService";
+import { Link } from "react-router-dom";
 // import {
 //   Sheet,
 //   SheetContent,
@@ -50,7 +51,13 @@ export default function TestExtraInstallments() {
   return (
     <DashboardLayout header={{ title: "Test Extra Installments" }}>
       <div className="flex min-h-[60vh] items-center justify-center flex-col gap-16">
-
+        
+<Link to="/rentals">
+  <Button variant="outline" className="flex items-center gap-2"> 
+    <Building className="w-4 h-4" />
+    Rentals
+  </Button>
+</Link> 
 
 {/* future component Inherit payments */}
         {/* <div className="flex items-center justify-center gap-1">

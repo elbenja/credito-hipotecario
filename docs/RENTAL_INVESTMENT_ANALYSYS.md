@@ -39,7 +39,7 @@ You'll need specialized calculation hooks for different income/expense types:
 interface CalculationSource {
   id: string;
   name: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'equity';
   calculationType: 'fixed' | 'percentage_rent' | 'percentage_property';
   frequency: 'monthly' | 'annually' | 'one_time';
   baseValue?: number;
@@ -53,10 +53,23 @@ interface MonthlyCalculationResult {
   sources: Record<string, number>; // sourceId -> amount
   totalIncome: number;
   totalExpenses: number;
+  totalEquity: number;
   netCashFlow: number;
   accumulatedIncome: number;
   accumulatedExpenses: number;
+  accumulatedEquity: number;
   accumulatedNetFlow: number;
+  propertyValue: number;
+  equityPercentage: number;
+}
+
+interface EquityCalculation {
+  initialEquity: number;
+  principalPayments: number;
+  extraPayments: number;
+  appreciation: number;
+  totalEquity: number;
+  equityPercentage: number;
 }
 ```
 
@@ -160,12 +173,15 @@ export const useChartData = (monthlyResults: MonthlyCalculationResult[]) => {
 
 ## **7. Specific Calculation Examples**
 
-Based on your spreadsheet example, here are the calculation types you'll need:
-
 ### **Income Sources:**
 - **Rental Income**: Fixed monthly amount with annual increases
-- **Property Appreciation**: Percentage-based on property value
 - **Tax Benefits**: Percentage calculations
+
+### **Equity Sources:**
+- **Initial Equity**: Down payment (initial contribution)
+- **Principal Payments**: From monthly mortgage installments
+- **Extra Payments**: Additional principal prepayments
+- **Property Appreciation**: Percentage-based on property value (moved from Income to Equity)
 
 ### **Expense Sources:**
 - **Mortgage Payment**: From your mortgage data
@@ -174,7 +190,72 @@ Based on your spreadsheet example, here are the calculation types you'll need:
 - **Maintenance**: Percentage of rent or property value
 - **Property Management**: Percentage of rent
 
-## **8. File Structure Recommendation**
+## **8. Calculation Types Interface**
+```typescript
+// /src/types/calculations.ts
+interface CalculationSource {
+  id: string;
+  name: string;
+  type: 'income' | 'expense' | 'equity';
+  calculationType: 'fixed' | 'percentage_rent' | 'percentage_property';
+  frequency: 'monthly' | 'annually' | 'one_time';
+  baseValue?: number;
+  percentage?: number;
+  startDate?: Date;
+  endDate?: Date;
+}
+
+interface MonthlyCalculationResult {
+  date: Date;
+  sources: Record<string, number>; // sourceId -> amount
+  totalIncome: number;
+  totalExpenses: number;
+  totalEquity: number;
+  netCashFlow: number;
+  accumulatedIncome: number;
+  accumulatedExpenses: number;
+  accumulatedEquity: number;
+  accumulatedNetFlow: number;
+  propertyValue: number;
+  equityPercentage: number;
+}
+
+interface EquityCalculation {
+  initialEquity: number;
+  principalPayments: number;
+  extraPayments: number;
+  appreciation: number;
+  totalEquity: number;
+  equityPercentage: number;
+}
+```
+
+## **9. Equity Calculation System**
+
+### **A. Equity Calculation Hook**
+```typescript
+// /src/hooks/calculations/useEquityCalculations.ts
+export const useEquityCalculations = (mortgageData: any, propertyData: any) => {
+  return useMemo(() => {
+    return {
+      initialEquity: CalculationSource;
+      principalPayments: CalculationSource;
+      extraPayments: CalculationSource;
+      appreciation: CalculationSource;
+    };
+  }, [mortgageData, propertyData]);
+};
+```
+
+### **B. Equity Tracking Components**
+```typescript
+// /src/components/investment-analysis/
+├── EquityBreakdown.tsx          // Shows equity components
+├── EquityGrowthChart.tsx        // Visualizes equity growth over time
+└── EquityMetrics.tsx            // Displays key equity metrics
+```
+
+## **10. File Structure Recommendation**
 
 ```
 /src/
@@ -204,49 +285,9 @@ Based on your spreadsheet example, here are the calculation types you'll need:
 
 
 
-## Overview
 
-This document outlines the architecture and code organization for a dynamic property investment analysis system. The goal is to enable flexible, modular calculations of incomes and expenses, and to visualize key investment metrics over time.
 
----
-
-## 1. **System Architecture**
-
-**Data Flow:**
-
-```
-Mortgage Data → Calculation Engines → Monthly Normalization → Zustand Store → Dynamic Table & Charts
-```
-
----
-
-## 2. **Folder Structure**
-
-```
-/src/
-├── components/
-│   ├── investment-analysis/
-│   │   ├── DynamicInvestmentTable/
-│   │   ├── CalculationManager/
-│   │   └── charts/
-├── hooks/
-│   ├── calculations/
-│   └── useInvestmentAnalysis.ts
-├── utils/
-│   ├── calculationEngine.ts
-│   ├── mortgageProcessor.ts
-│   └── dateUtils.ts
-├── types/
-│   ├── calculations.ts
-│   ├── mortgage.ts
-│   └── investment.ts
-└── store/
-    └── investmentAnalysis.ts
-```
-
----
-
-## 3. **Calculation Logic: Hooks vs. Utils**
+## Appendix . **Calculation Logic: Hooks vs. Utils**
 
 ### **Calculations in `utils/`**
 
@@ -290,70 +331,7 @@ export function useMortgageCalculations(mortgageData) {
 | hooks/   | Integrate calculations with React | Yes         | Yes           | `useMortgageCalculations`       |
 | utils/   | Pure calculation logic         | No          | No            | `calculateMonthlyPayments`      |
 
----
 
-## 4. **Key Components & Types**
-
-### **Calculation Types**
-
-```typescript
-// /src/types/calculations.ts
-interface CalculationSource {
-  id: string;
-  name: string;
-  type: 'income' | 'expense';
-  calculationType: 'fixed' | 'percentage_rent' | 'percentage_property';
-  frequency: 'monthly' | 'annually' | 'one_time';
-  baseValue?: number;
-  percentage?: number;
-  startDate?: Date;
-  endDate?: Date;
-}
-
-interface MonthlyCalculationResult {
-  date: Date;
-  sources: Record<string, number>; // sourceId -> amount
-  totalIncome: number;
-  totalExpenses: number;
-  netCashFlow: number;
-  accumulatedIncome: number;
-  accumulatedExpenses: number;
-  accumulatedNetFlow: number;
-}
-```
-
----
-
-## 5. **Implementation Phases**
-
-1. **Core Calculation Engine**
-   - Create base calculation types and interfaces
-   - Implement mortgage data processor
-   - Build individual calculation hooks
-   - Create main calculation orchestrator
-
-2. **Dynamic Table System**
-   - Build base table component
-   - Implement column management system
-   - Add calculation result display
-   - Create table controls and configuration
-
-3. **Visualization Layer**
-   - Implement accumulation chart
-   - Add monthly cash flow visualization
-   - Create interactive controls
-   - Build export/sharing functionality
-
----
-
-## 6. **Calculation Examples**
-
-- **Income Sources:** Rental income, property appreciation, tax benefits
-- **Expense Sources:** Mortgage payment, property insurance, operating expenses, maintenance, property management
-
----
-
-## 7. **Best Practices**
 
 - **Put all pure, reusable logic in `utils/`.**
 - **Use hooks in `hooks/` to connect those utilities to React components,** manage state, and optimize performance with memoization.
