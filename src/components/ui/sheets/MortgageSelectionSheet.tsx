@@ -39,14 +39,14 @@ export function MortgageSelectionSheet({
             <RadioGroup value={selectedMortgageId || ""} onValueChange={onMortgageSelect}>
               {properties.map((property) => (
                 property.mortgages && property.mortgages.length > 0 && (
-                  <div key={property.id} className="space-y-4">
-                    <div className="border-b pb-2">
+                  <div key={property.id} className=" mt-4 mb-2 ">
+                    <div className="border-b pb-2 ">
                       <h3 className="text-lg font-semibold">{property.name}</h3>
                       <p className="text-sm text-muted-foreground">
                         {formatCurrency(property.price_cost, property.currency)}
                       </p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
+                    <div className=" rounded-lg p-4 ">
                       <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground mb-3">
                         <span>Name</span>
                         <span className="text-right">Loan Amount</span>
