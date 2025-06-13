@@ -20,7 +20,32 @@ Mortgage Data → Calculation Engines → Monthly Normalization → Zustand Stor
 
 ## **2. Calculation System**
 
-### **A. Individual Calculation Hooks**
+### **A. Simulation Parameters**
+```typescript
+// /src/types/simulation.ts
+interface SimulationParameters {
+  startDate: Date;  // First installment date from mortgage or today's date
+  durationInYears: number;  // Fixed at 25 years
+  totalMonths: number;  // Calculated as durationInYears * 12
+}
+
+// /src/hooks/useSimulationParameters.ts
+export const useSimulationParameters = (mortgageData?: any) => {
+  return useMemo(() => {
+    const startDate = mortgageData?.first_installment_date 
+      ? new Date(mortgageData.first_installment_date)
+      : new Date(); // Today's date if no mortgage data
+    
+    return {
+      startDate,
+      durationInYears: 25,
+      totalMonths: 25 * 12
+    };
+  }, [mortgageData]);
+};
+```
+
+### **B. Individual Calculation Hooks**
 You'll need specialized calculation hooks for different income/expense types:
 
 ```typescript
