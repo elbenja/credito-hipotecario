@@ -92,7 +92,7 @@ export const LiveScenarioPayments: React.FC<LiveScenarioPaymentsProps> = ({
     <div className="space-y-6">
       {/* Scenario Overview */}
       <div className=" border  rounded-lg p-6">
-        <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-medium mb-4 flex items-center gap-4">
           <span className="text-md">{t('scenario_payments.overview.title')} </span> 
           <span className="font-bold bg-brand text-black px-2 py-0 rounded-md">
             {scenarioType ? t(`scenario_payments.scenario_types.${scenarioType}` as any) : scenarioType?.replace('_', ' ').toLowerCase().replace(/^./, c => c.toUpperCase())}

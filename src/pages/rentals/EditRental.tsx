@@ -5,23 +5,26 @@ import { ChartColumnBig, ChevronRight, Eye, PencilLine, TagIcon } from "lucide-r
 import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useTranslation } from "react-i18next";
-import { usePropertiesWithMortgagesAndBonus } from "@/services/propertyService";
+import { usePropertiesWithMortgagesAndBonus, useProperties } from "@/services/propertyService";
 import { formatCurrency } from "@/utils/utils";
 import type { Mortgage } from "@/types";
 import { PaymentsSheet } from "@/components/ui/sheets/PaymentsSheet";
 import { MortgageSelectionSheet } from "@/components/ui/sheets/MortgageSelectionSheet";
+import { PropertySelectionSheet } from "@/components/ui/sheets/PropertySelectionSheet";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export default function EditRental() {
-
   const [selectedMortgageId, setSelectedMortgageId] = useState<string | null>(null);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [isSelectionSheetOpen, setIsSelectionSheetOpen] = useState(false);
+  const [isPropertySheetOpen, setIsPropertySheetOpen] = useState(false);
   const [isPaymentsSheetOpen, setIsPaymentsSheetOpen] = useState(false);
   
   const { user } = useAuth();
   const { t } = useTranslation(['properties', 'global']);
   
-  const { data: propertiesWithMortgages = [], isLoading } = usePropertiesWithMortgagesAndBonus(user?.id);
+  const { data: propertiesWithMortgages = [], isLoading: isLoadingMortgages } = usePropertiesWithMortgagesAndBonus(user?.id);
+  const { data: properties = [], isLoading: isLoadingProperties } = useProperties(user?.id);
 
   // Find the selected mortgage and its property
   const selectedMortgageInfo = selectedMortgageId ? (() => {
@@ -34,6 +37,9 @@ export default function EditRental() {
     return null;
   })() : null;
 
+  // Find the selected property
+  const selectedProperty = selectedPropertyId ? properties.find(p => p.id === selectedPropertyId) : null;
+
   return (
     <DashboardLayout
       header={{
@@ -41,12 +47,11 @@ export default function EditRental() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-     hey there
+                hey there
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
- 
-Edit Rental
+                Edit Rental
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -64,18 +69,23 @@ Edit Rental
             </div>
             <Accordion type="single" collapsible> 
               <AccordionItem value="item-1">
-                <AccordionTrigger className="p-2">Investment</AccordionTrigger>
+                <AccordionTrigger className="p-4">Property Investment</AccordionTrigger>
                 <AccordionContent className="flex flex-col gap-2 p-2">
             
-                    <Button variant="outline" className="p-4 inline-flex justify-start items-start gap-3 h-auto  whitespace-normal"
+                    <Button 
+                      variant="outline" 
+                      className="p-4 inline-flex justify-start items-start gap-3 h-auto whitespace-normal"
+                      onClick={() => setIsPropertySheetOpen(true)}
                     >
                       <TagIcon className="w-4 h-4" />
-                
-                      <div className="flex-1    inline-flex flex-col justify-start items-start gap-1">
-                        <div className="font-medium">Choose a property</div>
-                        <div className="text-muted-foreground text-left  justify-start text-sm font-medium  leading-tight ">
-                          One-time property payment includes bonus calculation
-
+                      <div className="flex-1 inline-flex flex-col justify-start items-start gap-1">
+                        <div className="font-medium">
+                          {selectedProperty ? selectedProperty.name : "Choose a property"}
+                        </div>
+                        <div className="text-muted-foreground text-left justify-start text-sm font-medium leading-tight">
+                          {selectedProperty 
+                            ? formatCurrency(selectedProperty.price_cost, selectedProperty.currency as "USD" | "PEN")
+                            : "One-time property payment includes bonus calculation"}
                         </div>
                       </div>
                     </Button>
@@ -96,11 +106,10 @@ Edit Rental
                             ) : (
                               <> 
                               <ChartColumnBig className="w-4 h-4" />
-                              <div className="flex-1    inline-flex flex-col justify-start items-start gap-1">
+                              <div className="flex-1 inline-flex flex-col justify-start items-start gap-1">
                                 <div className="font-medium">Choose a mortgage</div>
-                                <div className="text-muted-foreground text-left  justify-start text-sm font-medium  leading-tight ">
-                                Import a mortgage with its monthly payments
-
+                                <div className="text-muted-foreground text-left justify-start text-sm font-medium leading-tight">
+                                  Import a mortgage with its monthly payments
                                 </div>
                               </div>
                               </>
@@ -120,26 +129,13 @@ Edit Rental
                         <Eye className="w-4 h-4" />
                         Payments
                       </Button>
-                      <Button variant="outline" className="p-4 inline-flex justify-start items-start gap-3 h-auto  whitespace-normal"
-                    >
-                        <PencilLine className="w-4 h-4" />
-                  
-                        <div className="flex-1    inline-flex flex-col justify-start items-start gap-1">
-                          <div className="font-medium">Manual </div>
-                          <div className="text-muted-foreground text-left  justify-start text-sm font-medium  leading-tight ">
-                          Enter the property value as a one-time payment
-                          </div>
-                        </div>
-                    </Button>
                 </AccordionContent>
               </AccordionItem>
-
             </Accordion>
-
           </div>
 
           {/* Right Container */}  
-         <div className="w-screen sm:w-full overflow-hidden flex-1 pt-8 sm:p-0">
+          <div className="w-screen sm:w-full overflow-hidden flex-1 pt-8 sm:p-0">
            
           </div> 
         </div>
@@ -151,7 +147,16 @@ Edit Rental
         selectedMortgageId={selectedMortgageId}
         onMortgageSelect={setSelectedMortgageId}
         properties={propertiesWithMortgages}
-        isLoading={isLoading}
+        isLoading={isLoadingMortgages}
+      />
+
+      <PropertySelectionSheet
+        isOpen={isPropertySheetOpen}
+        onOpenChange={setIsPropertySheetOpen}
+        selectedPropertyId={selectedPropertyId}
+        onPropertySelect={setSelectedPropertyId}
+        properties={properties}
+        isLoading={isLoadingProperties}
       />
 
       <PaymentsSheet
@@ -160,6 +165,7 @@ Edit Rental
         mortgageId={selectedMortgageId}
         mortgageInfo={selectedMortgageInfo}
       />
+      
     </DashboardLayout>
   )
 }

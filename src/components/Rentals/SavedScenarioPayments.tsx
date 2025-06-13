@@ -84,8 +84,8 @@ export const SavedScenario: React.FC<SavedScenarioExampleProps> = ({ mortgageId 
   return (
     <div className="space-y-6">
       {/* Scenario Overview */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+      <div className=" border  rounded-lg p-6">
+        <h2 className="text-lg font-medium mb-4 flex items-center gap-4">
           <span className="text-md">{t('scenario_payments.overview.title')} </span> 
           <span className="font-bold bg-brand text-black px-2 py-0 rounded-md">
             {savedScenarioType ? t(`scenario_payments.scenario_types.${savedScenarioType}` as any) : savedScenarioType?.replace('_', ' ').toLowerCase().replace(/^./, c => c.toUpperCase())}
@@ -157,7 +157,7 @@ export const SavedScenario: React.FC<SavedScenarioExampleProps> = ({ mortgageId 
       </div> */}
 
       {/* All Payments */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <div className=" border  rounded-lg p-6">
         <h3 className="text-lg font-medium mb-4">
           {t('scenario_payments.payments_table.title')} ({t('scenario_payments.payments_table.payments_count', { count: payments.length })})
         </h3>
