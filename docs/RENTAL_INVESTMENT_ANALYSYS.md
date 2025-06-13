@@ -73,7 +73,42 @@ interface EquityCalculation {
 }
 ```
 
-## **3. Dynamic Table System**
+## **3. Currency Handling**
+
+### **A. Currency Conversion System**
+```typescript
+// /src/utils/currencyConverter.ts
+interface CurrencyConverter {
+  convertToPEN(amount: number, fromCurrency: 'USD' | 'PEN'): number;
+  getExchangeRate(fromCurrency: 'USD' | 'PEN'): number;
+}
+
+// /src/hooks/useCurrencyConversion.ts
+export const useCurrencyConversion = () => {
+  return {
+    convertToPEN: (amount: number, fromCurrency: 'USD' | 'PEN') => {
+      if (fromCurrency === 'PEN') return amount;
+      const rate = getExchangeRate('USD');
+      return amount * rate;
+    },
+    getExchangeRate: (fromCurrency: 'USD' | 'PEN') => {
+      // Fetch current exchange rate from a reliable API
+      // Consider caching the rate for a short period
+      return fetchExchangeRate(fromCurrency);
+    }
+  };
+};
+```
+
+### **B. Currency Integration**
+- All monetary values in the system will be stored in PEN (Peruvian Sol)
+- When properties or mortgages are in USD:
+  1. The system will automatically convert all values to PEN using the current exchange rate
+  2. The original USD values will be preserved for reference
+  3. All calculations and displays will use the PEN values
+  4. Exchange rates will be updated periodically to ensure accuracy
+
+## **4. Dynamic Table System**
 
 ### **A. Table Component Structure**
 ```typescript
@@ -101,7 +136,7 @@ interface InvestmentAnalysisState {
 }
 ```
 
-## **4. Mortgage Data Integration**
+## **5. Mortgage Data Integration**
 
 ### **A. Mortgage Data Processor**
 ```typescript
@@ -128,7 +163,7 @@ export const useMortgageCalculations = (mortgageData: any) => {
 };
 ```
 
-## **5. Chart/Visualization System**
+## **6. Chart/Visualization System**
 
 ### **A. Chart Components**
 ```typescript
@@ -151,7 +186,7 @@ export const useChartData = (monthlyResults: MonthlyCalculationResult[]) => {
 };
 ```
 
-## **6. Component Implementation Plan**
+## **7. Component Implementation Plan**
 
 ### **Phase 1: Core Calculation Engine**
 1. Create base calculation types and interfaces
@@ -171,7 +206,7 @@ export const useChartData = (monthlyResults: MonthlyCalculationResult[]) => {
 3. Create interactive controls
 4. Build export/sharing functionality
 
-## **7. Specific Calculation Examples**
+## **8. Specific Calculation Examples**
 
 ### **Income Sources:**
 - **Rental Income**: Fixed monthly amount with annual increases
@@ -190,7 +225,7 @@ export const useChartData = (monthlyResults: MonthlyCalculationResult[]) => {
 - **Maintenance**: Percentage of rent or property value
 - **Property Management**: Percentage of rent
 
-## **8. Calculation Types Interface**
+## **9. Calculation Types Interface**
 ```typescript
 // /src/types/calculations.ts
 interface CalculationSource {
@@ -230,7 +265,7 @@ interface EquityCalculation {
 }
 ```
 
-## **9. Equity Calculation System**
+## **10. Equity Calculation System**
 
 ### **A. Equity Calculation Hook**
 ```typescript
@@ -255,7 +290,7 @@ export const useEquityCalculations = (mortgageData: any, propertyData: any) => {
 └── EquityMetrics.tsx            // Displays key equity metrics
 ```
 
-## **10. File Structure Recommendation**
+## **11. File Structure Recommendation**
 
 ```
 /src/
