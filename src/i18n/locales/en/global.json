@@ -153,7 +153,8 @@
       "already_have_account": "Already have an account?",
       "no_account": "Don't have an account?",
       "account_created": "Account created!",
-      "check_email_verification": "Please check your email to verify your account."
+      "check_email_verification": "Please check your email to verify your account.",
+      "continue_with_google": "Continue with Google"
     }
   },
   "test_extra_installments": "Test Extra Installments",
