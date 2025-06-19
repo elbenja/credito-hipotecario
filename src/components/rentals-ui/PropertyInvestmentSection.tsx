@@ -12,7 +12,7 @@ import { PaymentsSheet } from "@/components/ui/sheets/PaymentsSheet";
 import { MortgageSelectionSheet } from "@/components/ui/sheets/MortgageSelectionSheet";
 import { PropertySelectionSheet } from "@/components/ui/sheets/PropertySelectionSheet";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { PropertyInvestmentDebug } from "@/components/rentals/PropertyInvestmentDebug";
+import { PropertyInvestmentDebug } from "@/components/rentals-ui/PropertyInvestmentDebug";
 import { useCalculationEngine } from "@/hooks/calculations/useCalculationEngine";
 import { useInvestmentAnalysisStore } from "@/store/investmentAnalysis";
 import { DynamicInvestmentTable } from "@/components/investment-analysis/DynamicInvestmentTable";
