@@ -17,7 +17,7 @@ import { formatCurrency } from "@/utils/utils";
 import { useTranslation } from "react-i18next";
 import type { Mortgage } from "@/types";
 // import useSavedScenarioPayments from "@/hooks/mortgages/useSavedScenarioPayments";
-// import { SavedScenarioExample } from "@/components/Rentals/ScenarioPayments";
+// import { SavedScenario } from "@/components/rentals/SavedScenarioPayments";
 import { MortgageSelectionSheet } from "../../components/ui/sheets/MortgageSelectionSheet";
 import { PaymentsSheet } from "../../components/ui/sheets/PaymentsSheet";
 import { ExpensesGroup } from "../../components/rentals/ExpensesGroup";
