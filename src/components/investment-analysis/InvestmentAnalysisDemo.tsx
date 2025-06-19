@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PropertyInvestmentSection } from '@/components/rentals/PropertyInvestmentSection';
+import { PropertyInvestmentSection } from '@/components/rentals-ui/PropertyInvestmentSection';
 import { DynamicInvestmentTable } from './DynamicInvestmentTable';
 import { useCalculationEngine } from '@/hooks/calculations/useCalculationEngine';
 import type { PropertyWithBonus } from '@/types/property';
