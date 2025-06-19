@@ -20,7 +20,7 @@ import type { Mortgage } from "@/types";
 // import { SavedScenario } from "@/components/rentals/SavedScenarioPayments";
 import { MortgageSelectionSheet } from "@/components/ui/sheets/MortgageSelectionSheet";
 import { PaymentsSheet } from "@/components/ui/sheets/PaymentsSheet";
-import { ExpensesGroup } from "@/components/rentals";
+// import { ExpensesGroup } from "@/components/rentals";
 
 
 export default function TestExtraInstallments() {
@@ -102,7 +102,7 @@ export default function TestExtraInstallments() {
 
           <div className="flex flex-col gap-2">
 
-            <ExpensesGroup
+            {/* <ExpensesGroup
               name="Costos de Compra"
               // suggestedNames={["Mantenimiento", "Internet", "Agente", "Condo Fees"]}
               suggestedNames={["Tasación", "Minuta", "Alcabala", "Notariales", "Registrales"]}
@@ -115,7 +115,9 @@ export default function TestExtraInstallments() {
               suggestedNames={["Gas Natural", "Cortinas", "Luces", "Mamparas De Vidrio", "Espejo"]}
               viewPeriod={false}
               viewRelation={false}
-            />
+            /> */}
+
+
           {/* <Accordion
             type="single"
             collapsible
