@@ -115,7 +115,7 @@ setSelectedTimeRange(range: { start: Date; end: Date } | null)
 - Real-time filter application
 
 ### **5. Property Integration**
-**Location**: `src/components/rentals/PropertyInvestmentSection.tsx`
+**Location**: `src/components/rentals-ui/PropertyInvestmentSection.tsx`
 
 #### **Enhanced Features**
 - Calculation engine integration

@@ -1,7 +1,7 @@
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
-import { TabSwitch } from "@/components/rentals/TabSwitch";
+import { TabSwitch } from "@/components/rentals-ui/TabSwitch";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 

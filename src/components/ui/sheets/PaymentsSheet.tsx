@@ -5,7 +5,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useTranslation } from "react-i18next";
-import { SavedScenario } from "@/components/rentals/SavedScenarioPayments";
+import { SavedScenario } from "@/components/rentals-ui/SavedScenarioPayments";
 
 interface PaymentsSheetProps {
   isOpen: boolean;
