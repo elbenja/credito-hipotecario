@@ -154,7 +154,8 @@
       "no_account": "¿No tienes una cuenta?",
       "account_created": "Cuenta creada",
       "check_email_verification": "Por favor, verifica tu correo electrónico para continuar",
-      "continue_with_google": "Continuar con Google"
+      "continue_with_google": "Continuar con Google",
+      "or": "O"
     }
   },
   "test_extra_installments": "Prueba de Cuotas Extra",

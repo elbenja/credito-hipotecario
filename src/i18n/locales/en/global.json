@@ -154,7 +154,8 @@
       "no_account": "Don't have an account?",
       "account_created": "Account created!",
       "check_email_verification": "Please check your email to verify your account.",
-      "continue_with_google": "Continue with Google"
+      "continue_with_google": "Continue with Google",
+      "or": "Or"
     }
   },
   "test_extra_installments": "Test Extra Installments",
