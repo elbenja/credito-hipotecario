@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useTranslation } from "react-i18next";
 import { usePropertiesWithMortgagesAndBonus, useProperties } from "@/services/propertyService";
-import { PropertyInvestmentSection } from "@/components/rentals/PropertyInvestmentSection";
+import { PropertyInvestmentSection } from "@/components/rentals/";
 import { DynamicInvestmentTable } from "@/components/investment-analysis/DynamicInvestmentTable";
 
 export default function EditRental() {
