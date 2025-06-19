@@ -1,4 +1,4 @@
-export { ExpensesGroup } from './ExpensesGroup';
+export { ExpensesGroup } from './expenses-group';
 export { PopExpense } from './PopExpense';
 export { LiveScenarioPayments } from './LiveScenarioPayments';
 export { SavedScenario } from './SavedScenarioPayments';

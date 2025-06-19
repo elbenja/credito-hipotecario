@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useTranslation } from "react-i18next";
 import { usePropertiesWithMortgagesAndBonus, useProperties } from "@/services/propertyService";
-// import { PropertyInvestmentSection } from "@/components/rentals/PropertyInvestmentSection";
+import { PropertyInvestmentSection } from "@/components/rentals/PropertyInvestmentSection";
 import { DynamicInvestmentTable } from "@/components/investment-analysis/DynamicInvestmentTable";
 
 export default function EditRental() {
@@ -39,7 +39,7 @@ export default function EditRental() {
         <div className="flex flex-col md:flex-row flex-1">
           {/* Left Container */}
           <div className="flex flex-col sm:w-full md:w-[30%] md:min-w-[340px] md:max-w-[520px] relative flex-shrink-0 border-r ">
-            {/* <PropertyInvestmentSection
+            <PropertyInvestmentSection
               properties={properties}
               propertiesWithMortgages={propertiesWithMortgages}
               isLoadingProperties={isLoadingProperties}
@@ -48,7 +48,7 @@ export default function EditRental() {
               selectedMortgageId={selectedMortgageId}
               onPropertySelect={setSelectedPropertyId}
               onMortgageSelect={setSelectedMortgageId}
-            /> */}
+            />
           </div>
 
           {/* Right Container */}  
