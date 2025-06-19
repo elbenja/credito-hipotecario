@@ -5,8 +5,9 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useTranslation } from "react-i18next";
-import { LiveScenarioPayments } from "@/components/rentals/LiveScenarioPayments";
+import { LiveScenarioPayments } from "@/components/rentals-ui/LiveScenarioPayments";
 import { PaymentRow, ScenarioResult } from "@/types/common";
+// werid 
 
 interface ExtraInstallment {
   id: string;
