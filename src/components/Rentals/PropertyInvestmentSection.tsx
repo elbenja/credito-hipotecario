@@ -12,6 +12,10 @@ import { PaymentsSheet } from "@/components/ui/sheets/PaymentsSheet";
 import { MortgageSelectionSheet } from "@/components/ui/sheets/MortgageSelectionSheet";
 import { PropertySelectionSheet } from "@/components/ui/sheets/PropertySelectionSheet";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { PropertyInvestmentDebug } from "@/components/rentals/PropertyInvestmentDebug";
+import { useCalculationEngine } from "@/hooks/calculations/useCalculationEngine";
+import { useInvestmentAnalysisStore } from "@/store/investmentAnalysis";
+import { DynamicInvestmentTable } from "@/components/investment-analysis/DynamicInvestmentTable";
 
 interface PropertyInvestmentSectionProps {
   properties: PropertyWithBonus[];
@@ -46,6 +50,9 @@ export function PropertyInvestmentSection({
   const [isPaymentsSheetOpen, setIsPaymentsSheetOpen] = useState(false);
   const [internalAppreciation, setInternalAppreciation] = useState(propertyAnnualAppreciation);
 
+  // Get appreciation rate from store or use internal value
+  const { propertyAnnualAppreciation: storeAppreciation, setPropertyAnnualAppreciation } = useInvestmentAnalysisStore();
+
   // Find the selected mortgage and its property
   const selectedMortgageInfo = selectedMortgageId ? (() => {
     for (const property of propertiesWithMortgages) {
@@ -59,6 +66,13 @@ export function PropertyInvestmentSection({
 
   // Find the selected property
   const selectedProperty = selectedPropertyId ? properties.find(p => p.id === selectedPropertyId) : null;
+
+  // Initialize calculation engine
+  const calculationEngine = useCalculationEngine({
+    selectedProperty: selectedProperty || null,
+    selectedMortgageId,
+    mortgageData: selectedMortgageInfo?.mortgage
+  });
 
   const handlePropertySelect = (propertyId: string) => {
     onPropertySelect?.(propertyId);
@@ -241,9 +255,19 @@ export function PropertyInvestmentSection({
               Payments
             </Button> */}
 
+            {/* Property Investment Analysis Debug */}
+            {(selectedProperty || selectedMortgageInfo) && (
+              <PropertyInvestmentDebug
+                selectedProperty={selectedProperty || null}
+                propertyAnnualAppreciation={internalAppreciation}
+                mortgageData={selectedMortgageInfo?.mortgage}
+              />
+            )}
+
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
 
       {/* Property Selection Sheet */}
       <PropertySelectionSheet

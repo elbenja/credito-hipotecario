@@ -163,7 +163,95 @@ interface InvestmentAnalysisState {
 
 ## **5. Mortgage Data Integration**
 
-### **A. Mortgage Data Processor**
+### **A. Existing Mortgage Hooks**
+The system can leverage existing mortgage hooks for data extraction:
+
+```typescript
+// Available hooks for mortgage data processing
+import { useSavedScenarioPayments } from "@/hooks/mortgages/useSavedScenarioPayments";
+import { useMortgageBundle } from "@/hooks/useMortgageBundle";
+import { useExtraInstallmentsFromBundle } from "@/hooks/mortgages/useExtraInstallmentsFromBundle";
+
+// Payment data structure from useSavedScenarioPayments
+interface MortgagePayment {
+  payment_date: string;           // ISO date string
+  beginning_balance: number;      // Loan balance at start of period
+  monthly_payment: number;        // Total monthly payment amount
+  monthly_interest: number;       // Interest portion of payment
+  property_insurance: number;     // Property insurance amount
+  monthly_loan_insurance: number; // Loan insurance (PMI) amount
+  principal: number;              // Principal portion of payment
+  ending_balance: number;         // Loan balance at end of period
+  is_different_from_base: boolean; // Indicates if payment differs from base scenario
+}
+```
+
+### **B. Extra Installments & Scenarios**
+For scenarios with accelerated payments or lower payments, use the bundle hooks:
+
+```typescript
+// /src/hooks/calculations/useMortgageWithScenarios.ts
+export const useMortgageWithScenarios = (mortgageId: string, scenarioType?: string) => {
+  const mortgageBundle = useMortgageBundle(mortgageId);
+  const savedPayments = useSavedScenarioPayments(mortgageId, scenarioType);
+  const extraInstallments = useExtraInstallmentsFromBundle(mortgageBundle);
+  
+  return useMemo(() => {
+    return {
+      monthlyPayments: savedPayments,        // All monthly payments with scenario adjustments
+      extraInstallments: extraInstallments,  // Additional payments for 'accelerated' scenarios
+      hasScenarioAdjustments: savedPayments?.some(p => p.is_different_from_base),
+      totalExtraPayments: extraInstallments?.reduce((sum, extra) => sum + extra.amount, 0) || 0
+    };
+  }, [savedPayments, extraInstallments, mortgageBundle]);
+};
+```
+
+### **C. Integration with Investment Analysis**
+```typescript
+// /src/hooks/calculations/useMortgageCalculations.ts
+export const useMortgageCalculations = (mortgageId: string, scenarioType?: string) => {
+  const mortgageData = useMortgageWithScenarios(mortgageId, scenarioType);
+  
+  return useMemo(() => {
+    if (!mortgageData.monthlyPayments) return [];
+    
+    return mortgageData.monthlyPayments.map(payment => ({
+      // Convert mortgage payment to CalculationSource format
+      monthlyPayment: {
+        id: 'mortgage-payment',
+        name: 'Monthly Mortgage Payment',
+        type: 'expense' as const,
+        amount: payment.monthly_payment,
+        date: new Date(payment.payment_date)
+      },
+      propertyInsurance: {
+        id: 'property-insurance',
+        name: 'Property Insurance',
+        type: 'expense' as const,
+        amount: payment.property_insurance,
+        date: new Date(payment.payment_date)
+      },
+      loanInsurance: {
+        id: 'loan-insurance',
+        name: 'Loan Insurance (PMI)',
+        type: 'expense' as const,
+        amount: payment.monthly_loan_insurance,
+        date: new Date(payment.payment_date)
+      },
+      principalPayment: {
+        id: 'principal-payment',
+        name: 'Principal Payment',
+        type: 'equity' as const,
+        amount: payment.principal,
+        date: new Date(payment.payment_date)
+      }
+    }));
+  }, [mortgageData]);
+};
+```
+
+### **D. Mortgage Data Processor**
 ```typescript
 // /src/utils/mortgageProcessor.ts
 interface MortgageDataProcessor {
@@ -171,21 +259,6 @@ interface MortgageDataProcessor {
   createMortgageCalculationSources(mortgageData: any): CalculationSource[];
   normalizePaymentSchedule(payments: any[]): MonthlyCalculationResult[];
 }
-```
-
-### **B. Mortgage Calculation Hook**
-```typescript
-// /src/hooks/calculations/useMortgageCalculations.ts
-export const useMortgageCalculations = (mortgageData: any) => {
-  return useMemo(() => {
-    return {
-      monthlyPayment: CalculationSource;
-      propertyInsurance: CalculationSource;
-      loanInsurance: CalculationSource;
-      // Extract other mortgage-related expenses
-    };
-  }, [mortgageData]);
-};
 ```
 
 ## **6. Chart/Visualization System**

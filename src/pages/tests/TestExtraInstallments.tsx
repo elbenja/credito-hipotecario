@@ -20,7 +20,7 @@ import type { Mortgage } from "@/types";
 // import { SavedScenarioExample } from "@/components/Rentals/ScenarioPayments";
 import { MortgageSelectionSheet } from "../../components/ui/sheets/MortgageSelectionSheet";
 import { PaymentsSheet } from "../../components/ui/sheets/PaymentsSheet";
-import { ExpensesGroup } from "@/components/Rentals/ExpensesGroup";
+import { ExpensesGroup } from "@/components/rentals/ExpensesGroup";
 
 
 export default function TestExtraInstallments() {

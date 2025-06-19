@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useTranslation } from "react-i18next";
 import { usePropertiesWithMortgagesAndBonus, useProperties } from "@/services/propertyService";
-import { PropertyInvestmentSection } from "@/components/Rentals/PropertyInvestmentSection";
+import { PropertyInvestmentSection } from "@/components/rentals/PropertyInvestmentSection";
+import { DynamicInvestmentTable } from "@/components/investment-analysis/DynamicInvestmentTable";
 
 export default function EditRental() {
   const [selectedMortgageId, setSelectedMortgageId] = useState<string | null>(null);
@@ -52,7 +53,13 @@ export default function EditRental() {
 
           {/* Right Container */}  
           <div className="w-screen sm:w-full overflow-hidden flex-1 pt-8 sm:p-0">
-           
+                 {/* Dynamic Investment Analysis Table */}
+                {(selectedPropertyId || selectedMortgageId) && (
+                  <div className="mt-6">
+                    <DynamicInvestmentTable />
+                  </div>
+                )}
+
           </div> 
         </div>
       </div>

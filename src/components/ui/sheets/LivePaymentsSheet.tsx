@@ -5,7 +5,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useTranslation } from "react-i18next";
-import { LiveScenarioPayments } from "@/components/Rentals/LiveScenarioPayments";
+import { LiveScenarioPayments } from "@/components/rentals/LiveScenarioPayments";
 import { PaymentRow, ScenarioResult } from "@/types/common";
 
 interface ExtraInstallment {
