@@ -138,7 +138,7 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
       {propertiesWithMortgages.map((property, index) => (
         <div 
           key={property.id} 
-          className=" h-80 w-52 bg-card rounded-2xl flex flex-col items-center overflow-hidden p-4 cursor-pointer hover:shadow-md transition-shadow"
+          className="w-full md:h-80 md:w-52 bg-card rounded-2xl flex flex-col items-center overflow-hidden p-4 cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => onPropertySelect && onPropertySelect(property)}
         >
           <div className="self-stretch flex justify-start items-start gap-2">
@@ -158,7 +158,7 @@ export function PropertyCards({ onPropertySelect, onPropertiesLoaded }: Property
             </button>
           </div>
           
-          <SVGillustration variant={getSVGVariant(index)} className="h-52 w-52" />
+          <SVGillustration variant={getSVGVariant(index)} className="h-32 w-32 md:h-52 md:w-52" />
           
           <div className="self-stretch flex justify-between items-center">
             <div className="flex flex-col justify-center items-start gap-1">

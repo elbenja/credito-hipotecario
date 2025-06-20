@@ -101,8 +101,8 @@ export default function Dashboard() {
 <div className="h-full w-full p-6  flex flex-col justify-center items-center ">
 
 
-  <div className="-mt-12 w-full inline-flex justify-center items-center gap-4 flex-wrap content-center ">
-      
+  <div className=" w-full inline-flex justify-center items-center gap-4 flex-wrap content-center ">
+   
      
       {!hasProperties && (
 
@@ -156,6 +156,7 @@ export default function Dashboard() {
 
       <FeatureCounts 
       onOpenEmptyPropertyForm={handleOpenEmptyPropertyForm} />
+
       <PropertyCards 
         onPropertySelect={() => {}} 
         onPropertiesLoaded={setHasProperties}

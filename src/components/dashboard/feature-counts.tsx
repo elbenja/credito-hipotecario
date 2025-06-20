@@ -55,8 +55,8 @@ export function FeatureCounts({
     accent: "bg-accent text-accent-foreground"
   }
 
-  const propertyLimit = planData?.limits['properties'] ?? 10
-  const mortgageLimit = planData?.limits['mortgages'] ?? 10
+  const propertyLimit = planData?.limits?.['properties'] ?? 0
+  const mortgageLimit = planData?.limits?.['mortgages'] ?? 0
 
   if (propertiesCount < 1 ) {
     return null;
@@ -64,7 +64,7 @@ export function FeatureCounts({
 
   return (
     <div className={cn(
-      "w-32 h-80 relative rounded-3xl flex flex-col justify-between items-start p-4 gap-6",
+      "w-full md:w-32  md:h-80 relative rounded-3xl flex flex-row md:flex-col justify-between items-start px-3 py-4 gap-6",
    
       containerStyles[variant],
       className
@@ -79,7 +79,7 @@ export function FeatureCounts({
             count={propertiesCount} 
             featureLabel={t('properties:title')}
             variant={variant}
-            maxLimit={propertyLimit}
+            maxLimit={Number(propertyLimit)}
             progressColor={progressColor}
             progressBgColor={progressBgColor}
           />
@@ -88,23 +88,26 @@ export function FeatureCounts({
             count={mortgagesCount} 
             featureLabel={t('mortgages:title')}
             variant={variant}
-            maxLimit={mortgageLimit}
+            maxLimit={Number(mortgageLimit)}
             progressColor={progressColor}
             progressBgColor={progressBgColor}
           />
         </div>
       </div>
-               <button 
-                type="button"
-                onClick={onOpenEmptyPropertyForm} 
-                className="text-xs h-8 flex gap-2">  
-                  <div className="flex-1 text-right text-sm font-medium leading-none">
-                    {t('actions.add_property', { ns: 'properties' })}
-                  </div>
-                  <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
-                    <Plus className="h-4 w-4" />
-                  </div>
-              </button>
+              <div className="flex-1 self-stretch inline-flex  md:flex flex-col justify-end items-end ">
+                <button 
+                  type="button"
+                  onClick={onOpenEmptyPropertyForm} 
+                  className="inline-flex  items-center justify-center  items-center text-xs md:h-8  gap-1 ">  
+                    <div className="flex-1 text-right text-sm font-medium leading-none">
+                      {t('actions.add_property', { ns: 'properties' })}
+                    </div>
+                    <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
+                      <Plus className="h-4 w-4" />
+                    </div>
+                </button>
+              </div>
+
 
 
     </div>
