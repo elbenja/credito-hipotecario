@@ -98,7 +98,7 @@ export default function Dashboard() {
     >
    
 {/* container start */}
-<div className="h-full w-full p-6  flex flex-col justify-center items-center ">
+<div className="h-full w-full md:p-6  flex flex-col justify-center items-center ">
 
 
   <div className=" w-full inline-flex justify-center items-center gap-4 flex-wrap content-center ">
@@ -106,46 +106,46 @@ export default function Dashboard() {
      
       {!hasProperties && (
 
-       <div className="flex justify-start items-end gap-4 "> 
+       <div className="flex flex-col md:flex-row justify-start items-center md:items-end gap-8 md:gap-4 "> 
 
             <div className="w-52  rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
                 <div className=" rounded-3xl flex flex-col justify-center items-center  gap-1 ">
-                  <SVGillustration variant="dog" className="w-52 h-52" />
+                  <SVGillustration variant="dog" className="w-40 h-40 md:w-52 md:h-52" />
                   <p  className="text-sm text-center w-40">
                   {t('messages.no_properties', { ns: 'properties' })}
 
                   </p>
                 </div>
-                <div className="w-40 h-19 bg-primary text-primary-foreground rounded-3xl flex flex-col justify-center items-center p-4 ">
-                <button onClick={handleOpenEmptyPropertyForm} className="text-xs h-8 flex gap-2">  
-                      <div className="flex-1 text-right text-sm font-medium leading-none">
-                        {t('actions.add_property', { ns: 'properties' })}
-                      </div>
-                      <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
-                        <Plus className="h-4 w-4" />
-                      </div>
-                  </button>
+                <div className=" md:w-40 h-19 bg-primary text-primary-foreground rounded-xl md:rounded-3xl flex flex-col justify-center items-center px-4 py-2 md:p-4 ">
+                  <button onClick={handleOpenEmptyPropertyForm} className="text-xs h-8 flex gap-2  justify-center items-center ">  
+                        <div className="flex-1 text-right text-sm font-medium leading-none">
+                          {t('actions.add_property', { ns: 'properties' })}
+                        </div>
+                        <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
+                          <Plus className="h-4 w-4" />
+                        </div>
+                    </button>
                   </div>
                
             </div>
 
 
        
-          <div className="w-64 flex flex-col justify-end items-start gap-8 relative ml-6  h-full">
+          <div className="w-64 flex flex-col justify-end items-start gap-8 relative md:ml-6  h-full">
                <div className="flex items-center space-x-4">
-                <div className="text-lg font-black flex size-16  flex-none rounded-full bg-muted text-primary  items-center justify-center">01</div>   
+                <div className="text-lg font-black flex md:size-16 size-12  flex-none rounded-full bg-muted text-primary  items-center justify-center">01</div>   
                 <Link to="/properties">
                   <p className="text-md  leading-none hover:text-brand">{t("sections.step_one")}</p>
                 </Link>
               </div>
               <div className="flex items-center space-x-4">
-                  <div className="text-lg font-black flex size-16  flex-none rounded-full bg-muted text-primary items-center justify-center">02</div>   
+                  <div className="text-lg font-black flex md:size-16 size-12  flex-none rounded-full bg-muted text-primary items-center justify-center">02</div>   
                   <Link to="/mortgages">
                     <p className="text-md  leading-none hover:text-brand">{t("sections.step_two")}</p>
                   </Link>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <div className="text-lg font-black flex size-16  flex-none rounded-full bg-muted text-primary  items-center justify-center">03
+                  <div className="text-lg font-black flex md:size-16 size-12  flex-none rounded-full bg-muted text-primary  items-center justify-center">03
                   </div>   
                   <p className="text-md leading-none">{t("sections.step_three")}</p>
                 </div>
