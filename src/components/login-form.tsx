@@ -217,6 +217,9 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth`,
+          queryParams: {
+            prompt: 'select_account',
+          },
         },
       })
 
