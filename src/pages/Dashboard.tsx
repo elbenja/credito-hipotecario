@@ -106,7 +106,7 @@ export default function Dashboard() {
      
       {!hasProperties && (
 
-       <div className="flex flex-col md:flex-row justify-start items-center md:items-end gap-8 md:gap-4 "> 
+       <div className="flex flex-col md:flex-row justify-start items-center md:items-end gap-12 md:gap-4 -mt-24 md:mt-0"> 
 
             <div className="w-52  rounded-3xl flex flex-col items-center justify-center p-0 gap-4">
                 <div className=" rounded-3xl flex flex-col justify-center items-center  gap-1 ">
