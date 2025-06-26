@@ -98,7 +98,7 @@ export default function Dashboard() {
     >
    
 {/* container start */}
-<div className="h-full w-full md:p-6  flex flex-col justify-center items-center ">
+<div className="h-full w-full md:p-6 p-4 flex flex-col justify-center items-center ">
 
 
   <div className=" w-full inline-flex justify-center items-center gap-4 flex-wrap content-center ">
