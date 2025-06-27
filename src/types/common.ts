@@ -26,10 +26,15 @@ export interface BaseAmortizationValues {
   down_payment_percentage: number;
   interest_rate: number;
   term_years: number;
+  term_months?: number | null;
   installments_per_year: 12 | 14;
   first_installment_date: Date;
   loan_protection_type: "individual" | "joint" | "none" | "custom";
   loan_protection_insurance: number;
+}
+
+export interface BaseAmortizationValuesWithMonths extends Omit<BaseAmortizationValues, 'term_months'> {
+  term_months: number;
 }
 
 export interface PaymentDetail {
@@ -68,6 +73,7 @@ export interface RateChange {
   effective_date: Date;
   new_interest_rate: number;
   new_term_years?: number;
+  new_term_months?: number;
 }
 
 /**
@@ -152,6 +158,7 @@ export interface MortgageFormValues {
   down_payment: number;
   interest_rate: number;
   term_years: number;
+  term_months?: number | null;
   installments_per_year: number;
   loan_protection_type: "individual" | "joint" | "none" | "custom";
   loan_protection_insurance: number;

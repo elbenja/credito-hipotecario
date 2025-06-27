@@ -31,6 +31,7 @@ export type Mortgage = {
   down_payment: number
   interest_rate: number
   term_years: number
+  term_months?: number | null  // New field for enhanced precision
   installments_per_year: number
   first_installment_date: string
   loan_protection_type: "none" | "custom" | "individual" | "joint"
@@ -82,6 +83,7 @@ export interface MortgageFormValues {
   down_payment_percentage: number | string;
   interest_rate: number | string;
   term_years: number | string;
+  term_months?: number | null;  // New field for enhanced precision
   installments_per_year: number | string;
   first_installment_date: Date;
   loan_protection_type: 'individual' | 'joint' | 'none' | 'custom';
@@ -121,6 +123,8 @@ export interface NewRate {
   effective_date: string;
   /** Optional updated term length (in years) */
   new_term_years?: number | null;
+  /** Optional updated term length (in months) - new field for enhanced precision */
+  new_term_months?: number | null;
   /** Timestamps */
   // created_at: string;
   // updated_at: string;
