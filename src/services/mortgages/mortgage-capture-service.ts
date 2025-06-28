@@ -87,6 +87,7 @@ export const useMortgageCapture = () => {
         down_payment: originalMortgage.down_payment,
         interest_rate: originalMortgage.interest_rate,
         term_years: originalMortgage.term_years,
+        term_months: originalMortgage.term_months, // Enhanced: Include term_months
         installments_per_year: originalMortgage.installments_per_year,
         loan_protection_type: originalMortgage.loan_protection_type,
         loan_protection_insurance: originalMortgage.loan_protection_insurance,

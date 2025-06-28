@@ -10,6 +10,7 @@ export interface MortgageDraft {
   down_payment: string
   interest_rate: string
   term_years: string
+  term_months?: number | null  // New field for enhanced precision
   installments_per_year: string
   first_installment_date: Date
   loan_protection_type: "none" | "custom" | "individual" | "joint"
@@ -41,7 +42,8 @@ const DEFAULT_DRAFT: MortgageDraft = {
   property_id: "",
   down_payment: "0",
   interest_rate: "8.5",
-  term_years: "20",
+  term_years: "20.0", // Updated to show 1 decimal precision
+  term_months: 240,    // Default to 240 months (20 years) for consistency
   installments_per_year: "12",
   first_installment_date: new Date(),
   loan_protection_type: "individual",
@@ -66,7 +68,7 @@ export const useMortgageDraftStore = create<MortgageDraftStore>()(
           // console.log(" state.mortgageDraft?.property_id", state.mortgageDraft?.property_id);
 
           const base = state.mortgageDraft ?? DEFAULT_DRAFT;
-          // merge in the user’s changes
+          // merge in the user's changes
           const merged = { ...base, ...updates };
 
           // **immediately** recalc loan_amount from merged values

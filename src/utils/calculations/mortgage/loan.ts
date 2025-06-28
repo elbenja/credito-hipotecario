@@ -6,6 +6,10 @@ import type {
   BonusRule
 } from '@/types/common';
 import { PropertyWithBonus } from '@/types/property';
+import { 
+  getEffectiveTermMonths, 
+  convertMonthsToYears 
+} from '@/utils/term-conversion';
 
 export class LoanCalculator {
   private static readonly FIXED_VALUES = {
@@ -96,7 +100,7 @@ export class LoanCalculator {
   private findCorrectMonthlyInstallment(
     loanAmount: number,
     annualRate: number,
-    termYears: number,
+    termMonths: number,
     installmentsPerYear: number
   ): number {
     // Convert to effective monthly rate using EAR formula
@@ -106,9 +110,8 @@ export class LoanCalculator {
     // Function to calculate final balance for a given monthly installment
     const calculateFinalBalance = (monthlyInstallmentGuess: number): number => {
       let balance = loanAmount;
-      const months = termYears * 12;
       
-      for (let i = 0; i < months; i++) {
+      for (let i = 0; i < termMonths; i++) {
         const isDoubleMonth = installmentsPerYear === 14 && (i % 12 === 6 || i % 12 === 11);
         const interest = Number((balance * monthlyRate).toFixed(10));
         const installment = isDoubleMonth ? monthlyInstallmentGuess * 2 : monthlyInstallmentGuess;
@@ -146,18 +149,18 @@ export class LoanCalculator {
   calculateMonthlyPayment(
     loanAmount: number,
     annualRate: number,
-    termYears: number,
+    termMonths: number,
     installmentsPerYear: number
   ): number {
     // Use the goal-seeking method for 14 installments per year
     if (installmentsPerYear === 14) {
-      return this.findCorrectMonthlyInstallment(loanAmount, annualRate, termYears, installmentsPerYear);
+      return this.findCorrectMonthlyInstallment(loanAmount, annualRate, termMonths, installmentsPerYear);
     }
 
     // Use the standard formula for 12 installments
     // Convert to effective monthly rate using EAR formula
     const monthlyRate = Math.pow(1 + annualRate/100, 1/12) - 1;
-    const totalPayments = termYears * installmentsPerYear;
+    const totalPayments = (termMonths / 12) * installmentsPerYear;
     
     if (monthlyRate === 0) {
       return loanAmount / totalPayments;
@@ -180,19 +183,27 @@ export class LoanCalculator {
     let remainingBalance = Number(loanAmount.toFixed(10));
     let paymentDate = new Date(baseValues.first_installment_date);
     
+    // Enhanced: Use term_months with fallback to term_years
+    const effectiveTermMonths = getEffectiveTermMonths(
+      baseValues.term_months, 
+      baseValues.term_years
+    );
+    
     // Calculate base installment amount (loan payment only, without insurances)
     const baseMonthlyPayment = this.calculateMonthlyPayment(
       loanAmount,
       baseValues.interest_rate,
-      baseValues.term_years,
+      effectiveTermMonths,
       baseValues.installments_per_year
     );
 
-    const totalPayments = baseValues.term_years * baseValues.installments_per_year;
+    const totalPayments = (effectiveTermMonths / 12) * baseValues.installments_per_year;
 
     console.log("LOAN CALCULATOR - Generating payment schedule:", {
       loanAmount,
       interestRate: baseValues.interest_rate,
+      termMonths: effectiveTermMonths,
+      termYears: convertMonthsToYears(effectiveTermMonths),
       baseMonthlyPayment,
       propertyInsurance: property.property_insurance,
       loanProtectionInsurance: baseValues.loan_protection_insurance,

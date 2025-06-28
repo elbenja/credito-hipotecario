@@ -28,6 +28,13 @@ import { zodResolver } from "@hookform/resolvers/zod"
 // import { mortgageFormSchema } from "./schema"
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { MonthYearPicker } from "../ui/month-year-picker"
+import { 
+  convertTermToMonths, 
+  formatTermDisplay,
+  getTermValidationError,
+  formatTermForInput,
+  parseTermInput 
+} from "@/utils/term-conversion"
 
 interface MortgageDetailsFormProps {
   form: ReturnType<typeof useForm<MortgageFormValues>>
@@ -367,35 +374,63 @@ export function MortgageDetailsForm({
             <FormField
               control={form.control}
               name="term_years"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('amortization.term', { ns: 'mortgages' })}</FormLabel>
-                  <Select onValueChange={(value) => {
-                    field.onChange(value)
-                    form.trigger("term_years")
-                  }} value={field.value}>
+              render={({ field }) => {
+                const [displayConversion, setDisplayConversion] = useState<string>("")
+                
+                // Real-time conversion feedback
+                useEffect(() => {
+                  if (field.value) {
+                    const parsed = parseFloat(field.value)
+                    if (!isNaN(parsed) && parsed > 0) {
+                      const months = convertTermToMonths(parsed)
+                      setDisplayConversion(`(${months} months)`)
+                    } else {
+                      setDisplayConversion("")
+                    }
+                  } else {
+                    setDisplayConversion("")
+                  }
+                }, [field.value])
+
+                return (
+                  <FormItem>
+                    <FormLabel>
+                      {t('amortization.term', { ns: 'mortgages' })}
+                      {displayConversion && (
+                        <span className="ml-2 text-sm text-muted-foreground">
+                          {displayConversion}
+                        </span>
+                      )}
+                    </FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select term" />
-                      </SelectTrigger>
+                      <Input
+                        {...field}
+                        type="number"
+                        step="0.1"
+                        min="5"
+                        max="30"
+                        placeholder="20.0"
+                        onChange={(e) => {
+                          field.onChange(e.target.value)
+                          // Update term_months in real-time
+                          const parsed = parseFloat(e.target.value)
+                          if (!isNaN(parsed) && parsed > 0) {
+                            const months = convertTermToMonths(parsed)
+                            form.setValue("term_months", months, { shouldValidate: false })
+                          }
+                          // Trigger validation
+                          form.trigger("term_years")
+                        }}
+                        className="focus:ring-2 focus:ring-blue-500"
+                      />
                     </FormControl>
-                    <SelectContent>
-                      
-                      {Array.from({ length: 16 }, (_, i) => i + 10).map((years) => (
-                        <SelectItem key={years} value={years.toString()}>
-                          {years} {t('scenarios.new_rate.form.years', { ns: 'mortgages', value: years })}
-                        </SelectItem>
-                      ))}
-                       {/* {[10, 15, 20, 25, 30].map((years) => (
-                        <SelectItem key={years} value={years.toString()}>
-                          {years} {t('scenarios.new_rate.form.years', { ns: 'mortgages', value: years })}
-                        </SelectItem>
-                      ))} */}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+                    <div className="text-xs text-muted-foreground">
+                      {t('amortization.term_hint', 'Enter term in years (e.g., 20.5 for 20 years and 6 months)', { ns: 'mortgages' })}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
             />
           </div>
 

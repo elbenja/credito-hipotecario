@@ -35,6 +35,7 @@ import { normalizeDate } from "@/utils/utils"
 import { ScenarioCalculator } from "@/utils/calculations/mortgage/scenarioCalculator"
 import { defaultValues, MortgageFormValues } from "@/components/mortgages/schema"
 import { useAddMortgage } from "@/hooks/mortgages"
+import { convertTermToMonths } from "@/utils/term-conversion"
 
 import { useMortgageDraft } from "@/hooks/useMortgageDraft"
 import { useMortgageDraftStore } from "@/store/mortgage/store"
@@ -214,7 +215,12 @@ useEffect(() => {
       // Parse form values
       const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, "") || "0")
       const interestRate = parseFloat(values.interest_rate)
-      const termYears = parseInt(values.term_years)
+      
+      // Use term conversion utilities for precise handling
+      const termYearsInput = parseFloat(values.term_years)
+      const termMonths = values.term_months || convertTermToMonths(termYearsInput)
+      const termYears = Math.round(termMonths / 12) // For backward compatibility
+      
       const installmentsPerYear = parseInt(values.installments_per_year)
       const loanProtectionInsurance = parseFloat(values.loan_protection_insurance)
       const calculatedLoanAmount = mortgageDraft?.loan_amount || 0

@@ -7,6 +7,11 @@ import { mortgageFormSchema, defaultValues, type MortgageFormValues } from '@/co
 // import { supabase } from '@/integrations/supabase/client'
 import { useMortgageBundle } from './useMortgageBundle'
 import { normalizeDate, parseDatabaseDate } from '@/utils/utils'
+import { 
+  getEffectiveTermMonths, 
+  formatTermForInput,
+  convertTermToMonths
+} from '@/utils/term-conversion'
 
 /**
  * This hook combines React Query for server state with Zustand for client state.
@@ -40,7 +45,18 @@ export function useMortgageDraft(mortgageId: string | null) {
     property_id: mortgage.property_id || '',
     down_payment: mortgage.down_payment?.toString() || '0',
     interest_rate: mortgage.interest_rate?.toString() || '0',
-    term_years: mortgage.term_years?.toString() || '20',
+    // Use priority logic: term_months first, fallback to term_years
+    term_years: (() => {
+      try {
+        const termMonths = (mortgage as any).term_months // Type assertion for transition period
+        const effectiveMonths = getEffectiveTermMonths(termMonths, mortgage.term_years)
+        return formatTermForInput(effectiveMonths)
+      } catch {
+        // Fallback to string conversion if data is invalid
+        return mortgage.term_years?.toString() || '20.0'
+      }
+    })(),
+    term_months: (mortgage as any).term_months || null, // Store the precise value with type assertion
     installments_per_year: mortgage.installments_per_year?.toString() || '12',
     first_installment_date: mortgage.first_installment_date 
       ? parseDatabaseDate(mortgage.first_installment_date)
@@ -65,13 +81,25 @@ export function useMortgageDraft(mortgageId: string | null) {
         ? parseDatabaseDate(mortgage.first_installment_date) 
         : parseDatabaseDate(new Date())
       
+      // Use priority logic for term handling
+      const termDisplay = (() => {
+        try {
+          const termMonths = (mortgage as any).term_months // Type assertion for transition period
+          const effectiveMonths = getEffectiveTermMonths(termMonths, mortgage.term_years)
+          return formatTermForInput(effectiveMonths)
+        } catch {
+          return mortgage.term_years?.toString() || '20.0'
+        }
+      })()
+      
       // Prepare form values with string conversions for numeric fields
       const formValues = {
         name: mortgage.name || '',
         property_id: mortgage.property_id || '',
         down_payment: mortgage.down_payment?.toString() || '0',
         interest_rate: mortgage.interest_rate?.toString() || '0',
-        term_years: mortgage.term_years?.toString() || '20',
+        term_years: termDisplay,
+        term_months: (mortgage as any).term_months || null, // Keep precise value with type assertion
         installments_per_year: mortgage.installments_per_year?.toString() || '12',
         loan_amount: mortgage.loan_amount?.toString() || '0', //  May 13
         first_installment_date: firstInstallmentDate,
@@ -94,19 +122,37 @@ export function useMortgageDraft(mortgageId: string | null) {
   
   // Watch for changes to make the form dirty
   useEffect(() => {
-    const subscription = form.watch(() => {
+    const subscription = form.watch((values) => {
       setIsDirty(true)
       
+      // Convert term_years input to term_months for precise storage
+      let termMonthsToStore = values.term_months
+      if (values.term_years && typeof values.term_years === 'string') {
+        try {
+          const years = parseFloat(values.term_years)
+          if (!isNaN(years) && years > 0) {
+            termMonthsToStore = convertTermToMonths(years)
+          }
+        } catch {
+          // Keep existing term_months if conversion fails
+        }
+      }
+      
       // Update draft in store
+      const updatedValues = {
+        ...values,
+        term_months: termMonthsToStore
+      }
+      
       // Only update if we have a property_id to preserve
       if (mortgageDraft?.property_id) {
         updateDraft({
-          ...form.getValues(),
+          ...updatedValues,
           property_id: mortgageDraft.property_id,
           property: mortgageDraft.property,
         })
       } else {
-        updateDraft(form.getValues())
+        updateDraft(updatedValues)
       }
     })
     

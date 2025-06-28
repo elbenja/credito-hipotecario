@@ -1,30 +1,20 @@
 import { GoalSeekService } from "./goalSeek"
 import { FixedPaymentsService } from "./fixedPayments"
-import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios } from "@/types/common"
+import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios, RateChange } from "@/types/common"
 import { normalizeDate } from "@/utils/utils"
 import { findBreakEvenPoint } from "./breakEvenPoint"
-interface ExtraInstallment {
-  amount: number
-  frequency: 'one-time' | 'monthly' | 'yearly'
-  start_date: string | Date | any // Accept both string and Date types to match database format x
-}
-
-interface RateChange {
-  id?: string
-  mortgage_id?: string
-  amortization_id?: string
-  new_interest_rate: number
-  new_term_years?: number
-  effective_date: Date | string
-  created_at?: string
-  updated_at?: string
-  new_balance?: number
-}
+import { ExtraInstallment } from "@/types/mortgage"
+import { 
+  getEffectiveTermMonths, 
+  convertMonthsToYears,
+  convertTermToMonths 
+} from "@/utils/term-conversion"
 
 interface CalculateInput {
   loan_amount: number
   interest_rate: number
   term_years: number
+  term_months?: number | null
   installments_per_year: number
   first_installment_date: Date
   property_insurance: number
@@ -46,6 +36,7 @@ export class ScenarioCalculator {
       loan_amount,
       interest_rate,
       term_years,
+      term_months,
       installments_per_year,
       first_installment_date,
       property_insurance,
@@ -53,6 +44,10 @@ export class ScenarioCalculator {
       extra_installments = [],
       rate_changes = []
     } = input
+
+    // Enhanced: Use priority logic for term calculation
+    const effectiveTermMonths = getEffectiveTermMonths(term_months, term_years)
+    const effectiveTermYears = convertMonthsToYears(effectiveTermMonths)
 
     // Normalize the first installment date
     const normalizedFirstInstallmentDate = first_installment_date ? normalizeDate(first_installment_date) : normalizeDate(new Date());
@@ -95,89 +90,65 @@ export class ScenarioCalculator {
         : normalizeDate(change.effective_date)
     }));
     
-    // Calculate each scenario independently
-    // console.log('📊 Calculating Regular Scenario...');
+    // Enhanced: Pass both term_months and effective values to calculations
     const regularScenario = this.calculateRegularScenario(
       loan_amount,
       interest_rate,
-      term_years,
+      effectiveTermYears,
+      effectiveTermMonths,
       installments_per_year,
       property_insurance,
       loan_insurance,
       normalizedFirstInstallmentDate
     )
-    // console.log('Regular Scenario Results:', {
-    //   monthlyPayment: regularScenario.summary.monthly_payment,
-    //   totalMonths: regularScenario.summary.total_months,
-    //   totalInterestAndInsurance: regularScenario.summary.total_interest_and_insurance
-    // });
 
-    // Calculate accelerated scenario (bi-weekly payments)
-    // console.log('📊 Calculating Accelerated Scenario...');
     const acceleratedScenario = this.calculateAcceleratedScenario(
       loan_amount,
       regularScenario.summary.monthly_payment,
       interest_rate,
-      term_years,
+      effectiveTermYears,
+      effectiveTermMonths,
       installments_per_year,
       property_insurance,
       loan_insurance,
       normalizedExtraInstallments,
       normalizedFirstInstallmentDate
     )
-    // console.log('Accelerated Scenario Results:', {
-    //   monthlyPayment: acceleratedScenario.summary.monthly_payment,
-    //   totalMonths: acceleratedScenario.summary.total_months,
-    //   totalInterestAndInsurance: acceleratedScenario.summary.total_interest_and_insurance
-    // });
 
-    // Calculate lower payment scenario (extended term)
-    // console.log('📊 Calculating Lower Payment Scenario input');
     const lowerPaymentScenario = this.calculateLowerPaymentScenario(
       loan_amount,
       interest_rate,
-      term_years, // Use original term without extension
+      effectiveTermYears,
+      effectiveTermMonths,
       installments_per_year,
       property_insurance,
       loan_insurance,
       normalizedExtraInstallments,
       normalizedFirstInstallmentDate
     )
-    // console.log('Lower Payment Scenario Results:', {
-    //   monthlyPayment: lowerPaymentScenario.summary.monthly_payment,
-    //   totalMonths: lowerPaymentScenario.summary.total_months,
-    //   totalInterestAndInsurance: lowerPaymentScenario.summary.total_interest_and_insurance
-    // });
-
-    // Calculate new rate scenario
-    // console.log('📊 Calculating New Rate Scenario...');
 
     const newRateScenario = normalizedRateChanges.length > 0 
       ? this.calculateNewRateScenario(
           loan_amount,
           interest_rate,
-          term_years,
+          effectiveTermYears,
+          effectiveTermMonths,
           installments_per_year,
           property_insurance,
           loan_insurance,
           normalizedRateChanges,
           normalizedFirstInstallmentDate
         )
-      : this.calculateRegularScenario( // If no rate changes, use regular scenario
+      : this.calculateRegularScenario(
           loan_amount,
           interest_rate,
-          term_years,
+          effectiveTermYears,
+          effectiveTermMonths,
           installments_per_year,
           property_insurance,
           loan_insurance,
           normalizedFirstInstallmentDate
         );
-    // console.log('New Rate Scenario Results:', {
-    //   monthlyPayment: newRateScenario.summary.monthly_payment,
-    //   totalMonths: newRateScenario.summary.total_months,
-    //   totalInterestAndInsurance: newRateScenario.summary.total_interest_and_insurance,
-    //   hasRateChanges: normalizedRateChanges.length > 0
-    // });
 
     return {
       regular: regularScenario,
@@ -188,28 +159,19 @@ export class ScenarioCalculator {
   }
 
   /**
-   * Calculate regular scenario with fixed payments
+   * Enhanced: Calculate regular scenario with month precision
    */
   private static calculateRegularScenario(
     amount: number,
     interest: number,
     termYears: number,
+    termMonths: number,
     installmentsPerYear: number,
     propertyInsurance: number,
     loanInsurance: number,
     firstInstallmentDate?: Date
   ) {    
-    // console.log('🔄 Regular Scenario Inputs:', {
-    //   amount,
-    //   interest,
-    //   termYears,
-    //   installmentsPerYear,
-    //   propertyInsurance,
-    //   loanInsurance,
-    //   firstInstallmentDate: firstInstallmentDate?.toISOString()
-    // });
-
-    const totalMonths = termYears * 12;
+    const totalMonths = termMonths;
     
     const result = GoalSeekService.calculate({
       amount,
@@ -221,14 +183,6 @@ export class ScenarioCalculator {
       first_installment_date: firstInstallmentDate
     })
 
-    // console.log('💰 Regular Scenario First Payment:', {
-    //   date: result.payments[0].payment_date,
-    //   beginning_balance: result.payments[0].beginning_balance,
-    //   ending_balance: result.payments[0].ending_balance,
-    //   monthly_payment: result.payments[0].monthly_payment,
-    //   monthly_interest: result.payments[0].monthly_interest
-    // });
-
     return {
       summary: this.calculateSummary(result.payments, totalMonths),
       payments: result.payments
@@ -236,13 +190,14 @@ export class ScenarioCalculator {
   }
 
   /**
-   * Calculate accelerated scenario with extra payments
+   * Enhanced: Calculate accelerated scenario with month precision
    */
   private static calculateAcceleratedScenario(
     amount: number,
     baseInstallment: number,
     interest: number,
     termYears: number,
+    termMonths: number,
     installmentsPerYear: number,
     propertyInsurance: number,
     loanInsurance: number,
@@ -255,6 +210,7 @@ export class ScenarioCalculator {
         amount,
         interest,
         termYears,
+        termMonths,
         installmentsPerYear,
         propertyInsurance,
         loanInsurance,
@@ -319,14 +275,13 @@ export class ScenarioCalculator {
   }
 
   /**
-   * Calculate lower payment scenario with extra lump sum
-   * This follows PROJECT_KNOWLEDGE.md lower payment scenario:
-   * "reduces the monthly payment amount for the remaining term while maintaining original term"
+   * Enhanced: Calculate lower payment scenario with month precision
    */
   private static calculateLowerPaymentScenario(
     amount: number,
     interest: number,
     termYears: number,
+    termMonths: number,
     installmentsPerYear: number,
     propertyInsurance: number,
     loanInsurance: number,
@@ -339,6 +294,7 @@ export class ScenarioCalculator {
         amount,
         interest,
         termYears,
+        termMonths,
         installmentsPerYear,
         propertyInsurance,
         loanInsurance,
@@ -385,7 +341,7 @@ export class ScenarioCalculator {
       .sort((a, b) => a.start_date.getTime() - b.start_date.getTime());
     
     // Calculate initial amortization (before any extra installments)
-    const totalMonths = termYears * 12;
+    const totalMonths = termMonths;
     
     const initialResult = GoalSeekService.calculate({
       amount,
@@ -548,12 +504,13 @@ export class ScenarioCalculator {
   }
 
   /**
-   * Calculate new rate scenario with rate changes
+   * Enhanced: Calculate new rate scenario with month precision
    */
   private static calculateNewRateScenario(
     amount: number,
     interest: number,
     termYears: number,
+    termMonths: number,
     installmentsPerYear: number,
     propertyInsurance: number,
     loanInsurance: number,
@@ -566,6 +523,7 @@ export class ScenarioCalculator {
         amount,
         interest,
         termYears,
+        termMonths,
         installmentsPerYear,
         propertyInsurance,
         loanInsurance,
@@ -573,8 +531,8 @@ export class ScenarioCalculator {
       )
     }
 
-    // Calculate total months for the term
-    const totalMonths = termYears * 12;
+    // Enhanced: Use precise term_months instead of termYears * 12
+    const totalMonths = termMonths;
 
     // Sort rate changes by effective date (ascending)
     const sortedChanges = [...rateChanges].sort((a, b) => 

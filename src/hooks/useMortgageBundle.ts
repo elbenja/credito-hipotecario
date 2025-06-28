@@ -9,6 +9,7 @@ export interface MortgageBundle {
     down_payment: number;
     interest_rate: number;
     term_years: number;
+    term_months?: number | null;
     installments_per_year: number;
     first_installment_date: string;
     loan_protection_type: "none" | "custom" | "individual" | "joint";

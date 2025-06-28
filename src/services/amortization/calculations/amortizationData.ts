@@ -1,4 +1,8 @@
 import type { Property } from "@/types/common"
+import { 
+  getEffectiveTermMonths, 
+  convertMonthsToYears 
+} from "@/utils/term-conversion"
 
 export interface AmortizationRow {
   row: number;
@@ -27,6 +31,7 @@ export interface AmortizationCalculationParams {
   downPayment: number;
   interestRate: number;
   termYears: number;
+  termMonths?: number | null;
   installmentsPerYear: 12 | 14;
   firstInstallmentDate: Date;
   propertyInsurance: number;
@@ -51,15 +56,19 @@ export class AmortizationDataService {
       downPayment,
       interestRate,
       termYears,
+      termMonths,
       installmentsPerYear,
       firstInstallmentDate,
       propertyInsurance,
       loanProtection
     } = params;
 
-    const loanAmount = property.cost - downPayment;
+    const loanAmount = property.price_cost - downPayment;
     const monthlyRate = this.calculateMonthlyRate(interestRate, installmentsPerYear);
-    const totalMonths = termYears * 12;
+    
+    // Enhanced: Use term_months with fallback to term_years
+    const effectiveTermMonths = getEffectiveTermMonths(termMonths, termYears);
+    const totalMonths = effectiveTermMonths;
 
     // Calculate the base monthly payment that will pay off the loan in the given term
     // This is the fixed monthly payment amount (excluding interest and insurances)

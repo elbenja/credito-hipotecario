@@ -41,6 +41,7 @@ import { PropertyWithBonus } from "@/types/property"
 import { PlanLimitDialog } from "@/components/common/PlanLimitDialog"
 import { useSaveMortgageScenario, SaveScenarioParams } from '@/services/mortgages/mortgage-save-scenario-service'
 import type { Scenarios } from '@/types/common';
+import { convertTermToMonths } from "@/utils/term-conversion"
 
 
 
@@ -242,7 +243,12 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
       // Parse numeric values
       const downPayment = parseFloat(formValues.down_payment.replace(/[^0-9.]/g, ""))
       const interestRate = parseFloat(formValues.interest_rate)
-      const termYears = parseInt(formValues.term_years)
+      
+      // Use term conversion utilities for precise handling
+      const termYearsInput = parseFloat(formValues.term_years)
+      const termMonths = formValues.term_months || convertTermToMonths(termYearsInput)
+      const termYears = Math.round(termMonths / 12) // For backward compatibility
+      
       const installmentsPerYear = parseInt(formValues.installments_per_year)
       const loanProtectionInsurance = parseFloat(formValues.loan_protection_insurance)
       const loanAmount = mortgageDraft?.loan_amount || 0
@@ -271,6 +277,7 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
           down_payment: downPayment,
           interest_rate: interestRate,
           term_years: termYears,
+          term_months: termMonths, // Store the precise value
           installments_per_year: installmentsPerYear,
         first_installment_date: formattedDate,
         loan_amount: loanAmount,
