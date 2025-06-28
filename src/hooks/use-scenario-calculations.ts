@@ -3,7 +3,11 @@ import { fetchExtraInstallments, fetchNewRates } from "@/services/mortgageServic
 import { ScenarioCalculator } from "@/utils/calculations/mortgage/scenarioCalculator"
 import { useMortgageDraftStore, MortgageDraft } from "@/store/mortgage/store"
 import { PaymentRow, ScenarioResult, ScenarioSummaryResult, Scenarios, RateChange } from "@/types/common"
-import { useMemo } from "react";
+import { useMemo } from "react"
+import { 
+  getEffectiveTermMonths, 
+  convertTermToMonths 
+} from "@/utils/term-conversion";
 
 // Default empty scenarios to prevent UI crashes
 function getDefaultScenarios(): Scenarios {
@@ -38,17 +42,25 @@ export function useScenarioCalculations() {
       loan_amount,
       interest_rate,
       term_years,
+      term_months,
       installments_per_year,
       first_installment_date,
       property,
       loan_protection_insurance,
     } = mortgageDraft;
 
+    // Enhanced: Use term_months with fallback to term_years
+    const effectiveTermMonths = getEffectiveTermMonths(
+      term_months, 
+      parseFloat(term_years || "20")
+    );
+
     return {
       id,
       loan_amount,
       interest_rate,
-      term_years,
+      term_years: parseFloat(term_years || "20"),
+      term_months: effectiveTermMonths,
       installments_per_year,
       first_installment_date: first_installment_date?.toISOString(),
       property_insurance: property?.property_insurance,
@@ -67,10 +79,17 @@ export function useScenarioCalculations() {
         fetchNewRates(mortgageDraft.id),
       ]);
 
+      // Enhanced: Use term_months with fallback to term_years
+      const effectiveTermMonths = getEffectiveTermMonths(
+        mortgageDraft.term_months,
+        parseFloat(mortgageDraft.term_years || "20")
+      );
+
       return ScenarioCalculator.calculateScenarios({
         loan_amount: mortgageDraft.loan_amount || 0,
         interest_rate: parseFloat(mortgageDraft.interest_rate || "0"),
-        term_years: parseInt(mortgageDraft.term_years || "0"),
+        term_years: parseFloat(mortgageDraft.term_years || "20"),
+        term_months: effectiveTermMonths,
         installments_per_year: parseInt(mortgageDraft.installments_per_year || "12"),
         first_installment_date: mortgageDraft.first_installment_date!,
         property_insurance: mortgageDraft.property?.property_insurance || 0,

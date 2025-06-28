@@ -253,6 +253,7 @@ useEffect(() => {
         loan_amount: calculatedLoanAmount,
         interest_rate: interestRate,
         term_years: termYears,
+        term_months: termMonths, // Enhanced: Pass term_months for precision
         installments_per_year: installmentsPerYear,
         first_installment_date: firstInstallmentDate,
         property_insurance: property.property_insurance || 0,
@@ -272,6 +273,7 @@ useEffect(() => {
         down_payment: validDownPayment,
         interest_rate: interestRate,
         term_years: termYears,
+        term_months: termMonths, // Enhanced: Include term_months
         installments_per_year: installmentsPerYear,
         loan_protection_type: values.loan_protection_type,
         loan_protection_insurance: loanProtectionInsurance,
