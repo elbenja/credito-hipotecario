@@ -5,7 +5,8 @@ import {
   getTermValidationError, 
   convertTermToMonths, 
   parseTermInput,
-  formatTermForInput 
+  formatTermForInput,
+  isValidTermMonths
 } from "@/utils/term-conversion"
 
 // Unified schema for both amortizations and mortgages
@@ -43,26 +44,15 @@ export const mortgageFormSchema = z.object({
       },
       "amortization_form.validation.interest_rate_max"
     ),
-  term_years: z.string()
-    .min(1, "amortization_form.validation.required")
-    .refine(
-      (value) => {
-        const years = parseFloat(value)
-        return !isNaN(years) && years > 0
-      },
-      "amortization_form.validation.invalid_number"
-    ),
   term_months: z.number()
-    .nullable()
-    .optional()
+    .min(60, "amortization_form.validation.term_range_error")
+    .max(360, "amortization_form.validation.term_range_error")
     .refine(
-      (value) => {
-        // If term_months is provided, it should be valid
-        if (value === null || value === undefined) return true
-        return value > 0
-      },
-      "amortization_form.validation.invalid_number"
+      (value) => isValidTermMonths(value),
+      "amortization_form.validation.term_range_error"
     ),
+  term_years: z.string()
+    .optional(), // Keep for backward compatibility but make optional
   installments_per_year: z.string().min(1, "amortization_form.validation.required"),
   first_installment_date: z.preprocess((val) => {
     // if a string is provided, parse it as ISO 8601
@@ -80,29 +70,14 @@ export const mortgageFormSchema = z.object({
   }).default("none"),
   loan_protection_insurance: z.string().default("0"),
 })
-.refine(
-  (data) => {
-    // Cross-field validation using priority logic
-    const termYears = parseFloat(data.term_years)
-    const termMonths = data.term_months
-    
-    // Use the validation utility from Phase 2
-    const error = getTermValidationError(termMonths, termYears)
-    return error === null
-  },
-  {
-    message: "amortization_form.validation.term_range_error",
-    path: ["term_years"], // Show error on term_years field since that's the UI field
-  }
-)
 
 export const defaultValues: MortgageFormValues = {
   name: "",
   property_id: "",
   down_payment: "0",
   interest_rate: "8.5",
-  term_years: "20.0", // Updated to show 1 decimal precision
-  term_months: 240, // Default to 240 months (20 years) for consistency
+  term_months: 240, // Primary field: 240 months (20 years)
+  term_years: "20.0", // Keep for backward compatibility
   installments_per_year: "12",
   first_installment_date: normalizeDate(startOfMonth(addMonths(new Date(), 1))),
   loan_protection_type: "individual",

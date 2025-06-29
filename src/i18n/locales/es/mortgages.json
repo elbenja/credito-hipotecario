@@ -1,7 +1,7 @@
 {
   "title": "Hipotecas",
   "description": "Calcula y gestiona tus calendarios de amortización hipotecaria. Realiza seguimiento de pagos, tasas de interés y explora diferentes escenarios de pago.",
-  "amortization": {
+  "mortgage": {
     "title": "Básico",
     "description": "Calcula tu amortización hipotecaria",
     "new": "Crear Hipoteca",

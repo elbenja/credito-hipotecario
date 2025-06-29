@@ -133,7 +133,7 @@ export const getColumns = (
     {
       accessorKey: "name",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.name')}</div>
+        <div className="line-clamp-1">{tMortgages('mortgage.name')}</div>
       ),
       enableHiding: false,
       cell: ({ row }) => {
@@ -145,7 +145,7 @@ export const getColumns = (
     {
       accessorKey: "down_payment_percentage",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.short_down_payment')}</div>
+        <div className="line-clamp-1">{tMortgages('mortgage.short_down_payment')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => {
@@ -168,7 +168,7 @@ export const getColumns = (
     {
       accessorKey: "loan_amount",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.short_loan_amount')}</div>
+        <div className="line-clamp-1">{tMortgages('mortgage.short_loan_amount')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => {
@@ -180,7 +180,7 @@ export const getColumns = (
     {
       accessorKey: "interest_rate",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.short_interest_rate')}</div>
+        <div className="line-clamp-1">{tMortgages('mortgage.short_interest_rate')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => `${row.original.interest_rate}%`,
@@ -189,14 +189,18 @@ export const getColumns = (
     {
       accessorKey: "term",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.term')}</div>
+        <div className="line-clamp-1">{tMortgages('mortgage.term')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => {
         const termType = getTermType(row.original);
+        // Use term_months as primary, convert to years for display
+        const displayYears = row.original.term_months 
+          ? (row.original.term_months / 12).toFixed(1)
+          : row.original.term_years || '0';
         return (
           <div className="flex items-center gap-1">
-            <span className="text-nowrap">{row.original.term_years}{tGlobal('ui.short_year')}</span>
+            <span className="text-nowrap">{displayYears}{tGlobal('ui.short_year')}</span>
             <span className="text-muted-foreground text-sm">{tGlobal(`ui.term_type.${termType}`)}</span>
           </div>
         );
@@ -206,7 +210,7 @@ export const getColumns = (
     {
       accessorKey: "scenario",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.scenario')}</div>
+        <div className="line-clamp-1">{tMortgages('mortgage.scenario')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => {
@@ -224,7 +228,7 @@ export const getColumns = (
       accessorKey: "total_cost",
       header: ({ column }) => (
         <SortableHeader column={column}>
-          <div className="line-clamp-1">{tMortgages('amortization.total_cost')}</div>
+          <div className="line-clamp-1">{tMortgages('mortgage.total_cost')}</div>
         </SortableHeader>
       ),
       enableHiding: true,
@@ -265,7 +269,7 @@ export const getColumns = (
       accessorKey: "sum_interest_insurance",
       header: ({ column }) => (
         <SortableHeader column={column}>
-          <div className="line-clamp-1">{tMortgages('amortization.sum_interest_insurance')}</div>
+          <div className="line-clamp-1">{tMortgages('mortgage.sum_interest_insurance')}</div>
         </SortableHeader>
       ),
       enableHiding: true,
@@ -292,7 +296,7 @@ export const getColumns = (
       accessorKey: "years",
       header: ({ column }) => (
         <SortableHeader column={column}>
-          <div className="line-clamp-1">{tMortgages('amortization.years')}</div>
+          <div className="line-clamp-1">{tMortgages('mortgage.years')}</div>
         </SortableHeader>
       ),
       enableHiding: true,
@@ -319,7 +323,7 @@ export const getColumns = (
       accessorKey: "months",
       header: ({ column }) => (
         <SortableHeader column={column}>
-          <div className="line-clamp-1">{tMortgages('amortization.months')}</div>
+          <div className="line-clamp-1">{tMortgages('mortgage.months')}</div>
         </SortableHeader>
       ),
       enableHiding: true,
@@ -346,7 +350,7 @@ export const getColumns = (
       accessorKey: "monthly_payment",
       header: ({ column }) => (
         <SortableHeader column={column}>
-          <div className="line-clamp-1">{tMortgages('amortization.short_monthly_payment')}</div>
+          <div className="line-clamp-1">{tMortgages('mortgage.short_monthly_payment')}</div>
         </SortableHeader>
       ),
       enableHiding: true,
@@ -372,7 +376,7 @@ export const getColumns = (
     {
       accessorKey: "breakeven",
       header: ({ column }) => (
-        <div className="line-clamp-1">{tMortgages('amortization.short_breakeven')}</div>
+        <div className="line-clamp-1">{tMortgages('mortgage.short_breakeven')}</div>
       ),
       enableHiding: true,
       cell: ({ row }) => {

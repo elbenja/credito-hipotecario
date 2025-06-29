@@ -89,7 +89,7 @@ export default function NewMortgage() {
     }
     try {
       const property = await fetchPropertyWithBonus(user.id, propertyId);
-      const defaultName = `${property.name} ${t("amortization.mortgage_suffix", { ns: "mortgages" })}`;
+      const defaultName = `${property.name} ${t("mortgage.mortgage_suffix", { ns: "mortgages" })}`;
       // Sync the form name with the store name, form need to be change before zustand or it resets the calcmount
       form.setValue("name", defaultName, { shouldValidate: true });
 
@@ -185,7 +185,7 @@ useEffect(() => {
       
       // Update the form name if empty
       if (!form.getValues("name")) {
-        const defaultName = `${updated.name} ${t("amortization.mortgage_suffix", { ns: "mortgages" })}`
+        const defaultName = `${updated.name} ${t("mortgage.mortgage_suffix", { ns: "mortgages" })}`
         form.setValue("name", defaultName, { shouldValidate: true })
       }
       
@@ -337,7 +337,7 @@ useEffect(() => {
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   <BreadcrumbPage>
-                    {t("amortization.new", { ns: "mortgages" })}
+                    {t("mortgage.new", { ns: "mortgages" })}
                   </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
@@ -366,7 +366,7 @@ useEffect(() => {
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbPage>
-                  {form.watch("name") || t("amortization.new", { ns: "mortgages" })}
+                  {form.watch("name") || t("mortgage.new", { ns: "mortgages" })}
                 </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
@@ -419,9 +419,9 @@ useEffect(() => {
                   render={({ field }) => (
                     
                     <FormItem>
-                      <FormLabel>{t("amortization.label", { ns: "mortgages" })}</FormLabel>
+                      <FormLabel>{t("mortgage.label", { ns: "mortgages" })}</FormLabel>
                       <FormControl>
-                        <Input placeholder={t("amortization.name", { ns: "mortgages" })} {...field} />
+                        <Input placeholder={t("mortgage.name", { ns: "mortgages" })} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -143,7 +143,8 @@ export const useMortgageCapture = () => {
           mortgage_id: newMortgage.id,
           effective_date: rate.effective_date,
           new_interest_rate: rate.new_interest_rate,
-          new_term_years: rate.new_term_years
+          new_term_months: rate.new_term_months, // Use term_months as primary field
+          new_term_years: rate.new_term_years // Keep for backward compatibility
         }));
 
         // Insert all new rates
@@ -269,7 +270,8 @@ export const useMortgageCapture = () => {
         loan_amount: mortgageDraft.loan_amount || 0,
         down_payment: parseFloat(mortgageDraft.down_payment) || 0,
         interest_rate: parseFloat(mortgageDraft.interest_rate) || 0,
-        term_years: parseInt(mortgageDraft.term_years) || 0,
+        term_months: mortgageDraft.term_months || 240, // Use term_months as primary field
+        term_years: parseInt(mortgageDraft.term_years) || null, // Keep for backward compatibility
         installments_per_year: parseInt(mortgageDraft.installments_per_year) || 12,
         loan_protection_type: mortgageDraft.loan_protection_type,
         loan_protection_insurance: parseFloat(mortgageDraft.loan_protection_insurance) || 0,
@@ -326,7 +328,8 @@ export const useMortgageCapture = () => {
           mortgage_id: createdMortgage.id,
           effective_date: rate.effective_date,
           new_interest_rate: rate.new_interest_rate,
-          new_term_years: rate.new_term_years
+          new_term_months: rate.new_term_months, // Use term_months as primary field
+          new_term_years: rate.new_term_years // Keep for backward compatibility
         }));
 
         // Insert all new rates

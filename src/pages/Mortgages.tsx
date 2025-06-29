@@ -120,7 +120,7 @@ export default function Mortgages() {
   const headerActions = useMemo(() => (
     <Button onClick={handleNewMortgage} disabled={!propertiesWithMortgages || propertiesWithMortgages.length === 0}>
       <Plus className="mr-2 h-4 w-4" />
-      {tMortgages('amortization.new')}
+      {tMortgages('mortgage.new')}
     </Button>
   ), [navigate, tMortgages, propertiesWithMortgages])
 
@@ -255,7 +255,7 @@ export default function Mortgages() {
                     navigate('/mortgages/new');
                   }}>
                     <div className="flex-1 text-right text-sm font-medium leading-none">
-                      {tMortgages('amortization.new')}
+                      {tMortgages('mortgage.new')}
                     </div>
                     <div className="size-8 bg-card text-card-foreground rounded-[99px] flex justify-center items-center">
                       <Plus className="h-4 w-4" />

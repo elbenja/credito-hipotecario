@@ -109,12 +109,12 @@ export function MortgageDetailsForm({
  <Separator /> */}
       {/* Loan Amount Display */}
       <div className="space-y-2">
-        <h4 className="font-medium">{t('amortization.loan_amount', { ns: 'mortgages' })}</h4>
+        <h4 className="font-medium">{t('mortgage.loan_amount', { ns: 'mortgages' })}</h4>
         <div className="text-xl xl:text-2xl 2xl:text-3xl font-bold">
           {formatCurrency(Math.round(loanAmount || 0), (selectedProperty?.currency as "USD" | "PEN") || "PEN")}
         </div>
         <div className="text-xs">
-          {t('amortization.loan_amount_formula', { ns: 'mortgages' })}
+          {t('mortgage.loan_amount_formula', { ns: 'mortgages' })}
         </div>
       </div>
       <Separator />
@@ -122,7 +122,7 @@ export function MortgageDetailsForm({
       <div>
         <div className="space-y-6 sm:space-y-4">
         <div className="mt-4">           
-          <h4 className="font-medium"> {t('amortization.down_payment', { ns: 'mortgages' })}   </h4>
+          <h4 className="font-medium"> {t('mortgage.down_payment', { ns: 'mortgages' })}   </h4>
           <div className="grid grid-col-1 sm:grid-cols-[_1fr_16px_1fr] ">
          
             <FormField
@@ -224,7 +224,7 @@ export function MortgageDetailsForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    {t('amortization.amount_in', { ns: 'mortgages' })}
+                    {t('mortgage.amount_in', { ns: 'mortgages' })}
                     {selectedProperty?.currency === 'USD' ? ' $' : ' S/'}
                   </FormLabel>
                   <FormControl>
@@ -269,7 +269,7 @@ export function MortgageDetailsForm({
               name="loan_protection_type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('amortization.insurance.type', { ns: 'mortgages' })}</FormLabel>
+                  <FormLabel>{t('mortgage.insurance.type', { ns: 'mortgages' })}</FormLabel>
                   <Select onValueChange={(value) => {
                     field.onChange(value)
                     // Set loan_protection_insurance based on selected type
@@ -297,7 +297,7 @@ export function MortgageDetailsForm({
                       <SelectItem value="individual">{t('insurance.individual')}</SelectItem>
                       <SelectItem value="joint">{t('insurance.joint')}</SelectItem>
                       <SelectItem value="none">{t('insurance.none')}</SelectItem>
-                      <SelectItem value="custom">{t('amortization.insurance.manual', 'Manual', { ns: 'mortgages' })}</SelectItem>
+                      <SelectItem value="custom">{t('mortgage.insurance.manual', 'Manual', { ns: 'mortgages' })}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -310,7 +310,7 @@ export function MortgageDetailsForm({
               name="loan_protection_insurance"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('amortization.monthly_rate', { ns: 'mortgages' })}  </FormLabel>
+                  <FormLabel>{t('mortgage.monthly_rate', { ns: 'mortgages' })}  </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
@@ -350,7 +350,7 @@ export function MortgageDetailsForm({
               name="interest_rate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('amortization.interest_rate', { ns: 'mortgages' })}</FormLabel>
+                  <FormLabel>{t('mortgage.interest_rate', { ns: 'mortgages' })}</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input {...field} 
@@ -373,21 +373,19 @@ export function MortgageDetailsForm({
             />
             <FormField
               control={form.control}
-              name="term_years"
+              name="term_months"
               render={({ field }) => {
                 const [displayConversion, setDisplayConversion] = useState<string>("")
+                const [displayValue, setDisplayValue] = useState<string>("")
                 
-                // Real-time conversion feedback
+                // Initialize display value from term_months
                 useEffect(() => {
-                  if (field.value) {
-                    const parsed = parseFloat(field.value)
-                    if (!isNaN(parsed) && parsed > 0) {
-                      const months = convertTermToMonths(parsed)
-                      setDisplayConversion(`(${months} months)`)
-                    } else {
-                      setDisplayConversion("")
-                    }
+                  if (field.value && field.value > 0) {
+                    const yearsValue = formatTermForInput(field.value)
+                    setDisplayValue(yearsValue)
+                    setDisplayConversion(`(${field.value} months)`)
                   } else {
+                    setDisplayValue("")
                     setDisplayConversion("")
                   }
                 }, [field.value])
@@ -395,7 +393,7 @@ export function MortgageDetailsForm({
                 return (
                   <FormItem>
                     <FormLabel>
-                      {t('amortization.term', { ns: 'mortgages' })}
+                      {t('mortgage.term', { ns: 'mortgages' })}
                       {displayConversion && (
                         <span className="ml-2 text-sm text-muted-foreground">
                           {displayConversion}
@@ -404,22 +402,29 @@ export function MortgageDetailsForm({
                     </FormLabel>
                     <FormControl>
                       <Input
-                        {...field}
+                        value={displayValue}
                         type="number"
                         step="0.1"
                         min="5"
                         max="30"
                         placeholder="20.0"
                         onChange={(e) => {
-                          field.onChange(e.target.value)
-                          // Update term_months in real-time
-                          const parsed = parseFloat(e.target.value)
+                          const inputValue = e.target.value
+                          setDisplayValue(inputValue)
+                          
+                          // Convert years input to months and update the field
+                          const parsed = parseFloat(inputValue)
                           if (!isNaN(parsed) && parsed > 0) {
                             const months = convertTermToMonths(parsed)
-                            form.setValue("term_months", months, { shouldValidate: false })
+                            setDisplayConversion(`(${months} months)`)
+                            field.onChange(months)
+                          } else {
+                            setDisplayConversion("")
+                            field.onChange(0)
                           }
+                          
                           // Trigger validation
-                          form.trigger("term_years")
+                          form.trigger("term_months")
                         }}
                         className="focus:ring-2 focus:ring-blue-500"
                       />
@@ -440,7 +445,7 @@ export function MortgageDetailsForm({
               name="installments_per_year"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('amortization.installments_per_year', { ns: 'mortgages' })}</FormLabel>
+                  <FormLabel>{t('mortgage.installments_per_year', { ns: 'mortgages' })}</FormLabel>
                   <Select 
                     onValueChange={(value) => {
                       field.onChange(value);
@@ -590,7 +595,7 @@ export function MortgageDetailsForm({
                   form={form}
                   minDate={new Date(new Date().getFullYear() - 15, 0, 1)}
                   maxDate={new Date(new Date().getFullYear() + 20, 11, 1)}
-                  labelKey={t('amortization.first_date', { ns: 'mortgages' })}
+                  labelKey={t('mortgage.first_date', { ns: 'mortgages' })}
                   ns="global"
                 />
               )}
