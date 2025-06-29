@@ -82,7 +82,7 @@ export async function fetchPropertiesWithMortgagesAndBonus(userId: string) {
     .select(`
       *,
       mortgages(
-        id, name, loan_amount, down_payment, interest_rate, term_years,
+        id, name, loan_amount, down_payment, interest_rate, term_years, term_months,
         installments_per_year, loan_protection_type, loan_protection_insurance,
         first_installment_date, saved_scenario, saved_scenario_total_interest_and_insurance,
         saved_scenario_total_months, saved_scenario_monthly_payment, saved_scenario_breakeven_point, property_id

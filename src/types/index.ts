@@ -17,6 +17,7 @@ export type Mortgage = {
   down_payment: number
   interest_rate: number
   term_years: number
+  term_months: number
   installments_per_year: number
   property_id: string
   loan_protection_type: "none" | "custom" | "individual" | "joint"
