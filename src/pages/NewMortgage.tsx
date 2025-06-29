@@ -216,10 +216,8 @@ useEffect(() => {
       const downPayment = parseFloat(values.down_payment.replace(/[^0-9.]/g, "") || "0")
       const interestRate = parseFloat(values.interest_rate)
       
-      // Use term conversion utilities for precise handling
-      const termYearsInput = parseFloat(values.term_years)
-      const termMonths = values.term_months || convertTermToMonths(termYearsInput)
-      const termYears = Math.round(termMonths / 12) // For backward compatibility
+      // ✅ Only use term_months - remove term_years calculation
+      const termMonths = values.term_months || convertTermToMonths(20) // fallback to 20 years
       
       const installmentsPerYear = parseInt(values.installments_per_year)
       const loanProtectionInsurance = parseFloat(values.loan_protection_insurance)
@@ -231,8 +229,8 @@ useEffect(() => {
       if (isNaN(interestRate) || interestRate <= 0) {
         throw new Error("Invalid interest rate")
       }
-      if (isNaN(termYears) || termYears <= 0) {
-        throw new Error("Invalid term years")
+      if (!termMonths || termMonths <= 0) { // ✅ Validate term_months instead
+        throw new Error("Invalid term months")
       }
       if (![12, 14].includes(installmentsPerYear)) {
         throw new Error("Invalid installments per year")
@@ -252,8 +250,8 @@ useEffect(() => {
       const scenarios = ScenarioCalculator.calculateScenarios({
         loan_amount: calculatedLoanAmount,
         interest_rate: interestRate,
-        term_years: termYears,
-        term_months: termMonths, // Enhanced: Pass term_months for precision
+        term_years: Math.round(termMonths / 12), // ✅ Only for calculation, not stored
+        term_months: termMonths,
         installments_per_year: installmentsPerYear,
         first_installment_date: firstInstallmentDate,
         property_insurance: property.property_insurance || 0,
@@ -263,7 +261,7 @@ useEffect(() => {
       // Get the regular scenario
       const regularScenario = scenarios.regular
       
-      // Create mortgage object
+      // ✅ Create mortgage object WITHOUT term_years
       console.log("property.id", property.id)
       const mortgageData = {
         name: values.name,
@@ -272,8 +270,8 @@ useEffect(() => {
         loan_amount: calculatedLoanAmount,
         down_payment: validDownPayment,
         interest_rate: interestRate,
-        term_years: termYears,
-        term_months: termMonths, // Enhanced: Include term_months
+        // term_years: termYears, // ❌ Remove this line
+        term_months: termMonths, // ✅ Only use term_months
         installments_per_year: installmentsPerYear,
         loan_protection_type: values.loan_protection_type,
         loan_protection_insurance: loanProtectionInsurance,

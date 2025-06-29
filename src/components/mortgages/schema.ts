@@ -51,8 +51,7 @@ export const mortgageFormSchema = z.object({
       (value) => isValidTermMonths(value),
       "amortization_form.validation.term_range_error"
     ),
-  term_years: z.string()
-    .optional(), // Keep for backward compatibility but make optional
+  // term_years: removed - deprecated field
   installments_per_year: z.string().min(1, "amortization_form.validation.required"),
   first_installment_date: z.preprocess((val) => {
     // if a string is provided, parse it as ISO 8601
@@ -77,7 +76,6 @@ export const defaultValues: MortgageFormValues = {
   down_payment: "0",
   interest_rate: "8.5",
   term_months: 240, // Primary field: 240 months (20 years)
-  term_years: "20.0", // Keep for backward compatibility
   installments_per_year: "12",
   first_installment_date: normalizeDate(startOfMonth(addMonths(new Date(), 1))),
   loan_protection_type: "individual",

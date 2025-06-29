@@ -9,8 +9,8 @@ export interface MortgageDraft {
   property_id: string
   down_payment: string
   interest_rate: string
-  term_years: string
-  term_months?: number | null  // New field for enhanced precision
+  term_years?: string // ✅ Optional - deprecated field
+  term_months: number  // ✅ Required - primary field
   installments_per_year: string
   first_installment_date: Date
   loan_protection_type: "none" | "custom" | "individual" | "joint"
@@ -42,8 +42,8 @@ const DEFAULT_DRAFT: MortgageDraft = {
   property_id: "",
   down_payment: "0",
   interest_rate: "8.5",
-  term_years: "20.0", // Updated to show 1 decimal precision
-  term_months: 240,    // Default to 240 months (20 years) for consistency
+  // term_years: "20.0", // ❌ Remove deprecated field
+  term_months: 240,     // ✅ Primary field: 240 months (20 years)
   installments_per_year: "12",
   first_installment_date: new Date(),
   loan_protection_type: "individual",

@@ -29,9 +29,11 @@ export const useSaveMortgageScenario = () => {
     onSuccess
   }: SaveScenarioParams) => {
     try {
+      const { term_years, ...cleanFormValues } = formValues;
+      
       await updateMortgage.mutateAsync({
         id: mortgageId,
-        ...formValues,
+        ...cleanFormValues,
         saved_scenario: scenarioType,
         saved_scenario_total_interest_and_insurance: scenarioData.total_interest_and_insurance,
         saved_scenario_total_months: scenarioData.total_months,
@@ -39,7 +41,6 @@ export const useSaveMortgageScenario = () => {
         saved_scenario_breakeven_point: scenarioData.breakeven_point
       } as Mortgage);
 
-      // Save to localStorage for persistence
       localStorage.setItem(`savedScenario_${mortgageId}`, scenarioType);
 
       toast({

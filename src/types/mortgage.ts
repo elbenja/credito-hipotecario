@@ -30,8 +30,8 @@ export type Mortgage = {
   loan_amount: number
   down_payment: number
   interest_rate: number
-  term_months: number  // Primary field for enhanced precision
-  term_years?: number | null  // Optional field for backward compatibility
+  term_years?: number // ✅ Optional - deprecated field
+  term_months: number // ✅ Required - primary field
   installments_per_year: number
   first_installment_date: string
   loan_protection_type: "none" | "custom" | "individual" | "joint"

@@ -129,7 +129,7 @@ export default function EditMortgageWithZustand(mortgageData: any) {
       loanAmount: calculatedLoanAmount,
       downPayment: parseFloat(mortgageForm.getValues().down_payment?.replace(/[^0-9.]/g, "") || "0"),
       interestRate: parseFloat(mortgageForm.getValues().interest_rate || "0"),
-      termYears: parseInt(mortgageForm.getValues().term_years || "0"),
+      // termYears: parseInt(mortgageForm.getValues().term_years || "0"),
       installmentsPerYear: parseInt(mortgageForm.getValues().installments_per_year || "12"),
       loanProtectionType: mortgageForm.getValues().loan_protection_type,
       loanProtectionInsurance: parseFloat(mortgageForm.getValues().loan_protection_insurance || "0"),
@@ -245,9 +245,9 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
       const interestRate = parseFloat(formValues.interest_rate)
       
       // Use term conversion utilities for precise handling
-      const termYearsInput = parseFloat(formValues.term_years)
-      const termMonths = formValues.term_months || convertTermToMonths(termYearsInput)
-      const termYears = Math.round(termMonths / 12) // For backward compatibility
+      // const termYearsInput = parseFloat(formValues.term_years)
+      const termMonths = formValues.term_months || convertTermToMonths(20) // fallback to 20 years
+      // const termYears = Math.round(termMonths / 12) // For backward compatibility
       
       const installmentsPerYear = parseInt(formValues.installments_per_year)
       const loanProtectionInsurance = parseFloat(formValues.loan_protection_insurance)
@@ -276,7 +276,6 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
         property_id: formValues.property_id,
           down_payment: downPayment,
           interest_rate: interestRate,
-          term_years: termYears,
           term_months: termMonths, // Store the precise value
           installments_per_year: installmentsPerYear,
         first_installment_date: formattedDate,

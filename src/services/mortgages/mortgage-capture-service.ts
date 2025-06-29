@@ -271,7 +271,7 @@ export const useMortgageCapture = () => {
         down_payment: parseFloat(mortgageDraft.down_payment) || 0,
         interest_rate: parseFloat(mortgageDraft.interest_rate) || 0,
         term_months: mortgageDraft.term_months || 240, // Use term_months as primary field
-        term_years: parseInt(mortgageDraft.term_years) || null, // Keep for backward compatibility
+        // term_years: parseInt(mortgageDraft.term_years) || null, // ❌ Remove this line
         installments_per_year: parseInt(mortgageDraft.installments_per_year) || 12,
         loan_protection_type: mortgageDraft.loan_protection_type,
         loan_protection_insurance: parseFloat(mortgageDraft.loan_protection_insurance) || 0,
