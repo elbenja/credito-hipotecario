@@ -422,7 +422,7 @@ export function MortgageDetailsForm({
                           // Trigger validation
                           form.trigger("term_months")
                         }}
-                        className="focus:ring-2 focus:ring-blue-500"
+                        
                       />
                     </FormControl>
                     <div className="text-xs text-muted-foreground">

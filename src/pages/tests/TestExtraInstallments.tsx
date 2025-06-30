@@ -1,7 +1,7 @@
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Building, ChevronRight, Eye, Plus, Table, TableProperties } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/auth-context";
 import { usePropertiesWithMortgagesAndBonus } from "@/services/propertyService";
 import { Link } from "react-router-dom";
@@ -22,14 +22,182 @@ import { MortgageSelectionSheet } from "@/components/ui/sheets/MortgageSelection
 import { PaymentsSheet } from "@/components/ui/sheets/PaymentsSheet";
 import { ExpensesGroup } from "@/components/rentals-ui/expenses-group";
 import { FormControl, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { convertTermToMonths } from "@/utils/term-conversion";
+import { convertTermToMonths, formatTermForInput } from "@/utils/term-conversion";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
+// Term Months Input Component with Popover - bidirectional converter
+interface TermMonthsPopoverProps {
+  value?: number;
+  onChange?: (months: number) => void;
+  className?: string;
+}
+
+const TermMonthsPopover = ({ value, onChange, className }: TermMonthsPopoverProps) => {
+  const [isOpen, setIsOpen] = useState(false)
+  const [yearsInput, setYearsInput] = useState<string>("")
+  const [monthsInput, setMonthsInput] = useState<string>("")
+  const [errorMessage, setErrorMessage] = useState<string>("")
+  
+  // Display values for the main input
+  const [displayValue, setDisplayValue] = useState<string>("")
+  const [displayConversion, setDisplayConversion] = useState<string>("")
+
+  // Initialize display values and popover inputs
+  useEffect(() => {
+    if (value && value > 0) {
+      const yearsValue = formatTermForInput(value)
+      setDisplayValue(yearsValue)
+      setDisplayConversion(`${value} months`)
+      
+      // Set popover inputs
+      setMonthsInput(value.toString())
+      setYearsInput(yearsValue)
+    } else {
+      setDisplayValue("")
+      setDisplayConversion("")
+      setMonthsInput("")
+      setYearsInput("")
+    }
+  }, [value])
+
+  // Convert months to years (1 decimal place)
+  const monthsToYears = (months: number): string => {
+    return (months / 12).toFixed(1)
+  }
+
+  // Convert years to months (rounded integer)
+  const yearsToMonths = (years: number): number => {
+    return Math.round(years * 12)
+  }
+
+  // Validate range (5-30 years = 60-360 months)
+  const validateValue = (months: number): boolean => {
+    return months >= 60 && months <= 360
+  }
+
+  // Handle years input change
+  const handleYearsChange = (inputValue: string) => {
+    setYearsInput(inputValue)
+    setErrorMessage("")
+    
+    const parsed = parseFloat(inputValue)
+    if (!isNaN(parsed) && parsed > 0) {
+      const months = yearsToMonths(parsed)
+      setMonthsInput(months.toString())
+      
+      if (validateValue(months)) {
+        onChange?.(months)
+      } else {
+        setErrorMessage("Outside the range")
+      }
+    } else if (inputValue === "") {
+      setMonthsInput("")
+    }
+  }
+
+  // Handle months input change
+  const handleMonthsChange = (inputValue: string) => {
+    setMonthsInput(inputValue)
+    setErrorMessage("")
+    
+    const parsed = parseInt(inputValue)
+    if (!isNaN(parsed) && parsed > 0) {
+      const years = monthsToYears(parsed)
+      setYearsInput(years)
+      
+      if (validateValue(parsed)) {
+        onChange?.(parsed)
+      } else {
+        setErrorMessage("Outside the range")
+      }
+    } else if (inputValue === "") {
+      setYearsInput("")
+    }
+  }
+
+  return (
+    <div className={className}>
+      <Label>
+        Loan Term (Years)
+      </Label>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <Input
+            value={displayValue}
+            readOnly
+            placeholder="20.0"
+            className="cursor-pointer"
+            onClick={() => setIsOpen(true)}
+          />
+        </PopoverTrigger>
+        <PopoverContent className="w-80" align="start">
+          <div className="space-y-4">
+            <div className="text-sm font-medium">Term</div>
+            
+            {/* Side-by-side converter */}
+            <div className="flex items-center space-x-2">
+              <div className="flex-1">
+                <Label className="text-xs text-muted-foreground">Years</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="5"
+                  max="30"
+                  value={yearsInput}
+                  onChange={(e) => handleYearsChange(e.target.value)}
+                  placeholder="19.6"
+                />
+              </div>
+              
+              <div className="px-2 py-6 text-lg font-medium text-muted-foreground">
+                =
+              </div>
+              
+              <div className="flex-1">
+                <Label className="text-xs text-muted-foreground">Months</Label>
+                <Input
+                  type="number"
+                  min="60"
+                  max="360"
+                  value={monthsInput}
+                  onChange={(e) => handleMonthsChange(e.target.value)}
+                  placeholder="235"
+                />
+              </div>
+            </div>
+            
+            {/* Error message */}
+            {errorMessage && (
+              <div className="text-xs text-red-500">
+                {errorMessage}
+              </div>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+      
+      <div className="text-xs text-muted-foreground mt-1">
+        {displayConversion && 
+          <span>
+            {displayConversion}
+          </span>
+        }
+      </div>
+    </div>
+  )
+}
 
 export default function TestExtraInstallments() {
   const [selectedMortgageId, setSelectedMortgageId] = useState<string | null>(null);
   const [isSelectionSheetOpen, setIsSelectionSheetOpen] = useState(false);
   const [isPaymentsSheetOpen, setIsPaymentsSheetOpen] = useState(false);
+  const [termMonths, setTermMonths] = useState<number>(240); // Default 20 years
   
 
 
@@ -64,31 +232,27 @@ export default function TestExtraInstallments() {
 
 
 {/* PopOver-months mock */}
-
-              {/* <FormItem>
-                    <FormLabel>
-                      {t('mortgage.term', { ns: 'mortgages' })}
-                      
-                    
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        value={20}
-                        type="number"
-                        step="0.1"
-                        min="5"
-                        max="30"
-                        placeholder="20.0"
-                        onChange={(e) => {
-                        }}
-                        className="focus:ring-2 focus:ring-blue-500"
-                      />
-                    </FormControl>
-                    <div className="text-xs text-muted-foreground">
-                      {t('amortization.term_hint', 'Enter term in years (e.g., 20.5 for 20 years and 6 months)', { ns: 'mortgages' })}
-                    </div>
-                    <FormMessage />
-                  </FormItem> */}
+<div className="w-full max-w-sm space-y-4">
+  <TermMonthsPopover
+    value={termMonths}
+    onChange={setTermMonths}
+    className="space-y-2"
+  />
+  <div className="mt-2 text-sm text-muted-foreground">
+    Current value: {termMonths} months ({(termMonths / 12).toFixed(1)} years)
+  </div>
+  
+  {/* Test button to show how it could be used */}
+  <Button 
+    variant="outline" 
+    onClick={() => {
+      console.log("Term months selected:", termMonths);
+      alert(`Selected term: ${termMonths} months (${(termMonths / 12).toFixed(1)} years)`);
+    }}
+  >
+    Test Term Selection
+  </Button>
+</div>
 
 
 
