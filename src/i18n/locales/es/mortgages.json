@@ -16,7 +16,7 @@
     "down_payment": "Cuota Inicial",
     "short_down_payment": "Inicial",
     "amount_in": "Monto en",
-    "property_percentage": "% de la Propiedad",
+    "property_percentage": "Monto en %",
     "interest_rate": "Tasa Effectiva - TEA",
     "short_interest_rate": "Tasa",
     "term": "Plazo",
@@ -44,7 +44,7 @@
       "type": "Tipo"
     },
     "validation": {
-      "down_payment_max": "Debe ser menor al 90% del costo de la propiedad"
+      "down_payment_max": "Máximo el 90% del costo de la propiedad"
     }
   },
   "scenarios": {

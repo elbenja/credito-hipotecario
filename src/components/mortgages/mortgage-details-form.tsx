@@ -125,7 +125,7 @@ export function MortgageDetailsForm({
     if (!isNaN(percentage)) {
       // Check for immediate validation (over 90%)
       if (percentage > 90) {
-        setPercentageError(t('amortization.validation.down_payment_max', 'Max is 90% of property cost', { ns: 'mortgages' }))
+        setPercentageError(t('mortgage.validation.down_payment_max', 'Max is 90% of property cost', { ns: 'mortgages' }))
       } else {
         setPercentageError("")
       }
@@ -201,7 +201,7 @@ export function MortgageDetailsForm({
               name="property_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('amortization.property_percentage', 'Property %', { ns: 'mortgages' })}</FormLabel>
+                  <FormLabel>{t('mortgage.property_percentage', { ns: 'mortgages' })}</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input 
@@ -259,7 +259,7 @@ export function MortgageDetailsForm({
                           
                           // Check for validation
                           if (percentage > 90) {
-                            setPercentageError(t('amortization.validation.down_payment_max', 'Max is 90% of property cost', { ns: 'mortgages' }));
+                            setPercentageError(t('mortgage.validation.down_payment_max', { ns: 'mortgages' }));
                           } else {
                             setPercentageError("");
                           }
