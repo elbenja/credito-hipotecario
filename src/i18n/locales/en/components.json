@@ -131,7 +131,8 @@
       "interest_rate_max": "Interest rate cannot exceed 18%",
       "first_installment_date_required": "First installment date is required",
       "first_installment_date_invalid": "Please enter a valid date in the format 'MMM d, yyyy' (e.g., Feb 28, 2026)",
-      "loan_protection_type_required": "Please select a loan protection type"
+      "loan_protection_type_required": "Please select a loan protection type",
+      "term_range_error": "Term must be between 5 and 30 years (60 and 360 months)"
     }
   },
   "property_form": {
