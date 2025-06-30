@@ -132,7 +132,7 @@ export function TermMonthsField<T extends FieldValues>({
                     value={displayValue}
                     placeholder={placeholder}
                     readOnly
-                    className="cursor-pointer"
+                    className="cursor-pointer text-left"
                     onClick={() => setIsOpen(true)}
                   />
                 </PopoverTrigger>
