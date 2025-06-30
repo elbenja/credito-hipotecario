@@ -21,6 +21,9 @@ import type { Mortgage } from "@/types";
 import { MortgageSelectionSheet } from "@/components/ui/sheets/MortgageSelectionSheet";
 import { PaymentsSheet } from "@/components/ui/sheets/PaymentsSheet";
 import { ExpensesGroup } from "@/components/rentals-ui/expenses-group";
+import { FormControl, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { convertTermToMonths } from "@/utils/term-conversion";
+import { Input } from "@/components/ui/input";
 
 
 export default function TestExtraInstallments() {
@@ -58,6 +61,36 @@ export default function TestExtraInstallments() {
     Rentals
   </Button>
 </Link> 
+
+
+{/* PopOver-months mock */}
+
+              {/* <FormItem>
+                    <FormLabel>
+                      {t('mortgage.term', { ns: 'mortgages' })}
+                      
+                    
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        value={20}
+                        type="number"
+                        step="0.1"
+                        min="5"
+                        max="30"
+                        placeholder="20.0"
+                        onChange={(e) => {
+                        }}
+                        className="focus:ring-2 focus:ring-blue-500"
+                      />
+                    </FormControl>
+                    <div className="text-xs text-muted-foreground">
+                      {t('amortization.term_hint', 'Enter term in years (e.g., 20.5 for 20 years and 6 months)', { ns: 'mortgages' })}
+                    </div>
+                    <FormMessage />
+                  </FormItem> */}
+
+
 
 {/* future component Inherit payments */}
         {/* <div className="flex items-center justify-center gap-1">

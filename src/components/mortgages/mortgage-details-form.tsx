@@ -383,7 +383,7 @@ export function MortgageDetailsForm({
                   if (field.value && field.value > 0) {
                     const yearsValue = formatTermForInput(field.value)
                     setDisplayValue(yearsValue)
-                    setDisplayConversion(`(${field.value} months)`)
+                    setDisplayConversion(`${field.value} months`)
                   } else {
                     setDisplayValue("")
                     setDisplayConversion("")
@@ -394,11 +394,7 @@ export function MortgageDetailsForm({
                   <FormItem>
                     <FormLabel>
                       {t('mortgage.term', { ns: 'mortgages' })}
-                      {displayConversion && (
-                        <span className="ml-2 text-sm text-muted-foreground">
-                          {displayConversion}
-                        </span>
-                      )}
+                    
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -416,7 +412,7 @@ export function MortgageDetailsForm({
                           const parsed = parseFloat(inputValue)
                           if (!isNaN(parsed) && parsed > 0) {
                             const months = convertTermToMonths(parsed)
-                            setDisplayConversion(`(${months} months)`)
+                            setDisplayConversion(`${months} months`)
                             field.onChange(months)
                           } else {
                             setDisplayConversion("")
@@ -430,7 +426,12 @@ export function MortgageDetailsForm({
                       />
                     </FormControl>
                     <div className="text-xs text-muted-foreground">
-                      {t('amortization.term_hint', 'Enter term in years (e.g., 20.5 for 20 years and 6 months)', { ns: 'mortgages' })}
+                    {displayConversion && 
+                        <span className="ml-2" >
+                          {displayConversion}
+                        </span>
+                      }
+                      {/* {t('amortization.term_hint', 'Enter term in years (e.g., 20.5 for 20 years and 6 months)', { ns: 'mortgages' })} */}
                     </div>
                     <FormMessage />
                   </FormItem>

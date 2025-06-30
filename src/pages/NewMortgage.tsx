@@ -250,7 +250,7 @@ useEffect(() => {
       const scenarios = ScenarioCalculator.calculateScenarios({
         loan_amount: calculatedLoanAmount,
         interest_rate: interestRate,
-        term_years: Math.round(termMonths / 12), // ✅ Only for calculation, not stored
+        term_years: termMonths / 12, // ✅ Provide decimal years for internal calculations
         term_months: termMonths,
         installments_per_year: installmentsPerYear,
         first_installment_date: firstInstallmentDate,
@@ -270,7 +270,6 @@ useEffect(() => {
         loan_amount: calculatedLoanAmount,
         down_payment: validDownPayment,
         interest_rate: interestRate,
-        // term_years: termYears, // ❌ Remove this line
         term_months: termMonths, // ✅ Only use term_months
         installments_per_year: installmentsPerYear,
         loan_protection_type: values.loan_protection_type,

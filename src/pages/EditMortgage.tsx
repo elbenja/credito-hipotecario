@@ -520,16 +520,16 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                         isThisScenarioSaved={savedScenario === "regular"}
                         onSaveScenario={handleSaveScenario}
                         onUpdateSavedScenarioUI={handleUpdateSavedScenarioUI}
-                        formValues={{
-                          loan_amount: calculatedLoanAmount,
-                          down_payment: getFormattedMortgageValues().downPayment,
-                          interest_rate: getFormattedMortgageValues().interestRate,
-                          term_years: getFormattedMortgageValues().termYears,
-                          installments_per_year: getFormattedMortgageValues().installmentsPerYear,
-                          loan_protection_type: getFormattedMortgageValues().loanProtectionType,
-                          loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
-                          first_installment_date: getFormattedMortgageValues().firstInstallmentDate
-                        }}
+                        // formValues={{
+                        //   loan_amount: calculatedLoanAmount,
+                        //   down_payment: getFormattedMortgageValues().downPayment,
+                        //   interest_rate: getFormattedMortgageValues().interestRate,
+                        //   term_years: getFormattedMortgageValues().termYears,
+                        //   installments_per_year: getFormattedMortgageValues().installmentsPerYear,
+                        //   loan_protection_type: getFormattedMortgageValues().loanProtectionType,
+                        //   loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
+                        //   first_installment_date: getFormattedMortgageValues().firstInstallmentDate
+                        // }}
                       // extraInstallments={extraInstallments}
                       // newRates={newRates.map(({ new_interest_rate, ...rest }) => ({
                       //   ...rest,
@@ -553,16 +553,16 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                             isThisScenarioSaved={savedScenario === "accelerated"}
                             onSaveScenario={handleSaveScenario}
                             onUpdateSavedScenarioUI={handleUpdateSavedScenarioUI}
-                            formValues={{
-                              loan_amount: calculatedLoanAmount,
-                              down_payment: getFormattedMortgageValues().downPayment,
-                              interest_rate: getFormattedMortgageValues().interestRate,
-                              term_years: getFormattedMortgageValues().termYears,
-                              installments_per_year: getFormattedMortgageValues().installmentsPerYear,
-                              loan_protection_type: getFormattedMortgageValues().loanProtectionType,
-                              loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
-                              first_installment_date: getFormattedMortgageValues().firstInstallmentDate
-                            }}
+                            // formValues={{
+                            //   loan_amount: calculatedLoanAmount,
+                            //   down_payment: getFormattedMortgageValues().downPayment,
+                            //   interest_rate: getFormattedMortgageValues().interestRate,
+                            //   term_years: getFormattedMortgageValues().termYears,
+                            //   installments_per_year: getFormattedMortgageValues().installmentsPerYear,
+                            //   loan_protection_type: getFormattedMortgageValues().loanProtectionType,
+                            //   loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
+                            //   first_installment_date: getFormattedMortgageValues().firstInstallmentDate
+                            // }}
                           extraInstallments={extraInstallments}
                           />
                       )}
@@ -592,16 +592,16 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                             isThisScenarioSaved={savedScenario === "lower_payment"}
                             onSaveScenario={handleSaveScenario}
                             onUpdateSavedScenarioUI={handleUpdateSavedScenarioUI}
-                            formValues={{
-                              loan_amount: calculatedLoanAmount,
-                              down_payment: getFormattedMortgageValues().downPayment,
-                              interest_rate: getFormattedMortgageValues().interestRate,
-                              term_years: getFormattedMortgageValues().termYears,
-                              installments_per_year: getFormattedMortgageValues().installmentsPerYear,
-                              loan_protection_type: getFormattedMortgageValues().loanProtectionType,
-                              loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
-                              first_installment_date: getFormattedMortgageValues().firstInstallmentDate
-                            }}
+                            // formValues={{
+                            //   loan_amount: calculatedLoanAmount,
+                            //   down_payment: getFormattedMortgageValues().downPayment,
+                            //   interest_rate: getFormattedMortgageValues().interestRate,
+                            //   term_years: getFormattedMortgageValues().termYears,
+                            //   installments_per_year: getFormattedMortgageValues().installmentsPerYear,
+                            //   loan_protection_type: getFormattedMortgageValues().loanProtectionType,
+                            //   loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
+                            //   first_installment_date: getFormattedMortgageValues().firstInstallmentDate
+                            // }}
                           extraInstallments={extraInstallments}
                           />
                       )}
@@ -631,16 +631,16 @@ const handlePropertyChange = (freshProperty: PropertyWithBonus) => {
                             isThisScenarioSaved={savedScenario === "new_rate"}
                             onSaveScenario={handleSaveScenario}
                             onUpdateSavedScenarioUI={handleUpdateSavedScenarioUI}
-                            formValues={{
-                              loan_amount: calculatedLoanAmount,
-                              down_payment: getFormattedMortgageValues().downPayment,
-                              interest_rate: getFormattedMortgageValues().interestRate,
-                              term_years: getFormattedMortgageValues().termYears,
-                              installments_per_year: getFormattedMortgageValues().installmentsPerYear,
-                              loan_protection_type: getFormattedMortgageValues().loanProtectionType,
-                              loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
-                              first_installment_date: getFormattedMortgageValues().firstInstallmentDate
-                            }}
+                            // formValues={{
+                            //   loan_amount: calculatedLoanAmount,
+                            //   down_payment: getFormattedMortgageValues().downPayment,
+                            //   interest_rate: getFormattedMortgageValues().interestRate,
+                            //   term_years: getFormattedMortgageValues().termYears,
+                            //   installments_per_year: getFormattedMortgageValues().installmentsPerYear,
+                            //   loan_protection_type: getFormattedMortgageValues().loanProtectionType,
+                            //   loan_protection_insurance: getFormattedMortgageValues().loanProtectionInsurance,
+                            //   first_installment_date: getFormattedMortgageValues().firstInstallmentDate
+                            // }}
                           newRates={newRates.map(({ new_interest_rate, ...rest }) => ({
                             ...rest,
                             interest_rate: new_interest_rate,
