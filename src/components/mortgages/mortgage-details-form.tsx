@@ -58,6 +58,10 @@ export function MortgageDetailsForm({
 }: MortgageDetailsFormProps) {
   const { t } = useTranslation(['mortgages', 'global', 'components'])
   
+  // Add state for percentage input management
+  const [rawPercentageValue, setRawPercentageValue] = useState("")
+  const [percentageError, setPercentageError] = useState("")
+  
   // Add tracking of previous values to avoid unnecessary recalculations
   // const [prevProperty, setPrevProperty] = useState<string | null>(null)
   // const [prevDownPayment, setPrevDownPayment] = useState<number>(0)
@@ -72,6 +76,17 @@ export function MortgageDetailsForm({
       form.setValue("first_installment_date", normalizeDate(currentDate));
     }
   }, [form]);
+
+  // Initialize percentage display value from form data
+  useEffect(() => {
+    const downPayment = form.getValues("down_payment")
+    if (downPayment && selectedProperty && selectedProperty.price_cost) {
+      const percentage = (parseFloat(downPayment.replace(/[^0-9.]/g, "") || "0") / selectedProperty.price_cost) * 100
+      if (percentage > 0) {
+        setRawPercentageValue(percentage.toFixed(2))
+      }
+    }
+  }, [selectedProperty])
 
   // Watch the down payment field for real-time calculation
   const downPayment = form.watch("down_payment")
@@ -88,6 +103,61 @@ export function MortgageDetailsForm({
     return calculatedAmount;
   }, [selectedProperty, numericDownPayment, propertyBonus, onLoanAmountChange, 
       mortgageDraft]);
+
+  // Helper function to handle percentage changes
+  const handlePercentageChange = (value: string) => {
+    setRawPercentageValue(value)
+    
+    // Check for valid property data first
+    if (!selectedProperty || !selectedProperty.price_cost) {
+      return;
+    }
+    
+    // Handle empty input - set down payment to "0"
+    if (value === "") {
+      form.setValue("down_payment", "0", { shouldValidate: true })
+      setPercentageError("")
+      return;
+    }
+    
+    // Parse the percentage input and calculate down payment
+    const percentage = parseFloat(value)
+    if (!isNaN(percentage)) {
+      // Check for immediate validation (over 90%)
+      if (percentage > 90) {
+        setPercentageError(t('amortization.validation.down_payment_max', 'Max is 90% of property cost', { ns: 'mortgages' }))
+      } else {
+        setPercentageError("")
+      }
+      
+      const downPayment = (percentage / 100 * selectedProperty.price_cost).toFixed(2)
+      form.setValue("down_payment", downPayment, { shouldValidate: true })
+    }
+  }
+
+  // Helper function to handle percentage blur (formatting)
+  const handlePercentageBlur = () => {
+    // Check for valid property data
+    if (!selectedProperty || !selectedProperty.price_cost) {
+      return;
+    }
+    
+    const value = rawPercentageValue
+    if (value && value !== "") {
+      const percentage = parseFloat(value)
+      if (!isNaN(percentage)) {
+        // Format to 2 decimal places when leaving the field
+        const formattedValue = percentage.toFixed(2)
+        setRawPercentageValue(formattedValue)
+        const downPayment = (percentage / 100 * selectedProperty.price_cost).toFixed(2)
+        form.setValue("down_payment", downPayment, { shouldValidate: true })
+      }
+    } else {
+      // If field is empty on blur, set to "0"
+      form.setValue("down_payment", "0", { shouldValidate: true })
+      setRawPercentageValue("")
+    }
+  }
 
   return (
     
@@ -141,67 +211,12 @@ export function MortgageDetailsForm({
                         max="90"
                         placeholder="0.00"
                         className="pr-8"
-                        value={form.watch("down_payment") && selectedProperty && selectedProperty.price_cost ? 
-                          Number(((parseFloat(form.watch("down_payment").replace(/[^0-9.]/g, "") || "0") / selectedProperty.price_cost) * 100).toFixed(2)) : 
-                          ""}
+                        value={rawPercentageValue}
                         onFocus={handleInputFocus}
-                        // onChange={(e) => {
-                        //   const value = e.target.value
-                        //   // Allow empty input
-                        //   if (value === "" || !selectedProperty || !selectedProperty.price_cost) {
-                        //     return
-                        //   }
-                          
-                        //   // Parse the percentage input and calculate down payment
-                        //   const percentage = parseFloat(value)
-                        //   if (!isNaN(percentage)) {
-                        //     const downPayment = (percentage / 100 * selectedProperty.price_cost).toFixed(2)
-                        //     form.setValue("down_payment", downPayment, { shouldValidate: true })
-                        //   }
-                        // }}
-// ... existing code ...
                         onChange={(e) => {
-                          const value = e.target.value
-                          
-                          // Check for valid property data first
-                          if (!selectedProperty || !selectedProperty.price_cost) {
-                            return;
-                          }
-                          
-                          // Handle empty input - set down payment to "0"
-                          if (value === "") {
-                            form.setValue("down_payment", "0", { shouldValidate: true })
-                            return;
-                          }
-                          
-                          // Parse the percentage input and calculate down payment
-                          const percentage = parseFloat(value)
-                          if (!isNaN(percentage)) {
-                            const downPayment = (percentage / 100 * selectedProperty.price_cost).toFixed(2)
-                            form.setValue("down_payment", downPayment, { shouldValidate: true })
-                          }
+                          handlePercentageChange(e.target.value)
                         }}
-                        
-                        onBlur={(e) => {
-                          // Check for valid property data
-                          if (!selectedProperty || !selectedProperty.price_cost) {
-                            return;
-                          }
-                          
-                          // Format to 2 decimal places when leaving the field
-                          const value = e.target.value
-                          if (value && value !== "") {
-                            const percentage = parseFloat(value)
-                            if (!isNaN(percentage)) {
-                              e.target.value = percentage.toFixed(2)
-                              const downPayment = (percentage / 100 * selectedProperty.price_cost).toFixed(2)
-                              form.setValue("down_payment", downPayment, { shouldValidate: true })
-                            }
-                          } else {
-                            // If field is empty on blur, set to "0"
-                            form.setValue("down_payment", "0", { shouldValidate: true })
-                          }
-                        }}
+                        onBlur={handlePercentageBlur}
                       />
                       <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted-foreground">
                         %
@@ -209,10 +224,10 @@ export function MortgageDetailsForm({
                     </div>
                   </FormControl>
                   <FormMessage />
-                  {form.watch("down_payment") && selectedProperty && selectedProperty.price_cost && 
-                   (Number(((parseFloat(form.watch("down_payment").replace(/[^0-9.]/g, "") || "0") / selectedProperty.price_cost) * 100).toFixed(2)) > 90) && (
+                  {rawPercentageValue && selectedProperty && selectedProperty.price_cost && 
+                   (Number(rawPercentageValue) > 90) && (
                     <p className="text-sm font-medium text-destructive">
-                      {t('amortization.validation.down_payment_max', 'Max is 90% of property cost', { ns: 'mortgages' })}
+                      {percentageError}
                     </p>
                   )}
                 </FormItem>
@@ -235,6 +250,20 @@ export function MortgageDetailsForm({
                         // Ensure empty values are treated as "0"
                         const finalValue = value === '' ? '0' : value;
                         field.onChange(finalValue);
+                        
+                        // Update percentage field when amount changes
+                        if (selectedProperty && selectedProperty.price_cost) {
+                          const numericValue = parseFloat(finalValue.replace(/[^0-9.]/g, "") || "0");
+                          const percentage = (numericValue / selectedProperty.price_cost) * 100;
+                          setRawPercentageValue(percentage > 0 ? percentage.toFixed(2) : "");
+                          
+                          // Check for validation
+                          if (percentage > 90) {
+                            setPercentageError(t('amortization.validation.down_payment_max', 'Max is 90% of property cost', { ns: 'mortgages' }));
+                          } else {
+                            setPercentageError("");
+                          }
+                        }
                         
                         // Make sure when empty/zero values are used, the form is updated immediately
                         setTimeout(() => {
