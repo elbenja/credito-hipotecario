@@ -144,5 +144,12 @@
   "column_toggle": {
     "customize_columns": "Seleccionar Columnas",
     "columns": "Columnas"
+  },
+  "term_months_field": {
+    "title": "Duración del Plazo",
+    "years_label": "Años",
+    "months_label": "Meses",
+    "range_error": "Fuera del rango",
+    "range_info": "Rango: 5-30 años (60-360 meses)"
   }
 } 

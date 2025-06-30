@@ -144,5 +144,12 @@
   "column_toggle": {
     "customize_columns": "Customize Columns",
     "columns": "Columns"
+  },
+  "term_months_field": {
+    "title": "Term Duration",
+    "years_label": "Years",
+    "months_label": "Months",
+    "range_error": "Outside the range",
+    "range_info": "Range: 5-30 years (60-360 months)"
   }
 } 
