@@ -35,6 +35,7 @@ import {
   formatTermForInput,
   parseTermInput 
 } from "@/utils/term-conversion"
+import { TermMonthsField } from "@/components/ui/term-months-field"
 
 interface MortgageDetailsFormProps {
   form: ReturnType<typeof useForm<MortgageFormValues>>
@@ -371,73 +372,7 @@ export function MortgageDetailsForm({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="term_months"
-              render={({ field }) => {
-                const [displayConversion, setDisplayConversion] = useState<string>("")
-                const [displayValue, setDisplayValue] = useState<string>("")
-                
-                // Initialize display value from term_months
-                useEffect(() => {
-                  if (field.value && field.value > 0) {
-                    const yearsValue = formatTermForInput(field.value)
-                    setDisplayValue(yearsValue)
-                    setDisplayConversion(`${field.value} months`)
-                  } else {
-                    setDisplayValue("")
-                    setDisplayConversion("")
-                  }
-                }, [field.value])
-
-                return (
-                  <FormItem>
-                    <FormLabel>
-                      {t('mortgage.term', { ns: 'mortgages' })}
-                    
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        value={displayValue}
-                        type="number"
-                        step="0.1"
-                        min="5"
-                        max="30"
-                        placeholder="20.0"
-                        onChange={(e) => {
-                          const inputValue = e.target.value
-                          setDisplayValue(inputValue)
-                          
-                          // Convert years input to months and update the field
-                          const parsed = parseFloat(inputValue)
-                          if (!isNaN(parsed) && parsed > 0) {
-                            const months = convertTermToMonths(parsed)
-                            setDisplayConversion(`${months} months`)
-                            field.onChange(months)
-                          } else {
-                            setDisplayConversion("")
-                            field.onChange(0)
-                          }
-                          
-                          // Trigger validation
-                          form.trigger("term_months")
-                        }}
-                        
-                      />
-                    </FormControl>
-                    <div className="text-xs text-muted-foreground">
-                    {displayConversion && 
-                        <span className="ml-2" >
-                          {displayConversion}
-                        </span>
-                      }
-                      {/* {t('amortization.term_hint', 'Enter term in years (e.g., 20.5 for 20 years and 6 months)', { ns: 'mortgages' })} */}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )
-              }}
-            />
+            <TermMonthsField name="term_months" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
