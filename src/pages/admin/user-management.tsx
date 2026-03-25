@@ -50,6 +50,15 @@ import {
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { UserTabs } from "@/components/admin/user-tabs"
 import { mapSupabaseErrorToTranslationKey } from "@/utils/supabase-error-mapper"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 type User = {
   id: string
@@ -75,53 +84,40 @@ function useUsers() {
   return useQuery({
     queryKey: ['admin-users'],
     queryFn: async (): Promise<User[]> => {
-      try {
-        const { data, error } = await supabase.rpc('get_all_users')
-        
-        if (!error && data) {
-          const userIds = data.map((user: User) => user.id);
-          
-          // Fetch subscriptions
-          const { data: subscriptions, error: subscriptionError } = await supabase
-            .from('user_subscriptions')
-            .select('id, user_id, plan_id, current_period_start, plan:plan_id(name)')
-            .in('user_id', userIds)
-            .eq('status', 'active');
-            
-          if (subscriptionError) {
-            console.error("Error fetching subscriptions:", subscriptionError);
-          }
-          
-          // Fetch mortgage and property counts
-          const { data: countsData, error: countsError } = await supabase
-            .rpc('get_mortgage_and_property_counts_for_admins');
-            
-          if (countsError) {
-            console.error("Error fetching counts:", countsError);
-          }
-          
-          return data.map((user: User) => {
-            const userSubscription = subscriptions?.find(s => s.user_id === user.id);
-            const userCounts = countsData?.find((c: { user_id: string, mortgage_count: number, property_count: number }) => c.user_id === user.id);
-            
-            return {
-              ...user,
-              subscription: userSubscription ? {
-                id: userSubscription.id,
-                plan_id: userSubscription.plan_id,
-                plan_name: (userSubscription.plan as any)?.name,
-                current_period_start: userSubscription.current_period_start
-              } : null,
-              mortgages_count: userCounts ? userCounts.mortgage_count : 0,
-              properties_count: userCounts ? userCounts.property_count : 0
-            };
-          });
-        }
-        throw new Error('Failed to fetch users')
-      } catch (error) {
-        console.error("Error fetching users:", error)
-        throw error
+      const { data, error } = await supabase.rpc('get_all_users')
+      if (error) throw error
+      if (!data) throw new Error('Failed to fetch users')
+
+      // Fetch mortgage and property counts via dedicated RPC (no .in() URL overflow risk)
+      const { data: countsData, error: countsError } = await supabase
+        .rpc('get_mortgage_and_property_counts_for_admins')
+      if (countsError) {
+        console.error('Error fetching counts:', countsError)
       }
+
+      return (data as any[]).map((row) => {
+        const userCounts = countsData?.find(
+          (c: { user_id: string; mortgage_count: number; property_count: number }) =>
+            c.user_id === row.id
+        )
+        return {
+          id: row.id,
+          email: row.email,
+          created_at: row.created_at,
+          last_sign_in_at: row.last_sign_in_at,
+          role: row.role,
+          subscription: row.subscription_id
+            ? {
+                id: row.subscription_id,
+                plan_id: row.plan_id,
+                plan_name: row.plan_name,
+                current_period_start: row.current_period_start,
+              }
+            : null,
+          mortgages_count: userCounts?.mortgage_count ?? 0,
+          properties_count: userCounts?.property_count ?? 0,
+        } satisfies User
+      })
     },
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
@@ -242,6 +238,8 @@ export default function UserManagement() {
   const [changingSubscription, setChangingSubscription] = useState<{[key: string]: boolean}>({})
   const [sortField, setSortField] = useState<SortField>('email')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+  const ITEMS_PER_PAGE = 50
+  const [currentPage, setCurrentPage] = useState(1)
 
   // React Query hooks
   const { data: users = [], isLoading, error } = useUsers()
@@ -252,6 +250,10 @@ export default function UserManagement() {
   useEffect(() => {
     checkAdminStatus()
   }, [])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, roleFilter, activeTab])
 
   const checkAdminStatus = async () => {
     try {
@@ -451,6 +453,12 @@ export default function UserManagement() {
     
     return matchesSearch && matchesRole && matchesTab
   }))
+
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE)
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
 
   const handleCreateUser = async () => {
     if (!newUserEmail) {
@@ -747,7 +755,7 @@ export default function UserManagement() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredUsers.map((user: User) => (
+                paginatedUsers.map((user: User) => (
                   <TableRow key={user.id}>
                     <TableCell>{user.email}</TableCell>
                     <TableCell className="capitalize hidden sm:table-cell">{user.role}</TableCell>
@@ -849,6 +857,65 @@ export default function UserManagement() {
             </TableBody>
           </Table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+            <span>
+              Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
+              {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)} of{' '}
+              {filteredUsers.length} users
+            </span>
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    aria-disabled={currentPage === 1}
+                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((page) =>
+                    page === 1 ||
+                    page === totalPages ||
+                    Math.abs(page - currentPage) <= 1
+                  )
+                  .reduce<(number | 'ellipsis')[]>((acc, page, idx, arr) => {
+                    if (idx > 0 && page - (arr[idx - 1] as number) > 1) acc.push('ellipsis')
+                    acc.push(page)
+                    return acc
+                  }, [])
+                  .map((item, idx) =>
+                    item === 'ellipsis' ? (
+                      <PaginationItem key={`ellipsis-${idx}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={item}>
+                        <PaginationLink
+                          isActive={item === currentPage}
+                          onClick={() => setCurrentPage(item as number)}
+                          className="cursor-pointer"
+                        >
+                          {item}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  )}
+
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    aria-disabled={currentPage === totalPages}
+                    className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
