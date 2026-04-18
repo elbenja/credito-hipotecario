@@ -12,14 +12,11 @@ import { useTranslation } from "react-i18next"
 import { Loader2 } from "lucide-react"
 import { mapSupabaseErrorToTranslationKey } from "@/utils/supabase-error-mapper"
 
-interface LoginFormProps {
-  defaultIsSignUp?: boolean
-}
+const EXTERNAL_SIGNUP_URL = "https://demo.creditohipotecar.io/signup"
 
-export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
+export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [isSignUp, setIsSignUp] = useState(defaultIsSignUp)
   const [isResettingPassword, setIsResettingPassword] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -38,106 +35,17 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
     const email = formData.get("email") as string
     const password = formData.get("password") as string
 
-    // Client-side password validation for sign up
-    if (isSignUp) {
-      // Check minimum length
-      if (password.length < 6) {
-        const errorMsg = t("auth.validation.password_min_length", "Password must be at least 6 characters long")
-        setError(errorMsg)
-        toast({
-          variant: "destructive",
-          title: t("ui.error"),
-          description: errorMsg,
-        })
-        setIsLoading(false)
-        return
-      }
-
-      // Check for at least one lowercase letter
-      if (!/[a-z]/.test(password)) {
-        const errorMsg = t("auth.validation.password_lowercase", "Password must contain at least one lowercase letter (a-z)")
-        setError(errorMsg)
-        toast({
-          variant: "destructive",
-          title: t("ui.error"),
-          description: errorMsg,
-        })
-        setIsLoading(false)
-        return
-      }
-
-      // Check for at least one uppercase letter
-      if (!/[A-Z]/.test(password)) {
-        const errorMsg = t("auth.validation.password_uppercase", "Password must contain at least one uppercase letter (A-Z)")
-        setError(errorMsg)
-        toast({
-          variant: "destructive",
-          title: t("ui.error"),
-          description: errorMsg,
-        })
-        setIsLoading(false)
-        return
-      }
-
-      // Check for at least one number
-      if (!/[0-9]/.test(password)) {
-        const errorMsg = t("auth.validation.password_number", "Password must contain at least one number (0-9)")
-        setError(errorMsg)
-        toast({
-          variant: "destructive",
-          title: t("ui.error"),
-          description: errorMsg,
-        })
-        setIsLoading(false)
-        return
-      }
-    }
-
     try {
-      if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              email: email,
-            }
-          }
-        })
-
-        if (error) {
-          console.error("Signup error:", error)
-          throw error
-        }
-
-        if (data.user) {
-          toast({
-            title: t("auth.login.account_created", "Account created!"),
-            // description: t("auth.login.check_email_verification", "Please check your email to verify your account."),
-          })
-          // Optionally update profiles table
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ email: email })
-            .eq('id', data.user.id)
-
-          if (profileError) {
-            console.error("Profile update error:", profileError)
-          }
-        }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-        if (error) {
-          console.error("Login error:", error)
-          throw error
-        }
-        // navigate("/dashboard")
-        navigate("/dashboard", { replace: true })
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (error) {
+        console.error("Login error:", error)
+        throw error
       }
-   
+
+      navigate("/dashboard", { replace: true })
 
     } catch (error: any) {
       const errorKey = mapSupabaseErrorToTranslationKey(error)
@@ -292,11 +200,9 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
       ) : (
         <>
           <div className="space-y-2 text-center">
-            <h1 className="text-2xl font-bold">{isSignUp ? t("auth.login.create_account_title", "Create Account") : t("auth.login.welcome_back", "Welcome back")}</h1>
+            <h1 className="text-2xl font-bold">{t("auth.login.welcome_back", "Welcome back")}</h1>
             <p className="text-gray-500">
-              {isSignUp
-                ? t("auth.login.create_account_description", "Create an account to continue")
-                : t("auth.login.credentials_prompt", "Please enter your credentials to continue")}
+              {t("auth.login.credentials_prompt", "Please enter your credentials to continue")}
             </p>
           </div>
 
@@ -385,8 +291,6 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   {t("auth.login.loading", "Signing in...")}
                 </>
-              ) : isSignUp ? (
-                t("auth.login.create_account", "Create Account")
               ) : (
                 t("auth.login.sign_in", "Sign In")
               )}
@@ -405,10 +309,10 @@ export function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
         <Button
           variant="link"
           className="text-sm"
-          onClick={() => setIsSignUp(!isSignUp)}
+          onClick={() => window.location.assign(EXTERNAL_SIGNUP_URL)}
           disabled={isLoading || isGoogleLoading}
         >
-          {isSignUp ? t("auth.login.already_have_account", "Already have an account?") : t("auth.login.no_account", "Don't have an account?")}
+          {t("auth.login.no_account", "Don't have an account?")}
         </Button>
       </div>
         </>

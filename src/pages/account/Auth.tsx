@@ -8,6 +8,8 @@ import { SEO } from "@/components/seo"
 import { Logo } from "@/components/ui/logo"
 import { useTranslation } from "react-i18next"
 
+const EXTERNAL_SIGNUP_URL = "https://demo.creditohipotecar.io/signup"
+
 export default function Auth() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -17,21 +19,26 @@ export default function Auth() {
   const isCreateAccount = searchParams.get('v') === 'create'
 
   useEffect(() => {
+    if (isCreateAccount) {
+      window.location.replace(EXTERNAL_SIGNUP_URL)
+      return
+    }
+
     // If we have a user and we're not loading, redirect to dashboard
     if (!loading && user) {
       // navigate('/dashboard', { replace: true })
       navigate('/', { replace: true })
     }
-  }, [user, loading, navigate])
+  }, [isCreateAccount, user, loading, navigate])
 
-//    if (!loading && user && !hasAccess) {
-//     console.log('no access, redirecting to account from auth')
-//     navigate('/account', { replace: true })
+  //    if (!loading && user && !hasAccess) {
+  //     console.log('no access, redirecting to account from auth')
+  //     navigate('/account', { replace: true })
 
-//   } else if (!loading && user) {
-//     navigate('/dashboard', { replace: true })
-//   }
-// }, [user, loading, navigate])
+  //   } else if (!loading && user) {
+  //     navigate('/dashboard', { replace: true })
+  //   }
+  // }, [user, loading, navigate])
 
 
   // Show loading state
@@ -48,7 +55,7 @@ export default function Auth() {
 
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
-      <SEO 
+      <SEO
         title={t('auth.title', 'CreditoHipotecar.io')}
         description={t('auth.description', 'Credito Hipotecario Simple y Claro')}
       />
@@ -61,12 +68,12 @@ export default function Auth() {
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-sm">
-            <LoginForm defaultIsSignUp={isCreateAccount} />
+            <LoginForm />
           </div>
         </div>
 
         <div className="text-center mt-8">
-         {/* <p className="mb-4">
+          {/* <p className="mb-4">
           {t('auth.no_credentials_prompt')} &nbsp;
           
           <a 
@@ -76,29 +83,29 @@ export default function Auth() {
             {t('auth.register_prompt')}
           </a>
         </p> */}
-        <p className="text-sm text-muted-foreground">
-          Junio 2025
-        </p>
-      </div>
-      
+          <p className="text-sm text-muted-foreground">
+            Abril 2026 (v2 está a la vuelta de la esquina)
+          </p>
+        </div>
+
       </div>
       <div className="flex items-center justify-center p-6 lg:p-10 bg-slate-800 min-h-[800px]">
         <div className="w-full max-w-md space-y-6 text-center flex flex-col gap-2 mt-4 mb-4">
-              <h2 className="text-5xl font-black">
-                    <span className="text-brand  leading-[70%]">crédito</span>
-                    <br />
-                    <span className="text-white leading-[70%]">hipotecar.io</span>
-                 </h2>
-                 <p className="mt-4 text-lg text-slate-200">
-                 {t('auth.clear_and_simple')}
-                </p>
-                <img 
-                  src="/lovable-uploads/amigo-en-beanbag.png" 
-                  alt="Person sitting comfortably in a yellow beanbag chair working on a laptop"
-                  className="w-full h-auto rounded-lg shadow-lg"
-                />
-              </div>
+          <h2 className="text-5xl font-black">
+            <span className="text-brand  leading-[70%]">crédito</span>
+            <br />
+            <span className="text-white leading-[70%]">hipotecar.io</span>
+          </h2>
+          <p className="mt-4 text-lg text-slate-200">
+            {t('auth.clear_and_simple')}
+          </p>
+          <img
+            src="/lovable-uploads/amigo-en-beanbag.png"
+            alt="Person sitting comfortably in a yellow beanbag chair working on a laptop"
+            className="w-full h-auto rounded-lg shadow-lg"
+          />
         </div>
+      </div>
     </div>
   )
 }
