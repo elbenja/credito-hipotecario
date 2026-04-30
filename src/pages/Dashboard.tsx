@@ -1,5 +1,6 @@
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { useTranslation } from "react-i18next"
 import { Link, Navigate } from "react-router-dom"
 import SVGillustration from '@/components/ui/SVGillustration'
@@ -12,7 +13,7 @@ import { FeatureCounts } from "@/components/dashboard/feature-counts"
 import { PropertyCards } from "@/components/dashboard/property-cards"
 import { useState, useEffect } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Plus, Terminal } from "lucide-react"
+import { Plus, Terminal, X } from "lucide-react"
 import { PropertyForm } from "@/components/properties/property-form"
 import { usePropertyCount } from "@/hooks/properties/useCount"
 // import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -29,6 +30,9 @@ export default function Dashboard() {
   const [hasProperties, setHasProperties] = useState(false)
   const [open, setOpen] = useState(false)
   const [showDialog, setShowDialog] = useState(false)
+  const [isV2CardDismissed, setIsV2CardDismissed] = useState(
+    () => localStorage.getItem('dashboardV2CardDismissed') === 'true'
+  )
   // const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   // const queryClient = useQueryClient()
@@ -72,6 +76,11 @@ export default function Dashboard() {
     }
   }
 
+  const handleDismissV2Card = () => {
+    localStorage.setItem('dashboardV2CardDismissed', 'true')
+    setIsV2CardDismissed(true)
+  }
+
 
 
   // // Fetch properties count with optimized caching
@@ -96,6 +105,32 @@ export default function Dashboard() {
         title: <h1 className="text-xl font-bold tracking-tight">{t("sections.dashboard")}</h1>
       }}
     >
+
+{!isV2CardDismissed && (
+  <div className="w-full px-4 pt-4 md:px-6 md:pt-6">
+    <Card className="relative w-full">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="absolute right-3 top-3 size-8"
+        aria-label="Cerrar"
+        onClick={handleDismissV2Card}
+      >
+        <X className="h-4 w-4" />
+      </Button>
+      <CardHeader className="pr-14">
+        <CardTitle>Ya lanzamos la V2</CardTitle>
+        <CardDescription>Descubre la nueva V2 con mejoras 🚀</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button asChild>
+          <a href="https://app.creditohipotecar.io/signin">Entra aquí</a>
+        </Button>
+      </CardContent>
+    </Card>
+  </div>
+)}
    
 {/* container start */}
 <div className="h-full w-full md:p-6 p-4 flex flex-col justify-center items-center ">
