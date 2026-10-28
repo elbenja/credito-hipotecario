@@ -100,7 +100,7 @@ export default function Auth() {
             {t('auth.clear_and_simple')}
           </p>
           <img
-            src="/lovable-uploads/amigo-en-beanbag.png"
+            src="/images/amigo-en-beanbag.png"
             alt="Person sitting comfortably in a yellow beanbag chair working on a laptop"
             className="w-full h-auto rounded-lg shadow-lg"
           />

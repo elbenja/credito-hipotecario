@@ -32,7 +32,7 @@ export default function ComingSoonPage() {
           <div className="flex h-full flex-col items-center justify-center text-center relative ">
             <h1 className="absolute top-[28%] left-1/2 -translate-x-1/2 -translate-y-1/2 mb-4 w-[504px] text-[117px] font-black text-white leading-[90%] z-0">{t('coming_soon')}</h1>
             <img
-              src="/lovable-uploads/Latina w Laptop.png"
+              src="/images/Latina w Laptop.png"
               alt="Person working on laptop"
               className="relative z-10 mx-auto mt-12 max-w-md rounded-lg"
             />
@@ -44,7 +44,7 @@ export default function ComingSoonPage() {
                 className="flex items-center gap-2 text-black hover:text-white transition-colors duration-200"
               >
                 <img
-                  src="/lovable-uploads/Instagram.svg"
+                  src="/images/Instagram.svg"
                   alt="Instagram"
                   className="w-6 h-6"
                 />
